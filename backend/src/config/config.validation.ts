@@ -1,0 +1,21 @@
+import * as Joi from 'joi';
+
+export const configValidationSchema = Joi.object({
+  // Application
+  NODE_ENV: Joi.string()
+    .valid('development', 'production', 'test')
+    .default('development'),
+  PORT: Joi.number().default(3000),
+  FRONTEND_URL: Joi.string().uri().default('http://localhost:5173'),
+
+  // Database
+  DATABASE_PATH: Joi.string().default('data/homehub.db'),
+
+  // MQTT
+  MQTT_BROKER_URL: Joi.string().uri().default('mqtt://localhost:1883'),
+  MQTT_USERNAME: Joi.string().optional(),
+  MQTT_PASSWORD: Joi.string().optional(),
+  MQTT_CLIENT_ID: Joi.string().default('homehub-backend'),
+  MQTT_RECONNECT_PERIOD: Joi.number().default(5000),
+});
+
