@@ -104,7 +104,10 @@
   },
   "assistant": {
     "title": "AI Assistant",
-    "subtitle": "Create automations in natural language"
+    "subtitle": "Create automations in natural language",
+    "noAutomationsCreated": "No automations created",
+    "noAutomationsCreatedHint": "Create your first automation to get started",
+    "createAutomation": "Create automation"
   },
   "history": {
     "title": "History",
