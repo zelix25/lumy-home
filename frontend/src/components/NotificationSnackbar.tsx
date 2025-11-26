@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Snackbar, Alert, AlertTitle } from '@mui/material';
 import { useWebSocket } from '../hooks/useWebSocket';
 
@@ -27,22 +27,27 @@ export default function NotificationSnackbar() {
       setNotifications((prev) => [...prev, notification]);
     };
 
-    const handleDeviceUpdated = (data: { device: any; message: string }) => {
-      const notification: Notification = {
-        id: Date.now().toString(),
-        title: 'Appareil mis à jour',
-        message: data.message,
-        type: 'success',
-      };
-      setNotifications((prev) => [...prev, notification]);
+    const handleDeviceUpdated = (data: { device: any; message?: string }) => {
+      // Ne pas afficher de notification pour les mises à jour d'appareils
+      // Les notifications sont gérées par handleDeviceState pour les données de capteurs
+    };
+    
+    const handleDeviceState = (data: {
+      ieeeAddress: string;
+      friendlyName: string;
+      state: Record<string, any>;
+    }) => {
+      // Ne pas afficher de notification pour les mises à jour de données de capteurs
     };
 
     socket.on('device:discovered', handleDeviceDiscovered);
     socket.on('device:updated', handleDeviceUpdated);
+    socket.on('device:state', handleDeviceState);
 
     return () => {
       socket.off('device:discovered', handleDeviceDiscovered);
       socket.off('device:updated', handleDeviceUpdated);
+      socket.off('device:state', handleDeviceState);
     };
   }, [isConnected, socket]);
 

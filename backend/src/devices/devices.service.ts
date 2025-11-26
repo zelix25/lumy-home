@@ -116,5 +116,38 @@ export class DevicesService {
   async stopDeviceDiscovery(): Promise<void> {
     await this.zigbee2MqttService.stopPermitJoin();
   }
+
+  async refreshDeviceStates(): Promise<void> {
+    // Forcer la récupération des états actuels
+    await this.zigbee2MqttService.requestDeviceStates();
+  }
+
+  async forceReadDeviceState(ieeeAddress: string): Promise<void> {
+    const device = await this.findOne(ieeeAddress);
+    await this.zigbee2MqttService.forceReadDeviceState(device.friendlyName);
+  }
+
+  async forceReadAllDeviceStates(): Promise<void> {
+    const devices = await this.findAll();
+    for (const device of devices) {
+      if (device.status === 'online') {
+        await this.zigbee2MqttService.forceReadDeviceState(device.friendlyName);
+        // Petit délai pour éviter de surcharger
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+    }
+  }
+
+  async sendMqttMessage(topic: string, payload: any): Promise<void> {
+    await this.zigbee2MqttService.sendMqttMessage(topic, payload);
+  }
+
+  getMqttStatus() {
+    return this.zigbee2MqttService.getMqttStatus();
+  }
+
+  async reconnectMqtt(): Promise<void> {
+    await this.zigbee2MqttService.reconnectMqtt();
+  }
 }
 

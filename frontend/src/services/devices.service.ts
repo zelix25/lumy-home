@@ -73,6 +73,36 @@ class DevicesService {
   async stopDiscovery(): Promise<{ success: boolean; message: string }> {
     return apiService.post<{ success: boolean; message: string }>('/devices/discovery/stop');
   }
+
+  async sendMqttMessage(
+    topic: string,
+    payload: Record<string, any> | string,
+  ): Promise<{ success: boolean; message: string }> {
+    const body: any = { topic };
+    if (typeof payload === 'string') {
+      body.payloadString = payload;
+    } else {
+      body.payload = payload;
+    }
+    return apiService.post<{ success: boolean; message: string }>('/devices/mqtt/send', body);
+  }
+
+  async getMqttStatus(): Promise<{
+    connected: boolean;
+    brokerUrl: string;
+    clientId: string;
+    messagesReceived: number;
+    messagesSent: number;
+    lastMessageReceived?: string;
+    lastMessageSent?: string;
+    subscribedTopics: string[];
+  }> {
+    return apiService.get('/devices/mqtt/status');
+  }
+
+  async reconnectMqtt(): Promise<{ success: boolean; message: string }> {
+    return apiService.post<{ success: boolean; message: string }>('/devices/mqtt/reconnect');
+  }
 }
 
 export const devicesService = new DevicesService();

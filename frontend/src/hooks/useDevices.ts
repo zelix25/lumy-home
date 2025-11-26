@@ -38,12 +38,16 @@ export function useDevices() {
       fetchDevices(); // Rafraîchir la liste
     };
 
-    const handleDeviceUpdated = (data: { device: Device; message: string }) => {
-      setDevices((prev) =>
-        prev.map((d) =>
+    const handleDeviceUpdated = (data: { device: Device; message?: string }) => {
+      console.log('📊 Device updated via WebSocket:', data.device.friendlyName, data.device.state);
+      console.log('📊 Device state keys:', data.device.state ? Object.keys(data.device.state) : 'no state');
+      setDevices((prev) => {
+        const updated = prev.map((d) =>
           d.ieeeAddress === data.device.ieeeAddress ? data.device : d,
-        ),
-      );
+        );
+        console.log('📊 Devices after update:', updated.find(d => d.ieeeAddress === data.device.ieeeAddress));
+        return updated;
+      });
     };
 
     const handleDeviceState = (data: {
@@ -51,6 +55,7 @@ export function useDevices() {
       friendlyName: string;
       state: Record<string, any>;
     }) => {
+      console.log('📊 Device state updated via WebSocket:', data.friendlyName, data.state);
       setDevices((prev) =>
         prev.map((d) =>
           d.ieeeAddress === data.ieeeAddress

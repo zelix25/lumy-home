@@ -1,6 +1,8 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { LoggerService } from '../logger/logger.service';
 import { MqttService } from '../mqtt/mqtt.service';
 import { WebsocketGateway } from '../websocket/websocket.gateway';
@@ -34,13 +36,66 @@ interface ZigbeeState {
 
 @Injectable()
 export class Zigbee2MqttService implements OnModuleInit {
+  private deviceTypeMapping: Array<{
+    model: string;
+    vendor?: string;
+    type: DeviceType;
+  }> = [];
+
   constructor(
     @InjectRepository(Device)
     private deviceRepository: Repository<Device>,
     private readonly logger: LoggerService,
     private readonly mqttService: MqttService,
     private readonly websocketGateway: WebsocketGateway,
-  ) {}
+  ) {
+    this.loadDeviceTypeMapping();
+  }
+
+  private loadDeviceTypeMapping(): void {
+    try {
+      // Essayer d'abord depuis __dirname (après compilation dans dist/)
+      let mappingPath = join(__dirname, 'device-type-mapping.json');
+      
+      // Si le fichier n'existe pas, essayer depuis le répertoire source (en développement)
+      try {
+        readFileSync(mappingPath, 'utf-8');
+      } catch {
+        mappingPath = join(process.cwd(), 'src', 'devices', 'device-type-mapping.json');
+      }
+      
+      const mappingFile = readFileSync(mappingPath, 'utf-8');
+      const mappings = JSON.parse(mappingFile);
+
+      // Convertir les types string en DeviceType enum
+      this.deviceTypeMapping = mappings.map((m: any) => ({
+        model: m.model,
+        vendor: m.vendor,
+        type: DeviceType[m.type.toUpperCase() as keyof typeof DeviceType] || DeviceType.UNKNOWN,
+      }));
+
+      this.logger.log(
+        `✅ ${this.deviceTypeMapping.length} mappings de types d'appareils chargés depuis ${mappingPath}`,
+        'Zigbee2MqttService',
+      );
+    } catch (error) {
+      this.logger.error(
+        `Erreur lors du chargement du fichier de mapping: ${error.message}`,
+        error.stack,
+        'Zigbee2MqttService',
+      );
+      // Utiliser un tableau vide en cas d'erreur
+      this.deviceTypeMapping = [];
+    }
+  }
+
+  getMqttStatus() {
+    return this.mqttService.getStatus();
+  }
+
+  async reconnectMqtt(): Promise<void> {
+    this.mqttService.reconnect();
+  }
 
   async onModuleInit() {
     // Écouter les messages MQTT
@@ -50,6 +105,24 @@ export class Zigbee2MqttService implements OnModuleInit {
 
     // Demander la liste des appareils au démarrage
     this.requestDevicesList();
+
+    // Démarrer le polling périodique pour forcer la récupération des états
+    this.startPeriodicPolling();
+  }
+
+  private startPeriodicPolling() {
+    // Polling toutes les 30 secondes pour forcer la récupération des états
+    setInterval(async () => {
+      if (this.mqttService.isConnected()) {
+        // Demander la liste des appareils (qui peut déclencher des mises à jour)
+        this.requestDevicesList();
+        
+        // Demander l'état du bridge (la réponse arrive sur zigbee2mqtt/bridge/state)
+        // Pas besoin de publier, le bridge publie automatiquement
+        
+        this.logger.debug('Polling périodique : demande de la liste des appareils', 'Zigbee2MqttService');
+      }
+    }, 30000); // 30 secondes
   }
 
   private async handleMqttMessage(message: {
@@ -58,13 +131,127 @@ export class Zigbee2MqttService implements OnModuleInit {
     timestamp: Date;
   }) {
     try {
+      // Gérer la liste des appareils depuis différents topics
       if (message.topic === 'zigbee2mqtt/bridge/devices') {
+        // Publication automatique de la liste des appareils
         await this.handleDevicesList(message.payload);
+      } else if (message.topic === 'zigbee2mqtt/bridge/config/devices') {
+        // Réponse à la requête devices/get
+        this.logger.debug(
+          `Réponse devices/get reçue: ${JSON.stringify(message.payload).substring(0, 200)}`,
+          'Zigbee2MqttService',
+        );
+        if (Array.isArray(message.payload)) {
+          await this.handleDevicesList(message.payload);
+        } else if (message.payload && Array.isArray(message.payload.devices)) {
+          await this.handleDevicesList(message.payload.devices);
+        }
       } else if (message.topic.startsWith('zigbee2mqtt/') && message.topic.endsWith('/state')) {
         const friendlyName = message.topic.split('/')[1];
+        this.logger.debug(
+          `État reçu pour ${friendlyName}: ${JSON.stringify(message.payload)}`,
+          'Zigbee2MqttService',
+        );
         await this.handleDeviceState(friendlyName, message.payload);
+      } else if (message.topic.startsWith('zigbee2mqtt/') && message.topic.endsWith('/availability')) {
+        // Gérer la disponibilité des appareils
+        const friendlyName = message.topic.split('/')[1];
+        await this.handleDeviceAvailability(friendlyName, message.payload);
+      } else if (message.topic.startsWith('zigbee2mqtt/') && 
+                 !message.topic.startsWith('zigbee2mqtt/bridge/') &&
+                 !message.topic.endsWith('/state') &&
+                 !message.topic.endsWith('/availability') &&
+                 !message.topic.endsWith('/set') &&
+                 message.topic.split('/').length === 2) {
+        // Format: zigbee2mqtt/{ieeeAddress} - données directes de l'appareil (format principal)
+        const ieeeAddress = message.topic.split('/')[1];
+        if (ieeeAddress && ieeeAddress.length > 0) {
+          // Vérifier que le payload n'est pas vide et est un objet
+          if (message.payload && typeof message.payload === 'object' && Object.keys(message.payload).length > 0) {
+            this.logger.log(
+              `📊 Données appareil [${ieeeAddress}]: ${JSON.stringify(message.payload).substring(0, 200)}`,
+              'Zigbee2MqttService',
+            );
+            await this.handleDeviceStateByIeeeAddress(ieeeAddress, message.payload);
+          } else {
+            this.logger.debug(
+              `📊 Données appareil [${ieeeAddress}]: payload vide ou invalide - ${JSON.stringify(message.payload)}`,
+              'Zigbee2MqttService',
+            );
+          }
+        }
+      } else if (message.topic.startsWith('zigbee2mqtt/bridge/') && message.topic !== 'zigbee2mqtt/bridge/devices' && 
+                 message.topic !== 'zigbee2mqtt/bridge/config' && 
+                 message.topic !== 'zigbee2mqtt/bridge/event' &&
+                 message.topic !== 'zigbee2mqtt/bridge/log' &&
+                 message.topic !== 'zigbee2mqtt/bridge/state' &&
+                 !message.topic.startsWith('zigbee2mqtt/bridge/config/')) {
+        // Format alternatif: zigbee2mqtt/bridge/{ieeeAddress} - données directes de l'appareil
+        const ieeeAddress = message.topic.split('/')[2];
+        if (ieeeAddress && ieeeAddress.length > 0) {
+          this.logger.log(
+            `📊 Données appareil [${ieeeAddress}] (bridge): ${JSON.stringify(message.payload).substring(0, 200)}`,
+            'Zigbee2MqttService',
+          );
+          await this.handleDeviceStateByIeeeAddress(ieeeAddress, message.payload);
+        }
       } else if (message.topic === 'zigbee2mqtt/bridge/event') {
         await this.handleBridgeEvent(message.payload);
+      } else if (message.topic === 'zigbee2mqtt/bridge/config') {
+        // Configuration du bridge (réponse aux commandes)
+        this.logger.debug(
+          `Configuration bridge Zigbee2MQTT: ${JSON.stringify(message.payload).substring(0, 200)}`,
+          'Zigbee2MqttService',
+        );
+        // Si c'est une réponse à devices/get, traiter comme une liste d'appareils
+        if (message.payload?.devices && Array.isArray(message.payload.devices)) {
+          await this.handleDevicesList(message.payload.devices);
+        }
+      } else if (message.topic.startsWith('zigbee2mqtt/bridge/config/')) {
+        // Autres topics de configuration (pour déboguer)
+        // Ignorer les payloads vides
+        if (message.payload === '' || message.payload === null || message.payload === undefined) {
+          this.logger.debug(
+            `Topic config reçu [${message.topic}]: (payload vide - ignoré)`,
+            'Zigbee2MqttService',
+          );
+          return;
+        }
+        
+        try {
+          this.logger.debug(
+            `Topic config reçu [${message.topic}]: ${JSON.stringify(message.payload).substring(0, 200)}`,
+            'Zigbee2MqttService',
+          );
+          // Si c'est une réponse devices/get sur le même topic (certaines versions de Zigbee2MQTT)
+          if (message.topic === 'zigbee2mqtt/bridge/config/devices/get' && Array.isArray(message.payload)) {
+            await this.handleDevicesList(message.payload);
+          }
+        } catch (error) {
+          this.logger.error(
+            `Erreur traitement topic config [${message.topic}]: ${error.message}`,
+            error.stack,
+            'Zigbee2MqttService',
+          );
+        }
+      } else if (message.topic === 'zigbee2mqtt/bridge/log') {
+        // Logger les logs du bridge pour déboguer
+        this.logger.debug(
+          `Log Zigbee2MQTT: ${JSON.stringify(message.payload)}`,
+          'Zigbee2MqttService',
+        );
+      } else if (message.topic === 'zigbee2mqtt/bridge/state') {
+        // État du bridge
+        this.logger.debug(
+          `État bridge Zigbee2MQTT: ${JSON.stringify(message.payload)}`,
+          'Zigbee2MqttService',
+        );
+      } else {
+        // Logger les autres topics pour déboguer
+        this.logger.debug(
+          `Message MQTT non traité [${message.topic}]: ${JSON.stringify(message.payload).substring(0, 100)}`,
+          'Zigbee2MqttService',
+        );
       }
     } catch (error) {
       this.logger.error(
@@ -160,7 +347,173 @@ export class Zigbee2MqttService implements OnModuleInit {
     }
   }
 
+  private async handleDeviceStateByIeeeAddress(ieeeAddress: string, state: any) {
+    this.logger.debug(
+      `🔍 Recherche appareil avec IEEE: ${ieeeAddress}`,
+      'Zigbee2MqttService',
+    );
+    
+    // Essayer de trouver l'appareil avec l'IEEE address exact
+    let device = await this.deviceRepository.findOne({
+      where: { ieeeAddress },
+    });
+
+    // Si pas trouvé, essayer avec différentes variantes (minuscules/majuscules)
+    if (!device) {
+      const allDevices = await this.deviceRepository.find();
+      const foundDevice = allDevices.find(
+        (d) => d.ieeeAddress.toLowerCase() === ieeeAddress.toLowerCase(),
+      );
+      if (foundDevice) {
+        device = foundDevice;
+        this.logger.debug(
+          `✅ Appareil trouvé par comparaison insensible à la casse: ${device.friendlyName}`,
+          'Zigbee2MqttService',
+        );
+      }
+    }
+    
+    // Si toujours pas trouvé, essayer de chercher par friendlyName (pour les cas où le topic utilise le nom au lieu de l'IEEE)
+    if (!device) {
+      const allDevices = await this.deviceRepository.find();
+      const foundDevice = allDevices.find(
+        (d) => d.friendlyName && d.friendlyName.toLowerCase() === ieeeAddress.toLowerCase(),
+      );
+      if (foundDevice) {
+        device = foundDevice;
+        this.logger.debug(
+          `✅ Appareil trouvé par friendlyName: ${device.friendlyName} (IEEE: ${device.ieeeAddress})`,
+          'Zigbee2MqttService',
+        );
+      }
+    }
+
+    if (!device) {
+      // Si l'appareil n'existe pas encore, essayer de le créer depuis la liste des appareils
+      this.logger.warn(
+        `⚠️ Données reçues pour appareil inconnu (IEEE: ${ieeeAddress}), demande de la liste des appareils`,
+        'Zigbee2MqttService',
+      );
+      this.requestDevicesList();
+      return;
+    }
+
+    this.logger.debug(
+      `✅ Appareil trouvé: ${device.friendlyName} (${device.type}) - IEEE: ${device.ieeeAddress}`,
+      'Zigbee2MqttService',
+    );
+
+    // Mettre à jour l'état avec toutes les données reçues
+    // Fusionner intelligemment : garder les valeurs existantes si nouvelles valeurs sont undefined/null
+    const mergedState = { ...(device.state || {}) };
+    Object.keys(state).forEach((key) => {
+      if (state[key] !== undefined && state[key] !== null) {
+        mergedState[key] = state[key];
+      }
+    });
+    
+    this.logger.debug(
+      `📝 État avant fusion [${device.friendlyName}]: ${JSON.stringify(device.state || {})}`,
+      'Zigbee2MqttService',
+    );
+    this.logger.debug(
+      `📝 Nouvelles données reçues: ${JSON.stringify(state)}`,
+      'Zigbee2MqttService',
+    );
+    this.logger.debug(
+      `📝 État après fusion: ${JSON.stringify(mergedState)}`,
+      'Zigbee2MqttService',
+    );
+    
+    device.state = mergedState;
+    device.status = DeviceStatus.ONLINE;
+    device.updatedAt = new Date();
+    
+    const savedDevice = await this.deviceRepository.save(device);
+    
+    this.logger.log(
+      `✅ État mis à jour [${savedDevice.friendlyName || ieeeAddress}]: ${Object.keys(mergedState).length} propriétés`,
+      'Zigbee2MqttService',
+    );
+    this.logger.debug(
+      `✅ État sauvegardé dans DB: ${JSON.stringify(savedDevice.state)}`,
+      'Zigbee2MqttService',
+    );
+
+    // S'assurer que l'état est bien sérialisé (TypeORM peut retourner un objet complexe)
+    const deviceToSend = {
+      ...savedDevice,
+      state: savedDevice.state ? JSON.parse(JSON.stringify(savedDevice.state)) : null,
+    };
+    
+    this.logger.debug(
+      `📡 Préparation WebSocket pour [${deviceToSend.friendlyName}]: state = ${JSON.stringify(deviceToSend.state)}`,
+      'Zigbee2MqttService',
+    );
+    
+    // Diffuser la mise à jour via WebSocket avec l'appareil complet sauvegardé
+    this.websocketGateway.broadcast('device:updated', { 
+      device: deviceToSend,
+      message: `Données mises à jour pour ${deviceToSend.friendlyName || ieeeAddress}`,
+    });
+    
+    this.logger.debug(
+      `📡 WebSocket broadcast envoyé pour [${deviceToSend.friendlyName}]`,
+      'Zigbee2MqttService',
+    );
+    
+    // Également envoyer l'événement device:state pour compatibilité
+    this.websocketGateway.broadcast('device:state', {
+      ieeeAddress: deviceToSend.ieeeAddress,
+      friendlyName: deviceToSend.friendlyName,
+      state: deviceToSend.state,
+    });
+  }
+
   private async handleDeviceState(friendlyName: string, state: ZigbeeState) {
+    const device = await this.deviceRepository.findOne({
+      where: { friendlyName },
+    });
+
+    if (!device) {
+      // Si l'appareil n'existe pas encore, essayer de le créer depuis la liste des appareils
+      this.logger.debug(
+        `État reçu pour appareil inconnu: ${friendlyName}, demande de la liste des appareils`,
+        'Zigbee2MqttService',
+      );
+      this.requestDevicesList();
+      return;
+    }
+
+    // Mettre à jour l'état avec toutes les données reçues
+    // Fusionner intelligemment : garder les valeurs existantes si nouvelles valeurs sont undefined/null
+    const mergedState = { ...(device.state || {}) };
+    Object.keys(state).forEach((key) => {
+      if (state[key] !== undefined && state[key] !== null) {
+        mergedState[key] = state[key];
+      }
+    });
+    
+    device.state = mergedState;
+    device.status = DeviceStatus.ONLINE;
+    device.updatedAt = new Date();
+
+    await this.deviceRepository.save(device);
+
+    this.logger.debug(
+      `État mis à jour pour ${friendlyName}: ${JSON.stringify(state)}`,
+      'Zigbee2MqttService',
+    );
+
+    // Diffuser la mise à jour via WebSocket
+    this.websocketGateway.broadcast('device:state', {
+      ieeeAddress: device.ieeeAddress,
+      friendlyName: device.friendlyName,
+      state: device.state,
+    });
+  }
+
+  private async handleDeviceAvailability(friendlyName: string, availability: any) {
     const device = await this.deviceRepository.findOne({
       where: { friendlyName },
     });
@@ -169,18 +522,23 @@ export class Zigbee2MqttService implements OnModuleInit {
       return;
     }
 
-    // Mettre à jour l'état
-    device.state = state;
-    device.status = DeviceStatus.ONLINE;
+    // Mettre à jour le statut selon la disponibilité
+    const isAvailable = availability?.state === 'online' || availability === 'online';
+    device.status = isAvailable ? DeviceStatus.ONLINE : DeviceStatus.OFFLINE;
     device.updatedAt = new Date();
 
     await this.deviceRepository.save(device);
 
+    this.logger.debug(
+      `Disponibilité mise à jour pour ${friendlyName}: ${isAvailable ? 'en ligne' : 'hors ligne'}`,
+      'Zigbee2MqttService',
+    );
+
     // Diffuser la mise à jour via WebSocket
-    this.websocketGateway.broadcast('device:state', {
+    this.websocketGateway.broadcast('device:availability', {
       ieeeAddress: device.ieeeAddress,
       friendlyName: device.friendlyName,
-      state: state,
+      status: device.status,
     });
   }
 
@@ -211,11 +569,40 @@ export class Zigbee2MqttService implements OnModuleInit {
     }
   }
 
+
   private normalizeDeviceType(device: ZigbeeDevice): DeviceType {
     const friendlyName = device.friendly_name.toLowerCase();
     const type = device.type?.toLowerCase() || '';
+    const model = device.definition?.model?.toLowerCase() || '';
+    const vendor = device.definition?.vendor?.toLowerCase() || '';
 
-    // Détection par type Zigbee2MQTT
+    // 1. Vérifier le tableau de correspondance par modèle/vendor
+    for (const mapping of this.deviceTypeMapping) {
+      const mappingModel = mapping.model.toLowerCase();
+      const mappingVendor = mapping.vendor?.toLowerCase();
+      
+      if (model.includes(mappingModel) || model === mappingModel) {
+        // Si un vendor est spécifié, vérifier qu'il correspond aussi
+        if (mappingVendor) {
+          if (vendor.includes(mappingVendor) || vendor === mappingVendor) {
+            this.logger.debug(
+              `Type détecté par mapping: ${mapping.model} (${mapping.vendor}) -> ${mapping.type}`,
+              'Zigbee2MqttService',
+            );
+            return mapping.type;
+          }
+        } else {
+          // Pas de vendor spécifié, accepter n'importe quel vendor
+          this.logger.debug(
+            `Type détecté par mapping: ${mapping.model} -> ${mapping.type}`,
+            'Zigbee2MqttService',
+          );
+          return mapping.type;
+        }
+      }
+    }
+
+    // 2. Détection par type Zigbee2MQTT
     if (type.includes('light') || friendlyName.includes('light') || friendlyName.includes('ampoule')) {
       return DeviceType.LIGHT;
     }
@@ -244,7 +631,7 @@ export class Zigbee2MqttService implements OnModuleInit {
       return DeviceType.BUTTON;
     }
 
-    // Détection par exposes
+    // 3. Détection par exposes
     if (device.definition?.exposes) {
       const exposes = device.definition.exposes;
       if (exposes.some((e: any) => e.type === 'light' || e.features?.some((f: any) => f.type === 'light'))) {
@@ -252,6 +639,26 @@ export class Zigbee2MqttService implements OnModuleInit {
       }
       if (exposes.some((e: any) => e.type === 'switch')) {
         return DeviceType.SWITCH;
+      }
+    }
+
+    // 4. Détection par exposes (vérification plus approfondie)
+    if (device.definition?.exposes) {
+      const exposes = device.definition.exposes;
+      const exposesStr = JSON.stringify(exposes).toLowerCase();
+      
+      // Vérifier la présence de features spécifiques
+      if (exposesStr.includes('presence') || exposesStr.includes('occupancy')) {
+        return DeviceType.MOTION;
+      }
+      if (exposesStr.includes('temperature') && exposesStr.includes('humidity')) {
+        return DeviceType.TEMPERATURE;
+      }
+      if (exposesStr.includes('contact')) {
+        return DeviceType.DOOR;
+      }
+      if (exposesStr.includes('illuminance')) {
+        return DeviceType.SENSOR;
       }
     }
 
@@ -274,14 +681,65 @@ export class Zigbee2MqttService implements OnModuleInit {
   }
 
   private requestDevicesList() {
-    this.mqttService.publish('zigbee2mqtt/bridge/config/devices/get', {});
+    // Zigbee2MQTT accepte une chaîne vide pour demander la liste des appareils
+    // La réponse arrive sur zigbee2mqtt/bridge/config/devices (sans /get)
+    this.mqttService.publish('zigbee2mqtt/bridge/config/devices/get', '');
+    this.logger.debug(
+      'Requête liste des appareils envoyée sur zigbee2mqtt/bridge/config/devices/get',
+      'Zigbee2MqttService',
+    );
+    // this.mqttService.publish('zigbee2mqtt/bridge/config/devices/get', {});
+  }
+
+  public async requestDeviceStates() {
+    // Demander les états de tous les appareils
+    this.logger.log('Demande des états de tous les appareils', 'Zigbee2MqttService');
+    
+    // Récupérer tous les appareils et forcer une lecture pour chacun
+    const devices = await this.deviceRepository.find();
+    
+    for (const device of devices) {
+      if (device.status === DeviceStatus.ONLINE) {
+        // Pour certains types d'appareils, on peut forcer une lecture
+        // En publiant une commande de lecture (si supporté par l'appareil)
+        // Mais généralement, on attend que Zigbee2MQTT publie automatiquement
+        this.logger.debug(
+          `Appareil ${device.friendlyName} en ligne, attente de publication d'état`,
+          'Zigbee2MqttService',
+        );
+      }
+    }
+    
+    // Demander aussi la liste des appareils qui peut déclencher des mises à jour
+    this.requestDevicesList();
+  }
+
+  public async forceReadDeviceState(friendlyName: string) {
+    // Forcer la lecture d'un appareil spécifique
+    // Certains appareils Zigbee supportent la commande "read"
+    const topic = `zigbee2mqtt/${friendlyName}/get`;
+    const payload = { state: '' }; // Commande vide pour forcer la lecture
+    
+    this.mqttService.publish(topic, payload);
+    this.logger.log(
+      `Lecture forcée demandée pour ${friendlyName}`,
+      'Zigbee2MqttService',
+    );
   }
 
   public async sendCommand(friendlyName: string, command: Record<string, any>): Promise<void> {
     const topic = `zigbee2mqtt/${friendlyName}/set`;
     this.mqttService.publish(topic, command);
     this.logger.log(
-      `Commande envoyée à ${friendlyName}: ${JSON.stringify(command)}`,
+      `🎮 Commande envoyée [${friendlyName}]: ${JSON.stringify(command)}`,
+      'Zigbee2MqttService',
+    );
+  }
+
+  public async sendMqttMessage(topic: string, payload: any): Promise<void> {
+    this.mqttService.publish(topic, payload);
+    this.logger.log(
+      `📨 Message MQTT envoyé [${topic}]: ${JSON.stringify(payload)}`,
       'Zigbee2MqttService',
     );
   }
@@ -317,7 +775,7 @@ export class Zigbee2MqttService implements OnModuleInit {
     this.mqttService.publish(topic, payload);
     
     this.logger.log(
-      `Détection d'appareils activée pour ${actualDuration} secondes (${Math.round(actualDuration / 60)} minutes)`,
+      `🔍 Détection d'appareils activée: ${actualDuration}s (${Math.round(actualDuration / 60)} min)`,
       'Zigbee2MqttService',
     );
   }

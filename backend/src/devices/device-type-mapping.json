@@ -1,0 +1,165 @@
+[
+  {
+    "model": "PIR",
+    "type": "motion"
+  },
+  {
+    "model": "SML001",
+    "type": "motion",
+    "comment": "Philips Hue motion sensor"
+  },
+  {
+    "model": "SML002",
+    "type": "motion",
+    "comment": "Philips Hue motion sensor"
+  },
+  {
+    "model": "RTCGQ11LM",
+    "type": "motion",
+    "comment": "Xiaomi Aqara motion sensor"
+  },
+  {
+    "model": "RTCGQ12LM",
+    "type": "motion",
+    "comment": "Xiaomi Aqara motion sensor"
+  },
+  {
+    "model": "MS01",
+    "type": "motion",
+    "comment": "Sonoff motion sensor"
+  },
+  {
+    "model": "MS01Z",
+    "type": "motion",
+    "comment": "Sonoff motion sensor"
+  },
+  {
+    "model": "WSDCGQ11LM",
+    "type": "temperature",
+    "comment": "Xiaomi Aqara temperature/humidity"
+  },
+  {
+    "model": "WSDCGQ12LM",
+    "type": "temperature",
+    "comment": "Xiaomi Aqara temperature/humidity"
+  },
+  {
+    "model": "SHT30",
+    "type": "temperature"
+  },
+  {
+    "model": "SHT40",
+    "type": "temperature"
+  },
+  {
+    "model": "TH01",
+    "type": "temperature",
+    "comment": "Sonoff temperature/humidity"
+  },
+  {
+    "model": "TH16",
+    "type": "temperature",
+    "comment": "Sonoff temperature/humidity"
+  },
+  {
+    "model": "MCCGQ11LM",
+    "type": "door",
+    "comment": "Xiaomi Aqara door/window sensor"
+  },
+  {
+    "model": "MCCGQ12LM",
+    "type": "door",
+    "comment": "Xiaomi Aqara door/window sensor"
+  },
+  {
+    "model": "MCCGQ13LM",
+    "type": "door",
+    "comment": "Xiaomi Aqara door/window sensor"
+  },
+  {
+    "model": "DS01Z",
+    "type": "door",
+    "comment": "Sonoff door sensor"
+  },
+  {
+    "model": "SML003",
+    "type": "sensor",
+    "comment": "Philips Hue motion sensor with temperature"
+  },
+  {
+    "model": "RTCGQ13LM",
+    "type": "sensor",
+    "comment": "Xiaomi Aqara PIR sensor"
+  },
+  {
+    "model": "SNZB-04P",
+    "type": "sensor",
+    "comment": "Sonoff SNZB-04P presence sensor"
+  },
+  {
+    "model": "SNZB-03P",
+    "type": "sensor",
+    "comment": "Sonoff SNZB-03P temperature/humidity sensor"
+  },
+  {
+    "model": "ZG-204Z",
+    "type": "sensor",
+    "comment": "Sonoff SNZB-05P presence sensor"
+  },
+  {
+    "model": "WXKG11LM",
+    "type": "button",
+    "comment": "Xiaomi Aqara button"
+  },
+  {
+    "model": "WXKG12LM",
+    "type": "button",
+    "comment": "Xiaomi Aqara button"
+  },
+  {
+    "model": "WXKG13LM",
+    "type": "button",
+    "comment": "Xiaomi Aqara button"
+  },
+  {
+    "model": "SNZB-01P",
+    "type": "button",
+    "comment": "Sonoff button"
+  },
+  {
+    "model": "ZNCZ02LM",
+    "type": "plug",
+    "comment": "Xiaomi Aqara plug"
+  },
+  {
+    "model": "SPL01",
+    "type": "plug",
+    "comment": "Sonoff plug"
+  },
+  {
+    "model": "SPL02",
+    "type": "plug",
+    "comment": "Sonoff plug"
+  },
+  {
+    "model": "LWB014",
+    "type": "light",
+    "comment": "Philips Hue white"
+  },
+  {
+    "model": "LWB015",
+    "type": "light",
+    "comment": "Philips Hue white"
+  },
+  {
+    "model": "LCT015",
+    "type": "light",
+    "comment": "Philips Hue color"
+  },
+  {
+    "model": "ZNLDP12LM",
+    "type": "light",
+    "comment": "Xiaomi Aqara LED bulb"
+  }
+]
+

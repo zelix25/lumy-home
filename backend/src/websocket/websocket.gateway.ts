@@ -47,8 +47,12 @@ export class WebsocketGateway
 
   handleConnection(client: Socket) {
     const clientId = client.id;
+    const ip = client.handshake.address;
     this.connectedClients.set(clientId, client);
-    this.logger.log(`Client WebSocket connecté: ${clientId}`, 'WebsocketGateway');
+    this.logger.log(
+      `🔌 WebSocket connecté: ${clientId} - IP: ${ip} - Total: ${this.connectedClients.size}`,
+      'WebsocketGateway',
+    );
 
     // Envoyer un message de bienvenue
     client.emit('connected', {
@@ -60,11 +64,15 @@ export class WebsocketGateway
   handleDisconnect(client: Socket) {
     const clientId = client.id;
     this.connectedClients.delete(clientId);
-    this.logger.log(`Client WebSocket déconnecté: ${clientId}`, 'WebsocketGateway');
+    this.logger.log(
+      `🔌 WebSocket déconnecté: ${clientId} - Total: ${this.connectedClients.size}`,
+      'WebsocketGateway',
+    );
   }
 
   @SubscribeMessage('ping')
   handlePing(@ConnectedSocket() client: Socket) {
+    this.logger.debug(`📡 WebSocket ping reçu de ${client.id}`, 'WebsocketGateway');
     client.emit('pong', { timestamp: new Date().toISOString() });
   }
 
@@ -73,8 +81,8 @@ export class WebsocketGateway
     @MessageBody() data: { topic: string },
     @ConnectedSocket() client: Socket,
   ) {
-    this.logger.debug(
-      `Client ${client.id} s'abonne au topic: ${data.topic}`,
+    this.logger.log(
+      `📡 WebSocket abonnement [${client.id}]: ${data.topic}`,
       'WebsocketGateway',
     );
     // Ici on pourrait gérer des abonnements spécifiques par client
@@ -86,11 +94,16 @@ export class WebsocketGateway
     this.server.emit('mqtt:message', {
       topic: message.topic,
       payload: message.payload,
-      timestamp: message.timestamp,
+      timestamp: message.timestamp || new Date().toISOString(),
+      direction: message.direction || 'incoming',
     });
   }
 
   public broadcast(event: string, data: any) {
+    this.logger.debug(
+      `📡 WebSocket broadcast [${event}] à ${this.connectedClients.size} client(s)`,
+      'WebsocketGateway',
+    );
     this.server.emit(event, data);
   }
 

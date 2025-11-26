@@ -21,6 +21,7 @@ import DevicesIcon from '@mui/icons-material/Devices';
 import SceneIcon from '@mui/icons-material/AutoAwesome';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import HistoryIcon from '@mui/icons-material/History';
+import BugReportIcon from '@mui/icons-material/BugReport';
 
 const drawerWidth = 280;
 
@@ -40,6 +41,7 @@ const navItems: NavItem[] = [
   { label: 'Scènes & Automatisations', path: '/scenes', icon: <SceneIcon /> },
   { label: 'Assistant IA', path: '/assistant', icon: <SmartToyIcon /> },
   { label: 'Historique', path: '/historique', icon: <HistoryIcon /> },
+  { label: 'Debug MQTT', path: '/debug', icon: <BugReportIcon /> },
 ];
 
 export default function Layout({ children }: LayoutProps) {

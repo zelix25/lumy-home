@@ -296,16 +296,152 @@ export default function DeviceDetailPage() {
                 />
               </Box>
 
-              {device.state && (
+              {device.state && Object.keys(device.state).length > 0 && (
                 <Box>
-                  <Typography variant="subtitle2" gutterBottom>
+                  <Typography variant="subtitle2" gutterBottom sx={{ mb: 2 }}>
                     Informations détaillées
                   </Typography>
-                  {Object.entries(device.state).map(([key, value]) => (
-                    <Typography key={key} variant="body2" color="text.secondary">
-                      {key}: {String(value)}
-                    </Typography>
-                  ))}
+                  
+                  {/* Données des capteurs avec icônes */}
+                  {device.state.temperature !== undefined && (
+                    <Box sx={{ mb: 1.5, p: 1.5, bgcolor: 'background.default', borderRadius: 1 }}>
+                      <Typography variant="body2" fontWeight={600} gutterBottom>
+                        🌡️ Température
+                      </Typography>
+                      <Typography variant="h6" color="primary.main">
+                        {device.state.temperature}°C
+                      </Typography>
+                    </Box>
+                  )}
+                  
+                  {device.state.humidity !== undefined && (
+                    <Box sx={{ mb: 1.5, p: 1.5, bgcolor: 'background.default', borderRadius: 1 }}>
+                      <Typography variant="body2" fontWeight={600} gutterBottom>
+                        💧 Humidité
+                      </Typography>
+                      <Typography variant="h6" color="primary.main">
+                        {device.state.humidity}%
+                      </Typography>
+                    </Box>
+                  )}
+                  
+                  {device.state.pressure !== undefined && (
+                    <Box sx={{ mb: 1.5, p: 1.5, bgcolor: 'background.default', borderRadius: 1 }}>
+                      <Typography variant="body2" fontWeight={600} gutterBottom>
+                        📊 Pression
+                      </Typography>
+                      <Typography variant="h6" color="primary.main">
+                        {device.state.pressure} hPa
+                      </Typography>
+                    </Box>
+                  )}
+                  
+                  {device.state.illuminance !== undefined && (
+                    <Box sx={{ mb: 1.5, p: 1.5, bgcolor: 'background.default', borderRadius: 1 }}>
+                      <Typography variant="body2" fontWeight={600} gutterBottom>
+                        ☀️ Luminosité ambiante
+                      </Typography>
+                      <Typography variant="h6" color="primary.main">
+                        {device.state.illuminance} lux
+                      </Typography>
+                    </Box>
+                  )}
+                  
+                  {device.state.occupancy !== undefined && (
+                    <Box sx={{ mb: 1.5, p: 1.5, bgcolor: 'background.default', borderRadius: 1 }}>
+                      <Typography variant="body2" fontWeight={600} gutterBottom>
+                        👤 Présence
+                      </Typography>
+                      <Typography variant="h6" color={device.state.occupancy ? 'success.main' : 'text.secondary'}>
+                        {device.state.occupancy ? 'Détectée' : 'Aucune'}
+                      </Typography>
+                    </Box>
+                  )}
+                  
+                  {device.state.contact !== undefined && (
+                    <Box sx={{ mb: 1.5, p: 1.5, bgcolor: 'background.default', borderRadius: 1 }}>
+                      <Typography variant="body2" fontWeight={600} gutterBottom>
+                        🚪 Contact
+                      </Typography>
+                      <Typography variant="h6" color={device.state.contact ? 'success.main' : 'error.main'}>
+                        {device.state.contact ? 'Fermé' : 'Ouvert'}
+                      </Typography>
+                    </Box>
+                  )}
+                  
+                  {device.state.water_leak !== undefined && (
+                    <Box sx={{ mb: 1.5, p: 1.5, bgcolor: device.state.water_leak ? 'error.light' : 'background.default', borderRadius: 1 }}>
+                      <Typography variant="body2" fontWeight={600} gutterBottom>
+                        💦 Fuite d'eau
+                      </Typography>
+                      <Typography variant="h6" color={device.state.water_leak ? 'error.main' : 'success.main'}>
+                        {device.state.water_leak ? '⚠️ Détectée' : 'Aucune'}
+                      </Typography>
+                    </Box>
+                  )}
+                  
+                  {device.state.smoke !== undefined && (
+                    <Box sx={{ mb: 1.5, p: 1.5, bgcolor: device.state.smoke ? 'error.light' : 'background.default', borderRadius: 1 }}>
+                      <Typography variant="body2" fontWeight={600} gutterBottom>
+                        🔥 Fumée
+                      </Typography>
+                      <Typography variant="h6" color={device.state.smoke ? 'error.main' : 'success.main'}>
+                        {device.state.smoke ? '⚠️ Détectée' : 'Aucune'}
+                      </Typography>
+                    </Box>
+                  )}
+                  
+                  {/* Informations système */}
+                  {device.state.battery !== undefined && (
+                    <Box sx={{ mb: 1.5, p: 1.5, bgcolor: 'background.default', borderRadius: 1 }}>
+                      <Typography variant="body2" fontWeight={600} gutterBottom>
+                        🔋 Batterie
+                      </Typography>
+                      <Typography variant="h6" color={device.state.battery < 20 ? 'error.main' : device.state.battery < 50 ? 'warning.main' : 'success.main'}>
+                        {device.state.battery}%
+                      </Typography>
+                    </Box>
+                  )}
+                  
+                  {device.state.voltage !== undefined && (
+                    <Box sx={{ mb: 1.5, p: 1.5, bgcolor: 'background.default', borderRadius: 1 }}>
+                      <Typography variant="body2" fontWeight={600} gutterBottom>
+                        ⚡ Tension
+                      </Typography>
+                      <Typography variant="h6" color="primary.main">
+                        {device.state.voltage}V
+                      </Typography>
+                    </Box>
+                  )}
+                  
+                  {device.state.linkquality !== undefined && (
+                    <Box sx={{ mb: 1.5, p: 1.5, bgcolor: 'background.default', borderRadius: 1 }}>
+                      <Typography variant="body2" fontWeight={600} gutterBottom>
+                        📶 Qualité du signal
+                      </Typography>
+                      <Typography variant="h6" color={device.state.linkquality < 50 ? 'error.main' : device.state.linkquality < 100 ? 'warning.main' : 'success.main'}>
+                        {device.state.linkquality}
+                      </Typography>
+                    </Box>
+                  )}
+                  
+                  {/* Autres données */}
+                  {Object.entries(device.state)
+                    .filter(([key]) => 
+                      !['temperature', 'humidity', 'pressure', 'illuminance', 'occupancy', 
+                        'contact', 'water_leak', 'smoke', 'battery', 'voltage', 'linkquality', 
+                        'state', 'brightness', 'color_temp'].includes(key)
+                    )
+                    .map(([key, value]) => (
+                      <Box key={key} sx={{ mb: 1, p: 1, bgcolor: 'background.default', borderRadius: 1 }}>
+                        <Typography variant="body2" fontWeight={600} gutterBottom>
+                          {key}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {String(value)}
+                        </Typography>
+                      </Box>
+                    ))}
                 </Box>
               )}
 

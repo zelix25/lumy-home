@@ -86,7 +86,7 @@ export default function DevicesPage() {
   };
 
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
+    let interval: ReturnType<typeof setInterval> | null = null;
     if (discoveryActive && timeRemaining > 0) {
       interval = setInterval(() => {
         setTimeRemaining((prev) => {
@@ -104,6 +104,11 @@ export default function DevicesPage() {
   }, [discoveryActive, timeRemaining]);
 
   const filteredDevices = devices.filter((device) => {
+    // Masquer le Coordinator
+    if (device.friendlyName && device.friendlyName.toLowerCase() === 'coordinator') {
+      return false;
+    }
+    
     const matchesSearch =
       device.friendlyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (device.room && device.room.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -238,7 +243,7 @@ export default function DevicesPage() {
       {devices.length > 0 && (
         <Box sx={{ mt: 4, textAlign: 'center' }}>
           <Typography variant="body2" color="text.secondary">
-            {filteredDevices.length} appareil{filteredDevices.length > 1 ? 's' : ''} affiché{filteredDevices.length > 1 ? 's' : ''} sur {devices.length}
+            {filteredDevices.length} appareil{filteredDevices.length > 1 ? 's' : ''} affiché{filteredDevices.length > 1 ? 's' : ''} sur {devices.length-1}
           </Typography>
         </Box>
       )}

@@ -7,6 +7,7 @@ import DeviceDetailPage from './pages/DeviceDetailPage';
 import ScenesPage from './pages/ScenesPage';
 import AssistantPage from './pages/AssistantPage';
 import HistoryPage from './pages/HistoryPage';
+import DebugPage from './pages/DebugPage';
 import NotificationSnackbar from './components/NotificationSnackbar';
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
           <Route path="/scenes" element={<ScenesPage />} />
           <Route path="/assistant" element={<AssistantPage />} />
           <Route path="/historique" element={<HistoryPage />} />
+          <Route path="/debug" element={<DebugPage />} />
         </Routes>
       </Box>
       <NotificationSnackbar />

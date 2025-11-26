@@ -12,6 +12,7 @@ import { DevicesService } from './devices.service';
 import { UpdateFriendlyNameDto } from './dto/update-friendly-name.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { SendCommandDto } from './dto/send-command.dto';
+import { SendMqttMessageDto } from './dto/send-mqtt-message.dto';
 
 @Controller('devices')
 export class DevicesController {
@@ -82,6 +83,61 @@ export class DevicesController {
     return {
       success: true,
       message: 'Détection d\'appareils désactivée',
+    };
+  }
+
+  @Post('refresh-states')
+  @HttpCode(HttpStatus.OK)
+  async refreshStates() {
+    await this.devicesService.refreshDeviceStates();
+    return {
+      success: true,
+      message: 'Rafraîchissement des états des appareils demandé',
+    };
+  }
+
+  @Post('force-read/:ieeeAddress')
+  @HttpCode(HttpStatus.OK)
+  async forceReadDevice(@Param('ieeeAddress') ieeeAddress: string) {
+    await this.devicesService.forceReadDeviceState(ieeeAddress);
+    return {
+      success: true,
+      message: 'Lecture forcée de l\'appareil demandée',
+    };
+  }
+
+  @Post('force-read-all')
+  @HttpCode(HttpStatus.OK)
+  async forceReadAllDevices() {
+    await this.devicesService.forceReadAllDeviceStates();
+    return {
+      success: true,
+      message: 'Lecture forcée de tous les appareils demandée',
+    };
+  }
+
+  @Post('mqtt/send')
+  @HttpCode(HttpStatus.OK)
+  async sendMqttMessage(@Body() dto: SendMqttMessageDto) {
+    await this.devicesService.sendMqttMessage(dto.topic, dto.payload || dto.payloadString);
+    return {
+      success: true,
+      message: `Message MQTT envoyé sur ${dto.topic}`,
+    };
+  }
+
+  @Get('mqtt/status')
+  async getMqttStatus() {
+    return this.devicesService.getMqttStatus();
+  }
+
+  @Post('mqtt/reconnect')
+  @HttpCode(HttpStatus.OK)
+  async reconnectMqtt() {
+    await this.devicesService.reconnectMqtt();
+    return {
+      success: true,
+      message: 'Réabonnement aux topics MQTT demandé',
     };
   }
 }
