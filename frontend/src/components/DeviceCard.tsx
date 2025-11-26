@@ -126,16 +126,18 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
               {device.friendlyName}
             </Typography>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              {getDeviceTypeLabel(device.type)}
-            </Typography>
-            {device.room && (
-              <Chip
-                label={device.room}
-                size="small"
-                sx={{ mt: 0.5, fontSize: '0.75rem' }}
-              />
-            )}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+              <Typography variant="body2" color="text.secondary">
+                {getDeviceTypeLabel(device.type)}
+              </Typography>
+              {device.room && (
+                <Chip
+                  label={device.room}
+                  size="small"
+                  sx={{ fontSize: '0.75rem' }}
+                />
+              )}
+            </Box>
           </Box>
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <Chip

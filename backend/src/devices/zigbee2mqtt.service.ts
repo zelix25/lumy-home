@@ -745,13 +745,16 @@ export class Zigbee2MqttService implements OnModuleInit {
   }
 
   public renameDevice(oldFriendlyName: string, newFriendlyName: string): void {
-    const topic = 'zigbee2mqtt/bridge/config/devices/rename';
-    this.mqttService.publish(topic, {
+    // Topic correct pour renommer un appareil dans Zigbee2MQTT
+    const topic = 'zigbee2mqtt/bridge/request/device/rename';
+    const payload = {
       from: oldFriendlyName,
       to: newFriendlyName,
-    });
+    };
+    
+    this.mqttService.publish(topic, payload);
     this.logger.log(
-      `Renommage de ${oldFriendlyName} vers ${newFriendlyName}`,
+      `🔄 Renommage de ${oldFriendlyName} vers ${newFriendlyName} via MQTT`,
       'Zigbee2MqttService',
     );
   }

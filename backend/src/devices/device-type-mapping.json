@@ -103,8 +103,13 @@
   },
   {
     "model": "ZG-204Z",
+    "type": "motion",
+    "comment": "Hobeian motion sensor"
+  },
+  {
+    "model": "ZG-204ZV",
     "type": "sensor",
-    "comment": "Sonoff SNZB-05P presence sensor"
+    "comment": "Hobeian multiple sensors"
   },
   {
     "model": "WXKG11LM",
