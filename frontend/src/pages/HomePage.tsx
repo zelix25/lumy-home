@@ -2,9 +2,9 @@ import { Box, Typography, Grid, Card, CardContent, CircularProgress } from '@mui
 import HomeIcon from '@mui/icons-material/Home';
 import DevicesIcon from '@mui/icons-material/Devices';
 import SceneIcon from '@mui/icons-material/AutoAwesome';
-import SmartToyIcon from '@mui/icons-material/SmartToy';
 import { useEffect, useState } from 'react';
 import { devicesService, DeviceStats } from '../services/devices.service';
+import i18n from '@/i18n';
 
 export default function HomePage() {
   const [stats, setStats] = useState<DeviceStats | null>(null);
@@ -30,19 +30,19 @@ export default function HomePage() {
 
   const displayStats = [
     {
-      title: 'Appareils connectés',
+      title: i18n.t('home.totalDevices'),
       value: stats?.total.toString() || '0',
       icon: <DevicesIcon sx={{ fontSize: 40 }} />,
       color: '#667eea',
     },
     {
-      title: 'En ligne',
+      title: i18n.t('home.onlineDevices'),
       value: stats?.online.toString() || '0',
       icon: <DevicesIcon sx={{ fontSize: 40 }} />,
       color: '#48bb78',
     },
     {
-      title: 'Scènes actives',
+      title: i18n.t('home.scenesActive'),
       value: '0',
       icon: <SceneIcon sx={{ fontSize: 40 }} />,
       color: '#764ba2',
@@ -53,10 +53,10 @@ export default function HomePage() {
     <Box>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, mb: 1 }}>
-          Bienvenue dans votre maison intelligente
+          {i18n.t('home.title')}
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          Gérez tous vos appareils Zigbee depuis un seul endroit, simplement et intuitivement.
+          {i18n.t('home.subtitle')}
         </Typography>
       </Box>
 
@@ -108,10 +108,10 @@ export default function HomePage() {
             <HomeIcon sx={{ fontSize: 48, color: 'primary.main', mr: 2 }} />
             <Box>
               <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
-                Votre maison intelligente
+                {i18n.t('home.title')}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Commencez par explorer vos appareils ou créez votre première automatisation.
+                {i18n.t('home.subtitle')}
               </Typography>
             </Box>
           </Box>

@@ -18,9 +18,10 @@ import StopIcon from '@mui/icons-material/Stop';
 import { useDevices } from '../hooks/useDevices';
 import DeviceCard from '../components/DeviceCard';
 import { devicesService, Device } from '../services/devices.service';
+import i18n from '@/i18n';
 
 export default function DevicesPage() {
-  const { devices, loading, error, refetch } = useDevices();
+  const { devices, loading, error } = useDevices();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [discoveryActive, setDiscoveryActive] = useState(false);
@@ -56,7 +57,7 @@ export default function DevicesPage() {
       console.error('Erreur lors du démarrage de la détection:', error);
       setSnackbar({
         open: true,
-        message: 'Erreur lors du démarrage de la détection',
+        message: i18n.t('devices.errorStartingDiscovery'),
       });
     }
   };
@@ -68,13 +69,13 @@ export default function DevicesPage() {
       setTimeRemaining(0);
       setSnackbar({
         open: true,
-        message: 'Détection d\'appareils arrêtée',
+        message: i18n.t('devices.discoveryStopped'),
       });
     } catch (error) {
       console.error('Erreur lors de l\'arrêt de la détection:', error);
       setSnackbar({
         open: true,
-        message: 'Erreur lors de l\'arrêt de la détection',
+        message: i18n.t('devices.errorStoppingDiscovery'),
       });
     }
   };
@@ -117,13 +118,13 @@ export default function DevicesPage() {
   });
 
   const deviceTypes = [
-    { value: 'all', label: 'Tous' },
-    { value: 'light', label: 'Ampoules' },
-    { value: 'switch', label: 'Interrupteurs' },
-    { value: 'sensor', label: 'Capteurs' },
-    { value: 'plug', label: 'Prises' },
-    { value: 'motion', label: 'Mouvement' },
-    { value: 'temperature', label: 'Température' },
+    { value: 'all', label: i18n.t('devices.all') },
+    { value: 'light', label: i18n.t('devices.light') },
+    { value: 'switch', label: i18n.t('devices.switch') },
+    { value: 'sensor', label: i18n.t('devices.sensor') },
+    { value: 'plug', label: i18n.t('devices.plug') },
+    { value: 'motion', label: i18n.t('devices.motion') },
+    { value: 'temperature', label: i18n.t('devices.temperature') },
   ];
 
   if (loading) {
@@ -149,10 +150,10 @@ export default function DevicesPage() {
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <Box>
           <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, mb: 1 }}>
-            Appareils
+            {i18n.t('devices.title')}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Gérez tous vos appareils Zigbee connectés à votre maison.
+            {i18n.t('devices.subtitle')}
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
@@ -165,14 +166,14 @@ export default function DevicesPage() {
                 color="error"
                 sx={{ minWidth: 180 }}
               >
-                Arrêter la détection
+                {i18n.t('devices.stopDiscovery')}
               </Button>
               <Button
                 variant="contained"
                 disabled
                 sx={{ minWidth: 180 }}
               >
-                Détection active ({formatTime(timeRemaining)})
+                {i18n.t('devices.discoveryActive')} ({formatTime(timeRemaining)})
               </Button>
             </>
           ) : (
@@ -182,7 +183,7 @@ export default function DevicesPage() {
               onClick={handleStartDiscovery}
               sx={{ minWidth: 200 }}
             >
-              Démarrer la détection (4 min)
+              {i18n.t('devices.startDiscovery')}
             </Button>
           )}
         </Box>
@@ -191,7 +192,7 @@ export default function DevicesPage() {
       <Box sx={{ mb: 3 }}>
         <TextField
           fullWidth
-          placeholder="Rechercher un appareil ou une pièce..."
+          placeholder={i18n.t('devices.searchPlaceholder')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           InputProps={{
@@ -221,13 +222,13 @@ export default function DevicesPage() {
         <Box sx={{ textAlign: 'center', py: 8 }}>
           <Typography variant="h6" color="text.secondary" gutterBottom>
             {searchTerm || selectedType !== 'all'
-              ? 'Aucun appareil ne correspond à votre recherche'
-              : 'Aucun appareil détecté'}
+              ? i18n.t('devices.noDevicesFound')
+              : i18n.t('devices.noDevicesDetected')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {searchTerm || selectedType !== 'all'
-              ? 'Essayez de modifier vos critères de recherche'
-              : 'Les appareils Zigbee seront détectés automatiquement une fois connectés.'}
+              ? i18n.t('devices.tryModifyingSearchCriteria')
+              : i18n.t('devices.devicesWillBeDetectedAutomaticallyOnceConnected')}
           </Typography>
         </Box>
       ) : (

@@ -22,6 +22,8 @@ import SceneIcon from '@mui/icons-material/AutoAwesome';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import HistoryIcon from '@mui/icons-material/History';
 import BugReportIcon from '@mui/icons-material/BugReport';
+import LanguageSelector from './LanguageSelector';
+import { useTranslation } from 'react-i18next';
 
 const drawerWidth = 280;
 
@@ -35,13 +37,13 @@ interface NavItem {
   icon: ReactNode;
 }
 
-const navItems: NavItem[] = [
-  { label: 'Maison', path: '/', icon: <HomeIcon /> },
-  { label: 'Appareils', path: '/appareils', icon: <DevicesIcon /> },
-  { label: 'Scènes & Automatisations', path: '/scenes', icon: <SceneIcon /> },
-  { label: 'Assistant IA', path: '/assistant', icon: <SmartToyIcon /> },
-  { label: 'Historique', path: '/historique', icon: <HistoryIcon /> },
-  { label: 'Debug MQTT', path: '/debug', icon: <BugReportIcon /> },
+const getNavItems = (t: (key: string) => string): NavItem[] => [
+  { label: t('common.home'), path: '/', icon: <HomeIcon /> },
+  { label: t('common.devices'), path: '/appareils', icon: <DevicesIcon /> },
+  { label: t('common.scenes'), path: '/scenes', icon: <SceneIcon /> },
+  { label: t('common.assistant'), path: '/assistant', icon: <SmartToyIcon /> },
+  { label: t('common.history'), path: '/historique', icon: <HistoryIcon /> },
+  { label: t('common.debug'), path: '/debug', icon: <BugReportIcon /> },
 ];
 
 export default function Layout({ children }: LayoutProps) {
@@ -50,6 +52,7 @@ export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { t } = useTranslation();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -75,7 +78,7 @@ export default function Layout({ children }: LayoutProps) {
         </Typography>
       </Toolbar>
       <List sx={{ pt: 2 }}>
-        {navItems.map((item) => (
+        {getNavItems(t).map((item) => (
           <ListItem key={item.path} disablePadding>
             <ListItemButton
               selected={location.pathname === item.path}
@@ -136,8 +139,8 @@ export default function Layout({ children }: LayoutProps) {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            Domotique Intelligente
           </Typography>
+          <LanguageSelector />
         </Toolbar>
       </AppBar>
       <Box

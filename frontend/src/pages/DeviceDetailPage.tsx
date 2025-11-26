@@ -81,17 +81,18 @@ export default function DeviceDetailPage() {
   useEffect(() => {
     if (!isConnected || !ieeeAddress) return;
 
-    const handleDeviceState = (data: {
-      ieeeAddress: string;
-      friendlyName: string;
-      state: Record<string, any>;
-    }) => {
-      if (data.ieeeAddress === ieeeAddress) {
-        setIsOn(data.state?.state === 'ON' || data.state?.state === true);
-        if (data.state?.brightness !== undefined) {
-          setBrightness(Math.round((data.state.brightness / 255) * 100));
+    const handleDeviceState = (data: unknown) => {
+      const eventData = data as {
+        ieeeAddress: string;
+        friendlyName: string;
+        state: Record<string, any>;
+      };
+      if (eventData.ieeeAddress === ieeeAddress) {
+        setIsOn(eventData.state?.state === 'ON' || eventData.state?.state === true);
+        if (eventData.state?.brightness !== undefined) {
+          setBrightness(Math.round((eventData.state.brightness / 255) * 100));
         }
-        setDevice((prev) => (prev ? { ...prev, state: data.state } : null));
+        setDevice((prev) => (prev ? { ...prev, state: eventData.state } : null));
       }
     };
 
@@ -245,7 +246,7 @@ export default function DeviceDetailPage() {
                         checked={isOn}
                         onChange={(e) => handleToggle(e.target.checked)}
                         disabled={device.status !== 'online'}
-                        size="large"
+                        size="medium"
                       />
                     }
                     label={isOn ? 'Allumé' : 'Éteint'}
@@ -282,7 +283,7 @@ export default function DeviceDetailPage() {
                       checked={isOn}
                       onChange={(e) => handleToggle(e.target.checked)}
                       disabled={device.status !== 'online'}
-                      size="large"
+                      size="medium"
                     />
                   }
                   label={isOn ? 'Activé' : 'Désactivé'}

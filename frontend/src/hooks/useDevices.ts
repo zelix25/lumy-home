@@ -30,45 +30,49 @@ export function useDevices() {
   useEffect(() => {
     if (!isConnected) return;
 
-    const handleDevicesUpdated = (data: { devices: Device[] }) => {
-      setDevices(data.devices);
+    const handleDevicesUpdated = (data: unknown) => {
+      const eventData = data as { devices: Device[] };
+      setDevices(eventData.devices);
     };
 
-    const handleDeviceDiscovered = (data: { device: Device; message: string }) => {
+    const handleDeviceDiscovered = (_data: unknown) => {
       fetchDevices(); // Rafraîchir la liste
     };
 
-    const handleDeviceUpdated = (data: { device: Device; message?: string }) => {
-      console.log('📊 Device updated via WebSocket:', data.device.friendlyName, data.device.state);
-      console.log('📊 Device state keys:', data.device.state ? Object.keys(data.device.state) : 'no state');
+    const handleDeviceUpdated = (data: unknown) => {
+      const eventData = data as { device: Device; message?: string };
+      console.log('📊 Device updated via WebSocket:', eventData.device.friendlyName, eventData.device.state);
+      console.log('📊 Device state keys:', eventData.device.state ? Object.keys(eventData.device.state) : 'no state');
       setDevices((prev) => {
         const updated = prev.map((d) =>
-          d.ieeeAddress === data.device.ieeeAddress ? data.device : d,
+          d.ieeeAddress === eventData.device.ieeeAddress ? eventData.device : d,
         );
-        console.log('📊 Devices after update:', updated.find(d => d.ieeeAddress === data.device.ieeeAddress));
+        console.log('📊 Devices after update:', updated.find(d => d.ieeeAddress === eventData.device.ieeeAddress));
         return updated;
       });
     };
 
-    const handleDeviceState = (data: {
-      ieeeAddress: string;
-      friendlyName: string;
-      state: Record<string, any>;
-    }) => {
-      console.log('📊 Device state updated via WebSocket:', data.friendlyName, data.state);
+    const handleDeviceState = (data: unknown) => {
+      const eventData = data as {
+        ieeeAddress: string;
+        friendlyName: string;
+        state: Record<string, any>;
+      };
+      console.log('📊 Device state updated via WebSocket:', eventData.friendlyName, eventData.state);
       setDevices((prev) =>
         prev.map((d) =>
-          d.ieeeAddress === data.ieeeAddress
-            ? { ...d, state: data.state, status: 'online' }
+          d.ieeeAddress === eventData.ieeeAddress
+            ? { ...d, state: eventData.state, status: 'online' }
             : d,
         ),
       );
     };
 
-    const handleDeviceOffline = (data: { device: Device }) => {
+    const handleDeviceOffline = (data: unknown) => {
+      const eventData = data as { device: Device };
       setDevices((prev) =>
         prev.map((d) =>
-          d.ieeeAddress === data.device.ieeeAddress
+          d.ieeeAddress === eventData.device.ieeeAddress
             ? { ...d, status: 'offline' }
             : d,
         ),
