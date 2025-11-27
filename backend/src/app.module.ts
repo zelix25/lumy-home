@@ -9,6 +9,7 @@ import { WebsocketModule } from './websocket/websocket.module';
 import { DevicesModule } from './devices/devices.module';
 import { AiModule } from './ai/ai.module';
 import { HistoryModule } from './history/history.module';
+import { PlanModule } from './plan/plan.module';
 import { configValidationSchema } from './config/config.validation';
 
 @Module({
@@ -45,6 +46,7 @@ import { configValidationSchema } from './config/config.validation';
     DevicesModule,
     AiModule,
     HistoryModule,
+    PlanModule,
   ],
   controllers: [AppController],
   providers: [AppService],

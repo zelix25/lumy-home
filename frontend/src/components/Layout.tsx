@@ -21,6 +21,7 @@ import DevicesIcon from '@mui/icons-material/Devices';
 import SceneIcon from '@mui/icons-material/AutoAwesome';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import HistoryIcon from '@mui/icons-material/History';
+import MapIcon from '@mui/icons-material/Map';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import LanguageSelector from './LanguageSelector';
 import { useTranslation } from 'react-i18next';
@@ -43,6 +44,7 @@ const getNavItems = (t: (key: string) => string): NavItem[] => [
   { label: t('common.scenes'), path: '/scenes', icon: <SceneIcon /> },
   { label: t('common.assistant'), path: '/assistant', icon: <SmartToyIcon /> },
   { label: t('common.history'), path: '/historique', icon: <HistoryIcon /> },
+  { label: t('common.plan'), path: '/plan', icon: <MapIcon /> },
   { label: t('common.debug'), path: '/debug', icon: <BugReportIcon /> },
 ];
 
