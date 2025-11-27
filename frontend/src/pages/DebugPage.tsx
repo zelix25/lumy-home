@@ -282,7 +282,7 @@ export default function DebugPage() {
   return (
     <Box>
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, mb: 1 }}>
+        <Typography variant="h4" gutterBottom sx={{ fontWeight: 500, mb: 1 }}>
           Debug - Communication Zigbee2MQTT
         </Typography>
         <Typography variant="body1" color="text.secondary">
@@ -353,7 +353,7 @@ export default function DebugPage() {
       {mqttStatus && (
         <Card sx={{ mb: 3 }}>
           <CardContent>
-            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: 500, mb: 2 }}>
               État de la connexion MQTT
             </Typography>
             <Grid container spacing={2}>
@@ -588,7 +588,7 @@ export default function DebugPage() {
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            <Typography variant="h6" sx={{ fontWeight: 500 }}>
               Données brutes d'échange MQTT
             </Typography>
             <Tabs
@@ -693,7 +693,7 @@ export default function DebugPage() {
                         sx={{
                           fontFamily: 'monospace',
                           color: getTopicColor(log.topic),
-                          fontWeight: 600,
+                          fontWeight: 500,
                         }}
                       >
                         {log.topic}

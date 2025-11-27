@@ -63,7 +63,8 @@
     "state": "État",
     "active": "Actif",
     "inactive": "Inactif",
-    "unsupported": "Cet appareil n'est pas entièrement supporté"
+    "unsupported": "Cet appareil n'est pas entièrement supporté",
+    "searchPlaceholder": "Rechercher un appareil ou une pièce..."
   },
   "deviceDetail": {
     "title": "Détails de l'appareil",

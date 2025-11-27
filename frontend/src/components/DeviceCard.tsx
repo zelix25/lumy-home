@@ -100,13 +100,13 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
       sx={{
         height: '100%',
         cursor: 'pointer',
-        transition: 'all 0.2s',
-        border: isOnline ? '2px solid transparent' : '2px solid #e0e0e0',
+        transition: 'all 0.15s ease-in-out',
+        border: 'none',
         display: 'flex',
         flexDirection: 'column',
+        backgroundColor: '#FFFFFF',
         '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: 4,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
         },
       }}
       onClick={handleCardClick}
@@ -135,18 +135,29 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
                 <Chip
                   label={device.room}
                   size="small"
-                  sx={{ fontSize: '0.75rem' }}
+                  sx={{ 
+                    fontSize: '12px',
+                    fontWeight: 400,
+                    backgroundColor: 'rgba(0,0,0,0.04)',
+                    color: 'text.secondary',
+                  }}
                 />
               )}
             </Box>
           </Box>
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <Chip
-              label={isOnline ? 'En ligne' : 'Hors ligne'}
-              size="small"
-              color={isOnline ? 'success' : 'default'}
-              sx={{ mb: 1, fontSize: '0.7rem' }}
-            />
+              <Chip
+                label={isOnline ? i18n.t('common.online') : i18n.t('common.offline')}
+                size="small"
+                color={isOnline ? 'success' : 'default'}
+                sx={{ 
+                  mb: 1, 
+                  fontSize: '12px',
+                  fontWeight: 400,
+                  backgroundColor: isOnline ? 'rgba(134, 166, 160, 0.1)' : 'rgba(0,0,0,0.04)',
+                  color: isOnline ? '#86A6A0' : 'text.secondary',
+                }}
+              />
             {(device.type === 'light' || device.type === 'switch' || device.type === 'plug') && (
               <Tooltip title={isOn ? 'Éteindre' : 'Allumer'}>
                 <Switch
@@ -179,7 +190,7 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
                   <Typography variant="caption" color="text.secondary" display="block">
                     {i18n.t('devices.brightness')}
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
                     {Math.round((device.state.brightness / 255) * 100)}%
                   </Typography>
                 </Grid>
@@ -189,7 +200,7 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
                   <Typography variant="caption" color="text.secondary" display="block">
                     {i18n.t('devices.colorTemp')}
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
                     {device.state.color_temp}K
                   </Typography>
                 </Grid>
@@ -201,7 +212,7 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
                   <Typography variant="caption" color="text.secondary" display="block">
                     {i18n.t('devices.temperature')}
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
                     {typeof device.state.temperature === 'number' 
                       ? `${device.state.temperature.toFixed(1)}°C`
                       : `${device.state.temperature}°C`}
@@ -213,7 +224,7 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
                   <Typography variant="caption" color="text.secondary" display="block">
                     {i18n.t('devices.humidity')}
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
                     {typeof device.state.humidity === 'number'
                       ? `${Math.round(device.state.humidity)}%`
                       : `${device.state.humidity}%`}
@@ -230,7 +241,7 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
                   <Typography 
                     variant="body2" 
                     sx={{ 
-                      fontWeight: 600,
+                      fontWeight: 500,
                       color: (device.state.presence || device.state.occupancy) ? 'success.main' : 'text.secondary'
                     }}
                   >
@@ -245,7 +256,7 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
                   <Typography variant="caption" color="text.secondary" display="block">
                     {i18n.t('devices.illuminance')}
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
                     {typeof device.state.illuminance === 'number'
                       ? `${device.state.illuminance.toLocaleString()} lux`
                       : `${device.state.illuminance} lux`}
@@ -259,7 +270,7 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
                   <Typography variant="caption" color="text.secondary" display="block">
                     {i18n.t('devices.pressure')}
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
                     {typeof device.state.pressure === 'number'
                       ? `${Math.round(device.state.pressure)} hPa`
                       : `${device.state.pressure} hPa`}
@@ -276,7 +287,7 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
                   <Typography 
                     variant="body2" 
                     sx={{ 
-                      fontWeight: 600,
+                      fontWeight: 500,
                       color: device.state.contact ? 'success.main' : 'warning.main'
                     }}
                   >
@@ -294,7 +305,7 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
                   <Typography 
                     variant="body2" 
                     sx={{ 
-                      fontWeight: 600,
+                      fontWeight: 500,
                       color: device.state.water_leak ? 'error.main' : 'success.main'
                     }}
                   >
@@ -312,7 +323,7 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
                   <Typography 
                     variant="body2" 
                     sx={{ 
-                      fontWeight: 600,
+                      fontWeight: 500,
                       color: device.state.smoke ? 'error.main' : 'success.main'
                     }}
                   >
@@ -330,7 +341,7 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
                   <Typography 
                     variant="body2" 
                     sx={{ 
-                      fontWeight: 600,
+                      fontWeight: 500,
                       color: device.state.battery < 20 ? 'error.main' : device.state.battery < 50 ? 'warning.main' : 'success.main'
                     }}
                   >
@@ -345,7 +356,7 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
                   <Typography variant="caption" color="text.secondary" display="block">
                     {i18n.t('devices.voltage')}
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
                     {typeof device.state.voltage === 'number'
                       ? `${(device.state.voltage / 1000).toFixed(2)}V`
                       : `${device.state.voltage}V`}
@@ -360,7 +371,7 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
                   <Typography 
                     variant="body2" 
                     sx={{ 
-                      fontWeight: 600,
+                      fontWeight: 500,
                       color: device.state.linkquality < 50 ? 'error.main' : device.state.linkquality < 100 ? 'warning.main' : 'success.main'
                     }}
                   >
@@ -378,7 +389,7 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
                   <Typography 
                     variant="body2" 
                     sx={{ 
-                      fontWeight: 600,
+                      fontWeight: 500,
                       color: (device.state.state === 'ON' || device.state.state === true) ? 'success.main' : 'text.secondary'
                     }}
                   >

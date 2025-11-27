@@ -63,7 +63,8 @@
     "state": "State",
     "active": "Active",
     "inactive": "Inactive",
-    "unsupported": "This device is not fully supported"
+    "unsupported": "This device is not fully supported",
+    "searchPlaceholder": "Search for a device or room..."
   },
   "deviceDetail": {
     "title": "Device details",

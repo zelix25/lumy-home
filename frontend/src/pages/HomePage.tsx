@@ -33,29 +33,29 @@ export default function HomePage() {
       title: i18n.t('home.totalDevices'),
       value: stats?.total.toString() || '0',
       icon: <DevicesIcon sx={{ fontSize: 40 }} />,
-      color: '#667eea',
+      color: '#86A6A0', // Vert-gris nordique
     },
     {
       title: i18n.t('home.onlineDevices'),
       value: stats?.online.toString() || '0',
       icon: <DevicesIcon sx={{ fontSize: 40 }} />,
-      color: '#48bb78',
+      color: '#86A6A0', // Vert-gris nordique
     },
     {
       title: i18n.t('home.scenesActive'),
       value: '0',
       icon: <SceneIcon sx={{ fontSize: 40 }} />,
-      color: '#764ba2',
+      color: '#D0BFAE', // Bois clair
     },
   ];
 
   return (
     <Box>
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, mb: 1 }}>
+        <Typography variant="h4" gutterBottom sx={{ fontWeight: 500, mb: 1 }}>
           {i18n.t('home.title')}
         </Typography>
-        <Typography variant="body1" color="text.secondary">
+        <Typography variant="body1" color="text.secondary" sx={{ fontSize: '14px' }}>
           {i18n.t('home.subtitle')}
         </Typography>
       </Box>
@@ -71,8 +71,14 @@ export default function HomePage() {
             <Card
               sx={{
                 height: '100%',
-                background: `linear-gradient(135deg, ${stat.color}15 0%, ${stat.color}05 100%)`,
-                border: `1px solid ${stat.color}30`,
+                backgroundColor: '#FFFFFF',
+                border: 'none',
+                borderRadius: 8,
+                boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+                transition: 'all 0.15s ease-in-out',
+                '&:hover': {
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                },
               }}
             >
               <CardContent>
@@ -82,17 +88,17 @@ export default function HomePage() {
                       color: stat.color,
                       mr: 2,
                       p: 1.5,
-                      borderRadius: 2,
+                      borderRadius: 8,
                       backgroundColor: `${stat.color}15`,
                     }}
                   >
                     {stat.icon}
                   </Box>
-                  <Typography variant="h3" sx={{ fontWeight: 700, color: stat.color }}>
+                  <Typography variant="h3" sx={{ fontWeight: 500, color: stat.color }}>
                     {stat.value}
                   </Typography>
                 </Box>
-                <Typography variant="h6" color="text.secondary">
+                <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 400 }}>
                   {stat.title}
                 </Typography>
               </CardContent>
@@ -107,10 +113,10 @@ export default function HomePage() {
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <HomeIcon sx={{ fontSize: 48, color: 'primary.main', mr: 2 }} />
             <Box>
-              <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
+              <Typography variant="h5" gutterBottom sx={{ fontWeight: 500 }}>
                 {i18n.t('home.title')}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '14px' }}>
                 {i18n.t('home.subtitle')}
               </Typography>
             </Box>

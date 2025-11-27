@@ -178,7 +178,7 @@ export default function DeviceDetailPage() {
         <IconButton onClick={() => navigate('/appareils')} sx={{ mr: 2 }}>
           <ArrowBackIcon />
         </IconButton>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
+        <Typography variant="h4" sx={{ fontWeight: 500 }}>
           {device.friendlyName}
         </Typography>
       </Box>
@@ -187,7 +187,7 @@ export default function DeviceDetailPage() {
         <Grid item xs={12} md={8}>
           <Card sx={{ mb: 3 }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
                 Informations
               </Typography>
               <Divider sx={{ mb: 2 }} />
@@ -234,7 +234,7 @@ export default function DeviceDetailPage() {
           {device.type === 'light' && (
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+                <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
                   Contrôles
                 </Typography>
                 <Divider sx={{ mb: 3 }} />
@@ -272,7 +272,7 @@ export default function DeviceDetailPage() {
           {(device.type === 'switch' || device.type === 'plug') && (
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+                <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
                   Contrôles
                 </Typography>
                 <Divider sx={{ mb: 3 }} />
@@ -296,7 +296,7 @@ export default function DeviceDetailPage() {
         <Grid item xs={12} md={4}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
                 État
               </Typography>
               <Divider sx={{ mb: 2 }} />
@@ -322,7 +322,7 @@ export default function DeviceDetailPage() {
                     {device.state.temperature !== undefined && (
                       <Grid item xs={6}>
                         <Box sx={{ p: 1.5, bgcolor: 'background.default', borderRadius: 1, height: '100%' }}>
-                          <Typography variant="body2" fontWeight={600} gutterBottom>
+                          <Typography variant="body2" fontWeight={500} gutterBottom>
                             🌡️ Température
                           </Typography>
                           <Typography variant="h6" color="primary.main">
@@ -337,7 +337,7 @@ export default function DeviceDetailPage() {
                     {device.state.humidity !== undefined && (
                       <Grid item xs={6}>
                         <Box sx={{ p: 1.5, bgcolor: 'background.default', borderRadius: 1, height: '100%' }}>
-                          <Typography variant="body2" fontWeight={600} gutterBottom>
+                          <Typography variant="body2" fontWeight={500} gutterBottom>
                             💧 Humidité
                           </Typography>
                           <Typography variant="h6" color="primary.main">
@@ -352,7 +352,7 @@ export default function DeviceDetailPage() {
                     {device.state.pressure !== undefined && (
                       <Grid item xs={6}>
                         <Box sx={{ p: 1.5, bgcolor: 'background.default', borderRadius: 1, height: '100%' }}>
-                          <Typography variant="body2" fontWeight={600} gutterBottom>
+                          <Typography variant="body2" fontWeight={500} gutterBottom>
                             📊 Pression
                           </Typography>
                           <Typography variant="h6" color="primary.main">
@@ -367,7 +367,7 @@ export default function DeviceDetailPage() {
                     {device.state.illuminance !== undefined && (
                       <Grid item xs={6}>
                         <Box sx={{ p: 1.5, bgcolor: 'background.default', borderRadius: 1, height: '100%' }}>
-                          <Typography variant="body2" fontWeight={600} gutterBottom>
+                          <Typography variant="body2" fontWeight={500} gutterBottom>
                             ☀️ Luminosité ambiante
                           </Typography>
                           <Typography variant="h6" color="primary.main">
@@ -382,7 +382,7 @@ export default function DeviceDetailPage() {
                     {(device.state.presence !== undefined || device.state.occupancy !== undefined) && (
                       <Grid item xs={6}>
                         <Box sx={{ p: 1.5, bgcolor: 'background.default', borderRadius: 1, height: '100%' }}>
-                          <Typography variant="body2" fontWeight={600} gutterBottom>
+                          <Typography variant="body2" fontWeight={500} gutterBottom>
                             👤 Présence
                           </Typography>
                           <Typography variant="h6" color={(device.state.presence || device.state.occupancy) ? 'success.main' : 'text.secondary'}>
@@ -395,7 +395,7 @@ export default function DeviceDetailPage() {
                     {device.state.contact !== undefined && (
                       <Grid item xs={6}>
                         <Box sx={{ p: 1.5, bgcolor: 'background.default', borderRadius: 1, height: '100%' }}>
-                          <Typography variant="body2" fontWeight={600} gutterBottom>
+                          <Typography variant="body2" fontWeight={500} gutterBottom>
                             🚪 Contact
                           </Typography>
                           <Typography variant="h6" color={device.state.contact ? 'success.main' : 'error.main'}>
@@ -408,7 +408,7 @@ export default function DeviceDetailPage() {
                     {device.state.water_leak !== undefined && (
                       <Grid item xs={6}>
                         <Box sx={{ p: 1.5, bgcolor: device.state.water_leak ? 'error.light' : 'background.default', borderRadius: 1, height: '100%' }}>
-                          <Typography variant="body2" fontWeight={600} gutterBottom>
+                          <Typography variant="body2" fontWeight={500} gutterBottom>
                             💦 Fuite d'eau
                           </Typography>
                           <Typography variant="h6" color={device.state.water_leak ? 'error.main' : 'success.main'}>
@@ -421,7 +421,7 @@ export default function DeviceDetailPage() {
                     {device.state.smoke !== undefined && (
                       <Grid item xs={6}>
                         <Box sx={{ p: 1.5, bgcolor: device.state.smoke ? 'error.light' : 'background.default', borderRadius: 1, height: '100%' }}>
-                          <Typography variant="body2" fontWeight={600} gutterBottom>
+                          <Typography variant="body2" fontWeight={500} gutterBottom>
                             🔥 Fumée
                           </Typography>
                           <Typography variant="h6" color={device.state.smoke ? 'error.main' : 'success.main'}>
@@ -435,7 +435,7 @@ export default function DeviceDetailPage() {
                     {device.state.battery !== undefined && (
                       <Grid item xs={6}>
                         <Box sx={{ p: 1.5, bgcolor: 'background.default', borderRadius: 1, height: '100%' }}>
-                          <Typography variant="body2" fontWeight={600} gutterBottom>
+                          <Typography variant="body2" fontWeight={500} gutterBottom>
                             🔋 Batterie
                           </Typography>
                           <Typography variant="h6" color={device.state.battery < 20 ? 'error.main' : device.state.battery < 50 ? 'warning.main' : 'success.main'}>
@@ -450,7 +450,7 @@ export default function DeviceDetailPage() {
                     {device.state.voltage !== undefined && (
                       <Grid item xs={6}>
                         <Box sx={{ p: 1.5, bgcolor: 'background.default', borderRadius: 1, height: '100%' }}>
-                          <Typography variant="body2" fontWeight={600} gutterBottom>
+                          <Typography variant="body2" fontWeight={500} gutterBottom>
                             ⚡ Tension
                           </Typography>
                           <Typography variant="h6" color="primary.main">
@@ -465,7 +465,7 @@ export default function DeviceDetailPage() {
                     {device.state.linkquality !== undefined && (
                       <Grid item xs={6}>
                         <Box sx={{ p: 1.5, bgcolor: 'background.default', borderRadius: 1, height: '100%' }}>
-                          <Typography variant="body2" fontWeight={600} gutterBottom>
+                          <Typography variant="body2" fontWeight={500} gutterBottom>
                             📶 Qualité du signal
                           </Typography>
                           <Typography variant="h6" color={device.state.linkquality < 50 ? 'error.main' : device.state.linkquality < 100 ? 'warning.main' : 'success.main'}>
@@ -485,7 +485,7 @@ export default function DeviceDetailPage() {
                       .map(([key, value]) => (
                         <Grid item xs={6} key={key}>
                           <Box sx={{ p: 1.5, bgcolor: 'background.default', borderRadius: 1, height: '100%' }}>
-                            <Typography variant="body2" fontWeight={600} gutterBottom>
+                            <Typography variant="body2" fontWeight={500} gutterBottom>
                               {key}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">

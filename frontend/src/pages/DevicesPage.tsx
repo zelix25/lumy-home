@@ -149,7 +149,7 @@ export default function DevicesPage() {
     <Box>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <Box>
-          <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, mb: 1 }}>
+          <Typography variant="h4" gutterBottom sx={{ fontWeight: 500, mb: 1 }}>
             {i18n.t('devices.title')}
           </Typography>
           <Typography variant="body1" color="text.secondary">

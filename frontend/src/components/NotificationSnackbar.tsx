@@ -73,7 +73,7 @@ export default function NotificationSnackbar() {
         sx={{ width: '100%', minWidth: 300 }}
       >
         {currentNotification?.title && (
-          <AlertTitle sx={{ fontWeight: 600 }}>
+          <AlertTitle sx={{ fontWeight: 500 }}>
             {currentNotification.title}
           </AlertTitle>
         )}

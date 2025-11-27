@@ -25,7 +25,7 @@ import BugReportIcon from '@mui/icons-material/BugReport';
 import LanguageSelector from './LanguageSelector';
 import { useTranslation } from 'react-i18next';
 
-const drawerWidth = 280;
+const drawerWidth = 240; // Largeur sidebar selon guide scandinave
 
 interface LayoutProps {
   children: ReactNode;
@@ -69,11 +69,13 @@ export default function Layout({ children }: LayoutProps) {
     <Box>
       <Toolbar
         sx={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
+          background: '#FFFFFF',
+          color: '#1E1E1E',
+          borderBottom: '1px solid rgba(0,0,0,0.08)',
+          minHeight: '64px !important',
         }}
       >
-        <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 700 }}>
+        <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 500 }}>
           HomeHub IA
         </Typography>
       </Toolbar>
@@ -86,22 +88,27 @@ export default function Layout({ children }: LayoutProps) {
               sx={{
                 mx: 1,
                 mb: 0.5,
-                borderRadius: 2,
+                borderRadius: 8,
+                transition: 'all 0.15s ease-in-out',
+                '&:hover': {
+                  backgroundColor: 'rgba(0,0,0,0.04)',
+                },
                 '&.Mui-selected': {
-                  backgroundColor: 'primary.main',
-                  color: 'white',
+                  backgroundColor: 'rgba(134, 166, 160, 0.1)',
+                  color: '#1E1E1E',
                   '&:hover': {
-                    backgroundColor: 'primary.dark',
+                    backgroundColor: 'rgba(134, 166, 160, 0.15)',
                   },
                   '& .MuiListItemIcon-root': {
-                    color: 'white',
+                    color: '#86A6A0',
                   },
                 },
               }}
             >
               <ListItemIcon
                 sx={{
-                  color: location.pathname === item.path ? 'white' : 'text.secondary',
+                  color: location.pathname === item.path ? '#86A6A0' : 'text.secondary',
+                  minWidth: 40,
                 }}
               >
                 {item.icon}
@@ -109,7 +116,7 @@ export default function Layout({ children }: LayoutProps) {
               <ListItemText
                 primary={item.label}
                 primaryTypographyProps={{
-                  fontWeight: location.pathname === item.path ? 600 : 400,
+                  fontWeight: location.pathname === item.path ? 500 : 400,
                 }}
               />
             </ListItemButton>

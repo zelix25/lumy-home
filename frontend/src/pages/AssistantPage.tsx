@@ -6,7 +6,7 @@ export default function AssistantPage() {
   return (
     <Box>
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, mb: 1 }}>
+        <Typography variant="h4" gutterBottom sx={{ fontWeight: 500, mb: 1 }}>
           {i18n.t('assistant.title')}
         </Typography>
         <Typography variant="body1" color="text.secondary">
