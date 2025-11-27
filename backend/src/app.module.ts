@@ -7,6 +7,7 @@ import { LoggerModule } from './logger/logger.module';
 import { MqttModule } from './mqtt/mqtt.module';
 import { WebsocketModule } from './websocket/websocket.module';
 import { DevicesModule } from './devices/devices.module';
+import { AiModule } from './ai/ai.module';
 import { configValidationSchema } from './config/config.validation';
 
 @Module({
@@ -41,6 +42,7 @@ import { configValidationSchema } from './config/config.validation';
     MqttModule,
     WebsocketModule,
     DevicesModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -17,5 +17,10 @@ export const configValidationSchema = Joi.object({
   MQTT_PASSWORD: Joi.string().optional(),
   MQTT_CLIENT_ID: Joi.string().default('homehub-backend'),
   MQTT_RECONNECT_PERIOD: Joi.number().default(5000),
+
+  // AI (Llama)
+  LLAMA_API_URL: Joi.string().uri().default('http://localhost:11434'),
+  LLAMA_MODEL: Joi.string().default('llama3:8b'),
+  USE_LOCAL_LLAMA: Joi.boolean().default(true),
 });
 

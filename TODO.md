@@ -71,27 +71,33 @@ Je te la réécris par modules, mais avec les contraintes suivantes :
 
 ### Backend
 
-* [ ] Module IA textuelle
-* [ ] Llama 3 (8B max, pour local-friendly)
-* [ ] Prompt système spécial "grand public"
-* [ ] Transformer texte → règle JSON simple
-* [ ] Vérification cohérence :
+* [x] Module IA textuelle
+* [x] Llama 3 (8B max, pour local-friendly) - Intégration via Ollama
+* [x] Prompt système spécial "grand public"
+* [x] Transformer texte → règle JSON simple
+* [x] Vérification cohérence :
 
   * Appareil connu ?
   * Action possible ?
-* [ ] Interface de validation automatique
+* [x] Interface de validation automatique
+* [x] Endpoints REST pour génération et gestion des automatisations
+* [x] Entité Automation avec stockage en base de données
 
 ### Frontend
 
-* [ ] Modale "Créer une règle par phrase"
-* [ ] Exemple affichés :
+* [x] Modale "Créer une règle par phrase"
+* [x] Exemple affichés :
 
-  * “Allume la lumière du salon quand j’entre dans la pièce”
-  * “Éteins tout quand je pars”
-  * “Alerte-moi si une fenêtre reste ouverte”
-* [ ] Résultat → aperçu non-technique :
+  * "Allume la lumière du salon quand j'entre dans la pièce"
+  * "Éteins tout quand je pars"
+  * "Alerte-moi si une fenêtre reste ouverte"
+* [x] Résultat → aperçu non-technique :
 
-  * “Quand le capteur de mouvement du Salon détecte quelque chose → allumer Lumière Salon”
+  * "Quand le capteur de mouvement du Salon détecte quelque chose → allumer Lumière Salon"
+* [x] Page Assistant avec liste des automatisations
+* [x] Cartes d'automatisations avec activation/désactivation
+* [x] Service API pour communiquer avec le backend IA
+* [x] Traductions français/anglais complètes
 
 ---
 
