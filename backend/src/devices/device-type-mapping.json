@@ -102,14 +102,14 @@
     "comment": "Sonoff SNZB-03P temperature/humidity sensor"
   },
   {
-    "model": "ZG-204Z",
-    "type": "motion",
-    "comment": "Hobeian motion sensor"
-  },
-  {
     "model": "ZG-204ZV",
     "type": "sensor",
     "comment": "Hobeian multiple sensors"
+  },
+  {
+    "model": "ZG-204Z",
+    "type": "motion",
+    "comment": "Hobeian motion sensor"
   },
   {
     "model": "WXKG11LM",
