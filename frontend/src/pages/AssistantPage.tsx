@@ -24,7 +24,6 @@ export default function AssistantPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [llamaAvailable, setLlamaAvailable] = useState<boolean | null>(null);
-  const [llamaMessage, setLlamaMessage] = useState<string | null>(null);
   const [checkingLlama, setCheckingLlama] = useState(true);
 
   const fetchAutomations = async () => {
@@ -45,12 +44,8 @@ export default function AssistantPage() {
       setCheckingLlama(true);
       const status = await automationsService.checkStatus();
       setLlamaAvailable(status.available);
-      setLlamaMessage(status.message || null);
     } catch (err: any) {
       setLlamaAvailable(false);
-      setLlamaMessage(
-        err.message || t('assistant.llamaUnavailableMessage'),
-      );
     } finally {
       setCheckingLlama(false);
     }

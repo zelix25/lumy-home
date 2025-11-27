@@ -158,19 +158,32 @@ Les utilisateurs novices doivent pouvoir faire des choses *sans écrire de logiq
 
 ### Backend
 
-* [ ] HistoryModule
-* [ ] Enregistrer événements importants :
+* [x] HistoryModule
+* [x] Enregistrer événements importants :
 
   * détection mouvement
   * changement état
   * exécution scène
-* [ ] Endpoint filtrable
+  * appareil online/offline
+  * découverte d'appareil
+  * changement contact (porte/fenêtre)
+  * changement température
+* [x] Endpoint filtrable
+* [x] Endpoint statistiques
+* [x] Intégration avec Zigbee2MqttService pour enregistrement automatique
+* [x] Intégration avec AiService pour enregistrement des exécutions d'automatisations
 
 ### Frontend
 
-* [ ] Page “Historique”
-* [ ] Timeline simple et claire
-* [ ] Icônes explicites (mouvement, lumière, porte, etc.)
+* [x] Page "Historique"
+* [x] Timeline simple et claire
+* [x] Icônes explicites (mouvement, lumière, porte, etc.)
+* [x] Filtres (type d'événement, appareil, pièce)
+* [x] Statistiques (total, activité récente, appareil le plus actif)
+* [x] Pagination avec "Charger plus"
+* [x] Formatage des dates (il y a X minutes/heures/jours)
+* [x] Service API pour communiquer avec le backend
+* [x] Traductions français/anglais complètes
 
 ---
 

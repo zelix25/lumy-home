@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { readFileSync } from 'fs';
@@ -7,6 +7,7 @@ import { LoggerService } from '../logger/logger.service';
 import { MqttService } from '../mqtt/mqtt.service';
 import { WebsocketGateway } from '../websocket/websocket.gateway';
 import { Device, DeviceType, DeviceStatus } from './entities/device.entity';
+import { HistoryService } from '../history/history.service';
 
 interface ZigbeeDevice {
   ieee_address: string;
@@ -48,6 +49,8 @@ export class Zigbee2MqttService implements OnModuleInit {
     private readonly logger: LoggerService,
     private readonly mqttService: MqttService,
     private readonly websocketGateway: WebsocketGateway,
+    @Inject(forwardRef(() => HistoryService))
+    private readonly historyService?: HistoryService,
   ) {
     this.loadDeviceTypeMapping();
   }
@@ -335,6 +338,24 @@ export class Zigbee2MqttService implements OnModuleInit {
         'Zigbee2MqttService',
       );
 
+      // Enregistrer la découverte dans l'historique
+      if (this.historyService) {
+        try {
+          await this.historyService.logDeviceDiscovered(
+            newDevice.ieeeAddress,
+            newDevice.friendlyName || newDevice.ieeeAddress,
+            deviceType,
+            newDevice.room,
+          );
+        } catch (error) {
+          this.logger.error(
+            `Erreur lors de l'enregistrement de la découverte: ${error.message}`,
+            error.stack,
+            'Zigbee2MqttService',
+          );
+        }
+      }
+
       // Notifier via WebSocket avec un message user-friendly
       const notificationMessage = isSupported
         ? `Un nouvel appareil a été détecté : ${zigbeeDevice.friendly_name}. Comment souhaitez-vous le nommer ?`
@@ -403,6 +424,9 @@ export class Zigbee2MqttService implements OnModuleInit {
       'Zigbee2MqttService',
     );
 
+    // Sauvegarder l'ancien état pour détecter les changements
+    const oldState = device.state ? JSON.parse(JSON.stringify(device.state)) : {};
+
     // Mettre à jour l'état avec toutes les données reçues
     // Fusionner intelligemment : garder les valeurs existantes si nouvelles valeurs sont undefined/null
     const mergedState = { ...(device.state || {}) };
@@ -430,6 +454,20 @@ export class Zigbee2MqttService implements OnModuleInit {
     device.updatedAt = new Date();
     
     const savedDevice = await this.deviceRepository.save(device);
+
+    // Enregistrer les événements dans l'historique
+    if (this.historyService) {
+      try {
+        // Détecter les changements significatifs et les enregistrer
+        await this.logSignificantEvents(savedDevice, oldState, mergedState);
+      } catch (error) {
+        this.logger.error(
+          `Erreur lors de l'enregistrement de l'historique: ${error.message}`,
+          error.stack,
+          'Zigbee2MqttService',
+        );
+      }
+    }
     
     this.logger.log(
       `✅ État mis à jour [${savedDevice.friendlyName || ieeeAddress}]: ${Object.keys(mergedState).length} propriétés`,
@@ -522,6 +560,9 @@ export class Zigbee2MqttService implements OnModuleInit {
       return;
     }
 
+    // Sauvegarder l'ancien statut pour détecter les changements
+    const oldStatus = device.status;
+
     // Mettre à jour le statut selon la disponibilité
     const isAvailable = availability?.state === 'online' || availability === 'online';
     device.status = isAvailable ? DeviceStatus.ONLINE : DeviceStatus.OFFLINE;
@@ -533,6 +574,31 @@ export class Zigbee2MqttService implements OnModuleInit {
       `Disponibilité mise à jour pour ${friendlyName}: ${isAvailable ? 'en ligne' : 'hors ligne'}`,
       'Zigbee2MqttService',
     );
+
+    // Enregistrer le changement de statut dans l'historique
+    if (this.historyService && oldStatus !== device.status) {
+      try {
+        if (device.status === DeviceStatus.ONLINE) {
+          await this.historyService.logDeviceOnline(
+            device.ieeeAddress,
+            device.friendlyName || device.ieeeAddress,
+            device.room,
+          );
+        } else {
+          await this.historyService.logDeviceOffline(
+            device.ieeeAddress,
+            device.friendlyName || device.ieeeAddress,
+            device.room,
+          );
+        }
+      } catch (error) {
+        this.logger.error(
+          `Erreur lors de l'enregistrement du changement de statut: ${error.message}`,
+          error.stack,
+          'Zigbee2MqttService',
+        );
+      }
+    }
 
     // Diffuser la mise à jour via WebSocket
     this.websocketGateway.broadcast('device:availability', {
@@ -561,8 +627,27 @@ export class Zigbee2MqttService implements OnModuleInit {
           where: { ieeeAddress: event.data.ieee_address },
         });
         if (device) {
+          const oldStatus = device.status;
           device.status = DeviceStatus.OFFLINE;
           await this.deviceRepository.save(device);
+          
+          // Enregistrer l'événement offline dans l'historique
+          if (this.historyService && oldStatus !== DeviceStatus.OFFLINE) {
+            try {
+              await this.historyService.logDeviceOffline(
+                device.ieeeAddress,
+                device.friendlyName || device.ieeeAddress,
+                device.room,
+              );
+            } catch (error) {
+              this.logger.error(
+                `Erreur lors de l'enregistrement de l'événement offline: ${error.message}`,
+                error.stack,
+                'Zigbee2MqttService',
+              );
+            }
+          }
+          
           this.websocketGateway.broadcast('device:offline', { device });
         }
       }
@@ -826,6 +911,74 @@ export class Zigbee2MqttService implements OnModuleInit {
       'Détection d\'appareils désactivée',
       'Zigbee2MqttService',
     );
+  }
+
+  /**
+   * Enregistre les événements significatifs dans l'historique
+   */
+  private async logSignificantEvents(
+    device: Device,
+    oldState: Record<string, any>,
+    newState: Record<string, any>,
+  ): Promise<void> {
+    if (!this.historyService) return;
+
+    // Détection de mouvement
+    if (
+      newState.presence === true ||
+      newState.occupancy === true ||
+      (newState.motion !== undefined && newState.motion === true)
+    ) {
+      const hadMotion = oldState.presence === true || oldState.occupancy === true || oldState.motion === true;
+      if (!hadMotion) {
+        await this.historyService.logMotionDetected(
+          device.ieeeAddress,
+          device.friendlyName || device.ieeeAddress,
+          device.room,
+          { presence: newState.presence, occupancy: newState.occupancy, motion: newState.motion },
+        );
+      }
+    }
+
+    // Changement de contact (porte/fenêtre)
+    if (newState.contact !== undefined && oldState.contact !== newState.contact) {
+      await this.historyService.logContactChanged(
+        device.ieeeAddress,
+        device.friendlyName || device.ieeeAddress,
+        !newState.contact, // contact: true = fermé, false = ouvert
+        device.room,
+      );
+    }
+
+    // Changement de température significatif (> 0.5°C)
+    if (
+      newState.temperature !== undefined &&
+      oldState.temperature !== undefined &&
+      Math.abs(newState.temperature - oldState.temperature) > 0.5
+    ) {
+      await this.historyService.logTemperatureChanged(
+        device.ieeeAddress,
+        device.friendlyName || device.ieeeAddress,
+        newState.temperature,
+        device.room,
+      );
+    }
+
+    // Changement d'état (ON/OFF, brightness, etc.)
+    const stateChanged =
+      oldState.state !== newState.state ||
+      (oldState.brightness !== newState.brightness && newState.brightness !== undefined) ||
+      (oldState.color_temp !== newState.color_temp && newState.color_temp !== undefined);
+
+    if (stateChanged) {
+      await this.historyService.logStateChanged(
+        device.ieeeAddress,
+        device.friendlyName || device.ieeeAddress,
+        oldState,
+        newState,
+        device.room,
+      );
+    }
   }
 }
 

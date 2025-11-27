@@ -16,6 +16,8 @@ import { LoggerService } from '../logger/logger.service';
 import { SYSTEM_PROMPT, buildUserPrompt } from './prompts/system-prompt';
 import { AutomationResponseDto } from './dto/automation-response.dto';
 import { ConfigService } from '@nestjs/config';
+import { HistoryService } from '../history/history.service';
+import { Inject, forwardRef } from '@nestjs/common';
 
 interface ParsedAutomation {
   name: string;
@@ -43,6 +45,8 @@ export class AiService {
     private devicesService: DevicesService,
     private logger: LoggerService,
     private configService: ConfigService,
+    @Inject(forwardRef(() => HistoryService))
+    private readonly historyService?: HistoryService,
   ) {
     this.llamaApiUrl =
       this.configService.get<string>('LLAMA_API_URL') ||
