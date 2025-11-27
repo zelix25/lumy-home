@@ -1,15 +1,16 @@
 import { Box, Typography, Card, CardContent } from '@mui/material';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
+import i18n from '@/i18n';
 
 export default function AssistantPage() {
   return (
     <Box>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, mb: 1 }}>
-          Assistant IA
+          {i18n.t('assistant.title')}
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          Créez des automatisations en langage naturel avec l'aide de l'intelligence artificielle.
+          {i18n.t('assistant.subtitle')}
         </Typography>
       </Box>
 
@@ -18,10 +19,10 @@ export default function AssistantPage() {
           <Box sx={{ textAlign: 'center', py: 8 }}>
             <SmartToyIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" color="text.secondary" gutterBottom>
-              Assistant IA
+              {i18n.t('assistant.title')}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Dites-moi ce que vous voulez automatiser et je m'en occupe.
+              {i18n.t('assistant.subtitle')}
             </Typography>
           </Box>
         </CardContent>
