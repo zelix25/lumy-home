@@ -23,6 +23,7 @@ import {
   Delete as DeleteIcon,
   EditOff as EditOffIcon,
   Refresh as RefreshIcon,
+  Save as SaveIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useDevices } from '../hooks/useDevices';
@@ -48,7 +49,7 @@ interface DevicePosition {
 }
 
 const GRID_SIZE = 20;
-const MIN_ROOM_SIZE = 100;
+const MIN_ROOM_SIZE = 40;
 
 export default function PlanPage() {
   const { t } = useTranslation();
@@ -75,7 +76,7 @@ export default function PlanPage() {
   const [isMovingDevice, setIsMovingDevice] = useState(false);
   const [movingDeviceId, setMovingDeviceId] = useState<string | null>(null);
   const [moveDeviceStart, setMoveDeviceStart] = useState<{ x: number; y: number; deviceX: number; deviceY: number; roomId: string } | null>(null);
-  const [isEditMode, setIsEditMode] = useState(true);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [confirmDialogConfig, setConfirmDialogConfig] = useState<{
     title: string;
@@ -85,7 +86,7 @@ export default function PlanPage() {
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const syncLocalPlanToServer = useCallback(
-    async (roomsData: Room[], devicePositionsData: DevicePosition[]) => {
+    async (roomsData: Room[], devicePositionsData: DevicePosition[], showNotification = false) => {
       if (
         (!roomsData || roomsData.length === 0) &&
         (!devicePositionsData || devicePositionsData.length === 0)
@@ -94,18 +95,22 @@ export default function PlanPage() {
       }
       try {
         await planService.savePlan(roomsData, devicePositionsData);
-        addNotification({
-          type: 'success',
-          title: t('plan.saved'),
-          message: t('plan.savedMessage'),
-        });
+        if (showNotification) {
+          addNotification({
+            type: 'success',
+            title: t('plan.saved'),
+            message: t('plan.savedMessage'),
+          });
+        }
       } catch (error) {
         console.error('Erreur lors de la synchronisation du plan local vers le serveur:', error);
-        addNotification({
-          type: 'error',
-          title: t('plan.saveError'),
-          message: t('plan.saveErrorMessage'),
-        });
+        if (showNotification) {
+          addNotification({
+            type: 'error',
+            title: t('plan.saveError'),
+            message: t('plan.saveErrorMessage'),
+          });
+        }
       }
     },
     [addNotification, t],
@@ -130,7 +135,7 @@ export default function PlanPage() {
 
         setRooms(roomsFromLocal);
         setDevicePositions(positionsFromLocal);
-        await syncLocalPlanToServer(roomsFromLocal, positionsFromLocal);
+        await syncLocalPlanToServer(roomsFromLocal, positionsFromLocal, false);
       } catch (error) {
         console.error('Erreur lors du chargement du plan:', error);
         const savedRooms = localStorage.getItem('homehub-rooms');
@@ -140,7 +145,7 @@ export default function PlanPage() {
 
         setRooms(roomsFromLocal);
         setDevicePositions(positionsFromLocal);
-        await syncLocalPlanToServer(roomsFromLocal, positionsFromLocal);
+        await syncLocalPlanToServer(roomsFromLocal, positionsFromLocal, false);
       }
     };
 
@@ -160,29 +165,24 @@ export default function PlanPage() {
     }
   }, [devicePositions]);
 
-  // Sauvegarder en base de données quand on quitte le mode édition
-  useEffect(() => {
-    if (!isEditMode && (rooms.length > 0 || devicePositions.length > 0)) {
-      const savePlan = async () => {
-        try {
-          await planService.savePlan(rooms, devicePositions);
-          addNotification({
-            type: 'success',
-            title: t('plan.saved'),
-            message: t('plan.savedMessage'),
-          });
-        } catch (error) {
-          console.error('Erreur lors de la sauvegarde du plan:', error);
-          addNotification({
-            type: 'error',
-            title: t('plan.saveError'),
-            message: t('plan.saveErrorMessage'),
-          });
-        }
-      };
-      savePlan();
+  // Fonction de sauvegarde manuelle
+  const handleSavePlan = async () => {
+    try {
+      await planService.savePlan(rooms, devicePositions);
+      addNotification({
+        type: 'success',
+        title: t('plan.saved'),
+        message: t('plan.savedMessage'),
+      });
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde du plan:', error);
+      addNotification({
+        type: 'error',
+        title: t('plan.saveError'),
+        message: t('plan.saveErrorMessage'),
+      });
     }
-  }, [isEditMode, rooms, devicePositions, addNotification, t]);
+  };
 
   const handleCreateRoom = () => {
     if (!isEditMode) return;
@@ -625,6 +625,17 @@ export default function PlanPage() {
           >
             {isEditMode ? t('plan.disableEdit') : t('plan.enableEdit')}
           </Button>
+          {isEditMode && (
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<SaveIcon />}
+              onClick={handleSavePlan}
+              disabled={rooms.length === 0 && devicePositions.length === 0}
+            >
+              {t('plan.save')}
+            </Button>
+          )}
           <Button
             variant="outlined"
             color="error"

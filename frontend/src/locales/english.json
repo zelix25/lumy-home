@@ -197,6 +197,7 @@
     "resetPlan": "Reset plan",
     "confirmReset": "Are you sure you want to reset the plan? All rooms and device positions will be deleted.",
     "deleteRoom": "Delete room",
+    "save": "Save",
     "saved": "Plan saved",
     "savedMessage": "The plan has been saved successfully",
     "saveError": "Save error",

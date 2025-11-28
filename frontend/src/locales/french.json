@@ -197,6 +197,7 @@
     "resetPlan": "Réinitialiser le plan",
     "confirmReset": "Êtes-vous sûr de vouloir réinitialiser le plan ? Toutes les pièces et positions d'équipements seront supprimées.",
     "deleteRoom": "Supprimer la pièce",
+    "save": "Sauvegarder",
     "saved": "Plan sauvegardé",
     "savedMessage": "Le plan a été sauvegardé avec succès",
     "saveError": "Erreur de sauvegarde",
