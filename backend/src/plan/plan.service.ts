@@ -9,21 +9,17 @@ import { LoggerService } from '../logger/logger.service';
 export class PlanService {
   constructor(
     @InjectRepository(Plan)
-    private planRepository: Repository<Plan>,
-    private logger: LoggerService,
+    private readonly planRepository: Repository<Plan>,
+    private readonly logger: LoggerService,
   ) {}
 
-  /**
-   * Sauvegarde ou met à jour le plan
-   */
   async savePlan(dto: SavePlanDto): Promise<Plan> {
-    // Il n'y a qu'un seul plan pour l'instant
-    const existingPlan = await this.planRepository.findOne({
+    const [existingPlan] = await this.planRepository.find({
       order: { updatedAt: 'DESC' },
+      take: 1,
     });
 
     if (existingPlan) {
-      // Mettre à jour le plan existant
       existingPlan.rooms = dto.rooms;
       existingPlan.devicePositions = dto.devicePositions;
       const saved = await this.planRepository.save(existingPlan);
@@ -32,29 +28,26 @@ export class PlanService {
         'PlanService',
       );
       return saved;
-    } else {
-      // Créer un nouveau plan
-      const newPlan = this.planRepository.create({
-        rooms: dto.rooms,
-        devicePositions: dto.devicePositions,
-      });
-      const saved = await this.planRepository.save(newPlan);
-      this.logger.log(
-        `Plan créé: ${dto.rooms.length} pièces, ${dto.devicePositions.length} positions d'équipements`,
-        'PlanService',
-      );
-      return saved;
     }
+
+    const newPlan = this.planRepository.create({
+      rooms: dto.rooms,
+      devicePositions: dto.devicePositions,
+    });
+    const saved = await this.planRepository.save(newPlan);
+    this.logger.log(
+      `Plan créé: ${dto.rooms.length} pièces, ${dto.devicePositions.length} positions d'équipements`,
+      'PlanService',
+    );
+    return saved;
   }
 
-  /**
-   * Récupère le plan actuel
-   */
   async getPlan(): Promise<Plan | null> {
-    const plan = await this.planRepository.findOne({
+    const [plan] = await this.planRepository.find({
       order: { updatedAt: 'DESC' },
+      take: 1,
     });
-    return plan;
+    return plan || null;
   }
 }
 

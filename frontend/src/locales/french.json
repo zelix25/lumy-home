@@ -196,7 +196,11 @@
     "disableEdit": "Désactiver l'édition",
     "resetPlan": "Réinitialiser le plan",
     "confirmReset": "Êtes-vous sûr de vouloir réinitialiser le plan ? Toutes les pièces et positions d'équipements seront supprimées.",
-    "deleteRoom": "Supprimer la pièce"
+    "deleteRoom": "Supprimer la pièce",
+    "saved": "Plan sauvegardé",
+    "savedMessage": "Le plan a été sauvegardé avec succès",
+    "saveError": "Erreur de sauvegarde",
+    "saveErrorMessage": "Une erreur est survenue lors de la sauvegarde du plan"
   },
   "debug": {
     "title": "Debug MQTT",

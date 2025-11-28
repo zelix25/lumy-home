@@ -1,18 +1,22 @@
 import { useState, useEffect } from 'react';
 import { Snackbar, Alert, AlertTitle } from '@mui/material';
 import { useWebSocket } from '../hooks/useWebSocket';
-
-interface Notification {
-  id: string;
-  message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  title?: string;
-}
+import { subscribeToNotifications, getNotifications, type Notification } from '../hooks/useNotification';
 
 export default function NotificationSnackbar() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [currentNotification, setCurrentNotification] = useState<Notification | null>(null);
   const { isConnected, socket } = useWebSocket();
+
+  // S'abonner aux notifications
+  useEffect(() => {
+    const unsubscribe = subscribeToNotifications((newNotifications) => {
+      setNotifications(newNotifications);
+    });
+    // Charger les notifications existantes
+    setNotifications(getNotifications());
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     if (!isConnected) return;

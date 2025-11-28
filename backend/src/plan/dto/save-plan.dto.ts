@@ -1,20 +1,46 @@
-import { IsArray, IsObject, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsArray, IsString, IsNumber, ValidateNested } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
 
 class RoomDto {
+  @IsString()
   id: string;
+
+  @IsString()
   name: string;
+
+  @Type(() => Number)
+  @IsNumber()
   x: number;
+
+  @Type(() => Number)
+  @IsNumber()
   y: number;
+
+  @Type(() => Number)
+  @IsNumber()
   width: number;
+
+  @Type(() => Number)
+  @IsNumber()
   height: number;
+
+  @IsString()
   color: string;
 }
 
 class DevicePositionDto {
+  @IsString()
   deviceId: string;
+
+  @IsString()
   roomId: string;
+
+  @Type(() => Number)
+  @IsNumber()
   x: number;
+
+  @Type(() => Number)
+  @IsNumber()
   y: number;
 }
 

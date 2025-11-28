@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -28,6 +28,7 @@ import { useTranslation } from 'react-i18next';
 import { useDevices } from '../hooks/useDevices';
 import { devicesService } from '../services/devices.service';
 import { planService } from '../services/plan.service';
+import { useNotification } from '../hooks/useNotification';
 
 interface Room {
   id: string;
@@ -52,6 +53,7 @@ const MIN_ROOM_SIZE = 100;
 export default function PlanPage() {
   const { t } = useTranslation();
   const { devices, refetch } = useDevices();
+  const { addNotification } = useNotification();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [devicePositions, setDevicePositions] = useState<DevicePosition[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
@@ -82,6 +84,23 @@ export default function PlanPage() {
   } | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
+  const syncLocalPlanToServer = useCallback(
+    async (roomsData: Room[], devicePositionsData: DevicePosition[]) => {
+      if (
+        (!roomsData || roomsData.length === 0) &&
+        (!devicePositionsData || devicePositionsData.length === 0)
+      ) {
+        return;
+      }
+      try {
+        await planService.savePlan(roomsData, devicePositionsData);
+      } catch (error) {
+        console.error('Erreur lors de la synchronisation du plan local vers le serveur:', error);
+      }
+    },
+    [],
+  );
+
   // Charger le plan depuis la base de données
   useEffect(() => {
     const loadPlan = async () => {
@@ -90,35 +109,33 @@ export default function PlanPage() {
         if (plan) {
           setRooms(plan.rooms);
           setDevicePositions(plan.devicePositions);
-        } else {
-          // Fallback sur localStorage si pas de plan en DB
-          const savedRooms = localStorage.getItem('homehub-rooms');
-          const savedPositions = localStorage.getItem('homehub-device-positions');
-          
-          if (savedRooms) {
-            setRooms(JSON.parse(savedRooms));
-          }
-          if (savedPositions) {
-            setDevicePositions(JSON.parse(savedPositions));
-          }
+          return;
         }
-      } catch (error) {
-        console.error('Erreur lors du chargement du plan:', error);
-        // Fallback sur localStorage en cas d'erreur
+
+        // Fallback sur localStorage si pas de plan en DB
         const savedRooms = localStorage.getItem('homehub-rooms');
         const savedPositions = localStorage.getItem('homehub-device-positions');
-        
-        if (savedRooms) {
-          setRooms(JSON.parse(savedRooms));
-        }
-        if (savedPositions) {
-          setDevicePositions(JSON.parse(savedPositions));
-        }
+        const roomsFromLocal: Room[] = savedRooms ? JSON.parse(savedRooms) : [];
+        const positionsFromLocal: DevicePosition[] = savedPositions ? JSON.parse(savedPositions) : [];
+
+        setRooms(roomsFromLocal);
+        setDevicePositions(positionsFromLocal);
+        await syncLocalPlanToServer(roomsFromLocal, positionsFromLocal);
+      } catch (error) {
+        console.error('Erreur lors du chargement du plan:', error);
+        const savedRooms = localStorage.getItem('homehub-rooms');
+        const savedPositions = localStorage.getItem('homehub-device-positions');
+        const roomsFromLocal: Room[] = savedRooms ? JSON.parse(savedRooms) : [];
+        const positionsFromLocal: DevicePosition[] = savedPositions ? JSON.parse(savedPositions) : [];
+
+        setRooms(roomsFromLocal);
+        setDevicePositions(positionsFromLocal);
+        await syncLocalPlanToServer(roomsFromLocal, positionsFromLocal);
       }
     };
-    
+
     loadPlan();
-  }, []);
+  }, [syncLocalPlanToServer]);
 
   // Sauvegarder dans le localStorage (backup)
   useEffect(() => {
@@ -135,17 +152,27 @@ export default function PlanPage() {
 
   // Sauvegarder en base de données quand on quitte le mode édition
   useEffect(() => {
-    if (!isEditMode && rooms.length > 0) {
+    if (!isEditMode && (rooms.length > 0 || devicePositions.length > 0)) {
       const savePlan = async () => {
         try {
           await planService.savePlan(rooms, devicePositions);
+          addNotification({
+            type: 'success',
+            title: t('plan.saved'),
+            message: t('plan.savedMessage'),
+          });
         } catch (error) {
           console.error('Erreur lors de la sauvegarde du plan:', error);
+          addNotification({
+            type: 'error',
+            title: t('plan.saveError'),
+            message: t('plan.saveErrorMessage'),
+          });
         }
       };
       savePlan();
     }
-  }, [isEditMode, rooms, devicePositions]);
+  }, [isEditMode, rooms, devicePositions, addNotification, t]);
 
   const handleCreateRoom = () => {
     if (!isEditMode) return;
