@@ -94,11 +94,21 @@ export default function PlanPage() {
       }
       try {
         await planService.savePlan(roomsData, devicePositionsData);
+        addNotification({
+          type: 'success',
+          title: t('plan.saved'),
+          message: t('plan.savedMessage'),
+        });
       } catch (error) {
         console.error('Erreur lors de la synchronisation du plan local vers le serveur:', error);
+        addNotification({
+          type: 'error',
+          title: t('plan.saveError'),
+          message: t('plan.saveErrorMessage'),
+        });
       }
     },
-    [],
+    [addNotification, t],
   );
 
   // Charger le plan depuis la base de données
