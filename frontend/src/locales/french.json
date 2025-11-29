@@ -133,7 +133,7 @@
     "examples": "Exemples",
     "clickToUse": "Cliquez pour utiliser cet exemple",
     "llamaUnavailable": "Service IA non disponible",
-    "llamaUnavailableMessage": "Le serveur Ollama n'est pas accessible. Veuillez démarrer Ollama pour créer des automatisations.",
+    "llamaUnavailableMessage": "Le serveur Ollama n'est pas accessible. Veuillez démarrer Ollama et installer le modèle Gemma 3 pour créer des automatisations.",
     "checkingStatus": "Vérification du service IA..."
   },
   "history": {

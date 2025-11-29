@@ -66,7 +66,7 @@ export class AiController {
   }
 
   /**
-   * Vérifie si le serveur Llama est disponible
+   * Vérifie si le serveur Gemma 3 est disponible
    */
   @Get('status')
   async checkStatus(): Promise<{ available: boolean; message?: string }> {

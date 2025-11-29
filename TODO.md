@@ -72,7 +72,7 @@ Je te la réécris par modules, mais avec les contraintes suivantes :
 ### Backend
 
 * [x] Module IA textuelle
-* [x] Llama 3 (8B max, pour local-friendly) - Intégration via Ollama
+* [x] Gemma 3 (pour local-friendly) - Intégration via Ollama
 * [x] Prompt système spécial "grand public"
 * [x] Transformer texte → règle JSON simple
 * [x] Vérification cohérence :

@@ -68,7 +68,7 @@ class AutomationsService {
   }
 
   /**
-   * Vérifie si le serveur Llama est disponible
+   * Vérifie si le serveur Gemma 3 est disponible
    */
   async checkStatus(): Promise<{ available: boolean; message?: string }> {
     return apiService.get<{ available: boolean; message?: string }>('/ai/status');

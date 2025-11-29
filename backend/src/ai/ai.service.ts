@@ -126,7 +126,7 @@ export class AiService {
       let response: string;
 
       if (this.useLocalLlama) {
-        // Utiliser Llama local via Ollama
+        // Utiliser Gemma 3 local via Ollama
         response = await this.callLocalLlama(fullPrompt);
       } else {
         // Utiliser une API externe (OpenAI, etc.)
@@ -154,10 +154,10 @@ export class AiService {
   }
 
   /**
-   * Appelle Llama local via Ollama
+   * Appelle Gemma 3 local via Ollama
    */
   private async callLocalLlama(prompt: string): Promise<string> {
-    const model = this.configService.get<string>('LLAMA_MODEL', 'llama3:8b');
+    const model = this.configService.get<string>('LLAMA_MODEL', 'gemma3');
 
     try {
       const response = await fetch(`${this.llamaApiUrl}/api/generate`, {
@@ -403,18 +403,18 @@ export class AiService {
   }
 
   /**
-   * Vérifie si le serveur Llama est disponible
+   * Vérifie si le serveur Gemma 3 est disponible
    */
   async checkLlamaAvailability(): Promise<{ available: boolean; message?: string }> {
     if (!this.useLocalLlama) {
       return {
         available: false,
-        message: 'Le mode local Llama est désactivé',
+        message: 'Le mode local Gemma 3 est désactivé',
       };
     }
 
     try {
-      const model = this.configService.get<string>('LLAMA_MODEL', 'llama3:8b');
+      const model = this.configService.get<string>('LLAMA_MODEL', 'gemma3');
       
       // Vérifier si le modèle est disponible
       const controller = new AbortController();
@@ -477,7 +477,7 @@ export class AiService {
       return { available: true };
     } catch (error: any) {
       this.logger.warn(
-        `Vérification Llama échouée: ${error.message}`,
+        `Vérification Gemma 3 échouée: ${error.message}`,
         'AiService',
       );
       return {
