@@ -19,6 +19,12 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
+import DeleteIcon from '@mui/icons-material/Delete';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContentText from '@mui/material/DialogContentText';
 import { devicesService, Device } from '../services/devices.service';
 import { useWebSocket } from '../hooks/useWebSocket';
 
@@ -48,6 +54,8 @@ export default function DeviceDetailPage() {
   const [room, setRoom] = useState('');
   const [brightness, setBrightness] = useState(100);
   const [isOn, setIsOn] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const { isConnected, socket } = useWebSocket();
 
   useEffect(() => {
@@ -151,6 +159,22 @@ export default function DeviceDetailPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!ieeeAddress) return;
+    setDeleting(true);
+    try {
+      await devicesService.deleteDevice(ieeeAddress);
+      setDeleteDialogOpen(false);
+      // Rediriger vers la liste des appareils après suppression réussie
+      navigate('/appareils');
+    } catch (err: any) {
+      setError(err.message || 'Erreur lors de la suppression de l\'appareil');
+      setDeleteDialogOpen(false);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
@@ -174,13 +198,23 @@ export default function DeviceDetailPage() {
 
   return (
     <Box>
-      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
-        <IconButton onClick={() => navigate('/appareils')} sx={{ mr: 2 }}>
-          <ArrowBackIcon />
-        </IconButton>
-        <Typography variant="h4" sx={{ fontWeight: 500 }}>
-          {device.friendlyName}
-        </Typography>
+      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <IconButton onClick={() => navigate('/appareils')} sx={{ mr: 2 }}>
+            <ArrowBackIcon />
+          </IconButton>
+          <Typography variant="h4" sx={{ fontWeight: 500 }}>
+            {device.friendlyName}
+          </Typography>
+        </Box>
+        <Button
+          variant="outlined"
+          color="error"
+          startIcon={<DeleteIcon />}
+          onClick={() => setDeleteDialogOpen(true)}
+        >
+          Supprimer
+        </Button>
       </Box>
 
       <Grid container spacing={3}>
@@ -534,6 +568,24 @@ export default function DeviceDetailPage() {
           </Card>
         </Grid>
       </Grid>
+
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>Supprimer l'appareil</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Êtes-vous sûr de vouloir supprimer l'appareil "{device.friendlyName}" ? 
+            Cette action est irréversible et supprimera l'appareil de Zigbee2MQTT et de la base de données.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
+            Annuler
+          </Button>
+          <Button onClick={handleDelete} color="error" variant="contained" disabled={deleting}>
+            {deleting ? 'Suppression...' : 'Supprimer'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

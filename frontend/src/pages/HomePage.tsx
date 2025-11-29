@@ -73,7 +73,7 @@ export default function HomePage() {
                 height: '100%',
                 backgroundColor: '#FFFFFF',
                 border: 'none',
-                borderRadius: 8,
+                borderRadius: 1,
                 boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
                 transition: 'all 0.15s ease-in-out',
                 '&:hover': {
@@ -88,7 +88,7 @@ export default function HomePage() {
                       color: stat.color,
                       mr: 2,
                       p: 1.5,
-                      borderRadius: 8,
+                      borderRadius: 1,
                       backgroundColor: `${stat.color}15`,
                     }}
                   >

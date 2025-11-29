@@ -12,6 +12,7 @@ import { HistoryModule } from './history/history.module';
 import { PlanModule } from './plan/plan.module';
 import { AuthModule } from './auth/auth.module';
 import { SettingsModule } from './settings/settings.module';
+import { AutomationsModule } from './automations/automations.module';
 import { configValidationSchema } from './config/config.validation';
 
 @Module({
@@ -51,6 +52,7 @@ import { configValidationSchema } from './config/config.validation';
     PlanModule,
     AuthModule,
     SettingsModule,
+    AutomationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

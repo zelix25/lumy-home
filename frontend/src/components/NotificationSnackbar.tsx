@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Snackbar, Alert, AlertTitle } from '@mui/material';
+import { Snackbar, Alert, AlertTitle, Box } from '@mui/material';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { subscribeToNotifications, getNotifications, type Notification } from '../hooks/useNotification';
 
@@ -74,14 +74,22 @@ export default function NotificationSnackbar() {
         onClose={handleClose}
         severity={currentNotification?.type || 'info'}
         variant="filled"
-        sx={{ width: '100%', minWidth: 300 }}
+        sx={{ 
+          width: '100%', 
+          minWidth: 300,
+          '& .MuiAlert-message, & .MuiAlertTitle-root': {
+            color: 'white',
+          },
+        }}
       >
         {currentNotification?.title && (
-          <AlertTitle sx={{ fontWeight: 500 }}>
+          <AlertTitle sx={{ fontWeight: 500, color: 'white' }}>
             {currentNotification.title}
           </AlertTitle>
         )}
-        {currentNotification?.message}
+        <Box component="span" sx={{ color: 'white' }}>
+          {currentNotification?.message}
+        </Box>
       </Alert>
     </Snackbar>
   );

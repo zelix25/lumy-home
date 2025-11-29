@@ -5,6 +5,7 @@ import {
   Put,
   Body,
   Post,
+  Delete,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -141,6 +142,12 @@ export class DevicesController {
       success: true,
       message: 'Réabonnement aux topics MQTT demandé',
     };
+  }
+
+  @Delete(':ieeeAddress')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async remove(@Param('ieeeAddress') ieeeAddress: string) {
+    await this.devicesService.remove(ieeeAddress);
   }
 }
 

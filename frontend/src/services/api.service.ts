@@ -116,9 +116,27 @@ class ApiService {
     }
     
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(errorText || `HTTP error! status: ${response.status}`);
     }
-    return response.json();
+    
+    // Si la réponse est 204 No Content, retourner undefined
+    if (response.status === 204) {
+      return undefined as T;
+    }
+    
+    // Vérifier si la réponse a du contenu avant de parser en JSON
+    const text = await response.text();
+    if (!text || text.trim() === '') {
+      return undefined as T;
+    }
+    
+    try {
+      return JSON.parse(text);
+    } catch {
+      // Si le parsing échoue, retourner undefined
+      return undefined as T;
+    }
   }
 }
 

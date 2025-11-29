@@ -8,6 +8,7 @@ import { MqttModule } from '../mqtt/mqtt.module';
 import { WebsocketModule } from '../websocket/websocket.module';
 import { LoggerModule } from '../logger/logger.module';
 import { HistoryModule } from '../history/history.module';
+import { AutomationsModule } from '../automations/automations.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { HistoryModule } from '../history/history.module';
     MqttModule,
     WebsocketModule,
     forwardRef(() => HistoryModule),
+    forwardRef(() => AutomationsModule),
   ],
   controllers: [DevicesController],
   providers: [DevicesService, Zigbee2MqttService],

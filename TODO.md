@@ -126,31 +126,31 @@ Les utilisateurs novices doivent pouvoir faire des choses *sans écrire de logiq
 
 ### Backend
 
-* [ ] Engine d’automation simple “évènement → action”
-* [ ] Gestion des événements Zigbee standard :
+* [x] Engine d'automation simple "évènement → action"
+* [x] Gestion des événements Zigbee standard :
 
   * mouvement
   * ouverture porte
   * température
   * bouton pressé
-* [ ] Actions :
+* [x] Actions :
 
   * allumer / éteindre
   * changer intensité
   * envoyer notification
-* [ ] Endpoint CRUD
-* [ ] Logs exécution
+* [x] Endpoint CRUD
+* [x] Logs exécution
 
 ### Frontend
 
-* [ ] Page “Scènes & automatisations”
-* [ ] Mode guidé (assistant pas à pas) :
+* [x] Page "Scènes & automatisations"
+* [x] Mode guidé (assistant pas à pas) :
 
   1. Choisir un déclencheur
   2. Choisir un appareil
   3. Choisir une action
-* [ ] Visualisation simple :
-  “Quand il y a du mouvement à l’entrée → Allumer Lumière Entrée”
+* [x] Visualisation simple :
+  "Quand il y a du mouvement à l'entrée → Allumer Lumière Entrée"
 
 ---
 
@@ -245,3 +245,6 @@ Les utilisateurs novices doivent pouvoir faire des choses *sans écrire de logiq
 
 ---
 
+
+# A reprendre
+* [ ] Les setup

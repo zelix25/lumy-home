@@ -8,6 +8,7 @@ import { MqttService } from '../mqtt/mqtt.service';
 import { WebsocketGateway } from '../websocket/websocket.gateway';
 import { Device, DeviceType, DeviceStatus } from './entities/device.entity';
 import { HistoryService } from '../history/history.service';
+import { AutomationsService } from '../automations/automations.service';
 
 interface ZigbeeDevice {
   ieee_address: string;
@@ -51,6 +52,8 @@ export class Zigbee2MqttService implements OnModuleInit {
     private readonly websocketGateway: WebsocketGateway,
     @Inject(forwardRef(() => HistoryService))
     private readonly historyService?: HistoryService,
+    @Inject(forwardRef(() => AutomationsService))
+    private readonly automationsService?: AutomationsService,
   ) {
     this.loadDeviceTypeMapping();
   }
@@ -309,10 +312,20 @@ export class Zigbee2MqttService implements OnModuleInit {
         powerSource: zigbeeDevice.power_source,
         disabled: zigbeeDevice.disabled,
         exposes: zigbeeDevice.definition?.exposes || [],
+        originalType: zigbeeDevice.type, // Stocker le type original de Zigbee2MQTT
       },
     };
 
     if (existingDevice) {
+      // Mettre à jour les métadonnées pour inclure le type original si manquant
+      const existingMeta = existingDevice.meta || {};
+      deviceData.meta = {
+        ...existingMeta,
+        powerSource: zigbeeDevice.power_source,
+        disabled: zigbeeDevice.disabled,
+        exposes: zigbeeDevice.definition?.exposes || existingMeta.exposes || [],
+        originalType: existingMeta.originalType || zigbeeDevice.type, // Préserver ou ajouter le type original
+      };
       // Mettre à jour l'appareil existant
       Object.assign(existingDevice, deviceData);
       await this.deviceRepository.save(existingDevice);
@@ -358,7 +371,7 @@ export class Zigbee2MqttService implements OnModuleInit {
 
       // Notifier via WebSocket avec un message user-friendly
       const notificationMessage = isSupported
-        ? `Un nouvel appareil a été détecté : ${zigbeeDevice.friendly_name}. Comment souhaitez-vous le nommer ?`
+        ? `Un nouvel appareil a été détecté : ${zigbeeDevice.friendly_name}.`
         : `Un appareil a été détecté mais n'est pas encore entièrement supporté : ${zigbeeDevice.friendly_name}. ${unsupportedReason}`;
 
       this.websocketGateway.broadcast('device:discovered', {
@@ -506,6 +519,67 @@ export class Zigbee2MqttService implements OnModuleInit {
       friendlyName: deviceToSend.friendlyName,
       state: deviceToSend.state,
     });
+
+    // Déclencher les automatisations si un service d'automatisations est disponible
+    if (this.automationsService) {
+      try {
+        await this.triggerAutomations(deviceToSend, oldState, mergedState);
+      } catch (error) {
+        this.logger.error(
+          `Erreur lors du déclenchement des automatisations: ${error.message}`,
+          error.stack,
+          'Zigbee2MqttService',
+        );
+      }
+    }
+  }
+
+  /**
+   * Déclenche les automatisations basées sur les événements Zigbee
+   */
+  private async triggerAutomations(device: Device, oldState: any, newState: any) {
+    if (!this.automationsService) return;
+
+    // Détecter le type d'événement
+    let eventType: string | null = null;
+
+    // Détection de mouvement
+    if (
+      (newState.occupancy === true || newState.occupancy === 'true') &&
+      (oldState.occupancy !== true && oldState.occupancy !== 'true')
+    ) {
+      eventType = 'motion';
+      await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, newState);
+    }
+
+    // Détection de contact (porte/fenêtre)
+    if (newState.contact !== undefined && oldState.contact !== newState.contact) {
+      eventType = 'contact';
+      await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, {
+        ...newState,
+        contactChanged: true,
+        isOpen: !newState.contact, // contact: true = fermé, false = ouvert
+      });
+    }
+
+    // Détection de température
+    if (
+      newState.temperature !== undefined &&
+      oldState.temperature !== undefined &&
+      Math.abs(newState.temperature - oldState.temperature) > 0.5
+    ) {
+      eventType = 'temperature';
+      await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, newState);
+    }
+
+    // Détection de bouton pressé
+    if (newState.action !== undefined && oldState.action !== newState.action) {
+      eventType = 'button';
+      await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, {
+        ...newState,
+        action: newState.action,
+      });
+    }
   }
 
   private async handleDeviceState(friendlyName: string, state: ZigbeeState) {
@@ -825,6 +899,27 @@ export class Zigbee2MqttService implements OnModuleInit {
     this.mqttService.publish(topic, payload);
     this.logger.log(
       `📨 Message MQTT envoyé [${topic}]: ${JSON.stringify(payload)}`,
+      'Zigbee2MqttService',
+    );
+  }
+
+  public async removeDevice(friendlyName: string, ieeeAddress?: string): Promise<void> {
+    // Supprimer un appareil de Zigbee2MQTT
+    // Utiliser le topic bridge/request/device/remove avec le friendly_name ou ieee_address
+    // Documentation: https://www.zigbee2mqtt.io/guide/usage/mqtt_topics_and_messages.html#zigbee2mqtt-bridge-request-device-remove
+    const topic = 'zigbee2mqtt/bridge/request/device/remove';
+    // Payload peut être {"id": "deviceID"} ou deviceID (string)
+    // On utilise l'ieee_address si disponible, sinon le friendly_name
+    // Toujours mettre "force": true pour forcer la suppression
+    const deviceId = ieeeAddress || friendlyName;
+    const payload = {
+      id: deviceId,
+      force: true,
+    };
+    
+    this.mqttService.publish(topic, payload);
+    this.logger.log(
+      `🗑️ Suppression forcée de l'appareil demandée [${friendlyName}] (${ieeeAddress || 'N/A'}) via ${topic}`,
       'Zigbee2MqttService',
     );
   }

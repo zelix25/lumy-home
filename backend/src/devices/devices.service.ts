@@ -80,8 +80,29 @@ export class DevicesService {
   }> {
     const devices = await this.findAll();
 
+    // Filtrer le coordinateur (ne pas le compter dans les statistiques)
+    const devicesWithoutCoordinator = devices.filter((device) => {
+      const typeStr = String(device.type).toLowerCase();
+      const friendlyNameLower = device.friendlyName ? device.friendlyName.toLowerCase() : '';
+      const ieeeAddressLower = device.ieeeAddress ? device.ieeeAddress.toLowerCase() : '';
+      
+      // Vérifier dans les métadonnées le type original de Zigbee2MQTT
+      const originalType = device.meta?.originalType?.toLowerCase() || '';
+      
+      // Identifier le coordinateur par plusieurs critères
+      const isCoordinator = 
+        typeStr === 'coordinator' || 
+        originalType === 'coordinator' ||
+        friendlyNameLower === 'coordinator' ||
+        friendlyNameLower.includes('coordinator') ||
+        // Le coordinateur Zigbee a généralement une adresse IEEE spécifique (0x0000000000000000)
+        (ieeeAddressLower === '0x0000000000000000' || ieeeAddressLower === '0000000000000000');
+      
+      return !isCoordinator;
+    });
+
     const stats = {
-      total: devices.length,
+      total: devicesWithoutCoordinator.length,
       byType: {} as Record<string, number>,
       online: 0,
       offline: 0,
@@ -89,7 +110,7 @@ export class DevicesService {
       unsupported: 0,
     };
 
-    devices.forEach((device) => {
+    devicesWithoutCoordinator.forEach((device) => {
       stats.byType[device.type] = (stats.byType[device.type] || 0) + 1;
 
       if (device.status === 'online') {
@@ -148,6 +169,18 @@ export class DevicesService {
 
   async reconnectMqtt(): Promise<void> {
     await this.zigbee2MqttService.reconnectMqtt();
+  }
+
+  async remove(ieeeAddress: string): Promise<void> {
+    const device = await this.findOne(ieeeAddress);
+    
+    // Supprimer l'appareil de Zigbee2MQTT avant de le supprimer de la DB
+    if (device.friendlyName) {
+      await this.zigbee2MqttService.removeDevice(device.friendlyName, device.ieeeAddress);
+    }
+    
+    // Supprimer l'appareil de la base de données
+    await this.deviceRepository.remove(device);
   }
 }
 
