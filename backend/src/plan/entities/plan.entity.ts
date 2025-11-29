@@ -11,6 +11,13 @@ export class Plan {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ type: 'json', nullable: true })
+  floors?: Array<{
+    id: string;
+    name: string;
+    order: number;
+  }>;
+
   @Column({ type: 'json' })
   rooms: Array<{
     id: string;
@@ -20,6 +27,7 @@ export class Plan {
     width: number;
     height: number;
     color: string;
+    floorId: string;
   }>;
 
   @Column({ type: 'json' })

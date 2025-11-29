@@ -201,7 +201,19 @@
     "saved": "Plan sauvegardé",
     "savedMessage": "Le plan a été sauvegardé avec succès",
     "saveError": "Erreur de sauvegarde",
-    "saveErrorMessage": "Une erreur est survenue lors de la sauvegarde du plan"
+    "saveErrorMessage": "Une erreur est survenue lors de la sauvegarde du plan",
+    "addFloor": "Ajouter un étage",
+    "createFloor": "Créer un étage",
+    "floorName": "Nom de l'étage",
+    "selectFloor": "Sélectionner un étage",
+    "noFloorSelected": "Aucun étage sélectionné",
+    "selectFloorFirst": "Veuillez d'abord sélectionner ou créer un étage",
+    "deleteAllPlans": "Supprimer tous les plans",
+    "confirmDeleteAll": "Êtes-vous sûr de vouloir supprimer tous les plans ? Cette action est irréversible et supprimera tous les étages, pièces et positions d'équipements.",
+    "deleted": "Plans supprimés",
+    "allPlansDeleted": "Tous les plans ont été supprimés avec succès",
+    "deleteError": "Erreur de suppression",
+    "deleteErrorMessage": "Une erreur est survenue lors de la suppression des plans"
   },
   "debug": {
     "title": "Debug MQTT",

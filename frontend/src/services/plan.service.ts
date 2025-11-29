@@ -1,5 +1,11 @@
 import { apiService } from './api.service';
 
+export interface Floor {
+  id: string;
+  name: string;
+  order: number;
+}
+
 export interface Room {
   id: string;
   name: string;
@@ -8,6 +14,7 @@ export interface Room {
   width: number;
   height: number;
   color: string;
+  floorId: string;
 }
 
 export interface DevicePosition {
@@ -19,6 +26,7 @@ export interface DevicePosition {
 
 export interface Plan {
   id: string;
+  floors: Floor[];
   rooms: Room[];
   devicePositions: DevicePosition[];
   createdAt: string;
@@ -30,11 +38,16 @@ class PlanService {
     return apiService.get<Plan | null>('/plan');
   }
 
-  async savePlan(rooms: Room[], devicePositions: DevicePosition[]): Promise<Plan> {
+  async savePlan(floors: Floor[], rooms: Room[], devicePositions: DevicePosition[]): Promise<Plan> {
     return apiService.post<Plan>('/plan', {
+      floors,
       rooms,
       devicePositions,
     });
+  }
+
+  async deleteAllPlans(): Promise<void> {
+    return apiService.delete<void>('/plan');
   }
 }
 

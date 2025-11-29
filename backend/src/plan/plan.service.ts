@@ -20,23 +20,25 @@ export class PlanService {
     });
 
     if (existingPlan) {
+      existingPlan.floors = dto.floors || existingPlan.floors || [];
       existingPlan.rooms = dto.rooms;
       existingPlan.devicePositions = dto.devicePositions;
       const saved = await this.planRepository.save(existingPlan);
       this.logger.log(
-        `Plan mis à jour: ${dto.rooms.length} pièces, ${dto.devicePositions.length} positions d'équipements`,
+        `Plan mis à jour: ${(existingPlan.floors || []).length} étages, ${dto.rooms.length} pièces, ${dto.devicePositions.length} positions d'équipements`,
         'PlanService',
       );
       return saved;
     }
 
     const newPlan = this.planRepository.create({
+      floors: dto.floors || [],
       rooms: dto.rooms,
       devicePositions: dto.devicePositions,
     });
     const saved = await this.planRepository.save(newPlan);
     this.logger.log(
-      `Plan créé: ${dto.rooms.length} pièces, ${dto.devicePositions.length} positions d'équipements`,
+      `Plan créé: ${dto.floors?.length || 0} étages, ${dto.rooms.length} pièces, ${dto.devicePositions.length} positions d'équipements`,
       'PlanService',
     );
     return saved;
@@ -47,7 +49,15 @@ export class PlanService {
       order: { updatedAt: 'DESC' },
       take: 1,
     });
+    if (plan && !plan.floors) {
+      plan.floors = [];
+    }
     return plan || null;
+  }
+
+  async deleteAllPlans(): Promise<void> {
+    await this.planRepository.clear();
+    this.logger.log('Tous les plans ont été supprimés', 'PlanService');
   }
 }
 

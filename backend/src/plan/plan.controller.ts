@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body } from '@nestjs/common';
 import { PlanService } from './plan.service';
 import { SavePlanDto } from './dto/save-plan.dto';
 import { Plan } from './entities/plan.entity';
@@ -21,6 +21,15 @@ export class PlanController {
   @Post()
   async savePlan(@Body() dto: SavePlanDto): Promise<Plan> {
     return this.planService.savePlan(dto);
+  }
+
+  /**
+   * Supprime tous les plans
+   */
+  @Delete()
+  async deleteAllPlans(): Promise<{ message: string }> {
+    await this.planService.deleteAllPlans();
+    return { message: 'Tous les plans ont été supprimés' };
   }
 }
 

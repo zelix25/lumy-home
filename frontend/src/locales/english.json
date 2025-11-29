@@ -201,7 +201,19 @@
     "saved": "Plan saved",
     "savedMessage": "The plan has been saved successfully",
     "saveError": "Save error",
-    "saveErrorMessage": "An error occurred while saving the plan"
+    "saveErrorMessage": "An error occurred while saving the plan",
+    "addFloor": "Add floor",
+    "createFloor": "Create floor",
+    "floorName": "Floor name",
+    "selectFloor": "Select floor",
+    "noFloorSelected": "No floor selected",
+    "selectFloorFirst": "Please select or create a floor first",
+    "deleteAllPlans": "Delete all plans",
+    "confirmDeleteAll": "Are you sure you want to delete all plans? This action is irreversible and will delete all floors, rooms and device positions.",
+    "deleted": "Plans deleted",
+    "allPlansDeleted": "All plans have been successfully deleted",
+    "deleteError": "Delete error",
+    "deleteErrorMessage": "An error occurred while deleting the plans"
   },
   "debug": {
     "title": "MQTT Debug",

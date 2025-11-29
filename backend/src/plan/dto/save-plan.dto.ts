@@ -1,6 +1,18 @@
 import { IsArray, IsString, IsNumber, ValidateNested } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 
+class FloorDto {
+  @IsString()
+  id: string;
+
+  @IsString()
+  name: string;
+
+  @Type(() => Number)
+  @IsNumber()
+  order: number;
+}
+
 class RoomDto {
   @IsString()
   id: string;
@@ -26,6 +38,9 @@ class RoomDto {
 
   @IsString()
   color: string;
+
+  @IsString()
+  floorId: string;
 }
 
 class DevicePositionDto {
@@ -45,6 +60,11 @@ class DevicePositionDto {
 }
 
 export class SavePlanDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => FloorDto)
+  floors: FloorDto[];
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => RoomDto)

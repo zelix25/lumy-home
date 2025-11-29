@@ -24,12 +24,19 @@ import {
   EditOff as EditOffIcon,
   Refresh as RefreshIcon,
   Save as SaveIcon,
+  Layers as LayersIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useDevices } from '../hooks/useDevices';
 import { devicesService } from '../services/devices.service';
 import { planService } from '../services/plan.service';
 import { useNotification } from '../hooks/useNotification';
+
+interface Floor {
+  id: string;
+  name: string;
+  order: number;
+}
 
 interface Room {
   id: string;
@@ -39,6 +46,7 @@ interface Room {
   width: number;
   height: number;
   color: string;
+  floorId: string;
 }
 
 interface DevicePosition {
@@ -55,9 +63,13 @@ export default function PlanPage() {
   const { t } = useTranslation();
   const { devices, refetch } = useDevices();
   const { addNotification } = useNotification();
+  const [floors, setFloors] = useState<Floor[]>([]);
+  const [selectedFloorId, setSelectedFloorId] = useState<string | null>(null);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [devicePositions, setDevicePositions] = useState<DevicePosition[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
+  const [floorDialogOpen, setFloorDialogOpen] = useState(false);
+  const [newFloorName, setNewFloorName] = useState('');
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const [roomDialogOpen, setRoomDialogOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
@@ -86,15 +98,16 @@ export default function PlanPage() {
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const syncLocalPlanToServer = useCallback(
-    async (roomsData: Room[], devicePositionsData: DevicePosition[], showNotification = false) => {
+    async (floorsData: Floor[], roomsData: Room[], devicePositionsData: DevicePosition[], showNotification = false) => {
       if (
+        (!floorsData || floorsData.length === 0) &&
         (!roomsData || roomsData.length === 0) &&
         (!devicePositionsData || devicePositionsData.length === 0)
       ) {
         return;
       }
       try {
-        await planService.savePlan(roomsData, devicePositionsData);
+        await planService.savePlan(floorsData || [], roomsData || [], devicePositionsData || []);
         if (showNotification) {
           addNotification({
             type: 'success',
@@ -122,30 +135,52 @@ export default function PlanPage() {
       try {
         const plan = await planService.getPlan();
         if (plan) {
-          setRooms(plan.rooms);
-          setDevicePositions(plan.devicePositions);
+          setFloors(plan.floors || []);
+          setRooms(plan.rooms || []);
+          setDevicePositions(plan.devicePositions || []);
+          
+          // Sélectionner le premier étage par défaut
+          if (plan.floors && plan.floors.length > 0 && !selectedFloorId) {
+            setSelectedFloorId(plan.floors[0].id);
+          }
           return;
         }
 
         // Fallback sur localStorage si pas de plan en DB
+        const savedFloors = localStorage.getItem('homehub-floors');
         const savedRooms = localStorage.getItem('homehub-rooms');
         const savedPositions = localStorage.getItem('homehub-device-positions');
+        const floorsFromLocal: Floor[] = savedFloors ? JSON.parse(savedFloors) : [];
         const roomsFromLocal: Room[] = savedRooms ? JSON.parse(savedRooms) : [];
         const positionsFromLocal: DevicePosition[] = savedPositions ? JSON.parse(savedPositions) : [];
 
+        setFloors(floorsFromLocal);
         setRooms(roomsFromLocal);
         setDevicePositions(positionsFromLocal);
-        await syncLocalPlanToServer(roomsFromLocal, positionsFromLocal, false);
+        
+        if (floorsFromLocal.length > 0 && !selectedFloorId) {
+          setSelectedFloorId(floorsFromLocal[0].id);
+        }
+        
+        await syncLocalPlanToServer(floorsFromLocal, roomsFromLocal, positionsFromLocal, false);
       } catch (error) {
         console.error('Erreur lors du chargement du plan:', error);
+        const savedFloors = localStorage.getItem('homehub-floors');
         const savedRooms = localStorage.getItem('homehub-rooms');
         const savedPositions = localStorage.getItem('homehub-device-positions');
+        const floorsFromLocal: Floor[] = savedFloors ? JSON.parse(savedFloors) : [];
         const roomsFromLocal: Room[] = savedRooms ? JSON.parse(savedRooms) : [];
         const positionsFromLocal: DevicePosition[] = savedPositions ? JSON.parse(savedPositions) : [];
 
+        setFloors(floorsFromLocal);
         setRooms(roomsFromLocal);
         setDevicePositions(positionsFromLocal);
-        await syncLocalPlanToServer(roomsFromLocal, positionsFromLocal, false);
+        
+        if (floorsFromLocal.length > 0 && !selectedFloorId) {
+          setSelectedFloorId(floorsFromLocal[0].id);
+        }
+        
+        await syncLocalPlanToServer(floorsFromLocal, roomsFromLocal, positionsFromLocal, false);
       }
     };
 
@@ -153,6 +188,12 @@ export default function PlanPage() {
   }, [syncLocalPlanToServer]);
 
   // Sauvegarder dans le localStorage (backup)
+  useEffect(() => {
+    if (floors.length > 0) {
+      localStorage.setItem('homehub-floors', JSON.stringify(floors));
+    }
+  }, [floors]);
+
   useEffect(() => {
     if (rooms.length > 0) {
       localStorage.setItem('homehub-rooms', JSON.stringify(rooms));
@@ -168,7 +209,7 @@ export default function PlanPage() {
   // Fonction de sauvegarde manuelle
   const handleSavePlan = async () => {
     try {
-      await planService.savePlan(rooms, devicePositions);
+      await planService.savePlan(floors, rooms, devicePositions);
       addNotification({
         type: 'success',
         title: t('plan.saved'),
@@ -184,13 +225,40 @@ export default function PlanPage() {
     }
   };
 
+  // Fonction pour créer un nouvel étage
+  const handleCreateFloor = () => {
+    if (!newFloorName.trim()) return;
+    
+    const newFloor: Floor = {
+      id: `floor-${Date.now()}`,
+      name: newFloorName.trim(),
+      order: floors.length,
+    };
+    
+    setFloors((prev) => [...prev, newFloor]);
+    setSelectedFloorId(newFloor.id);
+    setNewFloorName('');
+    setFloorDialogOpen(false);
+  };
+
   const handleCreateRoom = () => {
-    if (!isEditMode) return;
+    if (!isEditMode || !selectedFloorId) {
+      if (!selectedFloorId) {
+        addNotification({
+          type: 'warning',
+          title: t('plan.noFloorSelected'),
+          message: t('plan.selectFloorFirst'),
+        });
+      }
+      return;
+    }
     setIsCreatingRoom(true);
     setSelectedRoom(null);
   };
 
   const handleResetPlan = () => {
+    setFloors([]);
+    setSelectedFloorId(null);
     setConfirmDialogConfig({
       title: t('plan.resetPlan'),
       message: t('plan.confirmReset'),
@@ -203,6 +271,44 @@ export default function PlanPage() {
         localStorage.removeItem('homehub-device-positions');
         setConfirmDialogOpen(false);
         setConfirmDialogConfig(null);
+      },
+    });
+    setConfirmDialogOpen(true);
+  };
+
+  const handleDeleteAllPlans = async () => {
+    setConfirmDialogConfig({
+      title: t('plan.deleteAllPlans'),
+      message: t('plan.confirmDeleteAll'),
+      onConfirm: async () => {
+        try {
+          await planService.deleteAllPlans();
+          setFloors([]);
+          setSelectedFloorId(null);
+          setRooms([]);
+          setDevicePositions([]);
+          setSelectedRoom(null);
+          setIsCreatingRoom(false);
+          localStorage.removeItem('homehub-rooms');
+          localStorage.removeItem('homehub-device-positions');
+          localStorage.removeItem('homehub-floors');
+          addNotification({
+            type: 'success',
+            title: t('plan.deleted'),
+            message: t('plan.allPlansDeleted'),
+          });
+          setConfirmDialogOpen(false);
+          setConfirmDialogConfig(null);
+        } catch (error) {
+          console.error('Erreur lors de la suppression des plans:', error);
+          addNotification({
+            type: 'error',
+            title: t('plan.deleteError'),
+            message: t('plan.deleteErrorMessage'),
+          });
+          setConfirmDialogOpen(false);
+          setConfirmDialogConfig(null);
+        }
       },
     });
     setConfirmDialogOpen(true);
@@ -240,6 +346,7 @@ export default function PlanPage() {
       width: MIN_ROOM_SIZE,
       height: MIN_ROOM_SIZE,
       color: newRoomColor,
+      floorId: selectedFloorId || '',
     };
     setRooms((prev) => [...prev, tempRoom]);
     setSelectedRoom(tempRoomId);
@@ -612,8 +719,27 @@ export default function PlanPage() {
           <Typography variant="body1" color="text.secondary">
             {t('plan.subtitle')}
           </Typography>
+          {floors.length > 0 && (
+            <Box sx={{ mt: 2 }}>
+              <Chip
+                label={selectedFloorId ? floors.find(f => f.id === selectedFloorId)?.name || t('plan.selectFloor') : t('plan.selectFloor')}
+                variant="outlined"
+                sx={{ mr: 1 }}
+              />
+              {floors.map((floor) => (
+                <Chip
+                  key={floor.id}
+                  label={floor.name}
+                  onClick={() => setSelectedFloorId(floor.id)}
+                  color={selectedFloorId === floor.id ? 'primary' : 'default'}
+                  variant={selectedFloorId === floor.id ? 'filled' : 'outlined'}
+                  sx={{ mr: 1, mt: 1 }}
+                />
+              ))}
+            </Box>
+          )}
         </Box>
-        <Stack direction="row" spacing={1}>
+        <Stack direction="row" spacing={1} alignItems="center">
           <Button
             variant={isEditMode ? 'contained' : 'outlined'}
             startIcon={isEditMode ? <EditOffIcon /> : <EditIcon />}
@@ -631,9 +757,18 @@ export default function PlanPage() {
               color="primary"
               startIcon={<SaveIcon />}
               onClick={handleSavePlan}
-              disabled={rooms.length === 0 && devicePositions.length === 0}
+              disabled={floors.length === 0 && rooms.length === 0 && devicePositions.length === 0}
             >
               {t('plan.save')}
+            </Button>
+          )}
+          {isEditMode && (
+            <Button
+              variant="contained"
+              startIcon={<LayersIcon />}
+              onClick={() => setFloorDialogOpen(true)}
+            >
+              {t('plan.addFloor')}
             </Button>
           )}
           <Button
@@ -645,11 +780,21 @@ export default function PlanPage() {
           >
             {t('plan.resetPlan')}
           </Button>
+          {!isEditMode && (
+            <Button
+              variant="outlined"
+              color="error"
+              startIcon={<DeleteIcon />}
+              onClick={handleDeleteAllPlans}
+            >
+              {t('plan.deleteAllPlans')}
+            </Button>
+          )}
           <Button
             variant="contained"
             startIcon={<AddIcon />}
             onClick={handleCreateRoom}
-            disabled={isCreatingRoom || !isEditMode}
+            disabled={isCreatingRoom || !isEditMode || !selectedFloorId}
           >
             {t('plan.addRoom')}
           </Button>
@@ -690,7 +835,7 @@ export default function PlanPage() {
                 onDragOver={handleCanvasDragOver}
               >
                 {/* Pièces */}
-                {rooms.map((room) => {
+                {rooms.filter(room => !selectedFloorId || room.floorId === selectedFloorId).map((room) => {
                   const devicesInRoom = getDevicesInRoom(room.id);
                   const isSelected = selectedRoom === room.id;
                   return (
@@ -1089,6 +1234,33 @@ export default function PlanPage() {
             color="error"
           >
             {t('common.confirm')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog pour créer un étage */}
+      <Dialog open={floorDialogOpen} onClose={() => setFloorDialogOpen(false)}>
+        <DialogTitle>{t('plan.createFloor')}</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label={t('plan.floorName')}
+            fullWidth
+            variant="outlined"
+            value={newFloorName}
+            onChange={(e) => setNewFloorName(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handleCreateFloor();
+              }
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setFloorDialogOpen(false)}>{t('common.cancel')}</Button>
+          <Button onClick={handleCreateFloor} variant="contained" disabled={!newFloorName.trim()}>
+            {t('common.create')}
           </Button>
         </DialogActions>
       </Dialog>
