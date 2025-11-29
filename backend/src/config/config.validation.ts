@@ -22,5 +22,10 @@ export const configValidationSchema = Joi.object({
   LLAMA_API_URL: Joi.string().uri().default('http://localhost:11434'),
   LLAMA_MODEL: Joi.string().default('gemma3'),
   USE_LOCAL_LLAMA: Joi.boolean().default(true),
+
+  // Auth
+  JWT_SECRET: Joi.string().default('homehub-secret-key-change-in-production'),
+  JWT_EXPIRES_IN: Joi.string().default('7d'),
+  ENABLE_LOCAL_MODE: Joi.boolean().default(true), // Mode local sans compte
 });
 

@@ -15,7 +15,9 @@
     "back": "Back",
     "loading": "Loading...",
     "error": "Error",
-    "success": "Success"
+    "success": "Success",
+    "skip": "Skip",
+    "save": "Save"
   },
   "devices": {
     "title": "Devices",
@@ -252,6 +254,75 @@
   "notifications": {
     "newDevice": "New device detected",
     "deviceUpdated": "Device updated"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "noAccount": "Don't have an account? Create one",
+    "alreadyHaveAccount": "Already have an account? Login",
+    "fillAllFields": "Please fill all fields",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "passwordTooShort": "Password must be at least 6 characters",
+    "error": "An error occurred"
+  },
+  "setup": {
+    "welcome": "Welcome to HomeHub",
+    "checking": "Checking...",
+    "detectedDevices": "I detect {{count}} Zigbee device in your house. Give me a name for each one.",
+    "detectedDevices_plural": "I detect {{count}} Zigbee devices in your house. Give me a name for each one.",
+    "nameDevices": "Name your devices",
+    "deviceNamePlaceholder": "Ex: Living Room Light, Entrance Sensor...",
+    "allDevicesNamed": "All your devices already have names!",
+    "continue": "Continue",
+    "complete": "Setup complete",
+    "readyToUse": "Your HomeHub is ready to use!",
+    "createAccountHint": "For better security, you can create an account by going to settings.",
+    "startUsing": "Start using HomeHub",
+    "errorSaving": "Error saving",
+    "stepUpdate": "Update",
+    "stepAccount": "Account",
+    "stepDevices": "Devices",
+    "stepComplete": "Complete",
+    "checkingUpdates": "Checking for updates",
+    "checkingUpdatesMessage": "Checking for available updates...",
+    "noUpdates": "Your system is up to date",
+    "updating": "Updating...",
+    "updateError": "Error checking for updates",
+    "retry": "Retry",
+    "createAccount": "Create account"
+  },
+  "menu": {
+    "myAccount": "My account",
+    "settings": "Settings",
+    "system": "System",
+    "logout": "Logout"
+  },
+  "account": {
+    "title": "My account",
+    "profile": "Profile",
+    "email": "Email",
+    "emailCannotBeChanged": "Email cannot be changed",
+    "profileUpdated": "Profile updated",
+    "error": "Error updating profile"
+  },
+  "settings": {
+    "title": "Settings",
+    "hostname": "Hostname",
+    "logoutDelay": "Logout delay (seconds)",
+    "logoutDelayHelp": "Delay before automatic logout (0 = disabled)",
+    "setup": "Setup complete",
+    "saved": "Settings saved",
+    "errorLoading": "Error loading settings",
+    "errorSaving": "Error saving settings"
+  },
+  "system": {
+    "title": "System management",
+    "description": "Choose an action for the system",
+    "restart": "Restart",
+    "shutdown": "Shutdown"
   }
 }
 

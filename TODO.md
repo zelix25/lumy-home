@@ -191,14 +191,14 @@ Les utilisateurs novices doivent pouvoir faire des choses *sans écrire de logiq
 
 ### Backend
 
-* [ ] Login ultra basique (email + mot de passe)
-* [ ] JWT
-* [ ] Option mode “local sans compte” pour la première installation
+* [x] Login ultra basique (email + mot de passe)
+* [x] JWT
+* [x] Option mode "local sans compte" pour la première installation
 
 ### Frontend
 
-* [ ] Écran de login minimaliste
-* [ ] Setup assistant à la première ouverture
+* [x] Écran de login minimaliste
+* [x] Setup assistant à la première ouverture
 
 → L’assistant doit dire :
 

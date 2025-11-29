@@ -63,13 +63,17 @@ if command -v docker &> /dev/null; then
 else
     # Ajouter la clé GPG de Docker
     install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-    chmod a+r /etc/apt/keyrings/docker.gpg
+    curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+    chmod a+r /etc/apt/keyrings/docker.asc
 
     # Ajouter le dépôt Docker
-    echo \
-      "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
-      $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+    tee /etc/apt/sources.list.d/docker.sources <<EOF
+    Types: deb
+    URIs: https://download.docker.com/linux/debian
+    Suites: $(. /etc/os-release && echo "$VERSION_CODENAME")
+    Components: stable
+    Signed-By: /etc/apt/keyrings/docker.asc
+    EOF
 
     # Mettre à jour la liste des paquets
     apt-get update -y
@@ -82,12 +86,17 @@ else
         docker-buildx-plugin \
         docker-compose-plugin
 
+    # Ajouter l'utilisateur courant au groupe docker
+    usermod -aG docker $USER
+    newgrp docker
+
     # Démarrer et activer Docker
     systemctl enable docker
     systemctl start docker
 
     info "Docker CE installé avec succès"
     docker --version
+
 fi
 
 # 4. Installation de Docker Compose officiel (standalone)

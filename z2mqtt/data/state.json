@@ -1,0 +1,45 @@
+{
+    "0xa4c138349ed4bd3d": {
+        "presence": false,
+        "motion_detection_sensitivity": 11,
+        "illuminance": 90,
+        "fading_time": 30,
+        "illuminance_interval": 1,
+        "temperature": 19.5,
+        "humidity": 78,
+        "indicator": "OFF",
+        "temperature_calibration": 0.8,
+        "humidity_calibration": 27,
+        "temperature_unit": "celsius",
+        "linkquality": 141,
+        "battery": 100
+    },
+    "0x04cf8cdf3c82cecf": {
+        "illuminance": 5,
+        "voltage": 2988,
+        "battery": 92,
+        "power_outage_count": 70,
+        "linkquality": 168
+    },
+    "0xa4c138c14f5d1e93": {
+        "battery": 100,
+        "voltage": 2900,
+        "occupancy": false,
+        "battery_low": false,
+        "linkquality": 168,
+        "sensitivity": "medium",
+        "tamper": false,
+        "keep_time": 30
+    },
+    "0xa4c1380065446a28": {
+        "temperature": 18.9,
+        "humidity": 51.1,
+        "battery": 100,
+        "linkquality": 177
+    },
+    "0xa4c1386146fa7caa": {
+        "battery": 67,
+        "voltage": 2800,
+        "linkquality": 171
+    }
+}

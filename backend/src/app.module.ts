@@ -10,6 +10,8 @@ import { DevicesModule } from './devices/devices.module';
 import { AiModule } from './ai/ai.module';
 import { HistoryModule } from './history/history.module';
 import { PlanModule } from './plan/plan.module';
+import { AuthModule } from './auth/auth.module';
+import { SettingsModule } from './settings/settings.module';
 import { configValidationSchema } from './config/config.validation';
 
 @Module({
@@ -47,6 +49,8 @@ import { configValidationSchema } from './config/config.validation';
     AiModule,
     HistoryModule,
     PlanModule,
+    AuthModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

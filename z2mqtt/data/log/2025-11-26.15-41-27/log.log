@@ -1,0 +1,26 @@
+[2025-11-26 16:41:27] info: 	z2m: Logging to console, file (filename: log.log)
+[2025-11-26 16:41:27] info: 	z2m: Starting Zigbee2MQTT version 2.6.3 (commit #6e001b48ec278c6c141579c9eacc045f190fc289
+)
+[2025-11-26 16:41:27] info: 	z2m: Starting zigbee-herdsman (6.3.2)
+[2025-11-26 16:41:28] info: 	zh:adapter:discovery: Matched adapter: {"path":"/dev/ttyUSB0","manufacturer":"Silicon Labs","serialNumber":"0001","pnpId":"usb-Silicon_Labs_ZiGate_0001-if00-port0","vendorId":"10c4","productId":"ea60"} => zigate: 3
+[2025-11-26 16:41:28] info: 	zh:zigate: Connected to ZiGate adapter successfully.
+[2025-11-26 16:41:28] error: 	zh:zigate:driver: sendCommand error Error: [object Object]
+[2025-11-26 16:41:28] error: 	zh:zigate: Error: sendCommand error: Error: [object Object]
+    at /app/node_modules/.pnpm/zigbee-herdsman@6.3.2/node_modules/zigbee-herdsman/src/adapter/zigate/driver/zigate.ts:160:45
+    at Queue.execute (/app/node_modules/.pnpm/zigbee-herdsman@6.3.2/node_modules/zigbee-herdsman/src/utils/queue.ts:36:20)
+    at ZiGate.sendCommand (/app/node_modules/.pnpm/zigbee-herdsman@6.3.2/node_modules/zigbee-herdsman/src/adapter/zigate/driver/zigate.ts:110:16)
+    at ZiGateAdapter.initNetwork (/app/node_modules/.pnpm/zigbee-herdsman@6.3.2/node_modules/zigbee-herdsman/src/adapter/zigate/adapter/zigateAdapter.ts:509:13)
+    at ZiGateAdapter.start (/app/node_modules/.pnpm/zigbee-herdsman@6.3.2/node_modules/zigbee-herdsman/src/adapter/zigate/adapter/zigateAdapter.ts:86:13)
+    at Controller.start (/app/node_modules/.pnpm/zigbee-herdsman@6.3.2/node_modules/zigbee-herdsman/src/controller/controller.ts:133:29)
+    at Zigbee.start (/app/lib/zigbee.ts:67:27)
+    at Controller.start (/app/lib/controller.ts:101:13)
+    at start (/app/index.js:149:5)
+[2025-11-26 16:41:28] info: 	z2m: zigbee-herdsman started (resumed)
+[2025-11-26 16:41:28] info: 	z2m: Coordinator firmware version: '{"meta":{"maintrel":"323","majorrel":"0","minorrel":"4","product":0,"revision":"323","transportrev":0},"type":"zigate"}'
+[2025-11-26 16:41:28] info: 	z2m: Currently 0 devices are joined.
+[2025-11-26 16:41:28] info: 	z2m: Connecting to MQTT server at mqtt://localhost:1883
+[2025-11-26 16:41:28] error: 	z2m: MQTT failed to connect, exiting... ()
+[2025-11-26 16:41:28] info: 	z2m: Stopping zigbee-herdsman...
+[2025-11-26 16:41:28] error: 	zh:zigate: source endpoint 242, not supported
+[2025-11-26 16:41:28] info: 	zh:zigate:driver: closing
+[2025-11-26 16:41:28] info: 	z2m: Stopped zigbee-herdsman

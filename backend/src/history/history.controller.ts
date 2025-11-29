@@ -2,8 +2,10 @@ import { Controller, Get, Query, Delete, Param } from '@nestjs/common';
 import { HistoryService } from './history.service';
 import { FilterHistoryDto } from './dto/filter-history.dto';
 import { HistoryResponseDto } from './dto/history-response.dto';
+import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('history')
+@Public()
 export class HistoryController {
   constructor(private readonly historyService: HistoryService) {}
 

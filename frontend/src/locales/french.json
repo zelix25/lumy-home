@@ -15,7 +15,9 @@
     "back": "Retour",
     "loading": "Chargement...",
     "error": "Erreur",
-    "success": "Succès"
+    "success": "Succès",
+    "skip": "Passer",
+    "save": "Enregistrer"
   },
   "devices": {
     "title": "Appareils",
@@ -252,6 +254,75 @@
   "notifications": {
     "newDevice": "Nouvel appareil détecté",
     "deviceUpdated": "Appareil mis à jour"
+  },
+  "auth": {
+    "login": "Connexion",
+    "register": "Inscription",
+    "email": "Email",
+    "password": "Mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "noAccount": "Pas encore de compte ? Créer un compte",
+    "alreadyHaveAccount": "Déjà un compte ? Se connecter",
+    "fillAllFields": "Veuillez remplir tous les champs",
+    "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
+    "passwordTooShort": "Le mot de passe doit contenir au moins 6 caractères",
+    "error": "Une erreur est survenue"
+  },
+  "setup": {
+    "welcome": "Bienvenue sur HomeHub",
+    "checking": "Vérification en cours...",
+    "detectedDevices": "Je détecte {{count}} appareil Zigbee dans la maison. Donne-moi un nom pour chacun.",
+    "detectedDevices_plural": "Je détecte {{count}} appareils Zigbee dans la maison. Donne-moi un nom pour chacun.",
+    "nameDevices": "Nommer vos appareils",
+    "deviceNamePlaceholder": "Ex: Lumière Salon, Capteur Entrée...",
+    "allDevicesNamed": "Tous vos appareils ont déjà un nom !",
+    "continue": "Continuer",
+    "complete": "Configuration terminée",
+    "readyToUse": "Votre HomeHub est prêt à être utilisé !",
+    "createAccountHint": "Pour une meilleure sécurité, vous pouvez créer un compte en allant dans les paramètres.",
+    "startUsing": "Commencer à utiliser HomeHub",
+    "errorSaving": "Erreur lors de la sauvegarde",
+    "stepUpdate": "Mise à jour",
+    "stepAccount": "Compte",
+    "stepDevices": "Équipements",
+    "stepComplete": "Terminé",
+    "checkingUpdates": "Vérification des mises à jour",
+    "checkingUpdatesMessage": "Vérification des mises à jour disponibles...",
+    "noUpdates": "Votre système est à jour",
+    "updating": "Mise à jour en cours...",
+    "updateError": "Erreur lors de la vérification des mises à jour",
+    "retry": "Réessayer",
+    "createAccount": "Créer un compte"
+  },
+  "menu": {
+    "myAccount": "Mon compte",
+    "settings": "Paramètres",
+    "system": "Système",
+    "logout": "Déconnexion"
+  },
+  "account": {
+    "title": "Mon compte",
+    "profile": "Profil",
+    "email": "Email",
+    "emailCannotBeChanged": "L'email ne peut pas être modifié",
+    "profileUpdated": "Profil mis à jour",
+    "error": "Erreur lors de la mise à jour du profil"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "hostname": "Nom d'hôte",
+    "logoutDelay": "Délai de déconnexion (secondes)",
+    "logoutDelayHelp": "Délai avant déconnexion automatique (0 = désactivé)",
+    "setup": "Configuration terminée",
+    "saved": "Paramètres sauvegardés",
+    "errorLoading": "Erreur lors du chargement des paramètres",
+    "errorSaving": "Erreur lors de la sauvegarde des paramètres"
+  },
+  "system": {
+    "title": "Gestion du système",
+    "description": "Choisissez une action pour le système",
+    "restart": "Redémarrer",
+    "shutdown": "Arrêter"
   }
 }
 

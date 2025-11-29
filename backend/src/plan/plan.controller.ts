@@ -2,8 +2,10 @@ import { Controller, Get, Post, Delete, Body } from '@nestjs/common';
 import { PlanService } from './plan.service';
 import { SavePlanDto } from './dto/save-plan.dto';
 import { Plan } from './entities/plan.entity';
+import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('plan')
+@Public()
 export class PlanController {
   constructor(private readonly planService: PlanService) {}
 

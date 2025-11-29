@@ -1,8 +1,9 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { LoggerService } from './logger/logger.service';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -15,6 +16,10 @@ async function bootstrap() {
 
   // Interceptor pour logger toutes les requêtes HTTP
   app.useGlobalInterceptors(new LoggingInterceptor(logger));
+
+  // Guard JWT global (avec support des routes publiques)
+  const reflector = app.get(Reflector);
+  app.useGlobalGuards(new JwtAuthGuard(reflector));
 
   // Configuration globale
   app.useGlobalPipes(

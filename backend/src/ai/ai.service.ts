@@ -439,41 +439,37 @@ export class AiService {
 
       const data = await response.json();
       const models = data.models || [];
-      const modelExists = models.some((m: any) => m.name === model);
-
+      
+      // Vérifier si le modèle exact existe
+      let modelExists = models.some((m: any) => m.name === model);
+      
+      // Si le modèle exact n'existe pas, chercher un modèle qui contient "gemma"
+      // (pour gérer les variantes comme gemma2:3b, gemma2:9b, etc.)
+      if (!modelExists && model.toLowerCase().includes('gemma')) {
+        modelExists = models.some((m: any) => 
+          m.name.toLowerCase().includes('gemma')
+        );
+      }
+      
       if (!modelExists) {
+        const availableModels = models.map((m: any) => m.name).join(', ') || 'aucun';
+        this.logger.warn(
+          `Modèle ${model} non trouvé. Modèles disponibles: ${availableModels}`,
+          'AiService',
+        );
         return {
           available: false,
-          message: `Le modèle ${model} n'est pas installé. Installez-le avec: ollama pull ${model}`,
+          message: `Le modèle ${model} n'est pas installé. Modèles disponibles: ${availableModels}. Installez-le avec: ollama pull ${model}`,
         };
       }
 
-      // Test rapide avec une requête simple
-      const testController = new AbortController();
-      const testTimeoutId = setTimeout(() => testController.abort(), 5000);
-      
-      const testResponse = await fetch(`${this.llamaApiUrl}/api/generate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model,
-          prompt: 'test',
-          stream: false,
-        }),
-        signal: testController.signal,
-      });
-      
-      clearTimeout(testTimeoutId);
-
-      if (!testResponse.ok) {
-        return {
-          available: false,
-          message: `Le serveur Ollama ne répond pas correctement (${testResponse.status})`,
-        };
-      }
-
+      // Si le modèle existe et le serveur répond, on considère que le service est disponible
+      // On ne fait pas de test de génération car cela peut prendre du temps et échouer
+      // pour des raisons non liées à la disponibilité du service
+      this.logger.log(
+        `Service Gemma 3 disponible (modèle trouvé dans Ollama)`,
+        'AiService',
+      );
       return { available: true };
     } catch (error: any) {
       this.logger.warn(

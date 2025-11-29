@@ -14,6 +14,8 @@ import {
   Typography,
   useTheme,
   useMediaQuery,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import HomeIcon from '@mui/icons-material/Home';
@@ -23,8 +25,14 @@ import SmartToyIcon from '@mui/icons-material/SmartToy';
 import HistoryIcon from '@mui/icons-material/History';
 import MapIcon from '@mui/icons-material/Map';
 import BugReportIcon from '@mui/icons-material/BugReport';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import SettingsIcon from '@mui/icons-material/Settings';
+import ComputerIcon from '@mui/icons-material/Computer';
+import LogoutIcon from '@mui/icons-material/Logout';
 import LanguageSelector from './LanguageSelector';
+import SystemModal from './SystemModal';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../contexts/AuthContext';
 
 const drawerWidth = 240; // Largeur sidebar selon guide scandinave
 
@@ -50,11 +58,14 @@ const getNavItems = (t: (key: string) => string): NavItem[] => [
 
 export default function Layout({ children }: LayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [systemModalOpen, setSystemModalOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { t } = useTranslation();
+  const { logout, isAuthenticated, user } = useAuth();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -65,6 +76,45 @@ export default function Layout({ children }: LayoutProps) {
     if (isMobile) {
       setMobileOpen(false);
     }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+    handleMenuClose();
+  };
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleAccount = () => {
+    navigate('/account');
+    handleMenuClose();
+  };
+
+  const handleSettings = () => {
+    navigate('/settings');
+    handleMenuClose();
+  };
+
+  const handleSystem = () => {
+    setSystemModalOpen(true);
+    handleMenuClose();
+  };
+
+  const handleRestart = () => {
+    // TODO: Implémenter l'appel API pour redémarrer
+    console.log('Redémarrer le système');
+  };
+
+  const handleShutdown = () => {
+    // TODO: Implémenter l'appel API pour arrêter
+    console.log('Arrêter le système');
   };
 
   const drawer = (
@@ -149,7 +199,66 @@ export default function Layout({ children }: LayoutProps) {
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
           </Typography>
+          {isAuthenticated && user && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mr: 2 }}>
+              <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' } }}>
+                {user.email}
+              </Typography>
+              <IconButton
+                color="inherit"
+                onClick={handleMenuOpen}
+                size="small"
+                aria-label="menu utilisateur"
+              >
+                <AccountCircleIcon />
+              </IconButton>
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleMenuClose}
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'right',
+                }}
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+              >
+                <MenuItem onClick={handleAccount}>
+                  <ListItemIcon>
+                    <AccountCircleIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>{t('menu.myAccount')}</ListItemText>
+                </MenuItem>
+                <MenuItem onClick={handleSettings}>
+                  <ListItemIcon>
+                    <SettingsIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>{t('menu.settings')}</ListItemText>
+                </MenuItem>
+                <MenuItem onClick={handleSystem}>
+                  <ListItemIcon>
+                    <ComputerIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>{t('menu.system')}</ListItemText>
+                </MenuItem>
+                <MenuItem onClick={handleLogout}>
+                  <ListItemIcon>
+                    <LogoutIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>{t('menu.logout')}</ListItemText>
+                </MenuItem>
+              </Menu>
+            </Box>
+          )}
           <LanguageSelector />
+          <SystemModal
+            open={systemModalOpen}
+            onClose={() => setSystemModalOpen(false)}
+            onRestart={handleRestart}
+            onShutdown={handleShutdown}
+          />
         </Toolbar>
       </AppBar>
       <Box
