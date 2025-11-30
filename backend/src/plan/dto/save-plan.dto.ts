@@ -1,4 +1,4 @@
-import { IsArray, IsString, IsNumber, ValidateNested } from 'class-validator';
+import { IsArray, IsString, IsNumber, ValidateNested, IsOptional, IsBoolean } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 
 class FloorDto {
@@ -11,6 +11,16 @@ class FloorDto {
   @Type(() => Number)
   @IsNumber()
   order: number;
+}
+
+class PointDto {
+  @Type(() => Number)
+  @IsNumber()
+  x: number;
+
+  @Type(() => Number)
+  @IsNumber()
+  y: number;
 }
 
 class RoomDto {
@@ -41,6 +51,16 @@ class RoomDto {
 
   @IsString()
   floorId: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PointDto)
+  points?: PointDto[];
+
+  @IsOptional()
+  @IsBoolean()
+  isPolyline?: boolean;
 }
 
 class DevicePositionDto {

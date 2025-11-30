@@ -242,7 +242,14 @@
     "roomCreated": "Pièce créée",
     "roomCreatedMessage": "La pièce {{room}} a été créée avec succès",
     "roomCreateError": "Erreur de création",
-    "roomCreateErrorMessage": "Une erreur est survenue lors de la création de la pièce"
+    "roomCreateErrorMessage": "Une erreur est survenue lors de la création de la pièce",
+    "rectangleMode": "Rectangle",
+    "polylineMode": "Polyligne",
+    "polylineInstructions": "Cliquez pour ajouter des points. Double-cliquez pour terminer (minimum 3 points).",
+    "selectOrCreateRoom": "Sélectionner ou créer une pièce",
+    "removeAllDevices": "Supprimer tous les appareils du plan",
+    "confirmRemoveAllDevices": "Êtes-vous sûr de vouloir supprimer tous les appareils du plan ? Cette action supprimera toutes les positions d'équipements.",
+    "allDevicesRemoved": "Tous les appareils ont été supprimés du plan"
   },
   "debug": {
     "title": "Debug MQTT",

@@ -30,19 +30,26 @@ import {
   Refresh as RefreshIcon,
   Save as SaveIcon,
   Layers as LayersIcon,
+  CropFree as CropFreeIcon,
 } from '@mui/icons-material';
+import PolylineIcon from '@mui/icons-material/Polyline';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import { useTranslation } from 'react-i18next';
 import { useDevices } from '../hooks/useDevices';
 import { devicesService } from '../services/devices.service';
 import { planService } from '../services/plan.service';
-import { roomsService, Room } from '../services/rooms.service';
+import { roomsService, Room as RoomEntity } from '../services/rooms.service';
 import { useNotification } from '../hooks/useNotification';
 
 interface Floor {
   id: string;
   name: string;
   order: number;
+}
+
+interface Point {
+  x: number;
+  y: number;
 }
 
 interface Room {
@@ -54,6 +61,8 @@ interface Room {
   height: number;
   color: string;
   floorId: string;
+  points?: Point[]; // Pour les polylignes (polygones)
+  isPolyline?: boolean; // Indique si c'est une polyligne ou un rectangle
 }
 
 interface DevicePosition {
@@ -78,11 +87,14 @@ export default function PlanPage() {
   const [floorDialogOpen, setFloorDialogOpen] = useState(false);
   const [newFloorName, setNewFloorName] = useState('');
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
+  const [roomMode, setRoomMode] = useState<'rectangle' | 'polyline'>('rectangle');
+  const [polylinePoints, setPolylinePoints] = useState<Point[]>([]);
+  const [isDrawingPolyline, setIsDrawingPolyline] = useState(false);
   const [roomDialogOpen, setRoomDialogOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
   const [newRoomName, setNewRoomName] = useState('');
   const [newRoomColor, setNewRoomColor] = useState('#86A6A0');
-  const [availableRooms, setAvailableRooms] = useState<Room[]>([]);
+  const [availableRooms, setAvailableRooms] = useState<RoomEntity[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [useCustomRoomName, setUseCustomRoomName] = useState(false);
   const [customRoomName, setCustomRoomName] = useState('');
@@ -91,7 +103,7 @@ export default function PlanPage() {
   const [draggedDevice, setDraggedDevice] = useState<string | null>(null);
   const [isMovingRoom, setIsMovingRoom] = useState(false);
   const [movingRoomId, setMovingRoomId] = useState<string | null>(null);
-  const [moveStart, setMoveStart] = useState<{ x: number; y: number; roomX: number; roomY: number } | null>(null);
+  const [moveStart, setMoveStart] = useState<{ x: number; y: number; roomX: number; roomY: number; initialPoints?: Point[] } | null>(null);
   const [isResizingRoom, setIsResizingRoom] = useState(false);
   const [resizingRoomId, setResizingRoomId] = useState<string | null>(null);
   const [resizeHandle, setResizeHandle] = useState<string | null>(null);
@@ -99,6 +111,10 @@ export default function PlanPage() {
   const [isMovingDevice, setIsMovingDevice] = useState(false);
   const [movingDeviceId, setMovingDeviceId] = useState<string | null>(null);
   const [moveDeviceStart, setMoveDeviceStart] = useState<{ x: number; y: number; deviceX: number; deviceY: number; roomId: string } | null>(null);
+  const [isMovingPolylinePoint, setIsMovingPolylinePoint] = useState(false);
+  const [movingPointIndex, setMovingPointIndex] = useState<number | null>(null);
+  const [movingPointRoomId, setMovingPointRoomId] = useState<string | null>(null);
+  const [movePointStart, setMovePointStart] = useState<{ x: number; y: number; pointX: number; pointY: number } | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [confirmDialogConfig, setConfirmDialogConfig] = useState<{
@@ -282,6 +298,10 @@ export default function PlanPage() {
     }
     setIsCreatingRoom(true);
     setSelectedRoom(null);
+    if (roomMode === 'polyline') {
+      setIsDrawingPolyline(true);
+      setPolylinePoints([]);
+    }
   };
 
   const handleResetPlan = () => {
@@ -364,7 +384,108 @@ export default function PlanPage() {
     const x = Math.floor((e.clientX - rect.left) / GRID_SIZE) * GRID_SIZE;
     const y = Math.floor((e.clientY - rect.top) / GRID_SIZE) * GRID_SIZE;
 
-    // Créer une pièce temporaire
+    // Mode polyligne
+    if (roomMode === 'polyline' && isDrawingPolyline) {
+      // Double-clic pour terminer la polyligne
+      if (e.detail === 2 && polylinePoints.length >= 3) {
+        finishPolyline();
+        return;
+      }
+
+      // Vérifier si on clique sur le point de départ pour fermer la polyligne
+      if (polylinePoints.length >= 3) {
+        const firstPoint = polylinePoints[0];
+        // Utiliser une tolérance relative à la grille (1.5x la taille de la grille)
+        const CLOSE_THRESHOLD = GRID_SIZE * 1.5; // 30 pixels avec GRID_SIZE = 20
+        const distance = Math.sqrt(Math.pow(x - firstPoint.x, 2) + Math.pow(y - firstPoint.y, 2));
+        
+        // Debug: afficher dans la console pour vérifier
+        console.log('Clic détecté:', { x, y, firstPoint, distance, threshold: CLOSE_THRESHOLD, canClose: distance < CLOSE_THRESHOLD });
+        
+        if (distance < CLOSE_THRESHOLD) {
+          console.log('Fermeture de la polyligne...');
+          // Fermer la polyligne en ajoutant le premier point à la fin
+          const closedPoints = [...polylinePoints, { x: firstPoint.x, y: firstPoint.y }];
+          setPolylinePoints(closedPoints);
+          
+          // Mettre à jour la pièce avec les points fermés
+          const xs = closedPoints.map(p => p.x);
+          const ys = closedPoints.map(p => p.y);
+          const minX = Math.min(...xs);
+          const minY = Math.min(...ys);
+          const maxX = Math.max(...xs);
+          const maxY = Math.max(...ys);
+          
+          setRooms((prev) =>
+            prev.map((room) =>
+              room.id === selectedRoom
+                ? {
+                    ...room,
+                    points: closedPoints,
+                    x: minX,
+                    y: minY,
+                    width: maxX - minX || 1,
+                    height: maxY - minY || 1,
+                  }
+                : room
+            )
+          );
+          
+          // Terminer la polyligne et ouvrir la fenêtre de nommage
+          finishPolyline();
+          return;
+        }
+      }
+
+      // Ajouter un point
+      const newPoints = [...polylinePoints, { x, y }];
+      setPolylinePoints(newPoints);
+
+      // Si c'est le premier point, créer la pièce temporaire
+      if (polylinePoints.length === 0) {
+        const tempRoomId = `temp-room-${Date.now()}`;
+        const tempRoom: Room = {
+          id: tempRoomId,
+          name: '',
+          x,
+          y,
+          width: 0,
+          height: 0,
+          color: newRoomColor,
+          floorId: selectedFloorId || '',
+          points: newPoints,
+          isPolyline: true,
+        };
+        setSelectedRoom(tempRoomId);
+        setRooms((prev) => [...prev, tempRoom]);
+      } else {
+        // Mettre à jour les points de la pièce et recalculer les bounds
+        const xs = newPoints.map(p => p.x);
+        const ys = newPoints.map(p => p.y);
+        const minX = Math.min(...xs);
+        const minY = Math.min(...ys);
+        const maxX = Math.max(...xs);
+        const maxY = Math.max(...ys);
+        
+        setRooms((prev) =>
+          prev.map((room) =>
+            room.id === selectedRoom
+              ? {
+                  ...room,
+                  points: newPoints,
+                  x: minX,
+                  y: minY,
+                  width: maxX - minX || 1,
+                  height: maxY - minY || 1,
+                }
+              : room
+          )
+        );
+      }
+      return;
+    }
+
+    // Mode rectangle (code existant)
     const tempRoomId = `temp-room-${Date.now()}`;
     const tempRoom: Room = {
       id: tempRoomId,
@@ -375,11 +496,58 @@ export default function PlanPage() {
       height: MIN_ROOM_SIZE,
       color: newRoomColor,
       floorId: selectedFloorId || '',
+      isPolyline: false,
     };
     setRooms((prev) => [...prev, tempRoom]);
     setSelectedRoom(tempRoomId);
     setDragStart({ x, y });
     setIsDragging(true);
+  };
+
+  const finishPolyline = () => {
+    if (!selectedRoom || polylinePoints.length < 3) {
+      // Supprimer la pièce si elle n'a pas assez de points
+      if (selectedRoom) {
+        setRooms((prev) => prev.filter((r) => r.id !== selectedRoom));
+      }
+      setSelectedRoom(null);
+      setIsDrawingPolyline(false);
+      setPolylinePoints([]);
+      return;
+    }
+
+    // Calculer les bounds pour x, y, width, height
+    const xs = polylinePoints.map((p) => p.x);
+    const ys = polylinePoints.map((p) => p.y);
+    const minX = Math.min(...xs);
+    const minY = Math.min(...ys);
+    const maxX = Math.max(...xs);
+    const maxY = Math.max(...ys);
+
+    setRooms((prev) =>
+      prev.map((room) =>
+        room.id === selectedRoom
+          ? {
+              ...room,
+              x: minX,
+              y: minY,
+              width: maxX - minX,
+              height: maxY - minY,
+              points: polylinePoints,
+            }
+          : room
+      )
+    );
+
+    setIsDrawingPolyline(false);
+    setIsCreatingRoom(false);
+    setPolylinePoints([]);
+    // Initialiser le nom de la pièce si elle existe déjà dans la liste
+    const room = rooms.find((r) => r.id === selectedRoom);
+    if (room && !room.name) {
+      setNewRoomName('');
+    }
+    setRoomDialogOpen(true);
   };
 
   const handleCanvasMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -404,6 +572,45 @@ export default function PlanPage() {
             ? { ...p, x: newX, y: newY }
             : p
         )
+      );
+      return;
+    }
+
+    // Déplacement d'un point de polyligne
+    if (isMovingPolylinePoint && movePointStart && movingPointRoomId !== null && movingPointIndex !== null) {
+      const deltaX = currentX - movePointStart.x;
+      const deltaY = currentY - movePointStart.y;
+
+      setRooms((prev) =>
+        prev.map((room) => {
+          if (room.id !== movingPointRoomId || !room.points) return room;
+
+          const newPoints = room.points.map((p, idx) =>
+            idx === movingPointIndex
+              ? {
+                  x: Math.max(0, movePointStart.pointX + deltaX),
+                  y: Math.max(0, movePointStart.pointY + deltaY),
+                }
+              : p
+          );
+
+          // Recalculer les bounds de la pièce après le déplacement du point
+          const xs = newPoints.map((p) => p.x);
+          const ys = newPoints.map((p) => p.y);
+          const minX = Math.min(...xs);
+          const minY = Math.min(...ys);
+          const maxX = Math.max(...xs);
+          const maxY = Math.max(...ys);
+
+          return {
+            ...room,
+            points: newPoints,
+            x: minX,
+            y: minY,
+            width: maxX - minX,
+            height: maxY - minY,
+          };
+        })
       );
       return;
     }
@@ -452,6 +659,33 @@ export default function PlanPage() {
       setRooms((prev) =>
         prev.map((room) => {
           if (room.id !== movingRoomId) return room;
+          
+          // Si c'est une polyligne, déplacer tous les points à partir des positions initiales
+          if (room.isPolyline && room.points && moveStart.initialPoints) {
+            const newPoints = moveStart.initialPoints.map((point) => ({
+              x: Math.max(0, point.x + deltaX),
+              y: Math.max(0, point.y + deltaY),
+            }));
+            
+            // Recalculer les bounds
+            const xs = newPoints.map((p) => p.x);
+            const ys = newPoints.map((p) => p.y);
+            const minX = Math.min(...xs);
+            const minY = Math.min(...ys);
+            const maxX = Math.max(...xs);
+            const maxY = Math.max(...ys);
+            
+            return {
+              ...room,
+              points: newPoints,
+              x: minX,
+              y: minY,
+              width: maxX - minX || 1,
+              height: maxY - minY || 1,
+            };
+          }
+          
+          // Pour les rectangles, déplacer normalement
           return {
             ...room,
             x: Math.max(0, moveStart.roomX + deltaX),
@@ -489,6 +723,15 @@ export default function PlanPage() {
       return;
     }
 
+    // Déplacement d'un point de polyligne
+    if (isMovingPolylinePoint) {
+      setIsMovingPolylinePoint(false);
+      setMovingPointIndex(null);
+      setMovingPointRoomId(null);
+      setMovePointStart(null);
+      return;
+    }
+
     // Redimensionnement
     if (isResizingRoom) {
       setIsResizingRoom(false);
@@ -523,9 +766,42 @@ export default function PlanPage() {
     }
   };
 
+  const handlePolylinePointMouseDown = (e: React.MouseEvent, room: Room, pointIndex: number, point: Point) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    // Permettre le déplacement des points même si on est en train de créer une autre pièce
+    // On vérifie seulement que c'est une pièce existante (pas une pièce temporaire en cours de création)
+    if (!isEditMode || !room.points) {
+      console.log('Déplacement de point bloqué:', { isEditMode, hasPoints: !!room.points });
+      return;
+    }
+
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const x = Math.floor((e.clientX - rect.left) / GRID_SIZE) * GRID_SIZE;
+    const y = Math.floor((e.clientY - rect.top) / GRID_SIZE) * GRID_SIZE;
+
+    console.log('Début du déplacement du point:', { room: room.id, index: pointIndex, point, x, y });
+    
+    setSelectedRoom(room.id);
+    setIsMovingPolylinePoint(true);
+    setMovingPointIndex(pointIndex);
+    setMovingPointRoomId(room.id);
+    setMovePointStart({ x, y, pointX: point.x, pointY: point.y });
+  };
+
   const handleRoomMouseDown = (e: React.MouseEvent, room: Room) => {
     e.stopPropagation();
     if (isCreatingRoom || !isEditMode) return;
+
+    // Si c'est une polyligne, ne pas déplacer toute la pièce par défaut
+    // (on peut le faire en cliquant ailleurs que sur les points)
+    if (room.isPolyline && room.points) {
+      setSelectedRoom(room.id);
+      return;
+    }
 
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -556,33 +832,36 @@ export default function PlanPage() {
     setResizeStart({ x, y, roomX: room.x, roomY: room.y, roomWidth: room.width, roomHeight: room.height });
   };
 
-  const handleDeviceMouseDown = (e: React.MouseEvent, deviceId: string, roomId: string, currentX: number, currentY: number) => {
-    e.stopPropagation();
-    if (isCreatingRoom || !isEditMode) return;
 
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
-
-    const x = Math.floor((e.clientX - rect.left) / GRID_SIZE) * GRID_SIZE;
-    const y = Math.floor((e.clientY - rect.top) / GRID_SIZE) * GRID_SIZE;
-
-    setIsMovingDevice(true);
-    setMovingDeviceId(deviceId);
-    setMoveDeviceStart({ x, y, deviceX: currentX, deviceY: currentY, roomId });
-  };
-
-  const handleSaveRoom = () => {
-    if (!selectedRoom || !newRoomName.trim()) return;
+  const handleSaveRoom = async () => {
+    if (!selectedRoom) return;
+    
+    // Utiliser customRoomName si newRoomName est vide
+    const roomNameToUse = newRoomName.trim() || customRoomName.trim();
+    if (!roomNameToUse) return;
 
     const room = rooms.find((r) => r.id === selectedRoom);
     if (room) {
+      // Si le nom n'existe pas dans la liste des pièces disponibles, créer une nouvelle pièce
+      const roomExists = availableRooms.find(r => r.name === roomNameToUse);
+      if (!roomExists && !room.name) {
+        try {
+          await roomsService.createRoom(roomNameToUse);
+          const updatedRooms = await roomsService.getAllRooms();
+          setAvailableRooms(updatedRooms.sort((a, b) => a.name.localeCompare(b.name)));
+        } catch (err: any) {
+          console.error('Erreur lors de la création de la pièce:', err);
+          // Continuer quand même avec la sauvegarde du plan
+        }
+      }
+
       // Mettre à jour la pièce existante
       if (room.id.startsWith('temp-room-')) {
         // Renommer la pièce temporaire
         setRooms((prev) =>
           prev.map((r) =>
             r.id === selectedRoom
-              ? { ...r, id: `room-${Date.now()}`, name: newRoomName, color: newRoomColor }
+              ? { ...r, id: `room-${Date.now()}`, name: roomNameToUse, color: newRoomColor }
               : r
           )
         );
@@ -591,7 +870,7 @@ export default function PlanPage() {
         setRooms((prev) =>
           prev.map((r) =>
             r.id === selectedRoom
-              ? { ...r, name: newRoomName, color: newRoomColor }
+              ? { ...r, name: roomNameToUse, color: newRoomColor }
               : r
           )
         );
@@ -600,6 +879,7 @@ export default function PlanPage() {
 
     setRoomDialogOpen(false);
     setNewRoomName('');
+    setCustomRoomName('');
     setEditingRoom(null);
     setSelectedRoom(null);
   };
@@ -743,22 +1023,24 @@ export default function PlanPage() {
     }
   };
 
-  const getDevicesInRoom = (roomId: string) => {
-    return devicePositions
-      .filter((p) => p.roomId === roomId)
-      .map((p) => {
-        const device = devices.find((d) => d.ieeeAddress === p.deviceId);
-        return { ...p, device };
-      })
-      .filter((item) => item.device);
-  };
 
   const getDevicesWithoutRoom = () => {
+    // Récupérer les IDs des pièces existantes
+    const existingRoomIds = new Set(rooms.map((r) => r.id));
+    
     return devices.filter(
-      (device) =>
-        !devicePositions.some((p) => p.deviceId === device.ieeeAddress) &&
-        device.friendlyName?.toLowerCase() !== 'coordinator' &&
-        device.type !== 'unknown'
+      (device) => {
+        // Vérifier si l'appareil est positionné dans une pièce existante
+        const position = devicePositions.find((p) => p.deviceId === device.ieeeAddress);
+        const isPositionedInValidRoom = position && existingRoomIds.has(position.roomId);
+        
+        // L'appareil est disponible s'il n'est pas positionné OU s'il est positionné dans une pièce qui n'existe plus
+        return (
+          !isPositionedInValidRoom &&
+          device.friendlyName?.toLowerCase() !== 'coordinator' &&
+          device.type !== 'unknown'
+        );
+      }
     );
   };
 
@@ -792,66 +1074,94 @@ export default function PlanPage() {
             </Box>
           )}
         </Box>
-        <Stack direction="row" spacing={1} alignItems="center">
-          <Button
-            variant={isEditMode ? 'contained' : 'outlined'}
-            startIcon={isEditMode ? <EditOffIcon /> : <EditIcon />}
-            onClick={() => {
-              setIsEditMode(!isEditMode);
-              setIsCreatingRoom(false);
-              setSelectedRoom(null);
-            }}
-          >
-            {isEditMode ? t('plan.disableEdit') : t('plan.enableEdit')}
-          </Button>
-          {isEditMode && (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
+          <Stack direction="row" spacing={1} alignItems="center">
             <Button
-              variant="contained"
-              color="primary"
-              startIcon={<SaveIcon />}
-              onClick={handleSavePlan}
-              disabled={floors.length === 0 && rooms.length === 0 && devicePositions.length === 0}
+              variant={isEditMode ? 'contained' : 'outlined'}
+              startIcon={isEditMode ? <EditOffIcon /> : <EditIcon />}
+              onClick={() => {
+                setIsEditMode(!isEditMode);
+                setIsCreatingRoom(false);
+                setSelectedRoom(null);
+              }}
             >
-              {t('plan.save')}
+              {isEditMode ? t('plan.disableEdit') : t('plan.enableEdit')}
             </Button>
-          )}
-          {isEditMode && (
-            <Button
-              variant="contained"
-              startIcon={<LayersIcon />}
-              onClick={() => setFloorDialogOpen(true)}
-            >
-              {t('plan.addFloor')}
-            </Button>
-          )}
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<RefreshIcon />}
-            onClick={handleResetPlan}
-            disabled={!isEditMode}
-          >
-            {t('plan.resetPlan')}
-          </Button>
-          {!isEditMode && (
+            {isEditMode && (
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<SaveIcon />}
+                onClick={handleSavePlan}
+                disabled={floors.length === 0 && rooms.length === 0 && devicePositions.length === 0}
+              >
+                {t('plan.save')}
+              </Button>
+            )}
             <Button
               variant="outlined"
               color="error"
-              startIcon={<DeleteIcon />}
-              onClick={handleDeleteAllPlans}
+              startIcon={<RefreshIcon />}
+              onClick={handleResetPlan}
+              disabled={!isEditMode}
             >
-              {t('plan.deleteAllPlans')}
+              {t('plan.resetPlan')}
             </Button>
+            {!isEditMode && (
+              <Button
+                variant="outlined"
+                color="error"
+                startIcon={<DeleteIcon />}
+                onClick={handleDeleteAllPlans}
+              >
+                {t('plan.deleteAllPlans')}
+              </Button>
+            )}
+          </Stack>
+          {isEditMode && (
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Button
+                variant="contained"
+                startIcon={<LayersIcon />}
+                onClick={() => setFloorDialogOpen(true)}
+              >
+                {t('plan.addFloor')}
+              </Button>
+              <Button
+                variant={roomMode === 'rectangle' ? 'contained' : 'outlined'}
+                startIcon={<CropFreeIcon />}
+                onClick={() => {
+                  setRoomMode('rectangle');
+                  setIsDrawingPolyline(false);
+                  setPolylinePoints([]);
+                }}
+                disabled={!selectedFloorId}
+              >
+                {t('plan.rectangleMode')}
+              </Button>
+              <Button
+                variant={roomMode === 'polyline' ? 'contained' : 'outlined'}
+                startIcon={<PolylineIcon />}
+                onClick={() => {
+                  setRoomMode('polyline');
+                  setIsDrawingPolyline(false);
+                  setPolylinePoints([]);
+                }}
+                disabled={!selectedFloorId}
+              >
+                {t('plan.polylineMode')}
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={handleCreateRoom}
+                disabled={isCreatingRoom || !selectedFloorId}
+              >
+                {t('plan.addRoom')}
+              </Button>
+            </Stack>
           )}
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleCreateRoom}
-            disabled={isCreatingRoom || !isEditMode || !selectedFloorId}
-          >
-            {t('plan.addRoom')}
-          </Button>
-        </Stack>
+        </Box>
       </Box>
 
       <Grid container spacing={3}>
@@ -873,6 +1183,8 @@ export default function PlanPage() {
                   borderRadius: 2,
                   overflow: 'auto',
                   cursor: isCreatingRoom ? 'crosshair' : 'default',
+                  userSelect: 'none',
+                  WebkitUserSelect: 'none',
                 }}
                 ref={canvasRef}
                 onMouseDown={handleCanvasMouseDown}
@@ -880,17 +1192,336 @@ export default function PlanPage() {
                 onMouseUp={handleCanvasMouseUp}
                 onMouseLeave={() => {
                   // Arrêter les opérations si la souris quitte le canvas
-                  if (isDragging || isMovingRoom || isResizingRoom || isMovingDevice) {
+                  if (isDragging || isMovingRoom || isResizingRoom || isMovingDevice || isMovingPolylinePoint) {
                     handleCanvasMouseUp();
                   }
                 }}
                 onDrop={handleCanvasDrop}
                 onDragOver={handleCanvasDragOver}
               >
-                {/* Pièces */}
+                {/* Polyligne en cours de dessin */}
+                {isDrawingPolyline && selectedRoom && polylinePoints.length > 0 && (
+                  <>
+                    {polylinePoints.length > 1 && (
+                      <svg
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          pointerEvents: 'none',
+                          zIndex: 10,
+                        }}
+                      >
+                        {polylinePoints.map((point, index) => {
+                          if (index === 0) return null;
+                          const prevPoint = polylinePoints[index - 1];
+                          return (
+                            <line
+                              key={`line-${index}`}
+                              x1={prevPoint.x}
+                              y1={prevPoint.y}
+                              x2={point.x}
+                              y2={point.y}
+                              stroke="#86A6A0"
+                              strokeWidth="2"
+                              strokeDasharray="5,5"
+                            />
+                          );
+                        })}
+                        {/* Ligne de prévisualisation pour fermer la polyligne si on a au moins 3 points */}
+                        {polylinePoints.length >= 3 && (
+                          <line
+                            x1={polylinePoints[polylinePoints.length - 1].x}
+                            y1={polylinePoints[polylinePoints.length - 1].y}
+                            x2={polylinePoints[0].x}
+                            y2={polylinePoints[0].y}
+                            stroke="#4CAF50"
+                            strokeWidth="2"
+                            strokeDasharray="5,5"
+                            opacity="0.5"
+                          />
+                        )}
+                      </svg>
+                    )}
+                    {polylinePoints.map((point, index) => {
+                      const isFirstPoint = index === 0;
+                      const canClose = polylinePoints.length >= 3 && isFirstPoint;
+                      return (
+                        <Box
+                          key={`point-${index}`}
+                          onClick={(e) => {
+                            if (canClose) {
+                              e.stopPropagation();
+                              console.log('Clic sur le premier point pour fermer la polyligne');
+                              // Fermer la polyligne en ajoutant le premier point à la fin
+                              const closedPoints = [...polylinePoints, { x: point.x, y: point.y }];
+                              setPolylinePoints(closedPoints);
+                              
+                              // Mettre à jour la pièce avec les points fermés
+                              const xs = closedPoints.map(p => p.x);
+                              const ys = closedPoints.map(p => p.y);
+                              const minX = Math.min(...xs);
+                              const minY = Math.min(...ys);
+                              const maxX = Math.max(...xs);
+                              const maxY = Math.max(...ys);
+                              
+                              setRooms((prev) =>
+                                prev.map((room) =>
+                                  room.id === selectedRoom
+                                    ? {
+                                        ...room,
+                                        points: closedPoints,
+                                        x: minX,
+                                        y: minY,
+                                        width: maxX - minX || 1,
+                                        height: maxY - minY || 1,
+                                      }
+                                    : room
+                                )
+                              );
+                              
+                              // Terminer la polyligne et ouvrir la fenêtre de nommage
+                              finishPolyline();
+                            }
+                          }}
+                          sx={{
+                            position: 'absolute',
+                            left: point.x - (isFirstPoint && canClose ? 8 : 6),
+                            top: point.y - (isFirstPoint && canClose ? 8 : 6),
+                            width: isFirstPoint && canClose ? 16 : 12,
+                            height: isFirstPoint && canClose ? 16 : 12,
+                            borderRadius: '50%',
+                            backgroundColor: canClose ? '#4CAF50' : '#86A6A0',
+                            border: '2px solid white',
+                            boxShadow: canClose ? '0 0 8px rgba(76, 175, 80, 0.6)' : '0 2px 4px rgba(0,0,0,0.2)',
+                            pointerEvents: canClose ? 'auto' : 'none',
+                            cursor: canClose ? 'pointer' : 'default',
+                            zIndex: 11,
+                            animation: canClose ? 'pulse 2s infinite' : 'none',
+                            '@keyframes pulse': {
+                              '0%, 100%': {
+                                transform: 'scale(1)',
+                                opacity: 1,
+                              },
+                              '50%': {
+                                transform: 'scale(1.2)',
+                                opacity: 0.8,
+                              },
+                            },
+                            '&:hover': canClose ? {
+                              transform: 'scale(1.3)',
+                              boxShadow: '0 0 12px rgba(76, 175, 80, 0.8)',
+                            } : {},
+                          }}
+                        />
+                      );
+                    })}
+                  </>
+                )}
+
+                {/* Pièces - rendues en premier avec z-index bas */}
                 {rooms.filter(room => !selectedFloorId || room.floorId === selectedFloorId).map((room) => {
-                  const devicesInRoom = getDevicesInRoom(room.id);
                   const isSelected = selectedRoom === room.id;
+                  
+                  // Si c'est une polyligne, utiliser SVG
+                  if (room.isPolyline && room.points && room.points.length >= 2) {
+                    // Calculer les bounds pour l'affichage
+                    const xs = room.points.map(p => p.x);
+                    const ys = room.points.map(p => p.y);
+                    const minX = Math.min(...xs);
+                    const minY = Math.min(...ys);
+                    const maxX = Math.max(...xs);
+                    const maxY = Math.max(...ys);
+                    const svgWidth = maxX - minX || 100;
+                    const svgHeight = maxY - minY || 100;
+                    
+                    // Convertir les points en coordonnées relatives au SVG
+                    const pointsString = room.points.map(p => `${p.x - minX},${p.y - minY}`).join(' ');
+                    
+                    return (
+                      <Box
+                        key={room.id}
+                        data-room={room.id}
+                        sx={{
+                          position: 'absolute',
+                          left: minX,
+                          top: minY,
+                          width: svgWidth,
+                          height: svgHeight,
+                          cursor: isCreatingRoom || !isEditMode ? 'default' : 'move',
+                          opacity: 0.7,
+                          userSelect: 'none',
+                          WebkitUserSelect: 'none',
+                          zIndex: 1,
+                          '&:hover': {
+                            opacity: 0.9,
+                          },
+                        }}
+                        onMouseDown={(e) => {
+                          // Si on clique sur la surface (pas sur un point), permettre de déplacer toute la polyligne
+                          // Ignorer si on a cliqué sur un point (les points gèrent leur propre événement)
+                          if ((e.target as HTMLElement).closest('[data-room-point]')) {
+                            return;
+                          }
+                          
+                          if (isEditMode && !isCreatingRoom) {
+                            const rect = canvasRef.current?.getBoundingClientRect();
+                            if (rect) {
+                              const x = Math.floor((e.clientX - rect.left) / GRID_SIZE) * GRID_SIZE;
+                              const y = Math.floor((e.clientY - rect.top) / GRID_SIZE) * GRID_SIZE;
+                              // Vérifier si on a cliqué sur un point (avec une tolérance de 15px pour être sûr)
+                              const clickedOnPoint = room.points?.some((p) => {
+                                const pointX = p.x;
+                                const pointY = p.y;
+                                const distance = Math.sqrt(Math.pow(x - pointX, 2) + Math.pow(y - pointY, 2));
+                                return distance < 15;
+                              });
+                              
+                              if (!clickedOnPoint) {
+                                setSelectedRoom(room.id);
+                                setIsMovingRoom(true);
+                                setMovingRoomId(room.id);
+                                // Pour les polylignes, stocker les points initiaux
+                                setMoveStart({ 
+                                  x, 
+                                  y, 
+                                  roomX: minX, 
+                                  roomY: minY,
+                                  initialPoints: room.points ? [...room.points] : undefined
+                                });
+                              }
+                            }
+                          }
+                        }}
+                      >
+                        <svg
+                          width={svgWidth}
+                          height={svgHeight}
+                          style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none', zIndex: 1 }}
+                        >
+                          {room.points.length >= 3 ? (
+                            <polygon
+                              points={pointsString}
+                              fill={room.color}
+                              stroke={isSelected ? '#86A6A0' : 'rgba(0,0,0,0.2)'}
+                              strokeWidth="2"
+                            />
+                          ) : (
+                            <polyline
+                              points={pointsString}
+                              fill="none"
+                              stroke={newRoomColor}
+                              strokeWidth="2"
+                              strokeDasharray="5,5"
+                            />
+                          )}
+                        </svg>
+                        {/* Afficher les points de la polyligne */}
+                        {isEditMode && room.points.map((point, index) => (
+                          <Box
+                            key={`room-point-${index}`}
+                            data-room-point={room.id}
+                            data-point-index={index}
+                            sx={{
+                              position: 'absolute',
+                              left: point.x - minX - 8,
+                              top: point.y - minY - 8,
+                              width: 16,
+                              height: 16,
+                              borderRadius: '50%',
+                              backgroundColor: isSelected ? '#86A6A0' : '#86A6A0',
+                              border: '2px solid white',
+                              boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+                              cursor: 'grab',
+                              zIndex: 25,
+                              pointerEvents: 'auto',
+                              transition: 'all 0.2s ease',
+                              '&:hover': {
+                                backgroundColor: '#4CAF50',
+                                transform: 'scale(1.3)',
+                                boxShadow: '0 4px 12px rgba(76, 175, 80, 0.6)',
+                                zIndex: 26,
+                              },
+                              '&:active': {
+                                cursor: 'grabbing',
+                                transform: 'scale(1.1)',
+                              },
+                            }}
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              console.log('Clic sur point de polyligne:', { room: room.id, index, point, isEditMode, isCreatingRoom });
+                              handlePolylinePointMouseDown(e, room, index, point);
+                            }}
+                          />
+                        ))}
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            top: 8,
+                            left: 8,
+                            right: 8,
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            pointerEvents: 'none',
+                          }}
+                        >
+                          <Typography
+                            variant="subtitle2"
+                            sx={{
+                              fontWeight: 500,
+                              color: '#1E1E1E',
+                              backgroundColor: 'rgba(255,255,255,0.9)',
+                              px: 1,
+                              py: 0.5,
+                              borderRadius: 1,
+                              userSelect: 'none',
+                              WebkitUserSelect: 'none',
+                            }}
+                          >
+                            {room.name}
+                          </Typography>
+                          <Stack direction="row" spacing={0.5} sx={{ pointerEvents: 'auto' }}>
+                            {isEditMode && (
+                              <>
+                                <IconButton
+                                  size="small"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEditRoom(room);
+                                  }}
+                                  sx={{
+                                    backgroundColor: 'rgba(255,255,255,0.9)',
+                                    '&:hover': { backgroundColor: 'rgba(255,255,255,1)' },
+                                  }}
+                                >
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                                <IconButton
+                                  size="small"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteRoom(room.id);
+                                  }}
+                                  sx={{
+                                    backgroundColor: 'rgba(255,255,255,0.9)',
+                                    '&:hover': { backgroundColor: 'rgba(255,255,255,1)' },
+                                  }}
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </>
+                            )}
+                          </Stack>
+                        </Box>
+                      </Box>
+                    );
+                  }
+                  
+                  // Rectangle classique
                   return (
                     <Box
                       key={room.id}
@@ -907,6 +1538,9 @@ export default function PlanPage() {
                         borderRadius: 0,
                         cursor: isCreatingRoom || !isEditMode ? 'default' : 'move',
                         opacity: 0.7,
+                        userSelect: 'none',
+                        WebkitUserSelect: 'none',
+                        zIndex: 1,
                         '&:hover': {
                           opacity: 0.9,
                           borderColor: '#86A6A0',
@@ -934,6 +1568,8 @@ export default function PlanPage() {
                             px: 1,
                             py: 0.5,
                             borderRadius: 1,
+                            userSelect: 'none',
+                            WebkitUserSelect: 'none',
                           }}
                         >
                           {room.name}
@@ -971,53 +1607,6 @@ export default function PlanPage() {
                           )}
                         </Stack>
                       </Box>
-
-                      {/* Équipements dans la pièce */}
-                      {devicesInRoom.map((item) => {
-                        const device = item.device;
-                        if (!device) return null;
-
-                        const relativeX = item.x - room.x;
-                        const relativeY = item.y - room.y;
-                        const isMoving = isMovingDevice && movingDeviceId === item.deviceId;
-
-                        return (
-                          <Tooltip key={item.deviceId} title={device.friendlyName || device.ieeeAddress}>
-                            <Box
-                              data-device={item.deviceId}
-                              sx={{
-                                position: 'absolute',
-                                left: relativeX,
-                                top: relativeY,
-                                width: 40,
-                                height: 40,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                backgroundColor: 'rgba(255,255,255,0.95)',
-                                border: '2px solid',
-                                borderColor: device.status === 'online' ? '#2e7d32' : '#d32f2f',
-                                borderRadius: '50%',
-                                fontSize: '20px',
-                                cursor: isEditMode ? 'grab' : 'default',
-                                boxShadow: isMoving ? '0 4px 8px rgba(0,0,0,0.2)' : '0 2px 4px rgba(0,0,0,0.1)',
-                                transition: isMoving ? 'none' : 'all 0.2s ease',
-                                zIndex: isMoving ? 100 : 10,
-                                '&:hover': {
-                                  transform: isMoving ? 'none' : 'scale(1.1)',
-                                  zIndex: 10,
-                                },
-                                '&:active': {
-                                  cursor: 'grabbing',
-                                },
-                              }}
-                              onMouseDown={(e) => handleDeviceMouseDown(e, item.deviceId, room.id, item.x, item.y)}
-                            >
-                              {getDeviceIcon(device.type)}
-                            </Box>
-                          </Tooltip>
-                        );
-                      })}
 
                       {/* Handles de redimensionnement */}
                       {isSelected && !isCreatingRoom && isEditMode && (
@@ -1167,6 +1756,69 @@ export default function PlanPage() {
                     </Box>
                   );
                 })}
+                
+                {/* Tous les appareils rendus après les pièces pour garantir qu'ils sont au-dessus */}
+                {devicePositions.map((position) => {
+                  const device = devices.find((d) => d.ieeeAddress === position.deviceId);
+                  if (!device) return null;
+                  
+                  // Vérifier que la pièce existe toujours
+                  const room = rooms.find((r) => r.id === position.roomId);
+                  if (!room) return null;
+                  
+                  const isMoving = isMovingDevice && movingDeviceId === position.deviceId;
+                  
+                  // Les positions dans devicePositions sont déjà absolues (coordonnées sur le canvas)
+                  return (
+                    <Tooltip key={position.deviceId} title={device.friendlyName || device.ieeeAddress}>
+                      <Box
+                        data-device={position.deviceId}
+                        sx={{
+                          position: 'absolute',
+                          left: position.x,
+                          top: position.y,
+                          width: 40,
+                          height: 40,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: 'rgba(255,255,255,0.95)',
+                          border: '2px solid',
+                          borderColor: device.status === 'online' ? '#2e7d32' : '#d32f2f',
+                          borderRadius: '50%',
+                          fontSize: '20px',
+                          cursor: isEditMode ? 'grab' : 'default',
+                          boxShadow: isMoving ? '0 4px 8px rgba(0,0,0,0.2)' : '0 2px 4px rgba(0,0,0,0.1)',
+                          transition: isMoving ? 'none' : 'all 0.2s ease',
+                          zIndex: isMoving ? 100 : 50,
+                          userSelect: 'none',
+                          WebkitUserSelect: 'none',
+                          '&:hover': {
+                            transform: isMoving ? 'none' : 'scale(1.1)',
+                            zIndex: 50,
+                          },
+                          '&:active': {
+                            cursor: 'grabbing',
+                          },
+                        }}
+                        onMouseDown={(e) => {
+                          if (isEditMode) {
+                            e.stopPropagation();
+                            const rect = canvasRef.current?.getBoundingClientRect();
+                            if (!rect) return;
+                            const x = Math.floor((e.clientX - rect.left) / GRID_SIZE) * GRID_SIZE;
+                            const y = Math.floor((e.clientY - rect.top) / GRID_SIZE) * GRID_SIZE;
+                            setIsMovingDevice(true);
+                            setMovingDeviceId(position.deviceId);
+                            setMoveDeviceStart({ x, y, deviceX: position.x, deviceY: position.y, roomId: position.roomId });
+                          }
+                        }}
+                      >
+                        {getDeviceIcon(device.type)}
+                      </Box>
+                    </Tooltip>
+                  );
+                })}
               </Box>
             </CardContent>
           </Card>
@@ -1175,9 +1827,43 @@ export default function PlanPage() {
         <Grid item xs={12} md={3}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 500, mb: 2 }}>
-                {t('plan.devices')}
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6" sx={{ fontWeight: 500 }}>
+                  {t('plan.devices')}
+                </Typography>
+                {devicePositions.length > 0 && (
+                  <Tooltip title={t('plan.removeAllDevices')}>
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        setConfirmDialogConfig({
+                          title: t('plan.removeAllDevices'),
+                          message: t('plan.confirmRemoveAllDevices'),
+                          onConfirm: () => {
+                            setDevicePositions([]);
+                            setConfirmDialogOpen(false);
+                            setConfirmDialogConfig(null);
+                            addNotification({
+                              message: t('plan.allDevicesRemoved'),
+                              type: 'success',
+                            });
+                          },
+                        });
+                        setConfirmDialogOpen(true);
+                      }}
+                      sx={{
+                        color: 'error.main',
+                        '&:hover': {
+                          backgroundColor: 'error.light',
+                          color: 'error.dark',
+                        },
+                      }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </Box>
               <Box sx={{ maxHeight: '500px', overflowY: 'auto' }}>
                 {getDevicesWithoutRoom().map((device) => (
                   <Paper
@@ -1252,7 +1938,11 @@ export default function PlanPage() {
                   label={t('plan.roomName')}
                   onChange={(e) => setNewRoomName(e.target.value)}
                   disabled={loadingRooms}
+                  displayEmpty
                 >
+                  <MenuItem value="">
+                    <em>{t('plan.selectOrCreateRoom')}</em>
+                  </MenuItem>
                   {availableRooms.map((room) => (
                     <MenuItem key={room.id} value={room.name}>
                       {room.name}
@@ -1272,7 +1962,13 @@ export default function PlanPage() {
                   fullWidth
                   label={t('plan.newRoomName')}
                   value={customRoomName}
-                  onChange={(e) => setCustomRoomName(e.target.value)}
+                  onChange={(e) => {
+                    setCustomRoomName(e.target.value);
+                    // Mettre à jour aussi newRoomName pour permettre la sauvegarde directe
+                    if (e.target.value.trim()) {
+                      setNewRoomName(e.target.value.trim());
+                    }
+                  }}
                   placeholder={t('plan.newRoomNamePlaceholder')}
                   onKeyPress={(e) => {
                     if (e.key === 'Enter') {
@@ -1316,7 +2012,11 @@ export default function PlanPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCancelRoom}>{t('common.cancel')}</Button>
-          <Button onClick={handleSaveRoom} variant="contained" disabled={!newRoomName.trim()}>
+          <Button 
+            onClick={handleSaveRoom} 
+            variant="contained" 
+            disabled={!newRoomName.trim() && !customRoomName.trim()}
+          >
             {t('common.save')}
           </Button>
         </DialogActions>

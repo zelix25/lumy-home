@@ -6,6 +6,11 @@ export interface Floor {
   order: number;
 }
 
+export interface Point {
+  x: number;
+  y: number;
+}
+
 export interface Room {
   id: string;
   name: string;
@@ -15,6 +20,8 @@ export interface Room {
   height: number;
   color: string;
   floorId: string;
+  points?: Point[]; // Pour les polylignes (polygones)
+  isPolyline?: boolean; // Indique si c'est une polyligne ou un rectangle
 }
 
 export interface DevicePosition {

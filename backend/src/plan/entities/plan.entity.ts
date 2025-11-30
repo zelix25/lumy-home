@@ -28,6 +28,8 @@ export class Plan {
     height: number;
     color: string;
     floorId: string;
+    points?: Array<{ x: number; y: number }>;
+    isPolyline?: boolean;
   }>;
 
   @Column({ type: 'json' })

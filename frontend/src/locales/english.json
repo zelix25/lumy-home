@@ -241,7 +241,14 @@
     "roomCreated": "Room created",
     "roomCreatedMessage": "The room {{room}} has been created successfully",
     "roomCreateError": "Creation error",
-    "roomCreateErrorMessage": "An error occurred while creating the room"
+    "roomCreateErrorMessage": "An error occurred while creating the room",
+    "rectangleMode": "Rectangle",
+    "polylineMode": "Polyline",
+    "polylineInstructions": "Click to add points. Double-click to finish (minimum 3 points).",
+    "selectOrCreateRoom": "Select or create a room",
+    "removeAllDevices": "Remove all devices from plan",
+    "confirmRemoveAllDevices": "Are you sure you want to remove all devices from the plan? This action will remove all device positions.",
+    "allDevicesRemoved": "All devices have been removed from the plan"
   },
   "debug": {
     "title": "MQTT Debug",

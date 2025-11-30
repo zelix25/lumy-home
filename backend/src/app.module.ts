@@ -37,6 +37,7 @@ import { configValidationSchema } from './config/config.validation';
           type: 'sqlite',
           database: dbPath,
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
           synchronize: nodeEnv !== 'production',
           logging: nodeEnv === 'development',
         };
