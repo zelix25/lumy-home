@@ -19,7 +19,8 @@
     "loading": "Chargement...",
     "error": "Erreur",
     "success": "Succès",
-    "skip": "Passer"
+    "skip": "Passer",
+    "create": "Ajouter"
   },
   "devices": {
     "title": "Appareils",
@@ -101,7 +102,22 @@
     "totalDevices": "Appareils connectés",
     "onlineDevices": "En ligne",
     "offlineDevices": "Hors ligne",
-    "scenesActive": "Scènes actives"
+    "scenesActive": "Scènes actives",
+    "generalStatus": "État général",
+    "temperature": "Température",
+    "windowsOpen": "fenêtre(s) ouverte(s)",
+    "sensorOffline": "Capteur",
+    "offline": "hors ligne",
+    "viewDetails": "Voir détails",
+    "noStatusInfo": "Aucune information disponible",
+    "aiSuggestion": "La pièce {{room}} semble froide, souhaitez-vous activer la scène {{scene}} ?",
+    "activateScene": "Activer",
+    "dismiss": "Ignorer",
+    "planView": "Vue plan",
+    "normalView": "Vue normale",
+    "noPlanAvailable": "Aucun plan disponible. Créez un plan dans la page Plan pour afficher la vue plan.",
+    "unnamedRoom": "Pièce sans nom",
+    "noRoomsWithDevices": "Aucune pièce avec des appareils. Ajoutez des appareils et assignez-les à des pièces."
   },
   "scenes": {
     "title": "Scènes & Automatisations",
@@ -219,7 +235,14 @@
     "deleted": "Plans supprimés",
     "allPlansDeleted": "Tous les plans ont été supprimés avec succès",
     "deleteError": "Erreur de suppression",
-    "deleteErrorMessage": "Une erreur est survenue lors de la suppression des plans"
+    "deleteErrorMessage": "Une erreur est survenue lors de la suppression des plans",
+    "newRoomName": "Nouveau nom de pièce",
+    "newRoomNamePlaceholder": "Ex: Bureau, Atelier...",
+    "or": "ou",
+    "roomCreated": "Pièce créée",
+    "roomCreatedMessage": "La pièce {{room}} a été créée avec succès",
+    "roomCreateError": "Erreur de création",
+    "roomCreateErrorMessage": "Une erreur est survenue lors de la création de la pièce"
   },
   "debug": {
     "title": "Debug MQTT",

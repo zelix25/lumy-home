@@ -101,7 +101,22 @@
     "totalDevices": "Total devices",
     "onlineDevices": "Online",
     "offlineDevices": "Offline",
-    "scenesActive": "Scenes active"
+    "scenesActive": "Scenes active",
+    "generalStatus": "General status",
+    "temperature": "Temperature",
+    "windowsOpen": "window(s) open",
+    "sensorOffline": "Sensor",
+    "offline": "offline",
+    "viewDetails": "View details",
+    "noStatusInfo": "No information available",
+    "aiSuggestion": "The {{room}} room seems cold, would you like to activate the {{scene}} scene?",
+    "activateScene": "Activate",
+    "dismiss": "Dismiss",
+    "planView": "Plan view",
+    "normalView": "Normal view",
+    "noPlanAvailable": "No plan available. Create a plan in the Plan page to display the plan view.",
+    "unnamedRoom": "Unnamed room",
+    "noRoomsWithDevices": "No rooms with devices. Add devices and assign them to rooms."
   },
   "scenes": {
     "title": "Scenes & Automations",
@@ -219,7 +234,14 @@
     "deleted": "Plans deleted",
     "allPlansDeleted": "All plans have been successfully deleted",
     "deleteError": "Delete error",
-    "deleteErrorMessage": "An error occurred while deleting the plans"
+    "deleteErrorMessage": "An error occurred while deleting the plans",
+    "newRoomName": "New room name",
+    "newRoomNamePlaceholder": "Ex: Office, Workshop...",
+    "or": "or",
+    "roomCreated": "Room created",
+    "roomCreatedMessage": "The room {{room}} has been created successfully",
+    "roomCreateError": "Creation error",
+    "roomCreateErrorMessage": "An error occurred while creating the room"
   },
   "debug": {
     "title": "MQTT Debug",

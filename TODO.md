@@ -256,3 +256,4 @@ Cela donne une expérience identique côté utilisateur (HomeHub → /ai/query),
 
 # A reprendre
 * [ ] Les setup
+* [ ] Creer un mode tablette

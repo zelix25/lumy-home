@@ -16,16 +16,22 @@ import {
   Alert,
   IconButton,
   Divider,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Dialog,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
 import DeleteIcon from '@mui/icons-material/Delete';
-import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContentText from '@mui/material/DialogContentText';
+import AddIcon from '@mui/icons-material/Add';
 import { devicesService, Device } from '../services/devices.service';
+import { roomsService, Room } from '../services/rooms.service';
 import { useWebSocket } from '../hooks/useWebSocket';
 
 const getDeviceTypeLabel = (type: string): string => {
@@ -56,6 +62,10 @@ export default function DeviceDetailPage() {
   const [isOn, setIsOn] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [loadingRooms, setLoadingRooms] = useState(false);
+  const [newRoomDialogOpen, setNewRoomDialogOpen] = useState(false);
+  const [newRoomName, setNewRoomName] = useState('');
   const { isConnected, socket } = useWebSocket();
 
   useEffect(() => {
@@ -84,6 +94,23 @@ export default function DeviceDetailPage() {
 
     fetchDevice();
   }, [ieeeAddress]);
+
+  // Charger les pièces disponibles
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        setLoadingRooms(true);
+        const roomsData = await roomsService.getAllRooms();
+        setRooms(roomsData);
+      } catch (error) {
+        console.error('Erreur lors du chargement des pièces:', error);
+      } finally {
+        setLoadingRooms(false);
+      }
+    };
+
+    fetchRooms();
+  }, []);
 
   // Écouter les mises à jour en temps réel
   useEffect(() => {
@@ -128,6 +155,20 @@ export default function DeviceDetailPage() {
       setDevice(updated);
     } catch (err) {
       console.error('Erreur lors de la mise à jour de la pièce:', err);
+    }
+  };
+
+  const handleCreateRoom = async () => {
+    if (!newRoomName.trim()) return;
+    try {
+      const newRoom = await roomsService.createRoom(newRoomName.trim());
+      setRooms((prev) => [...prev, newRoom].sort((a, b) => a.name.localeCompare(b.name)));
+      setRoom(newRoom.name);
+      setNewRoomDialogOpen(false);
+      setNewRoomName('');
+    } catch (err: any) {
+      console.error('Erreur lors de la création de la pièce:', err);
+      alert(err.message || 'Erreur lors de la création de la pièce');
     }
   };
 
@@ -245,22 +286,44 @@ export default function DeviceDetailPage() {
               </Box>
 
               <Box>
-                <TextField
-                  fullWidth
-                  label="Pièce"
-                  value={room}
-                  onChange={(e) => setRoom(e.target.value)}
-                  placeholder="Ex: Salon, Chambre, Cuisine..."
-                  sx={{ mb: 1 }}
-                />
-                <Button
-                  variant="contained"
-                  startIcon={<SaveIcon />}
-                  onClick={handleSaveRoom}
-                  size="small"
-                >
-                  Enregistrer la pièce
-                </Button>
+                <FormControl fullWidth sx={{ mb: 1 }}>
+                  <InputLabel id="room-select-label">Pièce</InputLabel>
+                  <Select
+                    labelId="room-select-label"
+                    value={room}
+                    label="Pièce"
+                    onChange={(e) => setRoom(e.target.value)}
+                    disabled={loadingRooms}
+                  >
+                    <MenuItem value="">
+                      <em>Aucune pièce</em>
+                    </MenuItem>
+                    {rooms.map((roomOption) => (
+                      <MenuItem key={roomOption.id} value={roomOption.name}>
+                        {roomOption.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<AddIcon />}
+                    onClick={() => setNewRoomDialogOpen(true)}
+                    size="small"
+                  >
+                    Ajouter une pièce
+                  </Button>
+                  <Button
+                    variant="contained"
+                    startIcon={<SaveIcon />}
+                    onClick={handleSaveRoom}
+                    size="small"
+                    disabled={!room}
+                  >
+                    Enregistrer la pièce
+                  </Button>
+                </Box>
               </Box>
             </CardContent>
           </Card>
@@ -569,6 +632,39 @@ export default function DeviceDetailPage() {
         </Grid>
       </Grid>
 
+      {/* Dialog pour créer une nouvelle pièce */}
+      <Dialog open={newRoomDialogOpen} onClose={() => setNewRoomDialogOpen(false)}>
+        <DialogTitle>Ajouter une nouvelle pièce</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Nom de la pièce"
+            fullWidth
+            variant="standard"
+            value={newRoomName}
+            onChange={(e) => setNewRoomName(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handleCreateRoom();
+              }
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setNewRoomDialogOpen(false);
+            setNewRoomName('');
+          }}>
+            Annuler
+          </Button>
+          <Button onClick={handleCreateRoom} variant="contained" disabled={!newRoomName.trim()}>
+            Créer
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog pour supprimer l'appareil */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
         <DialogTitle>Supprimer l'appareil</DialogTitle>
         <DialogContent>

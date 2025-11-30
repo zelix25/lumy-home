@@ -16,6 +16,11 @@ import {
   Chip,
   Stack,
   Grid,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Divider,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -26,10 +31,12 @@ import {
   Save as SaveIcon,
   Layers as LayersIcon,
 } from '@mui/icons-material';
+import AddCircleIcon from '@mui/icons-material/AddCircle';
 import { useTranslation } from 'react-i18next';
 import { useDevices } from '../hooks/useDevices';
 import { devicesService } from '../services/devices.service';
 import { planService } from '../services/plan.service';
+import { roomsService, Room } from '../services/rooms.service';
 import { useNotification } from '../hooks/useNotification';
 
 interface Floor {
@@ -75,6 +82,10 @@ export default function PlanPage() {
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
   const [newRoomName, setNewRoomName] = useState('');
   const [newRoomColor, setNewRoomColor] = useState('#86A6A0');
+  const [availableRooms, setAvailableRooms] = useState<Room[]>([]);
+  const [loadingRooms, setLoadingRooms] = useState(false);
+  const [useCustomRoomName, setUseCustomRoomName] = useState(false);
+  const [customRoomName, setCustomRoomName] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
   const [draggedDevice, setDraggedDevice] = useState<string | null>(null);
@@ -186,6 +197,23 @@ export default function PlanPage() {
 
     loadPlan();
   }, [syncLocalPlanToServer]);
+
+  // Charger les pièces disponibles
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        setLoadingRooms(true);
+        const roomsData = await roomsService.getAllRooms();
+        setAvailableRooms(roomsData);
+      } catch (error) {
+        console.error('Erreur lors du chargement des pièces:', error);
+      } finally {
+        setLoadingRooms(false);
+      }
+    };
+
+    fetchRooms();
+  }, []);
 
   // Sauvegarder dans le localStorage (backup)
   useEffect(() => {
@@ -588,7 +616,32 @@ export default function PlanPage() {
     setIsCreatingRoom(false);
     setRoomDialogOpen(false);
     setNewRoomName('');
+    setCustomRoomName('');
+    setUseCustomRoomName(false);
     setEditingRoom(null);
+  };
+
+  const handleCreateNewRoom = async () => {
+    if (!customRoomName.trim()) return;
+    try {
+      const newRoom = await roomsService.createRoom(customRoomName.trim());
+      setAvailableRooms((prev) => [...prev, newRoom].sort((a, b) => a.name.localeCompare(b.name)));
+      setNewRoomName(newRoom.name);
+      setCustomRoomName('');
+      setUseCustomRoomName(false);
+      addNotification({
+        type: 'success',
+        title: t('plan.roomCreated'),
+        message: t('plan.roomCreatedMessage', { room: newRoom.name }),
+      });
+    } catch (err: any) {
+      console.error('Erreur lors de la création de la pièce:', err);
+      addNotification({
+        type: 'error',
+        title: t('plan.roomCreateError'),
+        message: err.message || t('plan.roomCreateErrorMessage'),
+      });
+    }
   };
 
   const handleEditRoom = (room: Room) => {
@@ -1189,16 +1242,67 @@ export default function PlanPage() {
           {editingRoom ? t('plan.editRoom') : t('plan.createRoom')}
         </DialogTitle>
         <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label={t('plan.roomName')}
-            fullWidth
-            variant="outlined"
-            value={newRoomName}
-            onChange={(e) => setNewRoomName(e.target.value)}
-            sx={{ mb: 2 }}
-          />
+          {!useCustomRoomName ? (
+            <>
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel id="room-select-label">{t('plan.roomName')}</InputLabel>
+                <Select
+                  labelId="room-select-label"
+                  value={newRoomName}
+                  label={t('plan.roomName')}
+                  onChange={(e) => setNewRoomName(e.target.value)}
+                  disabled={loadingRooms}
+                >
+                  {availableRooms.map((room) => (
+                    <MenuItem key={room.id} value={room.name}>
+                      {room.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}>
+                <Divider sx={{ flex: 1 }} />
+                <Typography variant="body2" color="text.secondary">
+                  {t('plan.or')}
+                </Typography>
+                <Divider sx={{ flex: 1 }} />
+              </Box>
+              <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                <TextField
+                  fullWidth
+                  label={t('plan.newRoomName')}
+                  value={customRoomName}
+                  onChange={(e) => setCustomRoomName(e.target.value)}
+                  placeholder={t('plan.newRoomNamePlaceholder')}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      handleCreateNewRoom();
+                    }
+                  }}
+                />
+                <Button
+                  variant="outlined"
+                  startIcon={<AddCircleIcon />}
+                  onClick={handleCreateNewRoom}
+                  disabled={!customRoomName.trim()}
+                  sx={{ minWidth: 'auto' }}
+                >
+                  {t('plan.addRoom')}
+                </Button>
+              </Box>
+            </>
+          ) : (
+            <TextField
+              autoFocus
+              margin="dense"
+              label={t('plan.roomName')}
+              fullWidth
+              variant="outlined"
+              value={newRoomName}
+              onChange={(e) => setNewRoomName(e.target.value)}
+              sx={{ mb: 2 }}
+            />
+          )}
           <TextField
             margin="dense"
             label={t('plan.roomColor')}
