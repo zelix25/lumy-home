@@ -245,6 +245,14 @@ Les utilisateurs novices doivent pouvoir faire des choses *sans écrire de logiq
 
 ---
 
+# Mode IA 
+
+| Version                     | IA                       | API                       |
+| --------------------------- | ------------------------ | ------------------------- |
+| **Cloud / Entrée de gamme** | Gemma 3 Cloud            | **Google Vertex AI**      |
+| **Local / Premium**         | Gemma 3 local via Ollama | **HTTP local Ollama API** |
+
+Cela donne une expérience identique côté utilisateur (HomeHub → /ai/query), mais avec un backend différent selon la box.
 
 # A reprendre
 * [ ] Les setup
