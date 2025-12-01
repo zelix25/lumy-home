@@ -10,7 +10,6 @@ import {
   Slider,
   Divider,
   IconButton,
-  Tooltip,
 } from '@mui/material';
 import {
   Thermostat,

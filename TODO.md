@@ -257,3 +257,5 @@ Cela donne une expérience identique côté utilisateur (HomeHub → /ai/query),
 # A reprendre
 * [ ] Les setup
 * [ ] Creer un mode tablette
+* [ ] Dans paramettre choix des capteur a afficher
+* [ ] Mode avancer pour modifier les parametre des capteurs

@@ -33,6 +33,8 @@ import AddIcon from '@mui/icons-material/Add';
 import { devicesService, Device } from '../services/devices.service';
 import { roomsService, Room } from '../services/rooms.service';
 import { useWebSocket } from '../hooks/useWebSocket';
+import MultiSensorChart from '../components/MultiSensorChart';
+import { SensorType } from '../services/sensor-history.service';
 
 const getDeviceTypeLabel = (type: string): string => {
   const labels: Record<string, string> = {
@@ -367,7 +369,7 @@ export default function DeviceDetailPage() {
           )}
 
           {(device.type === 'switch' || device.type === 'plug') && (
-            <Card>
+            <Card sx={{ mb: 3 }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
                   Contrôles
@@ -388,6 +390,76 @@ export default function DeviceDetailPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Graphique unifié des capteurs */}
+          {device.state && (() => {
+            const availableSensors: Array<{ type: SensorType; label: string; unit: string }> = [];
+            
+            if (device.state.temperature !== undefined) {
+              availableSensors.push({
+                type: SensorType.TEMPERATURE,
+                label: 'Température',
+                unit: '°C',
+              });
+            }
+            
+            if (device.state.humidity !== undefined) {
+              availableSensors.push({
+                type: SensorType.HUMIDITY,
+                label: 'Humidité',
+                unit: '%',
+              });
+            }
+            
+            if (device.state.pressure !== undefined) {
+              availableSensors.push({
+                type: SensorType.PRESSURE,
+                label: 'Pression',
+                unit: 'hPa',
+              });
+            }
+            
+            if (device.state.illuminance !== undefined) {
+              availableSensors.push({
+                type: SensorType.ILLUMINANCE,
+                label: 'Luminosité ambiante',
+                unit: 'lux',
+              });
+            }
+            
+            if (device.state.battery !== undefined) {
+              availableSensors.push({
+                type: SensorType.BATTERY,
+                label: 'Batterie',
+                unit: '%',
+              });
+            }
+            
+            if (device.state.voltage !== undefined) {
+              availableSensors.push({
+                type: SensorType.VOLTAGE,
+                label: 'Tension',
+                unit: 'V',
+              });
+            }
+            
+            if (device.state.linkquality !== undefined) {
+              availableSensors.push({
+                type: SensorType.LINKQUALITY,
+                label: 'Qualité du signal',
+                unit: '',
+              });
+            }
+            
+            return availableSensors.length > 0 ? (
+              <Box sx={{ mb: 3 }}>
+                <MultiSensorChart
+                  deviceId={device.ieeeAddress}
+                  availableSensors={availableSensors}
+                />
+              </Box>
+            ) : null;
+          })()}
         </Grid>
 
         <Grid item xs={12} md={4}>

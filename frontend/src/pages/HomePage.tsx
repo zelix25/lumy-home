@@ -1,5 +1,4 @@
 import { Box, Typography, Grid, Card, CardContent, CircularProgress, ToggleButton, ToggleButtonGroup, Paper } from '@mui/material';
-import HomeIcon from '@mui/icons-material/Home';
 import DevicesIcon from '@mui/icons-material/Devices';
 import SceneIcon from '@mui/icons-material/AutoAwesome';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
@@ -7,8 +6,6 @@ import MapIcon from '@mui/icons-material/Map';
 import { useEffect, useState, useMemo } from 'react';
 import { devicesService, DeviceStats, Device } from '../services/devices.service';
 import { useDevices } from '../hooks/useDevices';
-import GeneralStatusCard from '../components/GeneralStatusCard';
-import AISuggestionBubble from '../components/AISuggestionBubble';
 import PlanViewMode from '../components/PlanViewMode';
 import RoomCard from '../components/RoomCard';
 import i18n from '@/i18n';

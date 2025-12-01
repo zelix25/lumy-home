@@ -1,21 +1,27 @@
-import { Controller, Get, Query, Delete, Param } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { HistoryService } from './history.service';
 import { FilterHistoryDto } from './dto/filter-history.dto';
 import { HistoryResponseDto } from './dto/history-response.dto';
-import { Public } from '../auth/decorators/public.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ApiTags, ApiBearerAuth, ApiResponse, ApiQuery } from '@nestjs/swagger';
 
+@ApiTags('history')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('history')
-@Public()
 export class HistoryController {
   constructor(private readonly historyService: HistoryService) {}
 
-  /**
-   * Récupère l'historique avec filtres
-   */
   @Get()
-  async findAll(
-    @Query() filters: FilterHistoryDto,
-  ): Promise<{
+  @HttpCode(HttpStatus.OK)
+  @ApiResponse({ status: HttpStatus.OK, description: 'List of sensor history data.', type: [HistoryResponseDto] })
+  @ApiQuery({ name: 'deviceId', required: false, description: 'Filter by device ID' })
+  @ApiQuery({ name: 'sensorType', required: false, enum: ['temperature', 'humidity', 'pressure', 'illuminance', 'battery', 'voltage', 'linkquality'] })
+  @ApiQuery({ name: 'startDate', required: false, description: 'Start date (ISO 8601)' })
+  @ApiQuery({ name: 'endDate', required: false, description: 'End date (ISO 8601)' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Maximum number of results' })
+  @ApiQuery({ name: 'offset', required: false, description: 'Offset for pagination' })
+  async findAll(@Query() filters: FilterHistoryDto): Promise<{
     items: HistoryResponseDto[];
     total: number;
     limit: number;
@@ -24,34 +30,17 @@ export class HistoryController {
     return this.historyService.findAll(filters);
   }
 
-  /**
-   * Récupère les statistiques de l'historique
-   */
   @Get('stats')
+  @HttpCode(HttpStatus.OK)
+  @ApiResponse({ status: HttpStatus.OK, description: 'History statistics.' })
   async getStats(): Promise<{
     total: number;
-    byEventType: Record<string, number>;
+    bySensorType: Record<string, number>;
     byDevice: Record<string, number>;
-    recentActivity: number;
+    recentData: number;
   }> {
     return this.historyService.getStats();
   }
-
-  /**
-   * Supprime les événements plus anciens qu'une date donnée
-   */
-  @Delete('clean/:days')
-  async cleanOldEvents(@Param('days') days: string): Promise<{ deleted: number }> {
-    const daysNumber = parseInt(days, 10);
-    if (isNaN(daysNumber) || daysNumber < 1) {
-      throw new Error('Le nombre de jours doit être un entier positif');
-    }
-
-    const olderThan = new Date();
-    olderThan.setDate(olderThan.getDate() - daysNumber);
-
-    const deleted = await this.historyService.cleanOldEvents(olderThan);
-    return { deleted };
-  }
 }
+
 

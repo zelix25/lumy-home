@@ -1,18 +1,23 @@
-import { IsOptional, IsString, IsIn, IsDateString, IsInt, Min } from 'class-validator';
+import { IsOptional, IsEnum, IsString, IsDateString, IsInt, Min } from 'class-validator';
 import { Type } from 'class-transformer';
-import { SensorType } from '../entities/history.entity';
+import { HistoryEventType } from '../entities/history_timeline.entity';
 
 export class FilterHistoryDto {
+  @IsOptional()
+  @IsEnum(HistoryEventType)
+  eventType?: HistoryEventType;
+
   @IsOptional()
   @IsString()
   deviceId?: string;
 
   @IsOptional()
   @IsString()
-  @IsIn(Object.values(SensorType) as string[], {
-    message: `sensorType must be one of: ${Object.values(SensorType).join(', ')}`,
-  })
-  sensorType?: string;
+  automationId?: string;
+
+  @IsOptional()
+  @IsString()
+  room?: string;
 
   @IsOptional()
   @IsDateString()
@@ -26,12 +31,12 @@ export class FilterHistoryDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  limit?: number;
+  limit?: number = 50;
 
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  offset?: number;
+  offset?: number = 0;
 }
 

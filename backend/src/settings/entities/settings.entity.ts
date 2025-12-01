@@ -17,7 +17,7 @@ export class Settings {
   @Column({ type: 'varchar', length: 255, default: '' })
   hostname: string;
 
-  @Column({ type: 'boolean', default: true })
+  @Column({ type: 'boolean', default: 1 })
   setup: boolean;
 
   @CreateDateColumn()

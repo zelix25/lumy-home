@@ -224,7 +224,7 @@ export default function HistoryPage() {
                   {t('history.totalEvents')}
                 </Typography>
                 <Typography variant="h4" sx={{ fontWeight: 500 }}>
-                  {stats.total.toLocaleString()}
+                  {(stats.total ?? 0).toLocaleString()}
                 </Typography>
               </CardContent>
             </Card>
@@ -236,7 +236,7 @@ export default function HistoryPage() {
                   {t('history.recentActivity')}
                 </Typography>
                 <Typography variant="h4" sx={{ fontWeight: 500 }}>
-                  {stats.recentActivity.toLocaleString()}
+                  {(stats.recentActivity ?? 0).toLocaleString()}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   {t('history.last24Hours')}
@@ -251,7 +251,7 @@ export default function HistoryPage() {
                   {t('history.mostActiveDevice')}
                 </Typography>
                 <Typography variant="h6" sx={{ fontWeight: 500 }}>
-                  {Object.keys(stats.byDevice).length > 0
+                  {stats.byDevice && Object.keys(stats.byDevice).length > 0
                     ? Object.entries(stats.byDevice)
                         .sort(([, a], [, b]) => b - a)[0][0]
                     : t('history.none')}

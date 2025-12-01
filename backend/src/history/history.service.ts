@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, FindOptionsWhere } from 'typeorm';
-import { History, HistoryEventType } from './entities/history.entity';
+import { Repository, Between } from 'typeorm';
+import { History, SensorType } from './entities/history.entity';
 import { HistoryResponseDto } from './dto/history-response.dto';
 import { FilterHistoryDto } from './dto/filter-history.dto';
 import { LoggerService } from '../logger/logger.service';
@@ -15,34 +15,22 @@ export class HistoryService {
   ) {}
 
   /**
-   * Enregistre un événement dans l'historique
+   * Enregistre une valeur de capteur dans l'historique
    */
-  async logEvent(
-    eventType: HistoryEventType,
-    options: {
-      deviceId?: string;
-      deviceName?: string;
-      automationId?: string;
-      automationName?: string;
-      description: string;
-      data?: Record<string, any>;
-      room?: string;
-    },
+  async logSensorValue(
+    deviceId: string,
+    sensorType: SensorType,
+    value: number,
   ): Promise<History> {
     const history = this.historyRepository.create({
-      eventType,
-      deviceId: options.deviceId,
-      deviceName: options.deviceName,
-      automationId: options.automationId,
-      automationName: options.automationName,
-      description: options.description,
-      data: options.data,
-      room: options.room,
+      deviceId,
+      sensorType,
+      value,
     });
 
     const saved = await this.historyRepository.save(history);
-    this.logger.log(
-      `📝 Événement enregistré: ${eventType} - ${options.description}`,
+    this.logger.debug(
+      `📊 Donnée capteur enregistrée: ${deviceId} - ${sensorType} = ${value}`,
       'HistoryService',
     );
 
@@ -50,208 +38,27 @@ export class HistoryService {
   }
 
   /**
-   * Enregistre une détection de mouvement
+   * Enregistre plusieurs valeurs de capteurs en une seule transaction
    */
-  async logMotionDetected(
+  async logSensorValues(
     deviceId: string,
-    deviceName: string,
-    room?: string,
-    data?: Record<string, any>,
-  ): Promise<History> {
-    return this.logEvent(HistoryEventType.MOTION_DETECTED, {
-      deviceId,
-      deviceName,
-      description: `Mouvement détecté${deviceName ? ` par ${deviceName}` : ''}`,
-      data,
-      room,
-    });
-  }
+    values: Array<{ sensorType: SensorType; value: number }>,
+  ): Promise<History[]> {
+    const histories = values.map((v) =>
+      this.historyRepository.create({
+        deviceId,
+        sensorType: v.sensorType,
+        value: v.value,
+      }),
+    );
 
-  /**
-   * Enregistre un changement d'état d'appareil
-   */
-  async logStateChanged(
-    deviceId: string,
-    deviceName: string,
-    oldState: Record<string, any>,
-    newState: Record<string, any>,
-    room?: string,
-  ): Promise<History> {
-    // Détecter les changements significatifs
-    const changes: string[] = [];
-    
-    if (oldState.state !== newState.state) {
-      changes.push(`État: ${oldState.state || 'inconnu'} → ${newState.state || 'inconnu'}`);
-    }
-    
-    if (oldState.brightness !== newState.brightness && newState.brightness !== undefined) {
-      changes.push(`Luminosité: ${Math.round((newState.brightness / 255) * 100)}%`);
-    }
-    
-    if (oldState.temperature !== newState.temperature && newState.temperature !== undefined) {
-      changes.push(`Température: ${newState.temperature}°C`);
-    }
-    
-    if (oldState.contact !== newState.contact && newState.contact !== undefined) {
-      changes.push(`Contact: ${newState.contact ? 'Fermé' : 'Ouvert'}`);
-    }
+    const saved = await this.historyRepository.save(histories);
+    this.logger.debug(
+      `📊 ${values.length} données capteurs enregistrées pour ${deviceId}`,
+      'HistoryService',
+    );
 
-    const description = changes.length > 0
-      ? `${deviceName}: ${changes.join(', ')}`
-      : `Changement d'état pour ${deviceName}`;
-
-    return this.logEvent(HistoryEventType.STATE_CHANGED, {
-      deviceId,
-      deviceName,
-      description,
-      data: {
-        oldState,
-        newState,
-        changes,
-      },
-      room,
-    });
-  }
-
-  /**
-   * Enregistre l'exécution d'une automatisation
-   */
-  async logAutomationExecuted(
-    automationId: string,
-    automationName: string,
-    success: boolean,
-    message?: string,
-    triggeredBy?: {
-      deviceId?: string;
-      deviceName?: string;
-      eventType?: string;
-    },
-  ): Promise<History> {
-    const description = success
-      ? `Automatisation "${automationName}" exécutée avec succès`
-      : `Échec de l'automatisation "${automationName}"`;
-
-    return this.logEvent(HistoryEventType.AUTOMATION_EXECUTED, {
-      automationId,
-      automationName,
-      description: message || description,
-      data: {
-        success,
-        triggeredBy,
-      },
-    });
-  }
-
-  /**
-   * Enregistre un appareil qui passe en ligne
-   */
-  async logDeviceOnline(
-    deviceId: string,
-    deviceName: string,
-    room?: string,
-  ): Promise<History> {
-    return this.logEvent(HistoryEventType.DEVICE_ONLINE, {
-      deviceId,
-      deviceName,
-      description: `${deviceName} est maintenant en ligne`,
-      room,
-    });
-  }
-
-  /**
-   * Enregistre un appareil qui passe hors ligne
-   */
-  async logDeviceOffline(
-    deviceId: string,
-    deviceName: string,
-    room?: string,
-  ): Promise<History> {
-    return this.logEvent(HistoryEventType.DEVICE_OFFLINE, {
-      deviceId,
-      deviceName,
-      description: `${deviceName} est maintenant hors ligne`,
-      room,
-    });
-  }
-
-  /**
-   * Enregistre la découverte d'un nouvel appareil
-   */
-  async logDeviceDiscovered(
-    deviceId: string,
-    deviceName: string,
-    deviceType: string,
-    room?: string,
-  ): Promise<History> {
-    return this.logEvent(HistoryEventType.DEVICE_DISCOVERED, {
-      deviceId,
-      deviceName,
-      description: `Nouvel appareil découvert: ${deviceName} (${deviceType})`,
-      data: {
-        deviceType,
-      },
-      room,
-    });
-  }
-
-  /**
-   * Enregistre un appui sur un bouton
-   */
-  async logButtonPressed(
-    deviceId: string,
-    deviceName: string,
-    action: string,
-    room?: string,
-  ): Promise<History> {
-    return this.logEvent(HistoryEventType.BUTTON_PRESSED, {
-      deviceId,
-      deviceName,
-      description: `Bouton "${deviceName}" pressé: ${action}`,
-      data: {
-        action,
-      },
-      room,
-    });
-  }
-
-  /**
-   * Enregistre un changement de contact (porte/fenêtre)
-   */
-  async logContactChanged(
-    deviceId: string,
-    deviceName: string,
-    isOpen: boolean,
-    room?: string,
-  ): Promise<History> {
-    return this.logEvent(HistoryEventType.CONTACT_CHANGED, {
-      deviceId,
-      deviceName,
-      description: `${deviceName}: ${isOpen ? 'Ouvert' : 'Fermé'}`,
-      data: {
-        isOpen,
-      },
-      room,
-    });
-  }
-
-  /**
-   * Enregistre un changement de température significatif
-   */
-  async logTemperatureChanged(
-    deviceId: string,
-    deviceName: string,
-    temperature: number,
-    room?: string,
-  ): Promise<History> {
-    return this.logEvent(HistoryEventType.TEMPERATURE_CHANGED, {
-      deviceId,
-      deviceName,
-      description: `${deviceName}: ${temperature}°C`,
-      data: {
-        temperature,
-      },
-      room,
-    });
+    return saved;
   }
 
   /**
@@ -263,28 +70,15 @@ export class HistoryService {
     limit: number;
     offset: number;
   }> {
-    const where: FindOptionsWhere<History> = {};
-
-    if (filters.eventType) {
-      where.eventType = filters.eventType;
-    }
-
-    if (filters.deviceId) {
-      where.deviceId = filters.deviceId;
-    }
-
-    if (filters.automationId) {
-      where.automationId = filters.automationId;
-    }
-
-    if (filters.room) {
-      where.room = filters.room;
-    }
-
     const queryBuilder = this.historyRepository.createQueryBuilder('history');
 
-    if (Object.keys(where).length > 0) {
-      queryBuilder.where(where);
+    // Appliquer les filtres
+    if (filters.deviceId) {
+      queryBuilder.andWhere('history.deviceId = :deviceId', { deviceId: filters.deviceId });
+    }
+
+    if (filters.sensorType) {
+      queryBuilder.andWhere('history.sensorType = :sensorType', { sensorType: filters.sensorType });
     }
 
     if (filters.startDate || filters.endDate) {
@@ -304,22 +98,37 @@ export class HistoryService {
       }
     }
 
-    // Compter le total
+    // Compter le total (avant pagination)
     const total = await queryBuilder.getCount();
 
     // Appliquer pagination et tri
     const items = await queryBuilder
-      .orderBy('history.timestamp', 'DESC')
-      .limit(filters.limit || 50)
+      .orderBy('history.timestamp', 'ASC') // Tri chronologique pour les graphiques
+      .limit(filters.limit || 1000)
       .offset(filters.offset || 0)
       .getMany();
 
     return {
       items: items.map((item) => HistoryResponseDto.fromEntity(item)),
       total,
-      limit: filters.limit || 50,
+      limit: filters.limit || 1000,
       offset: filters.offset || 0,
     };
+  }
+
+  /**
+   * Récupère les dernières valeurs pour un appareil et un type de capteur
+   */
+  async getLatestValue(
+    deviceId: string,
+    sensorType: SensorType,
+  ): Promise<HistoryResponseDto | null> {
+    const history = await this.historyRepository.findOne({
+      where: { deviceId, sensorType },
+      order: { timestamp: 'DESC' },
+    });
+
+    return history ? HistoryResponseDto.fromEntity(history) : null;
   }
 
   /**
@@ -327,45 +136,44 @@ export class HistoryService {
    */
   async getStats(): Promise<{
     total: number;
-    byEventType: Record<string, number>;
+    bySensorType: Record<string, number>;
     byDevice: Record<string, number>;
-    recentActivity: number; // Événements des dernières 24h
+    recentData: number; // Données des dernières 24h
   }> {
     const total = await this.historyRepository.count();
 
-    // Compter par type d'événement
-    const byEventType: Record<string, number> = {};
-    const eventTypes = await this.historyRepository
+    // Compter par type de capteur
+    const bySensorType: Record<string, number> = {};
+    const sensorTypes = await this.historyRepository
       .createQueryBuilder('history')
-      .select('history.eventType', 'eventType')
+      .select('history.sensorType', 'sensorType')
       .addSelect('COUNT(*)', 'count')
-      .groupBy('history.eventType')
+      .groupBy('history.sensorType')
       .getRawMany();
 
-    eventTypes.forEach((item) => {
-      byEventType[item.eventType] = parseInt(item.count, 10);
+    sensorTypes.forEach((item) => {
+      bySensorType[item.sensorType] = parseInt(item.count, 10);
     });
 
     // Compter par appareil
     const byDevice: Record<string, number> = {};
     const devices = await this.historyRepository
       .createQueryBuilder('history')
-      .select('history.deviceName', 'deviceName')
+      .select('history.deviceId', 'deviceId')
       .addSelect('COUNT(*)', 'count')
-      .where('history.deviceName IS NOT NULL')
-      .groupBy('history.deviceName')
+      .groupBy('history.deviceId')
       .orderBy('count', 'DESC')
       .limit(10)
       .getRawMany();
 
     devices.forEach((item) => {
-      byDevice[item.deviceName] = parseInt(item.count, 10);
+      byDevice[item.deviceId] = parseInt(item.count, 10);
     });
 
-    // Compter les événements des dernières 24h
+    // Compter les données des dernières 24h
     const yesterday = new Date();
     yesterday.setHours(yesterday.getHours() - 24);
-    const recentActivity = await this.historyRepository.count({
+    const recentData = await this.historyRepository.count({
       where: {
         timestamp: Between(yesterday, new Date()),
       },
@@ -373,16 +181,16 @@ export class HistoryService {
 
     return {
       total,
-      byEventType,
+      bySensorType,
       byDevice,
-      recentActivity,
+      recentData,
     };
   }
 
   /**
-   * Supprime les événements plus anciens qu'une date donnée
+   * Supprime les données plus anciennes qu'une date donnée
    */
-  async cleanOldEvents(olderThan: Date): Promise<number> {
+  async cleanOldData(olderThan: Date): Promise<number> {
     const result = await this.historyRepository
       .createQueryBuilder()
       .delete()
@@ -392,4 +200,5 @@ export class HistoryService {
     return result.affected || 0;
   }
 }
+
 

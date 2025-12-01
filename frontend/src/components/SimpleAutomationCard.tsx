@@ -10,14 +10,11 @@ import {
   MenuItem,
   Chip,
   Stack,
-  Divider,
 } from '@mui/material';
 import {
   MoreVert as MoreVertIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
-  PlayArrow as PlayIcon,
-  History as HistoryIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import {

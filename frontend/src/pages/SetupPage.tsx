@@ -31,7 +31,7 @@ export default function SetupPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { devices, refetch } = useDevices();
-  const { register, checkLocalMode } = useAuth();
+  const { register } = useAuth();
   const [currentStep, setCurrentStep] = useState<SetupStep>('update');
   const [updateStatus, setUpdateStatus] = useState<'checking' | 'updating' | 'updated' | 'error'>('checking');
   const [email, setEmail] = useState('');
@@ -57,7 +57,7 @@ export default function SetupPage() {
     }
   };
 
-  const handleUpdate = async () => {
+  /*const handleUpdate = async () => {
     setUpdateStatus('updating');
     try {
       // TODO: Implémenter la mise à jour réelle
@@ -67,7 +67,7 @@ export default function SetupPage() {
       setUpdateStatus('error');
       setError(t('setup.updateError'));
     }
-  };
+  };*/
 
   const handleCreateAccount = async () => {
     if (!email || !password) {

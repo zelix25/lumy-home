@@ -7,7 +7,9 @@ import { LoggerService } from '../logger/logger.service';
 import { MqttService } from '../mqtt/mqtt.service';
 import { WebsocketGateway } from '../websocket/websocket.gateway';
 import { Device, DeviceType, DeviceStatus } from './entities/device.entity';
+import { HistoryService as HistoryTimelineService } from '../history_timeline/history_timeline.service';
 import { HistoryService } from '../history/history.service';
+import { SensorType } from '../history/entities/history.entity';
 import { AutomationsService } from '../automations/automations.service';
 
 interface ZigbeeDevice {
@@ -50,6 +52,8 @@ export class Zigbee2MqttService implements OnModuleInit {
     private readonly logger: LoggerService,
     private readonly mqttService: MqttService,
     private readonly websocketGateway: WebsocketGateway,
+    @Inject(forwardRef(() => HistoryTimelineService))
+    private readonly historyTimelineService?: HistoryTimelineService,
     @Inject(forwardRef(() => HistoryService))
     private readonly historyService?: HistoryService,
     @Inject(forwardRef(() => AutomationsService))
@@ -352,9 +356,9 @@ export class Zigbee2MqttService implements OnModuleInit {
       );
 
       // Enregistrer la découverte dans l'historique
-      if (this.historyService) {
+      if (this.historyTimelineService) {
         try {
-          await this.historyService.logDeviceDiscovered(
+          await this.historyTimelineService.logDeviceDiscovered(
             newDevice.ieeeAddress,
             newDevice.friendlyName || newDevice.ieeeAddress,
             deviceType,
@@ -468,14 +472,27 @@ export class Zigbee2MqttService implements OnModuleInit {
     
     const savedDevice = await this.deviceRepository.save(device);
 
-    // Enregistrer les événements dans l'historique
-    if (this.historyService) {
+    // Enregistrer les événements dans l'historique timeline
+    if (this.historyTimelineService) {
       try {
         // Détecter les changements significatifs et les enregistrer
         await this.logSignificantEvents(savedDevice, oldState, mergedState);
       } catch (error) {
         this.logger.error(
-          `Erreur lors de l'enregistrement de l'historique: ${error.message}`,
+          `Erreur lors de l'enregistrement de l'historique timeline: ${error.message}`,
+          error.stack,
+          'Zigbee2MqttService',
+        );
+      }
+    }
+
+    // Enregistrer les données de capteurs dans l'historique
+    if (this.historyService) {
+      try {
+        await this.logSensorData(savedDevice.ieeeAddress, oldState, mergedState);
+      } catch (error) {
+        this.logger.error(
+          `Erreur lors de l'enregistrement des données capteurs: ${error.message}`,
           error.stack,
           'Zigbee2MqttService',
         );
@@ -650,16 +667,16 @@ export class Zigbee2MqttService implements OnModuleInit {
     );
 
     // Enregistrer le changement de statut dans l'historique
-    if (this.historyService && oldStatus !== device.status) {
+    if (this.historyTimelineService && oldStatus !== device.status) {
       try {
         if (device.status === DeviceStatus.ONLINE) {
-          await this.historyService.logDeviceOnline(
+          await this.historyTimelineService.logDeviceOnline(
             device.ieeeAddress,
             device.friendlyName || device.ieeeAddress,
             device.room,
           );
         } else {
-          await this.historyService.logDeviceOffline(
+          await this.historyTimelineService.logDeviceOffline(
             device.ieeeAddress,
             device.friendlyName || device.ieeeAddress,
             device.room,
@@ -706,9 +723,9 @@ export class Zigbee2MqttService implements OnModuleInit {
           await this.deviceRepository.save(device);
           
           // Enregistrer l'événement offline dans l'historique
-          if (this.historyService && oldStatus !== DeviceStatus.OFFLINE) {
+          if (this.historyTimelineService && oldStatus !== DeviceStatus.OFFLINE) {
             try {
-              await this.historyService.logDeviceOffline(
+              await this.historyTimelineService.logDeviceOffline(
                 device.ieeeAddress,
                 device.friendlyName || device.ieeeAddress,
                 device.room,
@@ -1011,12 +1028,81 @@ export class Zigbee2MqttService implements OnModuleInit {
   /**
    * Enregistre les événements significatifs dans l'historique
    */
+  /**
+   * Enregistre les données de capteurs dans l'historique
+   */
+  private async logSensorData(
+    deviceId: string,
+    oldState: Record<string, any>,
+    newState: Record<string, any>,
+  ): Promise<void> {
+    if (!this.historyService) return;
+
+    const sensorValues: Array<{ sensorType: SensorType; value: number }> = [];
+
+    // Enregistrer la température si elle a changé
+    if (newState.temperature !== undefined && typeof newState.temperature === 'number') {
+      if (oldState.temperature === undefined || oldState.temperature !== newState.temperature) {
+        sensorValues.push({ sensorType: SensorType.TEMPERATURE, value: newState.temperature });
+      }
+    }
+
+    // Enregistrer l'humidité si elle a changé
+    if (newState.humidity !== undefined && typeof newState.humidity === 'number') {
+      if (oldState.humidity === undefined || oldState.humidity !== newState.humidity) {
+        sensorValues.push({ sensorType: SensorType.HUMIDITY, value: newState.humidity });
+      }
+    }
+
+    // Enregistrer la pression si elle a changé
+    if (newState.pressure !== undefined && typeof newState.pressure === 'number') {
+      if (oldState.pressure === undefined || oldState.pressure !== newState.pressure) {
+        sensorValues.push({ sensorType: SensorType.PRESSURE, value: newState.pressure });
+      }
+    }
+
+    // Enregistrer la luminosité si elle a changé
+    if (newState.illuminance !== undefined && typeof newState.illuminance === 'number') {
+      if (oldState.illuminance === undefined || oldState.illuminance !== newState.illuminance) {
+        sensorValues.push({ sensorType: SensorType.ILLUMINANCE, value: newState.illuminance });
+      }
+    }
+
+    // Enregistrer la batterie si elle a changé
+    if (newState.battery !== undefined && typeof newState.battery === 'number') {
+      if (oldState.battery === undefined || oldState.battery !== newState.battery) {
+        sensorValues.push({ sensorType: SensorType.BATTERY, value: newState.battery });
+      }
+    }
+
+    // Enregistrer la tension si elle a changé (convertir mV en V)
+    if (newState.voltage !== undefined && typeof newState.voltage === 'number') {
+      if (oldState.voltage === undefined || oldState.voltage !== newState.voltage) {
+        // La tension est généralement en mV, on la convertit en V
+        const voltageInV = newState.voltage / 1000;
+        sensorValues.push({ sensorType: SensorType.VOLTAGE, value: voltageInV });
+      }
+    }
+
+    // Enregistrer la qualité de lien si elle a changé
+    if (newState.linkquality !== undefined && typeof newState.linkquality === 'number') {
+      if (oldState.linkquality === undefined || oldState.linkquality !== newState.linkquality) {
+        sensorValues.push({ sensorType: SensorType.LINKQUALITY, value: newState.linkquality });
+      }
+    }
+
+    // Enregistrer toutes les valeurs en une seule transaction
+    if (sensorValues.length > 0) {
+      await this.historyService.logSensorValues(deviceId, sensorValues);
+    }
+  }
+
   private async logSignificantEvents(
     device: Device,
     oldState: Record<string, any>,
     newState: Record<string, any>,
   ): Promise<void> {
-    if (!this.historyService) return;
+    if (!this.historyTimelineService) return;
 
     // Détection de mouvement
     if (
@@ -1026,7 +1112,7 @@ export class Zigbee2MqttService implements OnModuleInit {
     ) {
       const hadMotion = oldState.presence === true || oldState.occupancy === true || oldState.motion === true;
       if (!hadMotion) {
-        await this.historyService.logMotionDetected(
+        await this.historyTimelineService.logMotionDetected(
           device.ieeeAddress,
           device.friendlyName || device.ieeeAddress,
           device.room,
@@ -1037,7 +1123,7 @@ export class Zigbee2MqttService implements OnModuleInit {
 
     // Changement de contact (porte/fenêtre)
     if (newState.contact !== undefined && oldState.contact !== newState.contact) {
-      await this.historyService.logContactChanged(
+        await this.historyTimelineService.logContactChanged(
         device.ieeeAddress,
         device.friendlyName || device.ieeeAddress,
         !newState.contact, // contact: true = fermé, false = ouvert
@@ -1051,7 +1137,7 @@ export class Zigbee2MqttService implements OnModuleInit {
       oldState.temperature !== undefined &&
       Math.abs(newState.temperature - oldState.temperature) > 0.5
     ) {
-      await this.historyService.logTemperatureChanged(
+        await this.historyTimelineService.logTemperatureChanged(
         device.ieeeAddress,
         device.friendlyName || device.ieeeAddress,
         newState.temperature,
@@ -1065,8 +1151,17 @@ export class Zigbee2MqttService implements OnModuleInit {
       (oldState.brightness !== newState.brightness && newState.brightness !== undefined) ||
       (oldState.color_temp !== newState.color_temp && newState.color_temp !== undefined);
 
-    if (stateChanged) {
-      await this.historyService.logStateChanged(
+    // Détecter les changements de capteurs (humidity, pressure, illuminance, battery, voltage)
+    const sensorChanged =
+      (oldState.humidity !== newState.humidity && newState.humidity !== undefined) ||
+      (oldState.pressure !== newState.pressure && newState.pressure !== undefined) ||
+      (oldState.illuminance !== newState.illuminance && newState.illuminance !== undefined) ||
+      (oldState.battery !== newState.battery && newState.battery !== undefined) ||
+      (oldState.voltage !== newState.voltage && newState.voltage !== undefined);
+
+    // Enregistrer un STATE_CHANGED si l'état ou un capteur a changé
+    if (stateChanged || sensorChanged) {
+        await this.historyTimelineService.logStateChanged(
         device.ieeeAddress,
         device.friendlyName || device.ieeeAddress,
         oldState,

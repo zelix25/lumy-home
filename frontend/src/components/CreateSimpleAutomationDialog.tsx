@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -13,10 +13,6 @@ import {
   StepLabel,
   StepContent,
   Stack,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Slider,
   Alert,
   Chip,
@@ -42,7 +38,7 @@ interface CreateSimpleAutomationDialogProps {
   onSuccess: () => void;
 }
 
-const steps = ['trigger', 'device', 'action'];
+//const steps = ['trigger', 'device', 'action'];
 
 export default function CreateSimpleAutomationDialog({
   open,

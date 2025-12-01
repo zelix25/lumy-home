@@ -80,17 +80,17 @@ class HistoryService {
     }
 
     const queryString = params.toString();
-    const endpoint = queryString ? `/history?${queryString}` : '/history';
+    const endpoint = queryString ? `/history_timeline?${queryString}` : '/history_timeline';
     
     return apiService.get<HistoryResponse>(endpoint);
   }
 
   async getStats(): Promise<HistoryStats> {
-    return apiService.get<HistoryStats>('/history/stats');
+    return apiService.get<HistoryStats>('/history_timeline/stats');
   }
 
   async cleanOldEvents(days: number): Promise<{ deleted: number }> {
-    return apiService.delete<{ deleted: number }>(`/history/clean/${days}`);
+    return apiService.delete<{ deleted: number }>(`/history_timeline/clean/${days}`);
   }
 }
 
