@@ -6,6 +6,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY tsconfig*.json ./
 COPY nest-cli.json ./
+COPY env.example.prod ./env.production
 
 # Installer les dépendances
 RUN npm ci

@@ -23,6 +23,7 @@ import {
   HelpOutline,
 } from '@mui/icons-material';
 import { Device } from '../services/devices.service';
+import i18n from '@/i18n';
 
 interface DeviceCardProps {
   device: Device;
@@ -56,16 +57,16 @@ const getDeviceIcon = (type: string) => {
 
 const getDeviceTypeLabel = (type: string): string => {
   const labels: Record<string, string> = {
-    light: 'Ampoule',
-    switch: 'Interrupteur',
-    sensor: 'Capteur',
-    plug: 'Prise',
-    door: 'Porte',
-    window: 'Fenêtre',
-    temperature: 'Température',
-    motion: 'Mouvement',
-    button: 'Bouton',
-    unknown: 'Inconnu',
+    light: i18n.t('devices.light'),
+    switch: i18n.t('devices.switch'),
+    sensor: i18n.t('devices.sensor'),
+    plug: i18n.t('devices.plug'),
+    door: i18n.t('devices.door'),
+    window: i18n.t('devices.window'),
+    temperature: i18n.t('devices.temperature'),
+    motion: i18n.t('devices.motion'),
+    button: i18n.t('devices.button'),
+    unknown: i18n.t('devices.unknown'),
   };
   return labels[type] || type;
 };
@@ -99,13 +100,13 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
       sx={{
         height: '100%',
         cursor: 'pointer',
-        transition: 'all 0.2s',
-        border: isOnline ? '2px solid transparent' : '2px solid #e0e0e0',
+        transition: 'all 0.15s ease-in-out',
+        border: 'none',
         display: 'flex',
         flexDirection: 'column',
+        backgroundColor: '#FFFFFF',
         '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: 4,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
         },
       }}
       onClick={handleCardClick}
@@ -126,24 +127,37 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
               {device.friendlyName}
             </Typography>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              {getDeviceTypeLabel(device.type)}
-            </Typography>
-            {device.room && (
-              <Chip
-                label={device.room}
-                size="small"
-                sx={{ mt: 0.5, fontSize: '0.75rem' }}
-              />
-            )}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+              <Typography variant="body2" color="text.secondary">
+                {getDeviceTypeLabel(device.type)}
+              </Typography>
+              {device.room && (
+                <Chip
+                  label={device.room}
+                  size="small"
+                  sx={{ 
+                    fontSize: '12px',
+                    fontWeight: 400,
+                    backgroundColor: 'rgba(0,0,0,0.04)',
+                    color: 'text.secondary',
+                  }}
+                />
+              )}
+            </Box>
           </Box>
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <Chip
-              label={isOnline ? 'En ligne' : 'Hors ligne'}
-              size="small"
-              color={isOnline ? 'success' : 'default'}
-              sx={{ mb: 1, fontSize: '0.7rem' }}
-            />
+              <Chip
+                label={isOnline ? i18n.t('common.online') : i18n.t('common.offline')}
+                size="small"
+                color={isOnline ? 'success' : 'default'}
+                sx={{ 
+                  mb: 1, 
+                  fontSize: '12px',
+                  fontWeight: 400,
+                  backgroundColor: isOnline ? 'rgba(134, 166, 160, 0.1)' : 'rgba(0,0,0,0.04)',
+                  color: isOnline ? '#86A6A0' : 'text.secondary',
+                }}
+              />
             {(device.type === 'light' || device.type === 'switch' || device.type === 'plug') && (
               <Tooltip title={isOn ? 'Éteindre' : 'Allumer'}>
                 <Switch
@@ -162,7 +176,7 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
         {isOnline && (!device.state || typeof device.state !== 'object' || Object.keys(device.state).length === 0) && (
           <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
             <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-              ⏳ En attente de données...
+              {i18n.t('devices.waitingData')}
             </Typography>
           </Box>
         )}
@@ -174,9 +188,9 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
               {device.state.brightness !== undefined && (
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary" display="block">
-                    💡 Luminosité
+                    {i18n.t('devices.brightness')}
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
                     {Math.round((device.state.brightness / 255) * 100)}%
                   </Typography>
                 </Grid>
@@ -184,9 +198,9 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
               {device.state.color_temp !== undefined && (
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary" display="block">
-                    🌡️ Temp. couleur
+                    {i18n.t('devices.colorTemp')}
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
                     {device.state.color_temp}K
                   </Typography>
                 </Grid>
@@ -196,9 +210,9 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
               {device.state.temperature !== undefined && (
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary" display="block">
-                    🌡️ Température
+                    {i18n.t('devices.temperature')}
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
                     {typeof device.state.temperature === 'number' 
                       ? `${device.state.temperature.toFixed(1)}°C`
                       : `${device.state.temperature}°C`}
@@ -208,9 +222,9 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
               {device.state.humidity !== undefined && (
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary" display="block">
-                    💧 Humidité
+                    {i18n.t('devices.humidity')}
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
                     {typeof device.state.humidity === 'number'
                       ? `${Math.round(device.state.humidity)}%`
                       : `${device.state.humidity}%`}
@@ -222,12 +236,12 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
               {(device.state.presence !== undefined || device.state.occupancy !== undefined) && (
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary" display="block">
-                    👤 Présence
+                    {i18n.t('devices.presence')}
                   </Typography>
                   <Typography 
                     variant="body2" 
                     sx={{ 
-                      fontWeight: 600,
+                      fontWeight: 500,
                       color: (device.state.presence || device.state.occupancy) ? 'success.main' : 'text.secondary'
                     }}
                   >
@@ -240,9 +254,9 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
               {device.state.illuminance !== undefined && (
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary" display="block">
-                    ☀️ Luminosité
+                    {i18n.t('devices.illuminance')}
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
                     {typeof device.state.illuminance === 'number'
                       ? `${device.state.illuminance.toLocaleString()} lux`
                       : `${device.state.illuminance} lux`}
@@ -254,9 +268,9 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
               {device.state.pressure !== undefined && (
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary" display="block">
-                    📊 Pression
+                    {i18n.t('devices.pressure')}
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
                     {typeof device.state.pressure === 'number'
                       ? `${Math.round(device.state.pressure)} hPa`
                       : `${device.state.pressure} hPa`}
@@ -268,12 +282,12 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
               {device.state.contact !== undefined && (
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary" display="block">
-                    🚪 Contact
+                    {i18n.t('devices.contact')}
                   </Typography>
                   <Typography 
                     variant="body2" 
                     sx={{ 
-                      fontWeight: 600,
+                      fontWeight: 500,
                       color: device.state.contact ? 'success.main' : 'warning.main'
                     }}
                   >
@@ -286,12 +300,12 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
               {device.state.water_leak !== undefined && (
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary" display="block">
-                    💦 Fuite d'eau
+                    {i18n.t('devices.waterLeak')}
                   </Typography>
                   <Typography 
                     variant="body2" 
                     sx={{ 
-                      fontWeight: 600,
+                      fontWeight: 500,
                       color: device.state.water_leak ? 'error.main' : 'success.main'
                     }}
                   >
@@ -304,12 +318,12 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
               {device.state.smoke !== undefined && (
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary" display="block">
-                    🔥 Fumée
+                    {i18n.t('devices.smoke')}
                   </Typography>
                   <Typography 
                     variant="body2" 
                     sx={{ 
-                      fontWeight: 600,
+                      fontWeight: 500,
                       color: device.state.smoke ? 'error.main' : 'success.main'
                     }}
                   >
@@ -322,12 +336,12 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
               {device.state.battery !== undefined && (
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary" display="block">
-                    🔋 Batterie
+                    {i18n.t('devices.battery')}
                   </Typography>
                   <Typography 
                     variant="body2" 
                     sx={{ 
-                      fontWeight: 600,
+                      fontWeight: 500,
                       color: device.state.battery < 20 ? 'error.main' : device.state.battery < 50 ? 'warning.main' : 'success.main'
                     }}
                   >
@@ -340,9 +354,9 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
               {device.state.voltage !== undefined && (
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary" display="block">
-                    ⚡ Tension
+                    {i18n.t('devices.voltage')}
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
                     {typeof device.state.voltage === 'number'
                       ? `${(device.state.voltage / 1000).toFixed(2)}V`
                       : `${device.state.voltage}V`}
@@ -352,12 +366,12 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
               {device.state.linkquality !== undefined && (
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary" display="block">
-                    📶 Signal
+                    {i18n.t('devices.signal')}
                   </Typography>
                   <Typography 
                     variant="body2" 
                     sx={{ 
-                      fontWeight: 600,
+                      fontWeight: 500,
                       color: device.state.linkquality < 50 ? 'error.main' : device.state.linkquality < 100 ? 'warning.main' : 'success.main'
                     }}
                   >
@@ -370,12 +384,12 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
               {device.state.state !== undefined && device.type !== 'light' && device.type !== 'switch' && device.type !== 'plug' && (
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary" display="block">
-                    ⚙️ État
+                    {i18n.t('devices.state')}
                   </Typography>
                   <Typography 
                     variant="body2" 
                     sx={{ 
-                      fontWeight: 600,
+                      fontWeight: 500,
                       color: (device.state.state === 'ON' || device.state.state === true) ? 'success.main' : 'text.secondary'
                     }}
                   >
@@ -399,7 +413,7 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
             }}
           >
             <Typography variant="caption" color="warning.dark">
-              ⚠️ {device.unsupportedReason || "Cet appareil n'est pas entièrement supporté"}
+              ⚠️ {device.unsupportedReason || i18n.t('devices.unsupported')}
             </Typography>
           </Box>
         )}
@@ -415,7 +429,7 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
             }}
           >
             <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
-              Dernière mise à jour: {new Date(device.updatedAt).toLocaleTimeString('fr-FR')}
+              {i18n.t('devices.lastUpdate')}: {new Date(device.updatedAt).toLocaleTimeString('fr-FR')}
             </Typography>
           </Box>
         )}

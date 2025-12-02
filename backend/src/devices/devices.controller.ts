@@ -5,6 +5,7 @@ import {
   Put,
   Body,
   Post,
+  Delete,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -13,8 +14,10 @@ import { UpdateFriendlyNameDto } from './dto/update-friendly-name.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { SendCommandDto } from './dto/send-command.dto';
 import { SendMqttMessageDto } from './dto/send-mqtt-message.dto';
+import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('devices')
+@Public()
 export class DevicesController {
   constructor(private readonly devicesService: DevicesService) {}
 
@@ -139,6 +142,12 @@ export class DevicesController {
       success: true,
       message: 'Réabonnement aux topics MQTT demandé',
     };
+  }
+
+  @Delete(':ieeeAddress')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async remove(@Param('ieeeAddress') ieeeAddress: string) {
+    await this.devicesService.remove(ieeeAddress);
   }
 }
 

@@ -7,6 +7,14 @@ import { LoggerModule } from './logger/logger.module';
 import { MqttModule } from './mqtt/mqtt.module';
 import { WebsocketModule } from './websocket/websocket.module';
 import { DevicesModule } from './devices/devices.module';
+import { AiModule } from './ai/ai.module';
+import { HistoryTimelineModule } from './history_timeline/history_timeline.module';
+import { HistoryModule } from './history/history.module';
+import { PlanModule } from './plan/plan.module';
+import { AuthModule } from './auth/auth.module';
+import { SettingsModule } from './settings/settings.module';
+import { AutomationsModule } from './automations/automations.module';
+import { RoomsModule } from './rooms/rooms.module';
 import { configValidationSchema } from './config/config.validation';
 
 @Module({
@@ -30,6 +38,7 @@ import { configValidationSchema } from './config/config.validation';
           type: 'sqlite',
           database: dbPath,
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
           synchronize: nodeEnv !== 'production',
           logging: nodeEnv === 'development',
         };
@@ -41,6 +50,14 @@ import { configValidationSchema } from './config/config.validation';
     MqttModule,
     WebsocketModule,
     DevicesModule,
+    AiModule,
+    HistoryTimelineModule,
+    HistoryModule,
+    PlanModule,
+    AuthModule,
+    SettingsModule,
+    AutomationsModule,
+    RoomsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

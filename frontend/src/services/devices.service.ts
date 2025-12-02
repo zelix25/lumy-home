@@ -103,6 +103,10 @@ class DevicesService {
   async reconnectMqtt(): Promise<{ success: boolean; message: string }> {
     return apiService.post<{ success: boolean; message: string }>('/devices/mqtt/reconnect');
   }
+
+  async deleteDevice(ieeeAddress: string): Promise<void> {
+    return apiService.delete<void>(`/devices/${ieeeAddress}`);
+  }
 }
 
 export const devicesService = new DevicesService();

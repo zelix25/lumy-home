@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { readFileSync } from 'fs';
@@ -7,6 +7,10 @@ import { LoggerService } from '../logger/logger.service';
 import { MqttService } from '../mqtt/mqtt.service';
 import { WebsocketGateway } from '../websocket/websocket.gateway';
 import { Device, DeviceType, DeviceStatus } from './entities/device.entity';
+import { HistoryService as HistoryTimelineService } from '../history_timeline/history_timeline.service';
+import { HistoryService } from '../history/history.service';
+import { SensorType } from '../history/entities/history.entity';
+import { AutomationsService } from '../automations/automations.service';
 
 interface ZigbeeDevice {
   ieee_address: string;
@@ -48,6 +52,12 @@ export class Zigbee2MqttService implements OnModuleInit {
     private readonly logger: LoggerService,
     private readonly mqttService: MqttService,
     private readonly websocketGateway: WebsocketGateway,
+    @Inject(forwardRef(() => HistoryTimelineService))
+    private readonly historyTimelineService?: HistoryTimelineService,
+    @Inject(forwardRef(() => HistoryService))
+    private readonly historyService?: HistoryService,
+    @Inject(forwardRef(() => AutomationsService))
+    private readonly automationsService?: AutomationsService,
   ) {
     this.loadDeviceTypeMapping();
   }
@@ -306,10 +316,20 @@ export class Zigbee2MqttService implements OnModuleInit {
         powerSource: zigbeeDevice.power_source,
         disabled: zigbeeDevice.disabled,
         exposes: zigbeeDevice.definition?.exposes || [],
+        originalType: zigbeeDevice.type, // Stocker le type original de Zigbee2MQTT
       },
     };
 
     if (existingDevice) {
+      // Mettre à jour les métadonnées pour inclure le type original si manquant
+      const existingMeta = existingDevice.meta || {};
+      deviceData.meta = {
+        ...existingMeta,
+        powerSource: zigbeeDevice.power_source,
+        disabled: zigbeeDevice.disabled,
+        exposes: zigbeeDevice.definition?.exposes || existingMeta.exposes || [],
+        originalType: existingMeta.originalType || zigbeeDevice.type, // Préserver ou ajouter le type original
+      };
       // Mettre à jour l'appareil existant
       Object.assign(existingDevice, deviceData);
       await this.deviceRepository.save(existingDevice);
@@ -335,9 +355,27 @@ export class Zigbee2MqttService implements OnModuleInit {
         'Zigbee2MqttService',
       );
 
+      // Enregistrer la découverte dans l'historique
+      if (this.historyTimelineService) {
+        try {
+          await this.historyTimelineService.logDeviceDiscovered(
+            newDevice.ieeeAddress,
+            newDevice.friendlyName || newDevice.ieeeAddress,
+            deviceType,
+            newDevice.room,
+          );
+        } catch (error) {
+          this.logger.error(
+            `Erreur lors de l'enregistrement de la découverte: ${error.message}`,
+            error.stack,
+            'Zigbee2MqttService',
+          );
+        }
+      }
+
       // Notifier via WebSocket avec un message user-friendly
       const notificationMessage = isSupported
-        ? `Un nouvel appareil a été détecté : ${zigbeeDevice.friendly_name}. Comment souhaitez-vous le nommer ?`
+        ? `Un nouvel appareil a été détecté : ${zigbeeDevice.friendly_name}.`
         : `Un appareil a été détecté mais n'est pas encore entièrement supporté : ${zigbeeDevice.friendly_name}. ${unsupportedReason}`;
 
       this.websocketGateway.broadcast('device:discovered', {
@@ -403,6 +441,9 @@ export class Zigbee2MqttService implements OnModuleInit {
       'Zigbee2MqttService',
     );
 
+    // Sauvegarder l'ancien état pour détecter les changements
+    const oldState = device.state ? JSON.parse(JSON.stringify(device.state)) : {};
+
     // Mettre à jour l'état avec toutes les données reçues
     // Fusionner intelligemment : garder les valeurs existantes si nouvelles valeurs sont undefined/null
     const mergedState = { ...(device.state || {}) };
@@ -430,6 +471,33 @@ export class Zigbee2MqttService implements OnModuleInit {
     device.updatedAt = new Date();
     
     const savedDevice = await this.deviceRepository.save(device);
+
+    // Enregistrer les événements dans l'historique timeline
+    if (this.historyTimelineService) {
+      try {
+        // Détecter les changements significatifs et les enregistrer
+        await this.logSignificantEvents(savedDevice, oldState, mergedState);
+      } catch (error) {
+        this.logger.error(
+          `Erreur lors de l'enregistrement de l'historique timeline: ${error.message}`,
+          error.stack,
+          'Zigbee2MqttService',
+        );
+      }
+    }
+
+    // Enregistrer les données de capteurs dans l'historique
+    if (this.historyService) {
+      try {
+        await this.logSensorData(savedDevice.ieeeAddress, oldState, mergedState);
+      } catch (error) {
+        this.logger.error(
+          `Erreur lors de l'enregistrement des données capteurs: ${error.message}`,
+          error.stack,
+          'Zigbee2MqttService',
+        );
+      }
+    }
     
     this.logger.log(
       `✅ État mis à jour [${savedDevice.friendlyName || ieeeAddress}]: ${Object.keys(mergedState).length} propriétés`,
@@ -468,6 +536,67 @@ export class Zigbee2MqttService implements OnModuleInit {
       friendlyName: deviceToSend.friendlyName,
       state: deviceToSend.state,
     });
+
+    // Déclencher les automatisations si un service d'automatisations est disponible
+    if (this.automationsService) {
+      try {
+        await this.triggerAutomations(deviceToSend, oldState, mergedState);
+      } catch (error) {
+        this.logger.error(
+          `Erreur lors du déclenchement des automatisations: ${error.message}`,
+          error.stack,
+          'Zigbee2MqttService',
+        );
+      }
+    }
+  }
+
+  /**
+   * Déclenche les automatisations basées sur les événements Zigbee
+   */
+  private async triggerAutomations(device: Device, oldState: any, newState: any) {
+    if (!this.automationsService) return;
+
+    // Détecter le type d'événement
+    let eventType: string | null = null;
+
+    // Détection de mouvement
+    if (
+      (newState.occupancy === true || newState.occupancy === 'true') &&
+      (oldState.occupancy !== true && oldState.occupancy !== 'true')
+    ) {
+      eventType = 'motion';
+      await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, newState);
+    }
+
+    // Détection de contact (porte/fenêtre)
+    if (newState.contact !== undefined && oldState.contact !== newState.contact) {
+      eventType = 'contact';
+      await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, {
+        ...newState,
+        contactChanged: true,
+        isOpen: !newState.contact, // contact: true = fermé, false = ouvert
+      });
+    }
+
+    // Détection de température
+    if (
+      newState.temperature !== undefined &&
+      oldState.temperature !== undefined &&
+      Math.abs(newState.temperature - oldState.temperature) > 0.5
+    ) {
+      eventType = 'temperature';
+      await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, newState);
+    }
+
+    // Détection de bouton pressé
+    if (newState.action !== undefined && oldState.action !== newState.action) {
+      eventType = 'button';
+      await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, {
+        ...newState,
+        action: newState.action,
+      });
+    }
   }
 
   private async handleDeviceState(friendlyName: string, state: ZigbeeState) {
@@ -522,6 +651,9 @@ export class Zigbee2MqttService implements OnModuleInit {
       return;
     }
 
+    // Sauvegarder l'ancien statut pour détecter les changements
+    const oldStatus = device.status;
+
     // Mettre à jour le statut selon la disponibilité
     const isAvailable = availability?.state === 'online' || availability === 'online';
     device.status = isAvailable ? DeviceStatus.ONLINE : DeviceStatus.OFFLINE;
@@ -533,6 +665,31 @@ export class Zigbee2MqttService implements OnModuleInit {
       `Disponibilité mise à jour pour ${friendlyName}: ${isAvailable ? 'en ligne' : 'hors ligne'}`,
       'Zigbee2MqttService',
     );
+
+    // Enregistrer le changement de statut dans l'historique
+    if (this.historyTimelineService && oldStatus !== device.status) {
+      try {
+        if (device.status === DeviceStatus.ONLINE) {
+          await this.historyTimelineService.logDeviceOnline(
+            device.ieeeAddress,
+            device.friendlyName || device.ieeeAddress,
+            device.room,
+          );
+        } else {
+          await this.historyTimelineService.logDeviceOffline(
+            device.ieeeAddress,
+            device.friendlyName || device.ieeeAddress,
+            device.room,
+          );
+        }
+      } catch (error) {
+        this.logger.error(
+          `Erreur lors de l'enregistrement du changement de statut: ${error.message}`,
+          error.stack,
+          'Zigbee2MqttService',
+        );
+      }
+    }
 
     // Diffuser la mise à jour via WebSocket
     this.websocketGateway.broadcast('device:availability', {
@@ -561,8 +718,27 @@ export class Zigbee2MqttService implements OnModuleInit {
           where: { ieeeAddress: event.data.ieee_address },
         });
         if (device) {
+          const oldStatus = device.status;
           device.status = DeviceStatus.OFFLINE;
           await this.deviceRepository.save(device);
+          
+          // Enregistrer l'événement offline dans l'historique
+          if (this.historyTimelineService && oldStatus !== DeviceStatus.OFFLINE) {
+            try {
+              await this.historyTimelineService.logDeviceOffline(
+                device.ieeeAddress,
+                device.friendlyName || device.ieeeAddress,
+                device.room,
+              );
+            } catch (error) {
+              this.logger.error(
+                `Erreur lors de l'enregistrement de l'événement offline: ${error.message}`,
+                error.stack,
+                'Zigbee2MqttService',
+              );
+            }
+          }
+          
           this.websocketGateway.broadcast('device:offline', { device });
         }
       }
@@ -744,14 +920,38 @@ export class Zigbee2MqttService implements OnModuleInit {
     );
   }
 
+  public async removeDevice(friendlyName: string, ieeeAddress?: string): Promise<void> {
+    // Supprimer un appareil de Zigbee2MQTT
+    // Utiliser le topic bridge/request/device/remove avec le friendly_name ou ieee_address
+    // Documentation: https://www.zigbee2mqtt.io/guide/usage/mqtt_topics_and_messages.html#zigbee2mqtt-bridge-request-device-remove
+    const topic = 'zigbee2mqtt/bridge/request/device/remove';
+    // Payload peut être {"id": "deviceID"} ou deviceID (string)
+    // On utilise l'ieee_address si disponible, sinon le friendly_name
+    // Toujours mettre "force": true pour forcer la suppression
+    const deviceId = ieeeAddress || friendlyName;
+    const payload = {
+      id: deviceId,
+      force: true,
+    };
+    
+    this.mqttService.publish(topic, payload);
+    this.logger.log(
+      `🗑️ Suppression forcée de l'appareil demandée [${friendlyName}] (${ieeeAddress || 'N/A'}) via ${topic}`,
+      'Zigbee2MqttService',
+    );
+  }
+
   public renameDevice(oldFriendlyName: string, newFriendlyName: string): void {
-    const topic = 'zigbee2mqtt/bridge/config/devices/rename';
-    this.mqttService.publish(topic, {
+    // Topic correct pour renommer un appareil dans Zigbee2MQTT
+    const topic = 'zigbee2mqtt/bridge/request/device/rename';
+    const payload = {
       from: oldFriendlyName,
       to: newFriendlyName,
-    });
+    };
+    
+    this.mqttService.publish(topic, payload);
     this.logger.log(
-      `Renommage de ${oldFriendlyName} vers ${newFriendlyName}`,
+      `🔄 Renommage de ${oldFriendlyName} vers ${newFriendlyName} via MQTT`,
       'Zigbee2MqttService',
     );
   }
@@ -823,6 +1023,152 @@ export class Zigbee2MqttService implements OnModuleInit {
       'Détection d\'appareils désactivée',
       'Zigbee2MqttService',
     );
+  }
+
+  /**
+   * Enregistre les événements significatifs dans l'historique
+   */
+  /**
+   * Enregistre les données de capteurs dans l'historique
+   */
+  private async logSensorData(
+    deviceId: string,
+    oldState: Record<string, any>,
+    newState: Record<string, any>,
+  ): Promise<void> {
+    if (!this.historyService) return;
+
+    const sensorValues: Array<{ sensorType: SensorType; value: number }> = [];
+
+    // Enregistrer la température si elle a changé
+    if (newState.temperature !== undefined && typeof newState.temperature === 'number') {
+      if (oldState.temperature === undefined || oldState.temperature !== newState.temperature) {
+        sensorValues.push({ sensorType: SensorType.TEMPERATURE, value: newState.temperature });
+      }
+    }
+
+    // Enregistrer l'humidité si elle a changé
+    if (newState.humidity !== undefined && typeof newState.humidity === 'number') {
+      if (oldState.humidity === undefined || oldState.humidity !== newState.humidity) {
+        sensorValues.push({ sensorType: SensorType.HUMIDITY, value: newState.humidity });
+      }
+    }
+
+    // Enregistrer la pression si elle a changé
+    if (newState.pressure !== undefined && typeof newState.pressure === 'number') {
+      if (oldState.pressure === undefined || oldState.pressure !== newState.pressure) {
+        sensorValues.push({ sensorType: SensorType.PRESSURE, value: newState.pressure });
+      }
+    }
+
+    // Enregistrer la luminosité si elle a changé
+    if (newState.illuminance !== undefined && typeof newState.illuminance === 'number') {
+      if (oldState.illuminance === undefined || oldState.illuminance !== newState.illuminance) {
+        sensorValues.push({ sensorType: SensorType.ILLUMINANCE, value: newState.illuminance });
+      }
+    }
+
+    // Enregistrer la batterie si elle a changé
+    if (newState.battery !== undefined && typeof newState.battery === 'number') {
+      if (oldState.battery === undefined || oldState.battery !== newState.battery) {
+        sensorValues.push({ sensorType: SensorType.BATTERY, value: newState.battery });
+      }
+    }
+
+    // Enregistrer la tension si elle a changé (convertir mV en V)
+    if (newState.voltage !== undefined && typeof newState.voltage === 'number') {
+      if (oldState.voltage === undefined || oldState.voltage !== newState.voltage) {
+        // La tension est généralement en mV, on la convertit en V
+        const voltageInV = newState.voltage / 1000;
+        sensorValues.push({ sensorType: SensorType.VOLTAGE, value: voltageInV });
+      }
+    }
+
+    // Enregistrer la qualité de lien si elle a changé
+    if (newState.linkquality !== undefined && typeof newState.linkquality === 'number') {
+      if (oldState.linkquality === undefined || oldState.linkquality !== newState.linkquality) {
+        sensorValues.push({ sensorType: SensorType.LINKQUALITY, value: newState.linkquality });
+      }
+    }
+
+    // Enregistrer toutes les valeurs en une seule transaction
+    if (sensorValues.length > 0) {
+      await this.historyService.logSensorValues(deviceId, sensorValues);
+    }
+  }
+
+  private async logSignificantEvents(
+    device: Device,
+    oldState: Record<string, any>,
+    newState: Record<string, any>,
+  ): Promise<void> {
+    if (!this.historyTimelineService) return;
+
+    // Détection de mouvement
+    if (
+      newState.presence === true ||
+      newState.occupancy === true ||
+      (newState.motion !== undefined && newState.motion === true)
+    ) {
+      const hadMotion = oldState.presence === true || oldState.occupancy === true || oldState.motion === true;
+      if (!hadMotion) {
+        await this.historyTimelineService.logMotionDetected(
+          device.ieeeAddress,
+          device.friendlyName || device.ieeeAddress,
+          device.room,
+          { presence: newState.presence, occupancy: newState.occupancy, motion: newState.motion },
+        );
+      }
+    }
+
+    // Changement de contact (porte/fenêtre)
+    if (newState.contact !== undefined && oldState.contact !== newState.contact) {
+        await this.historyTimelineService.logContactChanged(
+        device.ieeeAddress,
+        device.friendlyName || device.ieeeAddress,
+        !newState.contact, // contact: true = fermé, false = ouvert
+        device.room,
+      );
+    }
+
+    // Changement de température significatif (> 0.5°C)
+    if (
+      newState.temperature !== undefined &&
+      oldState.temperature !== undefined &&
+      Math.abs(newState.temperature - oldState.temperature) > 0.5
+    ) {
+        await this.historyTimelineService.logTemperatureChanged(
+        device.ieeeAddress,
+        device.friendlyName || device.ieeeAddress,
+        newState.temperature,
+        device.room,
+      );
+    }
+
+    // Changement d'état (ON/OFF, brightness, etc.)
+    const stateChanged =
+      oldState.state !== newState.state ||
+      (oldState.brightness !== newState.brightness && newState.brightness !== undefined) ||
+      (oldState.color_temp !== newState.color_temp && newState.color_temp !== undefined);
+
+    // Détecter les changements de capteurs (humidity, pressure, illuminance, battery, voltage)
+    const sensorChanged =
+      (oldState.humidity !== newState.humidity && newState.humidity !== undefined) ||
+      (oldState.pressure !== newState.pressure && newState.pressure !== undefined) ||
+      (oldState.illuminance !== newState.illuminance && newState.illuminance !== undefined) ||
+      (oldState.battery !== newState.battery && newState.battery !== undefined) ||
+      (oldState.voltage !== newState.voltage && newState.voltage !== undefined);
+
+    // Enregistrer un STATE_CHANGED si l'état ou un capteur a changé
+    if (stateChanged || sensorChanged) {
+        await this.historyTimelineService.logStateChanged(
+        device.ieeeAddress,
+        device.friendlyName || device.ieeeAddress,
+        oldState,
+        newState,
+        device.room,
+      );
+    }
   }
 }
 

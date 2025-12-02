@@ -1,0 +1,49 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001" # WebSocket port (si besoin)
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+
+  zigbee2mqtt:
+    image: koenkk/zigbee2mqtt
+    container_name: zigbee2mqtt
+    restart: unless-stopped
+    depends_on:
+      - mosquitto
+    volumes:
+      - ./data:/app/data
+      - /run/udev:/run/udev:ro
+    ports:
+      - "8080:8080" # Port de l'interface web Zigbee2MQTT
+    environment:
+      - TZ=Europe/Paris
+    devices:
+      - /dev/ttyUSB0:/dev/ttyUSB0 # adapter selon ton coordinator Zigbee
+
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: gemma3-local
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./gemma3_data:/root/.ollama  # stockage des modèles
+    entrypoint: >
+      sh -c "
+        ollama serve &
+        sleep 5 &&
+        ollama pull gemma3 &&
+        wait
+      "
+
+networks:
+  default:
+    name: homehub-network

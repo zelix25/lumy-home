@@ -1,0 +1,93 @@
+services:
+
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: homehub-mosquitto
+    # Ports retirés - communication uniquement via réseau Docker privé
+    # Pour le développement local, décommentez les lignes suivantes :
+    # ports:
+    #   - "1883:1883"
+    #   - "9001:9001"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+    restart: unless-stopped
+    networks:
+      - homehub-network
+
+  zigbee2mqtt:
+      image: koenkk/zigbee2mqtt
+      container_name: zigbee2mqtt
+      restart: unless-stopped
+      depends_on:
+        - mosquitto
+      volumes:
+        - ./data:/app/data
+        - /run/udev:/run/udev:ro
+      ports:
+        - "8080:8080" # Port de l'interface web Zigbee2MQTT
+      environment:
+        - TZ=Europe/Paris
+      devices:
+        - /dev/ttyUSB0:/dev/ttyUSB0 # adapter selon ton coordinator Zigbee
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend
+    # Port retiré - communication uniquement via réseau Docker privé
+    # Pour le développement local, décommentez la ligne suivante :
+    # ports:
+    #   - "3000:3000"
+    volumes:
+      - ./backend/data:/app/data
+      - ./backend/logs:/app/logs
+    depends_on:
+      - mosquitto
+    restart: unless-stopped
+    networks:
+      - homehub-network
+      - frontend-backend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      # Plus besoin de VITE_API_URL et VITE_WS_URL - utilisation de chemins relatifs
+      # args:
+      #   - VITE_API_URL=${VITE_API_URL:-}
+      #   - VITE_WS_URL=${VITE_WS_URL:-}
+    container_name: frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - homehub-network
+      - frontend-backend
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: gemma3-local
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./gemma3_data:/root/.ollama  # stockage des modèles
+    entrypoint: >
+      sh -c "
+        ollama serve &
+        sleep 5 &&
+        ollama pull gemma3 &&
+        wait
+      "
+
+networks:
+  homehub-network:
+    external: true
+    driver: bridge
+  frontend-backend:
+    driver: bridge
+    internal: true

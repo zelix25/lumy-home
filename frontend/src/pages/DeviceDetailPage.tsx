@@ -16,11 +16,41 @@ import {
   Alert,
   IconButton,
   Divider,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Dialog,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
+import DeleteIcon from '@mui/icons-material/Delete';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContentText from '@mui/material/DialogContentText';
+import AddIcon from '@mui/icons-material/Add';
 import { devicesService, Device } from '../services/devices.service';
+import { roomsService, Room } from '../services/rooms.service';
 import { useWebSocket } from '../hooks/useWebSocket';
+import MultiSensorChart from '../components/MultiSensorChart';
+import { SensorType } from '../services/sensor-history.service';
+
+const getDeviceTypeLabel = (type: string): string => {
+  const labels: Record<string, string> = {
+    light: 'Ampoule',
+    switch: 'Interrupteur',
+    sensor: 'Capteur',
+    plug: 'Prise',
+    door: 'Porte',
+    window: 'Fenêtre',
+    temperature: 'Température',
+    motion: 'Mouvement',
+    button: 'Bouton',
+    unknown: 'Inconnu',
+  };
+  return labels[type] || type;
+};
 
 export default function DeviceDetailPage() {
   const { ieeeAddress } = useParams<{ ieeeAddress: string }>();
@@ -32,6 +62,12 @@ export default function DeviceDetailPage() {
   const [room, setRoom] = useState('');
   const [brightness, setBrightness] = useState(100);
   const [isOn, setIsOn] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [loadingRooms, setLoadingRooms] = useState(false);
+  const [newRoomDialogOpen, setNewRoomDialogOpen] = useState(false);
+  const [newRoomName, setNewRoomName] = useState('');
   const { isConnected, socket } = useWebSocket();
 
   useEffect(() => {
@@ -61,21 +97,39 @@ export default function DeviceDetailPage() {
     fetchDevice();
   }, [ieeeAddress]);
 
+  // Charger les pièces disponibles
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        setLoadingRooms(true);
+        const roomsData = await roomsService.getAllRooms();
+        setRooms(roomsData);
+      } catch (error) {
+        console.error('Erreur lors du chargement des pièces:', error);
+      } finally {
+        setLoadingRooms(false);
+      }
+    };
+
+    fetchRooms();
+  }, []);
+
   // Écouter les mises à jour en temps réel
   useEffect(() => {
     if (!isConnected || !ieeeAddress) return;
 
-    const handleDeviceState = (data: {
-      ieeeAddress: string;
-      friendlyName: string;
-      state: Record<string, any>;
-    }) => {
-      if (data.ieeeAddress === ieeeAddress) {
-        setIsOn(data.state?.state === 'ON' || data.state?.state === true);
-        if (data.state?.brightness !== undefined) {
-          setBrightness(Math.round((data.state.brightness / 255) * 100));
+    const handleDeviceState = (data: unknown) => {
+      const eventData = data as {
+        ieeeAddress: string;
+        friendlyName: string;
+        state: Record<string, any>;
+      };
+      if (eventData.ieeeAddress === ieeeAddress) {
+        setIsOn(eventData.state?.state === 'ON' || eventData.state?.state === true);
+        if (eventData.state?.brightness !== undefined) {
+          setBrightness(Math.round((eventData.state.brightness / 255) * 100));
         }
-        setDevice((prev) => (prev ? { ...prev, state: data.state } : null));
+        setDevice((prev) => (prev ? { ...prev, state: eventData.state } : null));
       }
     };
 
@@ -103,6 +157,20 @@ export default function DeviceDetailPage() {
       setDevice(updated);
     } catch (err) {
       console.error('Erreur lors de la mise à jour de la pièce:', err);
+    }
+  };
+
+  const handleCreateRoom = async () => {
+    if (!newRoomName.trim()) return;
+    try {
+      const newRoom = await roomsService.createRoom(newRoomName.trim());
+      setRooms((prev) => [...prev, newRoom].sort((a, b) => a.name.localeCompare(b.name)));
+      setRoom(newRoom.name);
+      setNewRoomDialogOpen(false);
+      setNewRoomName('');
+    } catch (err: any) {
+      console.error('Erreur lors de la création de la pièce:', err);
+      alert(err.message || 'Erreur lors de la création de la pièce');
     }
   };
 
@@ -134,6 +202,22 @@ export default function DeviceDetailPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!ieeeAddress) return;
+    setDeleting(true);
+    try {
+      await devicesService.deleteDevice(ieeeAddress);
+      setDeleteDialogOpen(false);
+      // Rediriger vers la liste des appareils après suppression réussie
+      navigate('/appareils');
+    } catch (err: any) {
+      setError(err.message || 'Erreur lors de la suppression de l\'appareil');
+      setDeleteDialogOpen(false);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
@@ -157,20 +241,30 @@ export default function DeviceDetailPage() {
 
   return (
     <Box>
-      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
-        <IconButton onClick={() => navigate('/appareils')} sx={{ mr: 2 }}>
-          <ArrowBackIcon />
-        </IconButton>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          {device.friendlyName}
-        </Typography>
+      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <IconButton onClick={() => navigate('/appareils')} sx={{ mr: 2 }}>
+            <ArrowBackIcon />
+          </IconButton>
+          <Typography variant="h4" sx={{ fontWeight: 500 }}>
+            {device.friendlyName}
+          </Typography>
+        </Box>
+        <Button
+          variant="outlined"
+          color="error"
+          startIcon={<DeleteIcon />}
+          onClick={() => setDeleteDialogOpen(true)}
+        >
+          Supprimer
+        </Button>
       </Box>
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={8}>
           <Card sx={{ mb: 3 }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
                 Informations
               </Typography>
               <Divider sx={{ mb: 2 }} />
@@ -194,22 +288,44 @@ export default function DeviceDetailPage() {
               </Box>
 
               <Box>
-                <TextField
-                  fullWidth
-                  label="Pièce"
-                  value={room}
-                  onChange={(e) => setRoom(e.target.value)}
-                  placeholder="Ex: Salon, Chambre, Cuisine..."
-                  sx={{ mb: 1 }}
-                />
-                <Button
-                  variant="contained"
-                  startIcon={<SaveIcon />}
-                  onClick={handleSaveRoom}
-                  size="small"
-                >
-                  Enregistrer la pièce
-                </Button>
+                <FormControl fullWidth sx={{ mb: 1 }}>
+                  <InputLabel id="room-select-label">Pièce</InputLabel>
+                  <Select
+                    labelId="room-select-label"
+                    value={room}
+                    label="Pièce"
+                    onChange={(e) => setRoom(e.target.value)}
+                    disabled={loadingRooms}
+                  >
+                    <MenuItem value="">
+                      <em>Aucune pièce</em>
+                    </MenuItem>
+                    {rooms.map((roomOption) => (
+                      <MenuItem key={roomOption.id} value={roomOption.name}>
+                        {roomOption.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<AddIcon />}
+                    onClick={() => setNewRoomDialogOpen(true)}
+                    size="small"
+                  >
+                    Ajouter une pièce
+                  </Button>
+                  <Button
+                    variant="contained"
+                    startIcon={<SaveIcon />}
+                    onClick={handleSaveRoom}
+                    size="small"
+                    disabled={!room}
+                  >
+                    Enregistrer la pièce
+                  </Button>
+                </Box>
               </Box>
             </CardContent>
           </Card>
@@ -217,7 +333,7 @@ export default function DeviceDetailPage() {
           {device.type === 'light' && (
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+                <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
                   Contrôles
                 </Typography>
                 <Divider sx={{ mb: 3 }} />
@@ -229,7 +345,7 @@ export default function DeviceDetailPage() {
                         checked={isOn}
                         onChange={(e) => handleToggle(e.target.checked)}
                         disabled={device.status !== 'online'}
-                        size="large"
+                        size="medium"
                       />
                     }
                     label={isOn ? 'Allumé' : 'Éteint'}
@@ -253,9 +369,9 @@ export default function DeviceDetailPage() {
           )}
 
           {(device.type === 'switch' || device.type === 'plug') && (
-            <Card>
+            <Card sx={{ mb: 3 }}>
               <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+                <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
                   Contrôles
                 </Typography>
                 <Divider sx={{ mb: 3 }} />
@@ -266,7 +382,7 @@ export default function DeviceDetailPage() {
                       checked={isOn}
                       onChange={(e) => handleToggle(e.target.checked)}
                       disabled={device.status !== 'online'}
-                      size="large"
+                      size="medium"
                     />
                   }
                   label={isOn ? 'Activé' : 'Désactivé'}
@@ -274,25 +390,93 @@ export default function DeviceDetailPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Graphique unifié des capteurs */}
+          {device.state && (() => {
+            const availableSensors: Array<{ type: SensorType; label: string; unit: string }> = [];
+            
+            if (device.state.temperature !== undefined) {
+              availableSensors.push({
+                type: SensorType.TEMPERATURE,
+                label: 'Température',
+                unit: '°C',
+              });
+            }
+            
+            if (device.state.humidity !== undefined) {
+              availableSensors.push({
+                type: SensorType.HUMIDITY,
+                label: 'Humidité',
+                unit: '%',
+              });
+            }
+            
+            if (device.state.pressure !== undefined) {
+              availableSensors.push({
+                type: SensorType.PRESSURE,
+                label: 'Pression',
+                unit: 'hPa',
+              });
+            }
+            
+            if (device.state.illuminance !== undefined) {
+              availableSensors.push({
+                type: SensorType.ILLUMINANCE,
+                label: 'Luminosité ambiante',
+                unit: 'lux',
+              });
+            }
+            
+            if (device.state.battery !== undefined) {
+              availableSensors.push({
+                type: SensorType.BATTERY,
+                label: 'Batterie',
+                unit: '%',
+              });
+            }
+            
+            if (device.state.voltage !== undefined) {
+              availableSensors.push({
+                type: SensorType.VOLTAGE,
+                label: 'Tension',
+                unit: 'V',
+              });
+            }
+            
+            if (device.state.linkquality !== undefined) {
+              availableSensors.push({
+                type: SensorType.LINKQUALITY,
+                label: 'Qualité du signal',
+                unit: '',
+              });
+            }
+            
+            return availableSensors.length > 0 ? (
+              <Box sx={{ mb: 3 }}>
+                <MultiSensorChart
+                  deviceId={device.ieeeAddress}
+                  availableSensors={availableSensors}
+                />
+              </Box>
+            ) : null;
+          })()}
         </Grid>
 
         <Grid item xs={12} md={4}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
                 État
               </Typography>
               <Divider sx={{ mb: 2 }} />
 
-              <Box sx={{ mb: 2 }}>
+              <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                 <Chip
                   label={device.status === 'online' ? 'En ligne' : 'Hors ligne'}
                   color={device.status === 'online' ? 'success' : 'default'}
-                  sx={{ mb: 1 }}
                 />
                 <Chip
-                  label={device.type}
-                  sx={{ ml: 1 }}
+                  label={getDeviceTypeLabel(device.type)}
                 />
               </Box>
 
@@ -302,168 +486,211 @@ export default function DeviceDetailPage() {
                     Informations détaillées
                   </Typography>
                   
-                  {/* Données des capteurs avec icônes */}
-                  {device.state.temperature !== undefined && (
-                    <Box sx={{ mb: 1.5, p: 1.5, bgcolor: 'background.default', borderRadius: 1 }}>
-                      <Typography variant="body2" fontWeight={600} gutterBottom>
-                        🌡️ Température
-                      </Typography>
-                      <Typography variant="h6" color="primary.main">
-                        {device.state.temperature}°C
-                      </Typography>
-                    </Box>
-                  )}
-                  
-                  {device.state.humidity !== undefined && (
-                    <Box sx={{ mb: 1.5, p: 1.5, bgcolor: 'background.default', borderRadius: 1 }}>
-                      <Typography variant="body2" fontWeight={600} gutterBottom>
-                        💧 Humidité
-                      </Typography>
-                      <Typography variant="h6" color="primary.main">
-                        {device.state.humidity}%
-                      </Typography>
-                    </Box>
-                  )}
-                  
-                  {device.state.pressure !== undefined && (
-                    <Box sx={{ mb: 1.5, p: 1.5, bgcolor: 'background.default', borderRadius: 1 }}>
-                      <Typography variant="body2" fontWeight={600} gutterBottom>
-                        📊 Pression
-                      </Typography>
-                      <Typography variant="h6" color="primary.main">
-                        {device.state.pressure} hPa
-                      </Typography>
-                    </Box>
-                  )}
-                  
-                  {device.state.illuminance !== undefined && (
-                    <Box sx={{ mb: 1.5, p: 1.5, bgcolor: 'background.default', borderRadius: 1 }}>
-                      <Typography variant="body2" fontWeight={600} gutterBottom>
-                        ☀️ Luminosité ambiante
-                      </Typography>
-                      <Typography variant="h6" color="primary.main">
-                        {device.state.illuminance} lux
-                      </Typography>
-                    </Box>
-                  )}
-                  
-                  {device.state.occupancy !== undefined && (
-                    <Box sx={{ mb: 1.5, p: 1.5, bgcolor: 'background.default', borderRadius: 1 }}>
-                      <Typography variant="body2" fontWeight={600} gutterBottom>
-                        👤 Présence
-                      </Typography>
-                      <Typography variant="h6" color={device.state.occupancy ? 'success.main' : 'text.secondary'}>
-                        {device.state.occupancy ? 'Détectée' : 'Aucune'}
-                      </Typography>
-                    </Box>
-                  )}
-                  
-                  {device.state.contact !== undefined && (
-                    <Box sx={{ mb: 1.5, p: 1.5, bgcolor: 'background.default', borderRadius: 1 }}>
-                      <Typography variant="body2" fontWeight={600} gutterBottom>
-                        🚪 Contact
-                      </Typography>
-                      <Typography variant="h6" color={device.state.contact ? 'success.main' : 'error.main'}>
-                        {device.state.contact ? 'Fermé' : 'Ouvert'}
-                      </Typography>
-                    </Box>
-                  )}
-                  
-                  {device.state.water_leak !== undefined && (
-                    <Box sx={{ mb: 1.5, p: 1.5, bgcolor: device.state.water_leak ? 'error.light' : 'background.default', borderRadius: 1 }}>
-                      <Typography variant="body2" fontWeight={600} gutterBottom>
-                        💦 Fuite d'eau
-                      </Typography>
-                      <Typography variant="h6" color={device.state.water_leak ? 'error.main' : 'success.main'}>
-                        {device.state.water_leak ? '⚠️ Détectée' : 'Aucune'}
-                      </Typography>
-                    </Box>
-                  )}
-                  
-                  {device.state.smoke !== undefined && (
-                    <Box sx={{ mb: 1.5, p: 1.5, bgcolor: device.state.smoke ? 'error.light' : 'background.default', borderRadius: 1 }}>
-                      <Typography variant="body2" fontWeight={600} gutterBottom>
-                        🔥 Fumée
-                      </Typography>
-                      <Typography variant="h6" color={device.state.smoke ? 'error.main' : 'success.main'}>
-                        {device.state.smoke ? '⚠️ Détectée' : 'Aucune'}
-                      </Typography>
-                    </Box>
-                  )}
-                  
-                  {/* Informations système */}
-                  {device.state.battery !== undefined && (
-                    <Box sx={{ mb: 1.5, p: 1.5, bgcolor: 'background.default', borderRadius: 1 }}>
-                      <Typography variant="body2" fontWeight={600} gutterBottom>
-                        🔋 Batterie
-                      </Typography>
-                      <Typography variant="h6" color={device.state.battery < 20 ? 'error.main' : device.state.battery < 50 ? 'warning.main' : 'success.main'}>
-                        {device.state.battery}%
-                      </Typography>
-                    </Box>
-                  )}
-                  
-                  {device.state.voltage !== undefined && (
-                    <Box sx={{ mb: 1.5, p: 1.5, bgcolor: 'background.default', borderRadius: 1 }}>
-                      <Typography variant="body2" fontWeight={600} gutterBottom>
-                        ⚡ Tension
-                      </Typography>
-                      <Typography variant="h6" color="primary.main">
-                        {device.state.voltage}V
-                      </Typography>
-                    </Box>
-                  )}
-                  
-                  {device.state.linkquality !== undefined && (
-                    <Box sx={{ mb: 1.5, p: 1.5, bgcolor: 'background.default', borderRadius: 1 }}>
-                      <Typography variant="body2" fontWeight={600} gutterBottom>
-                        📶 Qualité du signal
-                      </Typography>
-                      <Typography variant="h6" color={device.state.linkquality < 50 ? 'error.main' : device.state.linkquality < 100 ? 'warning.main' : 'success.main'}>
-                        {device.state.linkquality}
-                      </Typography>
-                    </Box>
-                  )}
-                  
-                  {/* Autres données */}
-                  {Object.entries(device.state)
-                    .filter(([key]) => 
-                      !['temperature', 'humidity', 'pressure', 'illuminance', 'occupancy', 
-                        'contact', 'water_leak', 'smoke', 'battery', 'voltage', 'linkquality', 
-                        'state', 'brightness', 'color_temp'].includes(key)
-                    )
-                    .map(([key, value]) => (
-                      <Box key={key} sx={{ mb: 1, p: 1, bgcolor: 'background.default', borderRadius: 1 }}>
-                        <Typography variant="body2" fontWeight={600} gutterBottom>
-                          {key}
+                  <Grid container spacing={1.5}>
+                    {/* Données des capteurs avec icônes */}
+                    {device.state.temperature !== undefined && (
+                      <Grid item xs={6}>
+                        <Box sx={{ p: 1.5, bgcolor: 'background.default', borderRadius: 1, height: '100%' }}>
+                          <Typography variant="body2" fontWeight={500} gutterBottom>
+                            🌡️ Température
+                          </Typography>
+                          <Typography variant="h6" color="primary.main">
+                            {typeof device.state.temperature === 'number' 
+                              ? `${device.state.temperature.toFixed(1)}°C`
+                              : `${device.state.temperature}°C`}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    )}
+                    
+                    {device.state.humidity !== undefined && (
+                      <Grid item xs={6}>
+                        <Box sx={{ p: 1.5, bgcolor: 'background.default', borderRadius: 1, height: '100%' }}>
+                          <Typography variant="body2" fontWeight={500} gutterBottom>
+                            💧 Humidité
+                          </Typography>
+                          <Typography variant="h6" color="primary.main">
+                            {typeof device.state.humidity === 'number'
+                              ? `${Math.round(device.state.humidity)}%`
+                              : `${device.state.humidity}%`}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    )}
+                    
+                    {device.state.pressure !== undefined && (
+                      <Grid item xs={6}>
+                        <Box sx={{ p: 1.5, bgcolor: 'background.default', borderRadius: 1, height: '100%' }}>
+                          <Typography variant="body2" fontWeight={500} gutterBottom>
+                            📊 Pression
+                          </Typography>
+                          <Typography variant="h6" color="primary.main">
+                            {typeof device.state.pressure === 'number'
+                              ? `${Math.round(device.state.pressure)} hPa`
+                              : `${device.state.pressure} hPa`}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    )}
+                    
+                    {device.state.illuminance !== undefined && (
+                      <Grid item xs={6}>
+                        <Box sx={{ p: 1.5, bgcolor: 'background.default', borderRadius: 1, height: '100%' }}>
+                          <Typography variant="body2" fontWeight={500} gutterBottom>
+                            ☀️ Luminosité ambiante
+                          </Typography>
+                          <Typography variant="h6" color="primary.main">
+                            {typeof device.state.illuminance === 'number'
+                              ? `${device.state.illuminance.toLocaleString()} lux`
+                              : `${device.state.illuminance} lux`}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    )}
+                    
+                    {(device.state.presence !== undefined || device.state.occupancy !== undefined) && (
+                      <Grid item xs={6}>
+                        <Box sx={{ p: 1.5, bgcolor: 'background.default', borderRadius: 1, height: '100%' }}>
+                          <Typography variant="body2" fontWeight={500} gutterBottom>
+                            👤 Présence
+                          </Typography>
+                          <Typography variant="h6" color={(device.state.presence || device.state.occupancy) ? 'success.main' : 'text.secondary'}>
+                            {(device.state.presence || device.state.occupancy) ? 'Détectée' : 'Aucune'}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    )}
+                    
+                    {device.state.contact !== undefined && (
+                      <Grid item xs={6}>
+                        <Box sx={{ p: 1.5, bgcolor: 'background.default', borderRadius: 1, height: '100%' }}>
+                          <Typography variant="body2" fontWeight={500} gutterBottom>
+                            🚪 Contact
+                          </Typography>
+                          <Typography variant="h6" color={device.state.contact ? 'success.main' : 'error.main'}>
+                            {device.state.contact ? 'Fermé' : 'Ouvert'}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    )}
+                    
+                    {device.state.water_leak !== undefined && (
+                      <Grid item xs={6}>
+                        <Box sx={{ p: 1.5, bgcolor: device.state.water_leak ? 'error.light' : 'background.default', borderRadius: 1, height: '100%' }}>
+                          <Typography variant="body2" fontWeight={500} gutterBottom>
+                            💦 Fuite d'eau
+                          </Typography>
+                          <Typography variant="h6" color={device.state.water_leak ? 'error.main' : 'success.main'}>
+                            {device.state.water_leak ? '⚠️ Détectée' : 'Aucune'}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    )}
+                    
+                    {device.state.smoke !== undefined && (
+                      <Grid item xs={6}>
+                        <Box sx={{ p: 1.5, bgcolor: device.state.smoke ? 'error.light' : 'background.default', borderRadius: 1, height: '100%' }}>
+                          <Typography variant="body2" fontWeight={500} gutterBottom>
+                            🔥 Fumée
+                          </Typography>
+                          <Typography variant="h6" color={device.state.smoke ? 'error.main' : 'success.main'}>
+                            {device.state.smoke ? '⚠️ Détectée' : 'Aucune'}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    )}
+                    
+                    {/* Informations système */}
+                    {device.state.battery !== undefined && (
+                      <Grid item xs={6}>
+                        <Box sx={{ p: 1.5, bgcolor: 'background.default', borderRadius: 1, height: '100%' }}>
+                          <Typography variant="body2" fontWeight={500} gutterBottom>
+                            🔋 Batterie
+                          </Typography>
+                          <Typography variant="h6" color={device.state.battery < 20 ? 'error.main' : device.state.battery < 50 ? 'warning.main' : 'success.main'}>
+                            {typeof device.state.battery === 'number'
+                              ? `${Math.round(device.state.battery)}%`
+                              : `${device.state.battery}%`}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    )}
+                    
+                    {device.state.voltage !== undefined && (
+                      <Grid item xs={6}>
+                        <Box sx={{ p: 1.5, bgcolor: 'background.default', borderRadius: 1, height: '100%' }}>
+                          <Typography variant="body2" fontWeight={500} gutterBottom>
+                            ⚡ Tension
+                          </Typography>
+                          <Typography variant="h6" color="primary.main">
+                            {typeof device.state.voltage === 'number'
+                              ? `${(device.state.voltage / 1000).toFixed(2)}V`
+                              : `${device.state.voltage}V`}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    )}
+                    
+                    {device.state.linkquality !== undefined && (
+                      <Grid item xs={6}>
+                        <Box sx={{ p: 1.5, bgcolor: 'background.default', borderRadius: 1, height: '100%' }}>
+                          <Typography variant="body2" fontWeight={500} gutterBottom>
+                            📶 Qualité du signal
+                          </Typography>
+                          <Typography variant="h6" color={device.state.linkquality < 50 ? 'error.main' : device.state.linkquality < 100 ? 'warning.main' : 'success.main'}>
+                            {device.state.linkquality}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    )}
+                    
+                    {/* Autres données */}
+                    {Object.entries(device.state)
+                      .filter(([key]) => 
+                        !['temperature', 'humidity', 'pressure', 'illuminance', 'occupancy', 'presence',
+                          'contact', 'water_leak', 'smoke', 'battery', 'voltage', 'linkquality', 
+                          'state', 'brightness', 'color_temp'].includes(key)
+                      )
+                      .map(([key, value]) => (
+                        <Grid item xs={6} key={key}>
+                          <Box sx={{ p: 1.5, bgcolor: 'background.default', borderRadius: 1, height: '100%' }}>
+                            <Typography variant="body2" fontWeight={500} gutterBottom>
+                              {key}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {String(value)}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                      ))}
+                  </Grid>
+                </Box>
+              )}
+
+              {(device.manufacturer || device.model) && (
+                <Box sx={{ mt: 2 }}>
+                  <Grid container spacing={2}>
+                    {device.manufacturer && (
+                      <Grid item xs={6}>
+                        <Typography variant="subtitle2" gutterBottom>
+                          Fabricant
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {String(value)}
+                          {device.manufacturer}
                         </Typography>
-                      </Box>
-                    ))}
-                </Box>
-              )}
-
-              {device.manufacturer && (
-                <Box sx={{ mt: 2 }}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Fabricant
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {device.manufacturer}
-                  </Typography>
-                </Box>
-              )}
-
-              {device.model && (
-                <Box sx={{ mt: 1 }}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Modèle
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {device.model}
-                  </Typography>
+                      </Grid>
+                    )}
+                    {device.model && (
+                      <Grid item xs={6}>
+                        <Typography variant="subtitle2" gutterBottom>
+                          Modèle
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {device.model}
+                        </Typography>
+                      </Grid>
+                    )}
+                  </Grid>
                 </Box>
               )}
 
@@ -476,6 +703,57 @@ export default function DeviceDetailPage() {
           </Card>
         </Grid>
       </Grid>
+
+      {/* Dialog pour créer une nouvelle pièce */}
+      <Dialog open={newRoomDialogOpen} onClose={() => setNewRoomDialogOpen(false)}>
+        <DialogTitle>Ajouter une nouvelle pièce</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Nom de la pièce"
+            fullWidth
+            variant="standard"
+            value={newRoomName}
+            onChange={(e) => setNewRoomName(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handleCreateRoom();
+              }
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setNewRoomDialogOpen(false);
+            setNewRoomName('');
+          }}>
+            Annuler
+          </Button>
+          <Button onClick={handleCreateRoom} variant="contained" disabled={!newRoomName.trim()}>
+            Créer
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog pour supprimer l'appareil */}
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>Supprimer l'appareil</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Êtes-vous sûr de vouloir supprimer l'appareil "{device.friendlyName}" ? 
+            Cette action est irréversible et supprimera l'appareil de Zigbee2MQTT et de la base de données.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
+            Annuler
+          </Button>
+          <Button onClick={handleDelete} color="error" variant="contained" disabled={deleting}>
+            {deleting ? 'Suppression...' : 'Supprimer'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

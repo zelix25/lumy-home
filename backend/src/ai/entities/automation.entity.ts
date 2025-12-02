@@ -1,0 +1,78 @@
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+
+export enum AutomationTriggerType {
+  MOTION = 'motion',
+  CONTACT = 'contact',
+  TEMPERATURE = 'temperature',
+  BUTTON = 'button',
+  TIME = 'time',
+  MANUAL = 'manual',
+}
+
+export enum AutomationActionType {
+  TURN_ON = 'turn_on',
+  TURN_OFF = 'turn_off',
+  SET_BRIGHTNESS = 'set_brightness',
+  SET_COLOR = 'set_color',
+  NOTIFY = 'notify',
+}
+
+export enum AutomationStatus {
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  ERROR = 'error',
+}
+
+@Entity('automations')
+export class Automation {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ type: 'varchar', length: 255 })
+  name: string;
+
+  @Column({ type: 'text', nullable: true })
+  description: string;
+
+  @Column({ type: 'text', nullable: true })
+  userQuery: string; // La phrase originale de l'utilisateur
+
+  @Column({ type: 'json' })
+  trigger: {
+    type: AutomationTriggerType;
+    deviceId?: string; // IEEE address du device déclencheur
+    deviceName?: string; // Nom friendly du device
+    condition?: Record<string, any>; // Conditions supplémentaires (ex: température > 20)
+  };
+
+  @Column({ type: 'json' })
+  actions: Array<{
+    type: AutomationActionType;
+    deviceId: string; // IEEE address du device cible
+    deviceName?: string; // Nom friendly du device
+    params?: Record<string, any>; // Paramètres de l'action (brightness, color, etc.)
+  }>;
+
+  @Column({ type: 'varchar', length: 50, default: AutomationStatus.ACTIVE })
+  status: AutomationStatus;
+
+  @Column({ type: 'json', nullable: true })
+  executionLog: Array<{
+    timestamp: Date;
+    success: boolean;
+    message: string;
+  }>;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}
+

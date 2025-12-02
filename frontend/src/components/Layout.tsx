@@ -14,6 +14,8 @@ import {
   Typography,
   useTheme,
   useMediaQuery,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import HomeIcon from '@mui/icons-material/Home';
@@ -21,9 +23,18 @@ import DevicesIcon from '@mui/icons-material/Devices';
 import SceneIcon from '@mui/icons-material/AutoAwesome';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import HistoryIcon from '@mui/icons-material/History';
+import MapIcon from '@mui/icons-material/Map';
 import BugReportIcon from '@mui/icons-material/BugReport';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import SettingsIcon from '@mui/icons-material/Settings';
+import ComputerIcon from '@mui/icons-material/Computer';
+import LogoutIcon from '@mui/icons-material/Logout';
+import LanguageSelector from './LanguageSelector';
+import SystemModal from './SystemModal';
+import { useTranslation } from 'react-i18next';
+import { useAuth } from '../contexts/AuthContext';
 
-const drawerWidth = 280;
+const drawerWidth = 240; // Largeur sidebar selon guide scandinave
 
 interface LayoutProps {
   children: ReactNode;
@@ -35,21 +46,26 @@ interface NavItem {
   icon: ReactNode;
 }
 
-const navItems: NavItem[] = [
-  { label: 'Maison', path: '/', icon: <HomeIcon /> },
-  { label: 'Appareils', path: '/appareils', icon: <DevicesIcon /> },
-  { label: 'Scènes & Automatisations', path: '/scenes', icon: <SceneIcon /> },
-  { label: 'Assistant IA', path: '/assistant', icon: <SmartToyIcon /> },
-  { label: 'Historique', path: '/historique', icon: <HistoryIcon /> },
-  { label: 'Debug MQTT', path: '/debug', icon: <BugReportIcon /> },
+const getNavItems = (t: (key: string) => string): NavItem[] => [
+  { label: t('common.home'), path: '/', icon: <HomeIcon /> },
+  { label: t('common.devices'), path: '/appareils', icon: <DevicesIcon /> },
+  { label: t('common.scenes'), path: '/scenes', icon: <SceneIcon /> },
+  { label: t('common.assistant'), path: '/assistant', icon: <SmartToyIcon /> },
+  { label: t('common.history'), path: '/historique', icon: <HistoryIcon /> },
+  { label: t('common.plan'), path: '/plan', icon: <MapIcon /> },
+  { label: t('common.debug'), path: '/debug', icon: <BugReportIcon /> },
 ];
 
 export default function Layout({ children }: LayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [systemModalOpen, setSystemModalOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { t } = useTranslation();
+  const { logout, isAuthenticated, user } = useAuth();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -62,20 +78,61 @@ export default function Layout({ children }: LayoutProps) {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+    handleMenuClose();
+  };
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleAccount = () => {
+    navigate('/account');
+    handleMenuClose();
+  };
+
+  const handleSettings = () => {
+    navigate('/settings');
+    handleMenuClose();
+  };
+
+  const handleSystem = () => {
+    setSystemModalOpen(true);
+    handleMenuClose();
+  };
+
+  const handleRestart = () => {
+    // TODO: Implémenter l'appel API pour redémarrer
+    console.log('Redémarrer le système');
+  };
+
+  const handleShutdown = () => {
+    // TODO: Implémenter l'appel API pour arrêter
+    console.log('Arrêter le système');
+  };
+
   const drawer = (
     <Box>
       <Toolbar
         sx={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
+          background: '#FFFFFF',
+          color: '#1E1E1E',
+          borderBottom: '1px solid rgba(0,0,0,0.08)',
+          minHeight: '64px !important',
         }}
       >
-        <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 700 }}>
+        <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 500 }}>
           HomeHub IA
         </Typography>
       </Toolbar>
       <List sx={{ pt: 2 }}>
-        {navItems.map((item) => (
+        {getNavItems(t).map((item) => (
           <ListItem key={item.path} disablePadding>
             <ListItemButton
               selected={location.pathname === item.path}
@@ -83,22 +140,27 @@ export default function Layout({ children }: LayoutProps) {
               sx={{
                 mx: 1,
                 mb: 0.5,
-                borderRadius: 2,
+                borderRadius: 8,
+                transition: 'all 0.15s ease-in-out',
+                '&:hover': {
+                  backgroundColor: 'rgba(0,0,0,0.04)',
+                },
                 '&.Mui-selected': {
-                  backgroundColor: 'primary.main',
-                  color: 'white',
+                  backgroundColor: 'rgba(134, 166, 160, 0.1)',
+                  color: '#1E1E1E',
                   '&:hover': {
-                    backgroundColor: 'primary.dark',
+                    backgroundColor: 'rgba(134, 166, 160, 0.15)',
                   },
                   '& .MuiListItemIcon-root': {
-                    color: 'white',
+                    color: '#86A6A0',
                   },
                 },
               }}
             >
               <ListItemIcon
                 sx={{
-                  color: location.pathname === item.path ? 'white' : 'text.secondary',
+                  color: location.pathname === item.path ? '#86A6A0' : 'text.secondary',
+                  minWidth: 40,
                 }}
               >
                 {item.icon}
@@ -106,7 +168,7 @@ export default function Layout({ children }: LayoutProps) {
               <ListItemText
                 primary={item.label}
                 primaryTypographyProps={{
-                  fontWeight: location.pathname === item.path ? 600 : 400,
+                  fontWeight: location.pathname === item.path ? 500 : 400,
                 }}
               />
             </ListItemButton>
@@ -136,8 +198,67 @@ export default function Layout({ children }: LayoutProps) {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            Domotique Intelligente
           </Typography>
+          {isAuthenticated && user && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mr: 2 }}>
+              <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' } }}>
+                {user.email}
+              </Typography>
+              <IconButton
+                color="inherit"
+                onClick={handleMenuOpen}
+                size="small"
+                aria-label="menu utilisateur"
+              >
+                <AccountCircleIcon />
+              </IconButton>
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleMenuClose}
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'right',
+                }}
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+              >
+                <MenuItem onClick={handleAccount}>
+                  <ListItemIcon>
+                    <AccountCircleIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>{t('menu.myAccount')}</ListItemText>
+                </MenuItem>
+                <MenuItem onClick={handleSettings}>
+                  <ListItemIcon>
+                    <SettingsIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>{t('menu.settings')}</ListItemText>
+                </MenuItem>
+                <MenuItem onClick={handleSystem}>
+                  <ListItemIcon>
+                    <ComputerIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>{t('menu.system')}</ListItemText>
+                </MenuItem>
+                <MenuItem onClick={handleLogout}>
+                  <ListItemIcon>
+                    <LogoutIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>{t('menu.logout')}</ListItemText>
+                </MenuItem>
+              </Menu>
+            </Box>
+          )}
+          <LanguageSelector />
+          <SystemModal
+            open={systemModalOpen}
+            onClose={() => setSystemModalOpen(false)}
+            onRestart={handleRestart}
+            onShutdown={handleShutdown}
+          />
         </Toolbar>
       </AppBar>
       <Box

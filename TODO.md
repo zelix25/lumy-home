@@ -71,27 +71,33 @@ Je te la réécris par modules, mais avec les contraintes suivantes :
 
 ### Backend
 
-* [ ] Module IA textuelle
-* [ ] Llama 3 (8B max, pour local-friendly)
-* [ ] Prompt système spécial "grand public"
-* [ ] Transformer texte → règle JSON simple
-* [ ] Vérification cohérence :
+* [x] Module IA textuelle
+* [x] Gemma 3 (pour local-friendly) - Intégration via Ollama
+* [x] Prompt système spécial "grand public"
+* [x] Transformer texte → règle JSON simple
+* [x] Vérification cohérence :
 
   * Appareil connu ?
   * Action possible ?
-* [ ] Interface de validation automatique
+* [x] Interface de validation automatique
+* [x] Endpoints REST pour génération et gestion des automatisations
+* [x] Entité Automation avec stockage en base de données
 
 ### Frontend
 
-* [ ] Modale "Créer une règle par phrase"
-* [ ] Exemple affichés :
+* [x] Modale "Créer une règle par phrase"
+* [x] Exemple affichés :
 
-  * “Allume la lumière du salon quand j’entre dans la pièce”
-  * “Éteins tout quand je pars”
-  * “Alerte-moi si une fenêtre reste ouverte”
-* [ ] Résultat → aperçu non-technique :
+  * "Allume la lumière du salon quand j'entre dans la pièce"
+  * "Éteins tout quand je pars"
+  * "Alerte-moi si une fenêtre reste ouverte"
+* [x] Résultat → aperçu non-technique :
 
-  * “Quand le capteur de mouvement du Salon détecte quelque chose → allumer Lumière Salon”
+  * "Quand le capteur de mouvement du Salon détecte quelque chose → allumer Lumière Salon"
+* [x] Page Assistant avec liste des automatisations
+* [x] Cartes d'automatisations avec activation/désactivation
+* [x] Service API pour communiquer avec le backend IA
+* [x] Traductions français/anglais complètes
 
 ---
 
@@ -120,31 +126,31 @@ Les utilisateurs novices doivent pouvoir faire des choses *sans écrire de logiq
 
 ### Backend
 
-* [ ] Engine d’automation simple “évènement → action”
-* [ ] Gestion des événements Zigbee standard :
+* [x] Engine d'automation simple "évènement → action"
+* [x] Gestion des événements Zigbee standard :
 
   * mouvement
   * ouverture porte
   * température
   * bouton pressé
-* [ ] Actions :
+* [x] Actions :
 
   * allumer / éteindre
   * changer intensité
   * envoyer notification
-* [ ] Endpoint CRUD
-* [ ] Logs exécution
+* [x] Endpoint CRUD
+* [x] Logs exécution
 
 ### Frontend
 
-* [ ] Page “Scènes & automatisations”
-* [ ] Mode guidé (assistant pas à pas) :
+* [x] Page "Scènes & automatisations"
+* [x] Mode guidé (assistant pas à pas) :
 
   1. Choisir un déclencheur
   2. Choisir un appareil
   3. Choisir une action
-* [ ] Visualisation simple :
-  “Quand il y a du mouvement à l’entrée → Allumer Lumière Entrée”
+* [x] Visualisation simple :
+  "Quand il y a du mouvement à l'entrée → Allumer Lumière Entrée"
 
 ---
 
@@ -152,19 +158,32 @@ Les utilisateurs novices doivent pouvoir faire des choses *sans écrire de logiq
 
 ### Backend
 
-* [ ] HistoryModule
-* [ ] Enregistrer événements importants :
+* [x] HistoryModule
+* [x] Enregistrer événements importants :
 
   * détection mouvement
   * changement état
   * exécution scène
-* [ ] Endpoint filtrable
+  * appareil online/offline
+  * découverte d'appareil
+  * changement contact (porte/fenêtre)
+  * changement température
+* [x] Endpoint filtrable
+* [x] Endpoint statistiques
+* [x] Intégration avec Zigbee2MqttService pour enregistrement automatique
+* [x] Intégration avec AiService pour enregistrement des exécutions d'automatisations
 
 ### Frontend
 
-* [ ] Page “Historique”
-* [ ] Timeline simple et claire
-* [ ] Icônes explicites (mouvement, lumière, porte, etc.)
+* [x] Page "Historique"
+* [x] Timeline simple et claire
+* [x] Icônes explicites (mouvement, lumière, porte, etc.)
+* [x] Filtres (type d'événement, appareil, pièce)
+* [x] Statistiques (total, activité récente, appareil le plus actif)
+* [x] Pagination avec "Charger plus"
+* [x] Formatage des dates (il y a X minutes/heures/jours)
+* [x] Service API pour communiquer avec le backend
+* [x] Traductions français/anglais complètes
 
 ---
 
@@ -172,14 +191,14 @@ Les utilisateurs novices doivent pouvoir faire des choses *sans écrire de logiq
 
 ### Backend
 
-* [ ] Login ultra basique (email + mot de passe)
-* [ ] JWT
-* [ ] Option mode “local sans compte” pour la première installation
+* [x] Login ultra basique (email + mot de passe)
+* [x] JWT
+* [x] Option mode "local sans compte" pour la première installation
 
 ### Frontend
 
-* [ ] Écran de login minimaliste
-* [ ] Setup assistant à la première ouverture
+* [x] Écran de login minimaliste
+* [x] Setup assistant à la première ouverture
 
 → L’assistant doit dire :
 
@@ -226,3 +245,17 @@ Les utilisateurs novices doivent pouvoir faire des choses *sans écrire de logiq
 
 ---
 
+# Mode IA 
+
+| Version                     | IA                       | API                       |
+| --------------------------- | ------------------------ | ------------------------- |
+| **Cloud / Entrée de gamme** | Gemma 3 Cloud            | **Google Vertex AI**      |
+| **Local / Premium**         | Gemma 3 local via Ollama | **HTTP local Ollama API** |
+
+Cela donne une expérience identique côté utilisateur (HomeHub → /ai/query), mais avec un backend différent selon la box.
+
+# A reprendre
+* [ ] Les setup
+* [ ] Creer un mode tablette
+* [ ] Dans paramettre choix des capteur a afficher
+* [ ] Mode avancer pour modifier les parametre des capteurs

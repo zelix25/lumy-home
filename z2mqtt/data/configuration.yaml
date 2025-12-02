@@ -1,0 +1,59 @@
+version: 4
+mqtt:
+  base_topic: zigbee2mqtt
+  server: mqtt://mosquitto
+  user: mqtt
+  password: mqtt
+serial:
+  port: /dev/ttyUSB0
+  adapter: zigate
+  baudrate: 115200
+  rtscts: false
+advanced:
+  log_level: info
+  channel: 25
+  network_key:
+    - 155
+    - 149
+    - 132
+    - 230
+    - 112
+    - 63
+    - 138
+    - 229
+    - 79
+    - 217
+    - 51
+    - 51
+    - 113
+    - 30
+    - 140
+    - 141
+  pan_id: 59272
+  ext_pan_id:
+    - 86
+    - 209
+    - 48
+    - 224
+    - 74
+    - 100
+    - 108
+    - 133
+frontend:
+  enabled: true
+  port: 8080
+homeassistant:
+  enabled: false
+onboarding: false
+devices:
+  '0xa4c138349ed4bd3d':
+    friendly_name: Capteur multiple
+    illuminance_calibration: 100
+  '0x04cf8cdf3c82cecf':
+    friendly_name: Capteur lux
+  '0xa4c138c14f5d1e93':
+    friendly_name: Capteur présence
+  '0xa4c1380065446a28':
+    friendly_name: Température
+  '0xa4c1386146fa7caa':
+    friendly_name: Interrupteur couloire

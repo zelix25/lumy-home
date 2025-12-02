@@ -1,42 +1,43 @@
-import { useState, useEffect, useRef } from 'react';
-import { Snackbar, Alert, AlertTitle } from '@mui/material';
+import { useState, useEffect } from 'react';
+import { Snackbar, Alert, AlertTitle, Box } from '@mui/material';
 import { useWebSocket } from '../hooks/useWebSocket';
-
-interface Notification {
-  id: string;
-  message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  title?: string;
-}
+import { subscribeToNotifications, getNotifications, type Notification } from '../hooks/useNotification';
 
 export default function NotificationSnackbar() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [currentNotification, setCurrentNotification] = useState<Notification | null>(null);
   const { isConnected, socket } = useWebSocket();
 
+  // S'abonner aux notifications
+  useEffect(() => {
+    const unsubscribe = subscribeToNotifications((newNotifications) => {
+      setNotifications(newNotifications);
+    });
+    // Charger les notifications existantes
+    setNotifications(getNotifications());
+    return unsubscribe;
+  }, []);
+
   useEffect(() => {
     if (!isConnected) return;
 
-    const handleDeviceDiscovered = (data: { device: any; message: string }) => {
+    const handleDeviceDiscovered = (data: unknown) => {
+      const eventData = data as { device: any; message: string };
       const notification: Notification = {
         id: Date.now().toString(),
         title: 'Nouvel appareil détecté',
-        message: data.message,
+        message: eventData.message,
         type: 'info',
       };
       setNotifications((prev) => [...prev, notification]);
     };
 
-    const handleDeviceUpdated = (data: { device: any; message?: string }) => {
+    const handleDeviceUpdated = (_data: unknown) => {
       // Ne pas afficher de notification pour les mises à jour d'appareils
       // Les notifications sont gérées par handleDeviceState pour les données de capteurs
     };
     
-    const handleDeviceState = (data: {
-      ieeeAddress: string;
-      friendlyName: string;
-      state: Record<string, any>;
-    }) => {
+    const handleDeviceState = (_data: unknown) => {
       // Ne pas afficher de notification pour les mises à jour de données de capteurs
     };
 
@@ -73,14 +74,22 @@ export default function NotificationSnackbar() {
         onClose={handleClose}
         severity={currentNotification?.type || 'info'}
         variant="filled"
-        sx={{ width: '100%', minWidth: 300 }}
+        sx={{ 
+          width: '100%', 
+          minWidth: 300,
+          '& .MuiAlert-message, & .MuiAlertTitle-root': {
+            color: 'white',
+          },
+        }}
       >
         {currentNotification?.title && (
-          <AlertTitle sx={{ fontWeight: 600 }}>
+          <AlertTitle sx={{ fontWeight: 500, color: 'white' }}>
             {currentNotification.title}
           </AlertTitle>
         )}
-        {currentNotification?.message}
+        <Box component="span" sx={{ color: 'white' }}>
+          {currentNotification?.message}
+        </Box>
       </Alert>
     </Snackbar>
   );

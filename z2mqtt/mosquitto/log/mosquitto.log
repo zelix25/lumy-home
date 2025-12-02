@@ -1,0 +1,709 @@
+1764159493: mosquitto version 2.0.22 starting
+1764159493: Config loaded from /mosquitto/config/mosquitto.conf.
+1764159493: Error: Unable to open pwfile "/mosquitto/config/passwd".
+1764159493: Error opening password file "/mosquitto/config/passwd".
+1764159553: mosquitto version 2.0.22 starting
+1764159553: Config loaded from /mosquitto/config/mosquitto.conf.
+1764159553: Error: Unable to open pwfile "/mosquitto/config/passwd".
+1764159553: Error opening password file "/mosquitto/config/passwd".
+1764159570: mosquitto version 2.0.22 starting
+1764159570: Config loaded from /mosquitto/config/mosquitto.conf.
+1764159570: Error: Unable to open pwfile "/mosquitto/config/passwd".
+1764159570: Error opening password file "/mosquitto/config/passwd".
+1764159571: mosquitto version 2.0.22 starting
+1764159571: Config loaded from /mosquitto/config/mosquitto.conf.
+1764159571: Error: Unable to open pwfile "/mosquitto/config/passwd".
+1764159571: Error opening password file "/mosquitto/config/passwd".
+1764159572: mosquitto version 2.0.22 starting
+1764159572: Config loaded from /mosquitto/config/mosquitto.conf.
+1764159572: Error: Unable to open pwfile "/mosquitto/config/passwd".
+1764159572: Error opening password file "/mosquitto/config/passwd".
+1764159573: mosquitto version 2.0.22 starting
+1764159573: Config loaded from /mosquitto/config/mosquitto.conf.
+1764159573: Error: Unable to open pwfile "/mosquitto/config/passwd".
+1764159573: Error opening password file "/mosquitto/config/passwd".
+1764159574: mosquitto version 2.0.22 starting
+1764159574: Config loaded from /mosquitto/config/mosquitto.conf.
+1764159574: Error: Unable to open pwfile "/mosquitto/config/passwd".
+1764159574: Error opening password file "/mosquitto/config/passwd".
+1764159576: mosquitto version 2.0.22 starting
+1764159576: Config loaded from /mosquitto/config/mosquitto.conf.
+1764159576: Error: Unable to open pwfile "/mosquitto/config/passwd".
+1764159576: Error opening password file "/mosquitto/config/passwd".
+1764159695: mosquitto version 2.0.22 starting
+1764159695: Config loaded from /mosquitto/config/mosquitto.conf.
+1764159695: Error: Unable to open pwfile "/mosquitto/config/passwd".
+1764159695: Error opening password file "/mosquitto/config/passwd".
+1764159696: mosquitto version 2.0.22 starting
+1764159696: Config loaded from /mosquitto/config/mosquitto.conf.
+1764159696: Error: Unable to open pwfile "/mosquitto/config/passwd".
+1764159696: Error opening password file "/mosquitto/config/passwd".
+1764159697: mosquitto version 2.0.22 starting
+1764159697: Config loaded from /mosquitto/config/mosquitto.conf.
+1764159697: Error: Unable to open pwfile "/mosquitto/config/passwd".
+1764159697: Error opening password file "/mosquitto/config/passwd".
+1764159697: mosquitto version 2.0.22 starting
+1764159697: Config loaded from /mosquitto/config/mosquitto.conf.
+1764159697: Error: Unable to open pwfile "/mosquitto/config/passwd".
+1764159697: Error opening password file "/mosquitto/config/passwd".
+1764159699: mosquitto version 2.0.22 starting
+1764159699: Config loaded from /mosquitto/config/mosquitto.conf.
+1764159699: Error: Unable to open pwfile "/mosquitto/config/passwd".
+1764159699: Error opening password file "/mosquitto/config/passwd".
+1764159701: mosquitto version 2.0.22 starting
+1764159701: Config loaded from /mosquitto/config/mosquitto.conf.
+1764159701: Error: Unable to open pwfile "/mosquitto/config/passwd".
+1764159701: Error opening password file "/mosquitto/config/passwd".
+1764159705: mosquitto version 2.0.22 starting
+1764159705: Config loaded from /mosquitto/config/mosquitto.conf.
+1764159705: Error: Unable to open pwfile "/mosquitto/config/passwd".
+1764159705: Error opening password file "/mosquitto/config/passwd".
+1764159788: mosquitto version 2.0.22 starting
+1764159788: Config loaded from /mosquitto/config/mosquitto.conf.
+1764159788: Opening ipv4 listen socket on port 1883.
+1764159788: Opening ipv6 listen socket on port 1883.
+1764159788: Opening websockets listen socket on port 9001.
+1764159788: mosquitto version 2.0.22 running
+1764159791: mosquitto version 2.0.22 terminating
+1764159791: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764159795: mosquitto version 2.0.22 starting
+1764159795: Config loaded from /mosquitto/config/mosquitto.conf.
+1764159795: Opening ipv4 listen socket on port 1883.
+1764159795: Opening ipv6 listen socket on port 1883.
+1764159795: Opening websockets listen socket on port 9001.
+1764159795: mosquitto version 2.0.22 running
+1764159840: mosquitto version 2.0.22 terminating
+1764159840: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764159844: mosquitto version 2.0.22 starting
+1764159844: Config loaded from /mosquitto/config/mosquitto.conf.
+1764159844: Opening ipv4 listen socket on port 1883.
+1764159844: Opening ipv6 listen socket on port 1883.
+1764159844: Opening websockets listen socket on port 9001.
+1764159844: mosquitto version 2.0.22 running
+1764159952: New connection from 10.0.10.2:41785 on port 1883.
+1764159952: Client <unknown> disconnected due to protocol error.
+1764159959: New connection from 10.0.10.2:41788 on port 1883.
+1764159959: New client connected from 10.0.10.2:41788 as mqtt-explorer-63fd88a6 (p2, c1, k60, u'mqtt').
+1764160066: Client mqtt-explorer-63fd88a6 disconnected.
+1764160069: New connection from 10.0.10.2:41812 on port 1883.
+1764160069: Client mqtt-explorer-63fd88a6 disconnected, not authorised.
+1764160080: New connection from 10.0.10.2:41814 on port 1883.
+1764160080: New client connected from 10.0.10.2:41814 as mqtt-explorer-63fd88a6 (p2, c1, k60, u'mqtt').
+1764160258: Client mqtt-explorer-63fd88a6 disconnected.
+1764160259: New connection from 10.0.10.2:41828 on port 1883.
+1764160259: New client connected from 10.0.10.2:41828 as mqtt-explorer-63fd88a6 (p2, c1, k60, u'mqtt').
+1764161568: Client mqtt-explorer-63fd88a6 disconnected.
+1764161645: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764163446: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764165247: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764167048: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764168849: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764170650: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764171640: mosquitto version 2.0.22 starting
+1764171640: Config loaded from /mosquitto/config/mosquitto.conf.
+1764171640: Opening ipv4 listen socket on port 1883.
+1764171640: Opening ipv6 listen socket on port 1883.
+1764171640: Opening websockets listen socket on port 9001.
+1764171640: mosquitto version 2.0.22 running
+1764171706: mosquitto version 2.0.22 terminating
+1764171706: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764171711: mosquitto version 2.0.22 starting
+1764171711: Config loaded from /mosquitto/config/mosquitto.conf.
+1764171711: Opening ipv4 listen socket on port 1883.
+1764171711: Opening ipv6 listen socket on port 1883.
+1764171711: Opening websockets listen socket on port 9001.
+1764171711: mosquitto version 2.0.22 running
+1764171715: New connection from 172.20.0.3:57938 on port 1883.
+1764171715: New client connected from 172.20.0.3:57938 as mqttjs_46b478dd (p2, c1, k60, u'mqtt').
+1764173511: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764175312: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764177113: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764178914: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764178946: New connection from 192.168.10.17:55579 on port 1883.
+1764178946: New client connected from 192.168.10.17:55579 as homehub-backend (p2, c1, k60, u'mqtt').
+1764179071: Client homehub-backend closed its connection.
+1764179085: New connection from 192.168.10.17:55824 on port 1883.
+1764179085: New client connected from 192.168.10.17:55824 as homehub-backend (p2, c1, k60, u'mqtt').
+1764179230: New connection from 192.168.10.17:55961 on port 1883.
+1764179230: New client connected from 192.168.10.17:55961 as mqtt-explorer-4d6f0097 (p2, c1, k60, u'mqtt').
+1764179569: Client homehub-backend closed its connection.
+1764179602: New connection from 192.168.10.17:56255 on port 1883.
+1764179602: New client connected from 192.168.10.17:56255 as homehub-backend (p2, c1, k60, u'mqtt').
+1764179628: Client homehub-backend closed its connection.
+1764179629: New connection from 192.168.10.17:56299 on port 1883.
+1764179629: New client connected from 192.168.10.17:56299 as homehub-backend (p2, c1, k60, u'mqtt').
+1764179654: Client homehub-backend closed its connection.
+1764179656: New connection from 192.168.10.17:56326 on port 1883.
+1764179656: New client connected from 192.168.10.17:56326 as homehub-backend (p2, c1, k60, u'mqtt').
+1764179669: Client homehub-backend closed its connection.
+1764179670: New connection from 192.168.10.17:56348 on port 1883.
+1764179670: New client connected from 192.168.10.17:56348 as homehub-backend (p2, c1, k60, u'mqtt').
+1764179727: Client homehub-backend closed its connection.
+1764179778: New connection from 192.168.10.17:56506 on port 1883.
+1764179778: New client connected from 192.168.10.17:56506 as homehub-backend (p2, c1, k60, u'mqtt').
+1764180224: Client homehub-backend disconnected due to malformed packet.
+1764180229: New connection from 192.168.10.17:56882 on port 1883.
+1764180229: New client connected from 192.168.10.17:56882 as homehub-backend (p2, c1, k60, u'mqtt').
+1764180242: Client homehub-backend closed its connection.
+1764180243: New connection from 192.168.10.17:56906 on port 1883.
+1764180243: New client connected from 192.168.10.17:56906 as homehub-backend (p2, c1, k60, u'mqtt').
+1764180247: Client homehub-backend closed its connection.
+1764180248: New connection from 192.168.10.17:56929 on port 1883.
+1764180248: New client connected from 192.168.10.17:56929 as homehub-backend (p2, c1, k60, u'mqtt').
+1764180254: Client homehub-backend closed its connection.
+1764180255: New connection from 192.168.10.17:56958 on port 1883.
+1764180255: New client connected from 192.168.10.17:56958 as homehub-backend (p2, c1, k60, u'mqtt').
+1764180262: Client homehub-backend closed its connection.
+1764180264: New connection from 192.168.10.17:56982 on port 1883.
+1764180264: New client connected from 192.168.10.17:56982 as homehub-backend (p2, c1, k60, u'mqtt').
+1764180267: Client homehub-backend closed its connection.
+1764180268: New connection from 192.168.10.17:57002 on port 1883.
+1764180268: New client connected from 192.168.10.17:57002 as homehub-backend (p2, c1, k60, u'mqtt').
+1764180329: Client homehub-backend closed its connection.
+1764180331: New connection from 192.168.10.17:57105 on port 1883.
+1764180331: New client connected from 192.168.10.17:57105 as homehub-backend (p2, c1, k60, u'mqtt').
+1764180355: Client homehub-backend closed its connection.
+1764180356: New connection from 192.168.10.17:57145 on port 1883.
+1764180356: New client connected from 192.168.10.17:57145 as homehub-backend (p2, c1, k60, u'mqtt').
+1764180374: Client homehub-backend closed its connection.
+1764180375: New connection from 192.168.10.17:57186 on port 1883.
+1764180375: New client connected from 192.168.10.17:57186 as homehub-backend (p2, c1, k60, u'mqtt').
+1764180391: Client homehub-backend closed its connection.
+1764180392: New connection from 192.168.10.17:57227 on port 1883.
+1764180392: New client connected from 192.168.10.17:57227 as homehub-backend (p2, c1, k60, u'mqtt').
+1764180451: Client mqtt-explorer-4d6f0097 disconnected due to malformed packet.
+1764180452: New connection from 192.168.10.17:57312 on port 1883.
+1764180452: New client connected from 192.168.10.17:57312 as mqtt-explorer-4d6f0097 (p2, c1, k60, u'mqtt').
+1764180454: Client mqtt-explorer-4d6f0097 disconnected due to malformed packet.
+1764180455: New connection from 192.168.10.17:57314 on port 1883.
+1764180455: New client connected from 192.168.10.17:57314 as mqtt-explorer-4d6f0097 (p2, c1, k60, u'mqtt').
+1764180455: Client mqtt-explorer-4d6f0097 disconnected.
+1764180459: New connection from 192.168.10.17:57319 on port 1883.
+1764180459: New client connected from 192.168.10.17:57319 as mqtt-explorer-4d6f0097 (p2, c1, k60, u'mqtt').
+1764180461: Client mqtt-explorer-4d6f0097 disconnected due to malformed packet.
+1764180462: New connection from 192.168.10.17:57322 on port 1883.
+1764180462: New client connected from 192.168.10.17:57322 as mqtt-explorer-4d6f0097 (p2, c1, k60, u'mqtt').
+1764180674: Client homehub-backend closed its connection.
+1764180688: New connection from 192.168.10.17:57542 on port 1883.
+1764180688: New client connected from 192.168.10.17:57542 as homehub-backend (p2, c1, k60, u'mqtt').
+1764180715: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764180752: Client homehub-backend closed its connection.
+1764180754: New connection from 192.168.10.17:57709 on port 1883.
+1764180754: New client connected from 192.168.10.17:57709 as homehub-backend (p2, c1, k60, u'mqtt').
+1764180760: Client homehub-backend closed its connection.
+1764180865: New connection from 192.168.10.17:58033 on port 1883.
+1764180865: New client connected from 192.168.10.17:58033 as homehub-backend (p2, c1, k60, u'mqtt').
+1764180883: Client homehub-backend closed its connection.
+1764181006: Client mqtt-explorer-4d6f0097 disconnected.
+1764181120: New connection from 192.168.10.17:58444 on port 1883.
+1764181120: New client connected from 192.168.10.17:58444 as mqttx_02f55f77 (p5, c1, k60, u'mqtt').
+1764181337: New connection from 192.168.10.17:58669 on port 1883.
+1764181337: New client connected from 192.168.10.17:58669 as homehub-backend (p2, c1, k60, u'mqtt').
+1764181416: Client homehub-backend closed its connection.
+1764181492: New connection from 192.168.10.17:58879 on port 1883.
+1764181492: New client connected from 192.168.10.17:58879 as homehub-backend (p2, c1, k60, u'mqtt').
+1764181508: Client homehub-backend closed its connection.
+1764181509: New connection from 192.168.10.17:58909 on port 1883.
+1764181509: New client connected from 192.168.10.17:58909 as homehub-backend (p2, c1, k60, u'mqtt').
+1764181525: Client homehub-backend closed its connection.
+1764181527: New connection from 192.168.10.17:58935 on port 1883.
+1764181527: New client connected from 192.168.10.17:58935 as homehub-backend (p2, c1, k60, u'mqtt').
+1764181540: Client homehub-backend closed its connection.
+1764181541: New connection from 192.168.10.17:58958 on port 1883.
+1764181541: New client connected from 192.168.10.17:58958 as homehub-backend (p2, c1, k60, u'mqtt').
+1764181689: Client homehub-backend closed its connection.
+1764181690: New connection from 192.168.10.17:59131 on port 1883.
+1764181690: New client connected from 192.168.10.17:59131 as homehub-backend (p2, c1, k60, u'mqtt').
+1764181693: Client homehub-backend closed its connection.
+1764181695: New connection from 192.168.10.17:59146 on port 1883.
+1764181695: New client connected from 192.168.10.17:59146 as homehub-backend (p2, c1, k60, u'mqtt').
+1764181700: Client homehub-backend closed its connection.
+1764181701: New connection from 192.168.10.17:59163 on port 1883.
+1764181701: New client connected from 192.168.10.17:59163 as homehub-backend (p2, c1, k60, u'mqtt').
+1764181703: Client homehub-backend closed its connection.
+1764181704: New connection from 192.168.10.17:59177 on port 1883.
+1764181704: New client connected from 192.168.10.17:59177 as homehub-backend (p2, c1, k60, u'mqtt').
+1764181704: Client homehub-backend closed its connection.
+1764181706: New connection from 192.168.10.17:59181 on port 1883.
+1764181706: New client connected from 192.168.10.17:59181 as homehub-backend (p2, c1, k60, u'mqtt').
+1764181706: Client homehub-backend closed its connection.
+1764181708: New connection from 192.168.10.17:59195 on port 1883.
+1764181708: New client connected from 192.168.10.17:59195 as homehub-backend (p2, c1, k60, u'mqtt').
+1764181709: Client homehub-backend closed its connection.
+1764181711: New connection from 192.168.10.17:59209 on port 1883.
+1764181711: New client connected from 192.168.10.17:59209 as homehub-backend (p2, c1, k60, u'mqtt').
+1764181712: Client homehub-backend closed its connection.
+1764181713: New connection from 192.168.10.17:59226 on port 1883.
+1764181713: New client connected from 192.168.10.17:59226 as homehub-backend (p2, c1, k60, u'mqtt').
+1764181714: Client homehub-backend closed its connection.
+1764181715: New connection from 192.168.10.17:59241 on port 1883.
+1764181715: New client connected from 192.168.10.17:59241 as homehub-backend (p2, c1, k60, u'mqtt').
+1764181719: Client homehub-backend closed its connection.
+1764181720: New connection from 192.168.10.17:59258 on port 1883.
+1764181720: New client connected from 192.168.10.17:59258 as homehub-backend (p2, c1, k60, u'mqtt').
+1764181725: Client homehub-backend closed its connection.
+1764181726: New connection from 192.168.10.17:59276 on port 1883.
+1764181726: New client connected from 192.168.10.17:59276 as homehub-backend (p2, c1, k60, u'mqtt').
+1764181727: Client homehub-backend closed its connection.
+1764181728: New connection from 192.168.10.17:59294 on port 1883.
+1764181728: New client connected from 192.168.10.17:59294 as homehub-backend (p2, c1, k60, u'mqtt').
+1764181729: Client homehub-backend closed its connection.
+1764181731: New connection from 192.168.10.17:59309 on port 1883.
+1764181731: New client connected from 192.168.10.17:59309 as homehub-backend (p2, c1, k60, u'mqtt').
+1764181732: Client homehub-backend closed its connection.
+1764181733: New connection from 192.168.10.17:59329 on port 1883.
+1764181733: New client connected from 192.168.10.17:59329 as homehub-backend (p2, c1, k60, u'mqtt').
+1764182059: Client homehub-backend closed its connection.
+1764182061: New connection from 192.168.10.17:59694 on port 1883.
+1764182061: New client connected from 192.168.10.17:59694 as homehub-backend (p2, c1, k60, u'mqtt').
+1764182075: Client homehub-backend closed its connection.
+1764182076: New connection from 192.168.10.17:59720 on port 1883.
+1764182076: New client connected from 192.168.10.17:59720 as homehub-backend (p2, c1, k60, u'mqtt').
+1764182450: New connection from 192.168.10.17:60164 on port 1883.
+1764182450: New client connected from 192.168.10.17:60164 as mqttjs_5913f8f1 (p2, c1, k60, u'mqtt').
+1764182516: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764182549: Client mqttjs_5913f8f1 closed its connection.
+1764182564: New connection from 192.168.10.17:60277 on port 1883.
+1764182564: New client connected from 192.168.10.17:60277 as mqttjs_d228a45e (p2, c1, k60, u'mqtt').
+1764182569: Client mqttjs_d228a45e closed its connection.
+1764182574: Client homehub-backend closed its connection.
+1764182587: New connection from 192.168.10.17:60327 on port 1883.
+1764182587: New client connected from 192.168.10.17:60327 as mqttjs_62a57068 (p2, c1, k60, u'mqtt').
+1764182615: Client mqttjs_62a57068 closed its connection.
+1764182616: New connection from 192.168.10.17:60403 on port 1883.
+1764182616: New client connected from 192.168.10.17:60403 as mqttjs_8f43ba6b (p2, c1, k60, u'mqtt').
+1764182624: Client mqttjs_8f43ba6b closed its connection.
+1764182630: New connection from 192.168.10.17:60442 on port 1883.
+1764182630: New client connected from 192.168.10.17:60442 as mqttjs_401e0964 (p2, c1, k60, u'mqtt').
+1764182638: Client mqttjs_401e0964 closed its connection.
+1764182646: New connection from 192.168.10.17:60491 on port 1883.
+1764182646: New client connected from 192.168.10.17:60491 as mqttjs_b6f88e0f (p2, c1, k60, u'mqtt').
+1764182662: Client mqttjs_b6f88e0f closed its connection.
+1764182720: New connection from 192.168.10.17:60639 on port 1883.
+1764182720: New client connected from 192.168.10.17:60639 as homehub-backend (p2, c1, k60, u'mqtt').
+1764182730: Client homehub-backend closed its connection.
+1764182731: New connection from 192.168.10.17:60661 on port 1883.
+1764182731: New client connected from 192.168.10.17:60661 as homehub-backend (p2, c1, k60, u'mqtt').
+1764182891: Client homehub-backend closed its connection.
+1764182892: New connection from 192.168.10.17:60851 on port 1883.
+1764182892: New client connected from 192.168.10.17:60851 as homehub-backend (p2, c1, k60, u'mqtt').
+1764182900: Client mqttx_02f55f77 has exceeded timeout, disconnecting.
+1764182904: New connection from 192.168.10.17:60870 on port 1883.
+1764182904: New client connected from 192.168.10.17:60870 as mqttx_02f55f77 (p5, c1, k60, u'mqtt').
+1764183002: Client homehub-backend closed its connection.
+1764183003: New connection from 192.168.10.17:61012 on port 1883.
+1764183003: New client connected from 192.168.10.17:61012 as homehub-backend (p2, c1, k60, u'mqtt').
+1764183006: Client homehub-backend closed its connection.
+1764183008: New connection from 192.168.10.17:61026 on port 1883.
+1764183008: New client connected from 192.168.10.17:61026 as homehub-backend (p2, c1, k60, u'mqtt').
+1764183046: Client homehub-backend closed its connection.
+1764183048: New connection from 192.168.10.17:61085 on port 1883.
+1764183048: New client connected from 192.168.10.17:61085 as homehub-backend (p2, c1, k60, u'mqtt').
+1764183320: Client mqttx_02f55f77 has exceeded timeout, disconnecting.
+1764183324: New connection from 192.168.10.17:61382 on port 1883.
+1764183324: New client connected from 192.168.10.17:61382 as mqttx_02f55f77 (p5, c1, k60, u'mqtt').
+1764183784: Client homehub-backend closed its connection.
+1764183815: New connection from 192.168.10.17:61929 on port 1883.
+1764183815: New client connected from 192.168.10.17:61929 as homehub-backend (p2, c1, k60, u'mqtt').
+1764183822: Client homehub-backend closed its connection.
+1764183824: New connection from 192.168.10.17:61954 on port 1883.
+1764183824: New client connected from 192.168.10.17:61954 as homehub-backend (p2, c1, k60, u'mqtt').
+1764183841: Client homehub-backend closed its connection.
+1764183842: New connection from 192.168.10.17:61983 on port 1883.
+1764183842: New client connected from 192.168.10.17:61983 as homehub-backend (p2, c1, k60, u'mqtt').
+1764183921: Client mqttx_02f55f77 has exceeded timeout, disconnecting.
+1764183925: New connection from 192.168.10.17:62079 on port 1883.
+1764183925: New client connected from 192.168.10.17:62079 as mqttx_02f55f77 (p5, c1, k60, u'mqtt').
+1764184317: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764184340: Client mqttx_02f55f77 has exceeded timeout, disconnecting.
+1764184344: New connection from 192.168.10.17:62546 on port 1883.
+1764184344: New client connected from 192.168.10.17:62546 as mqttx_02f55f77 (p5, c1, k60, u'mqtt').
+1764184682: Client homehub-backend closed its connection.
+1764184683: New connection from 192.168.10.17:62932 on port 1883.
+1764184683: New client connected from 192.168.10.17:62932 as homehub-backend (p2, c1, k60, u'mqtt').
+1764184722: Client homehub-backend closed its connection.
+1764184723: New connection from 192.168.10.17:62998 on port 1883.
+1764184723: New client connected from 192.168.10.17:62998 as homehub-backend (p2, c1, k60, u'mqtt').
+1764184729: Client homehub-backend closed its connection.
+1764184730: New connection from 192.168.10.17:63013 on port 1883.
+1764184730: New client connected from 192.168.10.17:63013 as homehub-backend (p2, c1, k60, u'mqtt').
+1764184731: Client homehub-backend closed its connection.
+1764184732: New connection from 192.168.10.17:63022 on port 1883.
+1764184733: New client connected from 192.168.10.17:63022 as homehub-backend (p2, c1, k60, u'mqtt').
+1764184760: Client mqttx_02f55f77 has exceeded timeout, disconnecting.
+1764184764: New connection from 192.168.10.17:63060 on port 1883.
+1764184764: New client connected from 192.168.10.17:63060 as mqttx_02f55f77 (p5, c1, k60, u'mqtt').
+1764184810: Client homehub-backend closed its connection.
+1764184811: New connection from 192.168.10.17:63124 on port 1883.
+1764184811: New client connected from 192.168.10.17:63124 as homehub-backend (p2, c1, k60, u'mqtt').
+1764184845: Client homehub-backend closed its connection.
+1764184846: New connection from 192.168.10.17:63171 on port 1883.
+1764184846: New client connected from 192.168.10.17:63171 as homehub-backend (p2, c1, k60, u'mqtt').
+1764184869: Client homehub-backend closed its connection.
+1764184870: New connection from 192.168.10.17:63209 on port 1883.
+1764184870: New client connected from 192.168.10.17:63209 as homehub-backend (p2, c1, k60, u'mqtt').
+1764185180: Client mqttx_02f55f77 has exceeded timeout, disconnecting.
+1764185185: New connection from 192.168.10.17:63600 on port 1883.
+1764185185: New client connected from 192.168.10.17:63600 as mqttx_02f55f77 (p5, c1, k60, u'mqtt').
+1764185600: Client mqttx_02f55f77 has exceeded timeout, disconnecting.
+1764185604: New connection from 192.168.10.17:63992 on port 1883.
+1764185604: New client connected from 192.168.10.17:63992 as mqttx_02f55f77 (p5, c1, k60, u'mqtt').
+1764186080: Client mqttx_02f55f77 has exceeded timeout, disconnecting.
+1764186084: New connection from 192.168.10.17:64416 on port 1883.
+1764186084: New client connected from 192.168.10.17:64416 as mqttx_02f55f77 (p5, c1, k60, u'mqtt').
+1764186118: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764186560: Client mqttx_02f55f77 has exceeded timeout, disconnecting.
+1764186565: New connection from 192.168.10.17:64839 on port 1883.
+1764186565: New client connected from 192.168.10.17:64839 as mqttx_02f55f77 (p5, c1, k60, u'mqtt').
+1764186797: Client homehub-backend closed its connection.
+1764186800: New connection from 192.168.10.17:65105 on port 1883.
+1764186800: New client connected from 192.168.10.17:65105 as homehub-backend (p2, c1, k60, u'mqtt').
+1764186801: Client homehub-backend closed its connection.
+1764186802: New connection from 192.168.10.17:65111 on port 1883.
+1764186802: New client connected from 192.168.10.17:65111 as homehub-backend (p2, c1, k60, u'mqtt').
+1764186980: Client mqttx_02f55f77 has exceeded timeout, disconnecting.
+1764186985: New connection from 192.168.10.17:65311 on port 1883.
+1764186985: New client connected from 192.168.10.17:65311 as mqttx_02f55f77 (p5, c1, k60, u'mqtt').
+1764187143: Client homehub-backend closed its connection.
+1764187168: New connection from 192.168.10.17:49196 on port 1883.
+1764187168: New client connected from 192.168.10.17:49196 as homehub-backend (p2, c1, k60, u'mqtt').
+1764187400: Client mqttx_02f55f77 has exceeded timeout, disconnecting.
+1764187404: New connection from 192.168.10.17:49465 on port 1883.
+1764187404: New client connected from 192.168.10.17:49465 as mqttx_02f55f77 (p5, c1, k60, u'mqtt').
+1764187495: Client mqttx_02f55f77 has exceeded timeout, disconnecting.
+1764187736: Client homehub-backend closed its connection.
+1764187743: New connection from 192.168.10.17:49934 on port 1883.
+1764187743: New client connected from 192.168.10.17:49934 as homehub-backend (p2, c1, k60, u'mqtt').
+1764187919: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764189720: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764191521: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764192552: Client homehub-backend closed its connection.
+1764193322: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764195123: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764196924: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764198725: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764200526: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764202327: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764204128: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764205929: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764207730: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764209531: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764211332: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764213133: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764214934: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764216735: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764218536: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764220337: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764222138: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764223939: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764225740: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764227541: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764229342: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764231143: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764232944: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764234745: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764236546: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764238347: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764240148: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764241949: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764243750: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764245551: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764247352: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764249153: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764250954: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764252755: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764254556: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764256357: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764258158: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764259959: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764261760: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764263561: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764265362: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764266451: New connection from 192.168.10.17:64766 on port 1883.
+1764266451: New client connected from 192.168.10.17:64766 as homehub-backend (p2, c1, k60, u'mqtt').
+1764267163: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764268964: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764270684: Client homehub-backend closed its connection.
+1764270717: New connection from 192.168.10.17:51028 on port 1883.
+1764270717: New client connected from 192.168.10.17:51028 as homehub-backend (p2, c1, k60, u'mqtt').
+1764270765: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764272566: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764273476: Client homehub-backend closed its connection.
+1764273477: New connection from 192.168.10.17:52527 on port 1883.
+1764273477: New client connected from 192.168.10.17:52527 as homehub-backend (p2, c1, k60, u'mqtt').
+1764273478: Client homehub-backend closed its connection.
+1764273479: New connection from 192.168.10.17:52534 on port 1883.
+1764273479: New client connected from 192.168.10.17:52534 as homehub-backend (p2, c1, k60, u'mqtt').
+1764273519: Client homehub-backend closed its connection.
+1764273520: New connection from 192.168.10.17:52597 on port 1883.
+1764273520: New client connected from 192.168.10.17:52597 as homehub-backend (p2, c1, k60, u'mqtt').
+1764273521: Client homehub-backend closed its connection.
+1764273523: New connection from 192.168.10.17:52604 on port 1883.
+1764273523: New client connected from 192.168.10.17:52604 as homehub-backend (p2, c1, k60, u'mqtt').
+1764273562: Client homehub-backend closed its connection.
+1764273564: New connection from 192.168.10.17:52640 on port 1883.
+1764273564: New client connected from 192.168.10.17:52640 as homehub-backend (p2, c1, k60, u'mqtt').
+1764273666: Client homehub-backend closed its connection.
+1764273673: New connection from 192.168.10.17:52743 on port 1883.
+1764273673: New client connected from 192.168.10.17:52743 as homehub-backend (p2, c1, k60, u'mqtt').
+1764273951: Client homehub-backend closed its connection.
+1764273953: New connection from 192.168.10.17:52956 on port 1883.
+1764273953: New client connected from 192.168.10.17:52956 as homehub-backend (p2, c1, k60, u'mqtt').
+1764273955: Client homehub-backend closed its connection.
+1764273956: New connection from 192.168.10.17:52964 on port 1883.
+1764273956: New client connected from 192.168.10.17:52964 as homehub-backend (p2, c1, k60, u'mqtt').
+1764273957: Client homehub-backend closed its connection.
+1764273958: New connection from 192.168.10.17:52973 on port 1883.
+1764273958: New client connected from 192.168.10.17:52973 as homehub-backend (p2, c1, k60, u'mqtt').
+1764273996: Client homehub-backend closed its connection.
+1764273998: New connection from 192.168.10.17:53034 on port 1883.
+1764273998: New client connected from 192.168.10.17:53034 as homehub-backend (p2, c1, k60, u'mqtt').
+1764274002: Client homehub-backend closed its connection.
+1764274003: New connection from 192.168.10.17:53046 on port 1883.
+1764274003: New client connected from 192.168.10.17:53046 as homehub-backend (p2, c1, k60, u'mqtt').
+1764274004: Client homehub-backend closed its connection.
+1764274005: New connection from 192.168.10.17:53052 on port 1883.
+1764274005: New client connected from 192.168.10.17:53052 as homehub-backend (p2, c1, k60, u'mqtt').
+1764274006: Client homehub-backend closed its connection.
+1764274009: New connection from 192.168.10.17:53063 on port 1883.
+1764274009: New client connected from 192.168.10.17:53063 as homehub-backend (p2, c1, k60, u'mqtt').
+1764274030: Client homehub-backend closed its connection.
+1764274032: New connection from 192.168.10.17:53107 on port 1883.
+1764274032: New client connected from 192.168.10.17:53107 as homehub-backend (p2, c1, k60, u'mqtt').
+1764274049: Client homehub-backend closed its connection.
+1764274051: New connection from 192.168.10.17:53144 on port 1883.
+1764274051: New client connected from 192.168.10.17:53144 as homehub-backend (p2, c1, k60, u'mqtt').
+1764274052: Client homehub-backend closed its connection.
+1764274054: New connection from 192.168.10.17:53149 on port 1883.
+1764274054: New client connected from 192.168.10.17:53149 as homehub-backend (p2, c1, k60, u'mqtt').
+1764274142: Client homehub-backend closed its connection.
+1764274181: New connection from 192.168.10.17:53296 on port 1883.
+1764274181: New client connected from 192.168.10.17:53296 as homehub-backend (p2, c1, k60, u'mqtt').
+1764274258: Client homehub-backend closed its connection.
+1764274261: New connection from 192.168.10.17:53337 on port 1883.
+1764274261: New client connected from 192.168.10.17:53337 as homehub-backend (p2, c1, k60, u'mqtt').
+1764274261: Client homehub-backend closed its connection.
+1764274367: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764274694: New connection from 192.168.10.17:53638 on port 1883.
+1764274694: New client connected from 192.168.10.17:53638 as homehub-backend (p2, c1, k60, u'mqtt').
+1764276168: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764276339: Client homehub-backend closed its connection.
+1764276348: New connection from 192.168.10.17:54762 on port 1883.
+1764276348: New client connected from 192.168.10.17:54762 as homehub-backend (p2, c1, k60, u'mqtt').
+1764277969: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764279698: Client homehub-backend closed its connection.
+1764279701: New connection from 192.168.10.17:57658 on port 1883.
+1764279701: New client connected from 192.168.10.17:57658 as homehub-backend (p2, c1, k60, u'mqtt').
+1764279702: Client homehub-backend closed its connection.
+1764279709: New connection from 192.168.10.17:57686 on port 1883.
+1764279709: New client connected from 192.168.10.17:57686 as homehub-backend (p2, c1, k60, u'mqtt').
+1764279721: Client homehub-backend closed its connection.
+1764279723: New connection from 192.168.10.17:57710 on port 1883.
+1764279723: New client connected from 192.168.10.17:57710 as homehub-backend (p2, c1, k60, u'mqtt').
+1764279770: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764279817: Client homehub-backend closed its connection.
+1764279824: New connection from 192.168.10.17:57834 on port 1883.
+1764279824: New client connected from 192.168.10.17:57834 as homehub-backend (p2, c1, k60, u'mqtt').
+1764279891: Client homehub-backend closed its connection.
+1764279892: New connection from 192.168.10.17:57913 on port 1883.
+1764279892: New client connected from 192.168.10.17:57913 as homehub-backend (p2, c1, k60, u'mqtt').
+1764279917: Client homehub-backend closed its connection.
+1764279918: New connection from 192.168.10.17:57943 on port 1883.
+1764279918: New client connected from 192.168.10.17:57943 as homehub-backend (p2, c1, k60, u'mqtt').
+1764280112: Client homehub-backend closed its connection.
+1764280119: New connection from 192.168.10.17:58250 on port 1883.
+1764280119: New client connected from 192.168.10.17:58250 as homehub-backend (p2, c1, k60, u'mqtt').
+1764280213: Client homehub-backend closed its connection.
+1764281571: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764283372: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764285173: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764286974: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764288775: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764290576: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764292377: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764294178: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764295979: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764297780: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764299581: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764301382: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764303183: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764304984: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764306785: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764308586: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764310387: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764312188: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764313989: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764315790: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764317591: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764319392: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764321193: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764322994: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764324795: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764326596: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764328397: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764329943: New connection from 192.168.10.17:60062 on port 1883.
+1764329943: New client connected from 192.168.10.17:60062 as homehub-backend (p2, c1, k60, u'mqtt').
+1764330198: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764331399: Client homehub-backend closed its connection.
+1764331401: New connection from 192.168.10.17:61889 on port 1883.
+1764331401: New client connected from 192.168.10.17:61889 as homehub-backend (p2, c1, k60, u'mqtt').
+1764331649: Client homehub-backend closed its connection.
+1764331650: New connection from 192.168.10.17:62250 on port 1883.
+1764331650: New client connected from 192.168.10.17:62250 as homehub-backend (p2, c1, k60, u'mqtt').
+1764331999: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764333800: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764335601: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764337402: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764339203: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764341004: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764342805: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764344606: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764346407: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764348208: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764348331: Client homehub-backend closed its connection.
+1764350009: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764351810: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764352163: New connection from 192.168.10.17:57030 on port 1883.
+1764352163: New client connected from 192.168.10.17:57030 as homehub-backend (p2, c1, k60, u'mqtt').
+1764352163: Client homehub-backend closed its connection.
+1764352165: New connection from 192.168.10.17:57033 on port 1883.
+1764352165: New client connected from 192.168.10.17:57033 as homehub-backend (p2, c1, k60, u'mqtt').
+1764352166: Client homehub-backend closed its connection.
+1764352168: New connection from 192.168.10.17:57039 on port 1883.
+1764352168: New client connected from 192.168.10.17:57039 as homehub-backend (p2, c1, k60, u'mqtt').
+1764352175: Client homehub-backend closed its connection.
+1764352251: New connection from 192.168.10.17:57092 on port 1883.
+1764352251: New client connected from 192.168.10.17:57092 as homehub-backend (p2, c1, k60, u'mqtt').
+1764352979: Client homehub-backend closed its connection.
+1764353611: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764354504: New connection from 192.168.10.17:61370 on port 1883.
+1764354504: New client connected from 192.168.10.17:61370 as homehub-backend (p2, c1, k60, u'mqtt').
+1764354689: Client homehub-backend closed its connection.
+1764354690: New connection from 192.168.10.17:61581 on port 1883.
+1764354690: New client connected from 192.168.10.17:61581 as homehub-backend (p2, c1, k60, u'mqtt').
+1764354693: Client homehub-backend closed its connection.
+1764354695: New connection from 192.168.10.17:61589 on port 1883.
+1764354695: New client connected from 192.168.10.17:61589 as homehub-backend (p2, c1, k60, u'mqtt').
+1764355412: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764357213: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764359014: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764360815: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764362616: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764364417: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764366218: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764368019: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764369820: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764371621: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764373422: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764375223: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764377024: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764378825: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764380626: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764382427: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764384228: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764386029: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764387830: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764389631: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764391432: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764393233: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764395034: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764396835: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764398636: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764400437: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764402238: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764404039: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764405840: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764407628: Client homehub-backend closed its connection.
+1764407641: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764407687: New connection from 192.168.10.17:59781 on port 1883.
+1764407687: New client connected from 192.168.10.17:59781 as homehub-backend (p2, c1, k60, u'mqtt').
+1764408117: Client homehub-backend closed its connection.
+1764408120: New connection from 192.168.10.17:60021 on port 1883.
+1764408120: New client connected from 192.168.10.17:60021 as homehub-backend (p2, c1, k60, u'mqtt').
+1764408120: Client homehub-backend closed its connection.
+1764408124: New connection from 192.168.10.17:60027 on port 1883.
+1764408124: New client connected from 192.168.10.17:60027 as homehub-backend (p2, c1, k60, u'mqtt').
+1764409442: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764410558: Client homehub-backend closed its connection.
+1764410559: New connection from 192.168.10.17:61226 on port 1883.
+1764410559: New client connected from 192.168.10.17:61226 as homehub-backend (p2, c1, k60, u'mqtt').
+1764410561: Client homehub-backend closed its connection.
+1764410562: New connection from 192.168.10.17:61232 on port 1883.
+1764410562: New client connected from 192.168.10.17:61232 as homehub-backend (p2, c1, k60, u'mqtt').
+1764410568: Client homehub-backend closed its connection.
+1764410573: New connection from 192.168.10.17:61243 on port 1883.
+1764410573: New client connected from 192.168.10.17:61243 as homehub-backend (p2, c1, k60, u'mqtt').
+1764410581: Client homehub-backend closed its connection.
+1764410583: New connection from 192.168.10.17:61250 on port 1883.
+1764410583: New client connected from 192.168.10.17:61250 as homehub-backend (p2, c1, k60, u'mqtt').
+1764410587: Client homehub-backend closed its connection.
+1764410588: New connection from 192.168.10.17:61254 on port 1883.
+1764410588: New client connected from 192.168.10.17:61254 as homehub-backend (p2, c1, k60, u'mqtt').
+1764410589: Client homehub-backend closed its connection.
+1764410592: New connection from 192.168.10.17:61262 on port 1883.
+1764410592: New client connected from 192.168.10.17:61262 as homehub-backend (p2, c1, k60, u'mqtt').
+1764410611: Client homehub-backend closed its connection.
+1764410613: New connection from 192.168.10.17:61273 on port 1883.
+1764410613: New client connected from 192.168.10.17:61273 as homehub-backend (p2, c1, k60, u'mqtt').
+1764410615: Client homehub-backend closed its connection.
+1764410617: New connection from 192.168.10.17:61277 on port 1883.
+1764410617: New client connected from 192.168.10.17:61277 as homehub-backend (p2, c1, k60, u'mqtt').
+1764410678: Client homehub-backend closed its connection.
+1764410992: New connection from 192.168.10.17:61628 on port 1883.
+1764410992: New client connected from 192.168.10.17:61628 as homehub-backend (p2, c1, k60, u'mqtt').
+1764411181: Client homehub-backend closed its connection.
+1764411188: New connection from 192.168.10.17:61832 on port 1883.
+1764411188: New client connected from 192.168.10.17:61832 as homehub-backend (p2, c1, k60, u'mqtt').
+1764411243: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764411762: Client homehub-backend closed its connection.
+1764411766: New connection from 192.168.10.17:62314 on port 1883.
+1764411766: New client connected from 192.168.10.17:62314 as homehub-backend (p2, c1, k60, u'mqtt').
+1764411766: Client homehub-backend closed its connection.
+1764411768: New connection from 192.168.10.17:62315 on port 1883.
+1764411768: New client connected from 192.168.10.17:62315 as homehub-backend (p2, c1, k60, u'mqtt').
+1764411768: Client homehub-backend closed its connection.
+1764411775: New connection from 192.168.10.17:62327 on port 1883.
+1764411775: New client connected from 192.168.10.17:62327 as homehub-backend (p2, c1, k60, u'mqtt').
+1764411780: Client homehub-backend closed its connection.
+1764411781: New connection from 192.168.10.17:62334 on port 1883.
+1764411781: New client connected from 192.168.10.17:62334 as homehub-backend (p2, c1, k60, u'mqtt').
+1764413044: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764414176: Client homehub-backend closed its connection.
+1764414177: New connection from 192.168.10.17:63811 on port 1883.
+1764414177: New client connected from 192.168.10.17:63811 as homehub-backend (p2, c1, k60, u'mqtt').
+1764414177: Client homehub-backend closed its connection.
+1764414179: New connection from 192.168.10.17:63817 on port 1883.
+1764414179: New client connected from 192.168.10.17:63817 as homehub-backend (p2, c1, k60, u'mqtt').
+1764414283: Client homehub-backend closed its connection.
+1764414303: New connection from 192.168.10.17:63949 on port 1883.
+1764414303: New client connected from 192.168.10.17:63949 as homehub-backend (p2, c1, k60, u'mqtt').
+1764414533: Client homehub-backend closed its connection.
+1764414619: New connection from 192.168.10.17:64365 on port 1883.
+1764414619: New client connected from 192.168.10.17:64365 as homehub-backend (p2, c1, k60, u'mqtt').
+1764414845: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764416646: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764417221: mosquitto version 2.0.22 terminating
+1764417221: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764417226: mosquitto version 2.0.22 starting
+1764417226: Config loaded from /mosquitto/config/mosquitto.conf.
+1764417226: Opening ipv4 listen socket on port 1883.
+1764417226: Opening ipv6 listen socket on port 1883.
+1764417226: Opening websockets listen socket on port 9001.
+1764417226: mosquitto version 2.0.22 running
+1764417227: New connection from 192.168.10.17:49352 on port 1883.
+1764417227: New client connected from 192.168.10.17:49352 as homehub-backend (p2, c1, k60, u'mqtt').
+1764417232: mosquitto version 2.0.22 terminating
+1764417232: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1764417306: mosquitto version 2.0.22 starting
+1764417306: Config loaded from /mosquitto/config/mosquitto.conf.
+1764417306: Opening ipv4 listen socket on port 1883.
+1764417306: Opening ipv6 listen socket on port 1883.
+1764417306: Opening websockets listen socket on port 9001.
+1764417306: mosquitto version 2.0.22 running
+1764417307: New connection from 192.168.10.17:49423 on port 1883.
+1764417307: New client connected from 192.168.10.17:49423 as homehub-backend (p2, c1, k60, u'mqtt').
+1764417311: New connection from 172.20.0.3:44422 on port 1883.
+1764417311: New client connected from 172.20.0.3:44422 as mqttjs_5b65b850 (p2, c1, k60, u'mqtt').
+1764417323: Client mqttjs_5b65b850 disconnected.
+1764417323: mosquitto version 2.0.22 terminating
+1764417323: Saving in-memory database to /mosquitto/data//mosquitto.db.

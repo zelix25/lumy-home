@@ -1,31 +1,127 @@
-import { Box, Typography, Card, CardContent } from '@mui/material';
-import SceneIcon from '@mui/icons-material/AutoAwesome';
+import { useState, useEffect } from 'react';
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  Button,
+  Grid,
+  CircularProgress,
+  Alert,
+} from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import { useTranslation } from 'react-i18next';
+import { simpleAutomationsService, Automation } from '../services/simple-automations.service';
+import { useNotification } from '../hooks/useNotification';
+import SimpleAutomationCard from '../components/SimpleAutomationCard';
+import CreateSimpleAutomationDialog from '../components/CreateSimpleAutomationDialog';
 
 export default function ScenesPage() {
+  const { t } = useTranslation();
+  const { addNotification } = useNotification();
+  const [automations, setAutomations] = useState<Automation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+
+  const fetchAutomations = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await simpleAutomationsService.getAll();
+      setAutomations(data);
+    } catch (err: any) {
+      setError(err.message || t('automations.loadError'));
+      addNotification({
+        type: 'error',
+        title: t('automations.error'),
+        message: err.message || t('automations.loadError'),
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAutomations();
+  }, []);
+
+  const handleCreateSuccess = () => {
+    fetchAutomations();
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
     <Box>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, mb: 1 }}>
-          Scènes & Automatisations
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Créez des scènes et automatisez votre maison en quelques clics.
-        </Typography>
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <Box>
+          <Typography variant="h4" gutterBottom sx={{ fontWeight: 500, mb: 1 }}>
+            {t('scenes.title')}
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            {t('scenes.subtitle')}
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => setCreateDialogOpen(true)}
+        >
+          {t('automations.createAutomation')}
+        </Button>
       </Box>
 
-      <Card>
-        <CardContent>
-          <Box sx={{ textAlign: 'center', py: 8 }}>
-            <SceneIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              Aucune scène créée
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Créez votre première scène ou automatisation pour commencer.
-            </Typography>
-          </Box>
-        </CardContent>
-      </Card>
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+
+      {automations.length === 0 ? (
+        <Card>
+          <CardContent>
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                {t('automations.noAutomationsCreated')}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                {t('automations.noAutomationsCreatedHint')}
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setCreateDialogOpen(true)}
+              >
+                {t('automations.createAutomation')}
+              </Button>
+            </Box>
+          </CardContent>
+        </Card>
+      ) : (
+        <Grid container spacing={3}>
+          {automations.map((automation) => (
+            <Grid item xs={12} md={6} key={automation.id}>
+              <SimpleAutomationCard
+                automation={automation}
+                onUpdate={fetchAutomations}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      )}
+
+      <CreateSimpleAutomationDialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        onSuccess={handleCreateSuccess}
+      />
     </Box>
   );
 }
