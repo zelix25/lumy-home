@@ -3,9 +3,11 @@ services:
   mosquitto:
     image: eclipse-mosquitto:2.0
     container_name: homehub-mosquitto
-    ports:
-      - "1883:1883"
-      - "9001:9001"
+    # Ports retirés - communication uniquement via réseau Docker privé
+    # Pour le développement local, décommentez les lignes suivantes :
+    # ports:
+    #   - "1883:1883"
+    #   - "9001:9001"
     volumes:
       - ./mosquitto/config:/mosquitto/config
       - ./mosquitto/data:/mosquitto/data
@@ -34,19 +36,11 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: homehub-backend
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - FRONTEND_URL=http://frontend:80
-      - DATABASE_PATH=/app/data/homehub.db
-      - MQTT_BROKER_URL=mqtt://mosquitto:1883
-      - MQTT_USERNAME=change-me
-      - MQTT_PASSWORD=change-me
-      - MQTT_CLIENT_ID=homehub-backend
-      - MQTT_RECONNECT_PERIOD=5000
+    container_name: backend
+    # Port retiré - communication uniquement via réseau Docker privé
+    # Pour le développement local, décommentez la ligne suivante :
+    # ports:
+    #   - "3000:3000"
     volumes:
       - ./backend/data:/app/data
       - ./backend/logs:/app/logs
@@ -55,12 +49,36 @@ services:
     restart: unless-stopped
     networks:
       - homehub-network
+      - frontend-backend
+    env_file:
+      - ./backend/.env
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${PORT:-3000}
+      - FRONTEND_URL=${FRONTEND_URL:-http://frontend:80}
+      - DATABASE_PATH=${DATABASE_PATH:-data/homehub.db}
+      - MQTT_BROKER_URL=${MQTT_BROKER_URL:-mqtt://mosquitto:1883}
+      - MQTT_USERNAME=${MQTT_USERNAME:-}
+      - MQTT_PASSWORD=${MQTT_PASSWORD:-}
+      - MQTT_CLIENT_ID=${MQTT_CLIENT_ID:-homehub-backend}
+      - MQTT_RECONNECT_PERIOD=${MQTT_RECONNECT_PERIOD:-5000}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LLAMA_API_URL=${LLAMA_API_URL:-http://ollama:11434}
+      - LLAMA_MODEL=${LLAMA_MODEL:-gemma3}
+      - USE_LOCAL_LLAMA=${USE_LOCAL_LLAMA:-true}
+      - JWT_SECRET=${JWT_SECRET:-homehub-secret-key-change-in-production}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+      - ENABLE_LOCAL_MODE=${ENABLE_LOCAL_MODE:-true}
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: homehub-frontend
+      # Plus besoin de VITE_API_URL et VITE_WS_URL - utilisation de chemins relatifs
+      # args:
+      #   - VITE_API_URL=${VITE_API_URL:-}
+      #   - VITE_WS_URL=${VITE_WS_URL:-}
+    container_name: frontend
     ports:
       - "80:80"
     depends_on:
@@ -68,6 +86,9 @@ services:
     restart: unless-stopped
     networks:
       - homehub-network
+      - frontend-backend
+    env_file:
+      - ./frontend/.env
 
   ollama:
     image: ollama/ollama:latest
@@ -87,5 +108,8 @@ services:
 
 networks:
   homehub-network:
+    external: true
     driver: bridge
-
+  frontend-backend:
+    driver: bridge
+    internal: true

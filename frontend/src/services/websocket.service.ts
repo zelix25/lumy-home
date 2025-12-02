@@ -1,6 +1,10 @@
 import { io, Socket } from 'socket.io-client';
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3000';
+// Utiliser un chemin relatif pour passer par le proxy nginx
+// En développement local, utilise VITE_WS_URL si défini
+// En production Docker, nginx fait le proxy de /socket.io vers backend:3000
+// Si VITE_WS_URL n'est pas défini, socket.io utilisera l'origine actuelle (chemin relatif)
+const WS_URL = import.meta.env.VITE_WS_URL || '';
 
 class WebSocketService {
   private socket: Socket | null = null;
@@ -11,11 +15,17 @@ class WebSocketService {
       return;
     }
 
-    this.socket = io(WS_URL, {
+    // Si WS_URL est vide, socket.io utilisera l'origine actuelle (chemin relatif)
+    // Cela permet de passer par le proxy nginx configuré pour /socket.io
+    const socketUrl = WS_URL || window.location.origin;
+    
+    this.socket = io(socketUrl, {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionAttempts: 5,
+      // Si on utilise un chemin relatif, socket.io doit utiliser le path /socket.io
+      path: WS_URL ? undefined : '/socket.io',
     });
 
     this.socket.on('connect', () => {

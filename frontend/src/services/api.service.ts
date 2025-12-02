@@ -1,9 +1,14 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// Utiliser un chemin relatif pour passer par le proxy nginx
+// En développement local, utilise VITE_API_URL si défini, sinon utilise /api
+// En production Docker, nginx fait le proxy de /api vers backend:3000
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 class ApiService {
   private baseUrl: string;
 
   constructor() {
+    // Si l'URL commence par http:// ou https://, c'est une URL absolue
+    // Sinon, c'est un chemin relatif qui sera résolu par le navigateur
     this.baseUrl = API_BASE_URL;
   }
 
@@ -22,7 +27,11 @@ class ApiService {
   }
 
   async get<T>(endpoint: string): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+    // Si baseUrl est un chemin relatif, on doit s'assurer que endpoint commence par /
+    const url = this.baseUrl.startsWith('http') 
+      ? `${this.baseUrl}${endpoint}` 
+      : `${this.baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+    const response = await fetch(url, {
       headers: this.getHeaders(),
     });
     
@@ -41,7 +50,10 @@ class ApiService {
   }
 
   async post<T>(endpoint: string, data?: unknown): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+    const url = this.baseUrl.startsWith('http') 
+      ? `${this.baseUrl}${endpoint}` 
+      : `${this.baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+    const response = await fetch(url, {
       method: 'POST',
       headers: this.getHeaders(),
       body: data ? JSON.stringify(data) : undefined,
@@ -62,7 +74,10 @@ class ApiService {
   }
 
   async put<T>(endpoint: string, data?: unknown): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+    const url = this.baseUrl.startsWith('http') 
+      ? `${this.baseUrl}${endpoint}` 
+      : `${this.baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+    const response = await fetch(url, {
       method: 'PUT',
       headers: this.getHeaders(),
       body: data ? JSON.stringify(data) : undefined,
@@ -82,7 +97,10 @@ class ApiService {
   }
 
   async patch<T>(endpoint: string, data?: unknown): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+    const url = this.baseUrl.startsWith('http') 
+      ? `${this.baseUrl}${endpoint}` 
+      : `${this.baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+    const response = await fetch(url, {
       method: 'PATCH',
       headers: this.getHeaders(),
       body: data ? JSON.stringify(data) : undefined,
@@ -103,7 +121,10 @@ class ApiService {
   }
 
   async delete<T>(endpoint: string): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+    const url = this.baseUrl.startsWith('http') 
+      ? `${this.baseUrl}${endpoint}` 
+      : `${this.baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+    const response = await fetch(url, {
       method: 'DELETE',
       headers: this.getHeaders(),
     });

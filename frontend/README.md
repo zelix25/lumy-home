@@ -29,6 +29,49 @@ npm run build
 
 Les fichiers de production seront dans le dossier `dist/`.
 
+## 🔧 Variables d'environnement
+
+### Développement local
+
+Créez un fichier `.env` à la racine du dossier `frontend` avec :
+
+```env
+VITE_API_URL=http://localhost:3000
+VITE_WS_URL=ws://localhost:3000
+```
+
+### Docker
+
+Pour Docker, les variables d'environnement doivent être définies **avant le build**. 
+
+**Option 1 : Fichier .env à la racine du projet**
+
+Créez un fichier `.env` à la racine du projet (à côté de `docker-compose.yml`) :
+
+```env
+VITE_API_URL=http://backend:3000
+VITE_WS_URL=ws://backend:3000
+```
+
+Puis lancez :
+```bash
+docker-compose build frontend
+docker-compose up
+```
+
+**Option 2 : Variables d'environnement système**
+
+Exportez les variables avant de lancer docker-compose :
+
+```bash
+export VITE_API_URL=http://backend:3000
+export VITE_WS_URL=ws://backend:3000
+docker-compose build frontend
+docker-compose up
+```
+
+**Note importante :** Les variables doivent être disponibles au moment du **build**, pas seulement au runtime. C'est pourquoi elles sont passées via `build.args` dans le `docker-compose.yml`.
+
 ## 📦 Structure du projet
 
 ```
