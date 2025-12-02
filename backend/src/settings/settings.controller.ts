@@ -5,7 +5,6 @@ import { Settings } from './entities/settings.entity';
 import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('settings')
-@Public()
 export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 
@@ -15,6 +14,16 @@ export class SettingsController {
   @Get()
   async getSettings(): Promise<Settings> {
     return this.settingsService.getSettings();
+  }
+
+  /**
+   * Vérifie le statut du setup (route publique)
+   */
+  @Public()
+  @Get('setup-status')
+  async getSetupStatus(): Promise<{ setup: boolean }> {
+    const settings = await this.settingsService.getSettings();
+    return { setup: settings.setup };
   }
 
   /**

@@ -13,8 +13,11 @@ import {
 import { AutomationsService } from './automations.service';
 import { CreateAutomationDto } from './dto/create-automation.dto';
 import { UpdateAutomationDto } from './dto/update-automation.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { UseGuards } from '@nestjs/common';
 
 @Controller('automations')
+@UseGuards(JwtAuthGuard)
 export class AutomationsController {
   constructor(private readonly automationsService: AutomationsService) {}
 

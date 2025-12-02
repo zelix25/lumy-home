@@ -13,10 +13,8 @@ import { AiService } from './ai.service';
 import { GenerateAutomationDto } from './dto/generate-automation.dto';
 import { AutomationResponseDto } from './dto/automation-response.dto';
 import { AutomationStatus } from './entities/automation.entity';
-import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('ai')
-@Public()
 export class AiController {
   constructor(private readonly aiService: AiService) {}
 

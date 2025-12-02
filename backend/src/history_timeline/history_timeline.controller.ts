@@ -3,11 +3,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { HistoryService } from './history_timeline.service';
 import { FilterHistoryDto } from './dto/filter-history-_timeline.dto';
 import { HistoryResponseDto } from './dto/history-timeline-response.dto';
-import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('history_timeline')
-//@UseGuards(JwtAuthGuard)
-@Public()
 export class HistoryController {
   constructor(private readonly historyService: HistoryService) {}
 

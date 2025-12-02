@@ -14,6 +14,13 @@ class SettingsService {
     return apiService.get<Settings>('/settings');
   }
 
+  /**
+   * Vérifie le statut du setup (route publique, ne nécessite pas d'authentification)
+   */
+  async getSetupStatus(): Promise<{ setup: boolean }> {
+    return apiService.get<{ setup: boolean }>('/settings/setup-status');
+  }
+
   async updateSettings(settings: Partial<Settings>): Promise<Settings> {
     return apiService.put<Settings>('/settings', settings);
   }

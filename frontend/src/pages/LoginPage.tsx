@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -10,9 +10,11 @@ import {
   Alert,
   Link,
   Stack,
+  CircularProgress,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
+import { settingsService } from '../services/settings.service';
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -24,6 +26,26 @@ export default function LoginPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [checkingSetup, setCheckingSetup] = useState(true);
+
+  // Vérifier le statut du setup au chargement de la page
+  useEffect(() => {
+    const checkSetup = async () => {
+      try {
+        const { setup } = await settingsService.getSetupStatus();
+        if (setup) {
+          navigate('/setup', { replace: true });
+        }
+      } catch (err) {
+        console.error('Erreur lors de la vérification du setup:', err);
+        // En cas d'erreur, on continue quand même (ne pas bloquer la page de login)
+      } finally {
+        setCheckingSetup(false);
+      }
+    };
+
+    checkSetup();
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,6 +81,23 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  // Afficher un loader pendant la vérification du setup
+  if (checkingSetup) {
+    return (
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#F7F7F5',
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box

@@ -10,8 +10,9 @@ export default function SetupChecker({ children }: { children: React.ReactNode }
   useEffect(() => {
     const checkSetup = async () => {
       try {
-        const settings = await settingsService.getSettings();
-        if (settings.setup) {
+        // Utiliser la route publique pour vérifier le setup
+        const { setup } = await settingsService.getSetupStatus();
+        if (setup) {
           navigate('/setup', { replace: true });
         }
       } catch (err) {

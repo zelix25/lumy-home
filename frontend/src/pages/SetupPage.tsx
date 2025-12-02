@@ -7,9 +7,6 @@ import {
   Typography,
   Button,
   TextField,
-  List,
-  ListItem,
-  ListItemText,
   CircularProgress,
   Alert,
   Stack,
@@ -18,32 +15,52 @@ import {
   StepLabel,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import { useDevices } from '../hooks/useDevices';
-import { devicesService } from '../services/devices.service';
 import { useAuth } from '../contexts/AuthContext';
 import { settingsService } from '../services/settings.service';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 
-type SetupStep = 'update' | 'account' | 'devices' | 'complete';
+type SetupStep = 'update' | 'account' | 'complete';
 
 export default function SetupPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { devices, refetch } = useDevices();
   const { register } = useAuth();
   const [currentStep, setCurrentStep] = useState<SetupStep>('update');
   const [updateStatus, setUpdateStatus] = useState<'checking' | 'updating' | 'updated' | 'error'>('checking');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [deviceNames, setDeviceNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [checkingSetup, setCheckingSetup] = useState(true);
+
+  // Vérifier le statut du setup au chargement de la page
+  useEffect(() => {
+    const checkSetup = async () => {
+      try {
+        const { setup } = await settingsService.getSetupStatus();
+        // Si setup est à false, rediriger vers la page de login
+        if (!setup) {
+          navigate('/login', { replace: true });
+        }
+      } catch (err) {
+        console.error('Erreur lors de la vérification du setup:', err);
+        // En cas d'erreur, on continue quand même (ne pas bloquer la page)
+      } finally {
+        setCheckingSetup(false);
+      }
+    };
+
+    checkSetup();
+  }, [navigate]);
 
   useEffect(() => {
-    checkUpdateStatus();
-  }, []);
+    // Ne vérifier les mises à jour que si le setup est actif
+    if (!checkingSetup) {
+      checkUpdateStatus();
+    }
+  }, [checkingSetup]);
 
   const checkUpdateStatus = async () => {
     setUpdateStatus('checking');
@@ -90,7 +107,7 @@ export default function SetupPage() {
 
     try {
       await register(email, password);
-      setCurrentStep('devices');
+      setCurrentStep('complete');
     } catch (err: any) {
       setError(err.message || t('auth.error'));
     } finally {
@@ -98,34 +115,6 @@ export default function SetupPage() {
     }
   };
 
-  const handleDeviceNameChange = (ieeeAddress: string, name: string) => {
-    setDeviceNames((prev) => ({
-      ...prev,
-      [ieeeAddress]: name,
-    }));
-  };
-
-  const handleSaveDevices = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const promises = Object.entries(deviceNames).map(([ieeeAddress, name]) => {
-        if (name.trim()) {
-          return devicesService.updateFriendlyName(ieeeAddress, name.trim());
-        }
-        return Promise.resolve();
-      });
-
-      await Promise.all(promises);
-      await refetch();
-      setCurrentStep('complete');
-    } catch (err: any) {
-      setError(err.message || t('setup.errorSaving'));
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleComplete = async () => {
     try {
@@ -141,7 +130,6 @@ export default function SetupPage() {
   const steps = [
     t('setup.stepUpdate'),
     t('setup.stepAccount'),
-    t('setup.stepDevices'),
     t('setup.stepComplete'),
   ];
 
@@ -151,10 +139,8 @@ export default function SetupPage() {
         return 0;
       case 'account':
         return 1;
-      case 'devices':
-        return 2;
       case 'complete':
-        return 3;
+        return 2;
       default:
         return 0;
     }
@@ -273,83 +259,6 @@ export default function SetupPage() {
           </Box>
         );
 
-      case 'devices':
-        const devicesToName = devices.filter(
-          (d) => !d.friendlyName || d.friendlyName === d.ieeeAddress,
-        );
-
-        return (
-          <Box>
-            <Typography variant="h6" sx={{ mb: 3, fontWeight: 500 }}>
-              {t('setup.nameDevices')}
-            </Typography>
-
-            {devicesToName.length > 0 && (
-              <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-                {t('setup.detectedDevices', { count: devicesToName.length })}
-              </Typography>
-            )}
-
-            {error && (
-              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-                {error}
-              </Alert>
-            )}
-
-            {devicesToName.length > 0 ? (
-              <>
-                <List>
-                  {devicesToName.map((device) => (
-                    <ListItem key={device.ieeeAddress} sx={{ px: 0 }}>
-                      <ListItemText
-                        primary={device.model || device.ieeeAddress}
-                        secondary={device.type || t('devices.unknown')}
-                        sx={{ flex: '0 1 auto', mr: 2 }}
-                      />
-                      <TextField
-                        size="small"
-                        placeholder={t('setup.deviceNamePlaceholder')}
-                        value={deviceNames[device.ieeeAddress] || ''}
-                        onChange={(e) =>
-                          handleDeviceNameChange(device.ieeeAddress, e.target.value)
-                        }
-                        sx={{ flex: 1 }}
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-
-                <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
-                  <Button
-                    variant="outlined"
-                    onClick={() => setCurrentStep('complete')}
-                    disabled={loading}
-                  >
-                    {t('common.skip')}
-                  </Button>
-                  <Button
-                    variant="contained"
-                    onClick={handleSaveDevices}
-                    disabled={loading}
-                    sx={{ flex: 1 }}
-                  >
-                    {loading ? t('common.loading') : t('common.save')}
-                  </Button>
-                </Stack>
-              </>
-            ) : (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-                  {t('setup.allDevicesNamed')}
-                </Typography>
-                <Button variant="contained" onClick={() => setCurrentStep('complete')}>
-                  {t('setup.continue')}
-                </Button>
-              </Box>
-            )}
-          </Box>
-        );
-
       case 'complete':
         return (
           <Box sx={{ textAlign: 'center' }}>
@@ -372,6 +281,23 @@ export default function SetupPage() {
         return null;
     }
   };
+
+  // Afficher un loader pendant la vérification du setup
+  if (checkingSetup) {
+    return (
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#F7F7F5',
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box
