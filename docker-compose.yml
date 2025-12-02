@@ -50,26 +50,6 @@ services:
     networks:
       - homehub-network
       - frontend-backend
-    env_file:
-      - ./backend/.env
-    environment:
-      - NODE_ENV=${NODE_ENV:-production}
-      - PORT=${PORT:-3000}
-      - FRONTEND_URL=${FRONTEND_URL:-http://frontend:80}
-      - DATABASE_PATH=${DATABASE_PATH:-data/homehub.db}
-      - MQTT_BROKER_URL=${MQTT_BROKER_URL:-mqtt://mosquitto:1883}
-      - MQTT_USERNAME=${MQTT_USERNAME:-}
-      - MQTT_PASSWORD=${MQTT_PASSWORD:-}
-      - MQTT_CLIENT_ID=${MQTT_CLIENT_ID:-homehub-backend}
-      - MQTT_RECONNECT_PERIOD=${MQTT_RECONNECT_PERIOD:-5000}
-      - LOG_LEVEL=${LOG_LEVEL:-info}
-      - LLAMA_API_URL=${LLAMA_API_URL:-http://ollama:11434}
-      - LLAMA_MODEL=${LLAMA_MODEL:-gemma3}
-      - USE_LOCAL_LLAMA=${USE_LOCAL_LLAMA:-true}
-      - JWT_SECRET=${JWT_SECRET:-homehub-secret-key-change-in-production}
-      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
-      - ENABLE_LOCAL_MODE=${ENABLE_LOCAL_MODE:-true}
-
   frontend:
     build:
       context: ./frontend
@@ -87,8 +67,6 @@ services:
     networks:
       - homehub-network
       - frontend-backend
-    env_file:
-      - ./frontend/.env
 
   ollama:
     image: ollama/ollama:latest

@@ -13,6 +13,7 @@ COPY package*.json ./
 COPY tsconfig*.json ./
 COPY vite.config.ts ./
 COPY index.html ./
+COPY env.example.prod ./env.production
 
 # Copier le fichier .env s'il existe (optionnel, les ENV prennent priorité)
 # Le .dockerignore exclut déjà .env, donc on le copie explicitement si nécessaire
