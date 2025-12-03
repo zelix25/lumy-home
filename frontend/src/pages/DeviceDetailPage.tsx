@@ -21,6 +21,8 @@ import {
   FormControl,
   InputLabel,
   Dialog,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
@@ -35,6 +37,7 @@ import { roomsService, Room } from '../services/rooms.service';
 import { useWebSocket } from '../hooks/useWebSocket';
 import MultiSensorChart from '../components/MultiSensorChart';
 import { SensorType } from '../services/sensor-history.service';
+import AdvancedExposesSettings from '../components/AdvancedExposesSettings';
 
 const getDeviceTypeLabel = (type: string): string => {
   const labels: Record<string, string> = {
@@ -68,6 +71,8 @@ export default function DeviceDetailPage() {
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [newRoomDialogOpen, setNewRoomDialogOpen] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
+  const [advancedMode, setAdvancedMode] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
   const { isConnected, socket } = useWebSocket();
 
   useEffect(() => {
@@ -250,216 +255,272 @@ export default function DeviceDetailPage() {
             {device.friendlyName}
           </Typography>
         </Box>
-        <Button
-          variant="outlined"
-          color="error"
-          startIcon={<DeleteIcon />}
-          onClick={() => setDeleteDialogOpen(true)}
-        >
-          Supprimer
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={advancedMode}
+                onChange={(e) => {
+                  const newMode = e.target.checked;
+                  setAdvancedMode(newMode);
+                  // Si on désactive le mode avancé et qu'on est sur l'onglet 2, revenir à l'onglet 0
+                  if (!newMode && activeTab === 2) {
+                    setActiveTab(0);
+                  }
+                }}
+              />
+            }
+            label="Mode avancé"
+          />
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<DeleteIcon />}
+            onClick={() => setDeleteDialogOpen(true)}
+          >
+            Supprimer
+          </Button>
+        </Box>
       </Box>
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={8}>
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
-                Informations
-              </Typography>
-              <Divider sx={{ mb: 2 }} />
+          <Card>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+              <Tabs
+                value={activeTab}
+                onChange={(_, newValue) => setActiveTab(newValue)}
+                aria-label="onglets de l'appareil"
+              >
+                <Tab label="Informations" />
+                <Tab label="Graphique des capteurs" />
+                {advancedMode && device.meta?.exposes && (
+                  <Tab label="Réglages avancés" />
+                )}
+              </Tabs>
+            </Box>
 
-              <Box sx={{ mb: 2 }}>
-                <TextField
-                  fullWidth
-                  label="Nom de l'appareil"
-                  value={friendlyName}
-                  onChange={(e) => setFriendlyName(e.target.value)}
-                  sx={{ mb: 1 }}
-                />
-                <Button
-                  variant="contained"
-                  startIcon={<SaveIcon />}
-                  onClick={handleSaveName}
-                  size="small"
-                >
-                  Enregistrer le nom
-                </Button>
-              </Box>
-
-              <Box>
-                <FormControl fullWidth sx={{ mb: 1 }}>
-                  <InputLabel id="room-select-label">Pièce</InputLabel>
-                  <Select
-                    labelId="room-select-label"
-                    value={room}
-                    label="Pièce"
-                    onChange={(e) => setRoom(e.target.value)}
-                    disabled={loadingRooms}
-                  >
-                    <MenuItem value="">
-                      <em>Aucune pièce</em>
-                    </MenuItem>
-                    {rooms.map((roomOption) => (
-                      <MenuItem key={roomOption.id} value={roomOption.name}>
-                        {roomOption.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button
-                    variant="outlined"
-                    startIcon={<AddIcon />}
-                    onClick={() => setNewRoomDialogOpen(true)}
-                    size="small"
-                  >
-                    Ajouter une pièce
-                  </Button>
+            {/* Onglet Informations */}
+            {activeTab === 0 && (
+              <CardContent>
+                <Box sx={{ mb: 2 }}>
+                  <TextField
+                    fullWidth
+                    label="Nom de l'appareil"
+                    value={friendlyName}
+                    onChange={(e) => setFriendlyName(e.target.value)}
+                    sx={{ mb: 1 }}
+                  />
                   <Button
                     variant="contained"
                     startIcon={<SaveIcon />}
-                    onClick={handleSaveRoom}
+                    onClick={handleSaveName}
                     size="small"
-                    disabled={!room}
                   >
-                    Enregistrer la pièce
+                    Enregistrer le nom
                   </Button>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-
-          {device.type === 'light' && (
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
-                  Contrôles
-                </Typography>
-                <Divider sx={{ mb: 3 }} />
-
-                <Box sx={{ mb: 3 }}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={isOn}
-                        onChange={(e) => handleToggle(e.target.checked)}
-                        disabled={device.status !== 'online'}
-                        size="medium"
-                      />
-                    }
-                    label={isOn ? 'Allumé' : 'Éteint'}
-                  />
                 </Box>
 
                 <Box>
-                  <Typography gutterBottom>Luminosité: {brightness}%</Typography>
-                  <Slider
-                    value={brightness}
-                    onChange={handleBrightnessChange}
-                    min={0}
-                    max={100}
-                    step={1}
-                    disabled={device.status !== 'online' || !isOn}
-                    sx={{ mb: 2 }}
-                  />
+                  <FormControl fullWidth sx={{ mb: 1 }}>
+                    <InputLabel id="room-select-label">Pièce</InputLabel>
+                    <Select
+                      labelId="room-select-label"
+                      value={room}
+                      label="Pièce"
+                      onChange={(e) => setRoom(e.target.value)}
+                      disabled={loadingRooms}
+                    >
+                      <MenuItem value="">
+                        <em>Aucune pièce</em>
+                      </MenuItem>
+                      {rooms.map((roomOption) => (
+                        <MenuItem key={roomOption.id} value={roomOption.name}>
+                          {roomOption.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button
+                      variant="outlined"
+                      startIcon={<AddIcon />}
+                      onClick={() => setNewRoomDialogOpen(true)}
+                      size="small"
+                    >
+                      Ajouter une pièce
+                    </Button>
+                    <Button
+                      variant="contained"
+                      startIcon={<SaveIcon />}
+                      onClick={handleSaveRoom}
+                      size="small"
+                      disabled={!room}
+                    >
+                      Enregistrer la pièce
+                    </Button>
+                  </Box>
                 </Box>
-              </CardContent>
-            </Card>
-          )}
 
-          {(device.type === 'switch' || device.type === 'plug') && (
-            <Card sx={{ mb: 3 }}>
-              <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
-                  Contrôles
-                </Typography>
-                <Divider sx={{ mb: 3 }} />
+                {device.type === 'light' && (
+                  <Box sx={{ mt: 3 }}>
+                    <Divider sx={{ mb: 3 }} />
+                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
+                      Contrôles
+                    </Typography>
+                    <Box sx={{ mb: 3 }}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={isOn}
+                            onChange={(e) => handleToggle(e.target.checked)}
+                            disabled={device.status !== 'online'}
+                            size="medium"
+                          />
+                        }
+                        label={isOn ? 'Allumé' : 'Éteint'}
+                      />
+                    </Box>
+                    <Box>
+                      <Typography gutterBottom>Luminosité: {brightness}%</Typography>
+                      <Slider
+                        value={brightness}
+                        onChange={handleBrightnessChange}
+                        min={0}
+                        max={100}
+                        step={1}
+                        disabled={device.status !== 'online' || !isOn}
+                        sx={{ mb: 2 }}
+                      />
+                    </Box>
+                  </Box>
+                )}
 
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={isOn}
-                      onChange={(e) => handleToggle(e.target.checked)}
-                      disabled={device.status !== 'online'}
-                      size="medium"
+                {(device.type === 'switch' || device.type === 'plug') && (
+                  <Box sx={{ mt: 3 }}>
+                    <Divider sx={{ mb: 3 }} />
+                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
+                      Contrôles
+                    </Typography>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={isOn}
+                          onChange={(e) => handleToggle(e.target.checked)}
+                          disabled={device.status !== 'online'}
+                          size="medium"
+                        />
+                      }
+                      label={isOn ? 'Activé' : 'Désactivé'}
                     />
+                  </Box>
+                )}
+              </CardContent>
+            )}
+
+            {/* Onglet Graphique des capteurs */}
+            {activeTab === 1 && (
+              <CardContent>
+                {device.state && (() => {
+                  const availableSensors: Array<{ type: SensorType; label: string; unit: string }> = [];
+                  
+                  if (device.state.temperature !== undefined) {
+                    availableSensors.push({
+                      type: SensorType.TEMPERATURE,
+                      label: 'Température',
+                      unit: '°C',
+                    });
                   }
-                  label={isOn ? 'Activé' : 'Désactivé'}
+                  
+                  if (device.state.humidity !== undefined) {
+                    availableSensors.push({
+                      type: SensorType.HUMIDITY,
+                      label: 'Humidité',
+                      unit: '%',
+                    });
+                  }
+                  
+                  if (device.state.pressure !== undefined) {
+                    availableSensors.push({
+                      type: SensorType.PRESSURE,
+                      label: 'Pression',
+                      unit: 'hPa',
+                    });
+                  }
+                  
+                  if (device.state.illuminance !== undefined) {
+                    availableSensors.push({
+                      type: SensorType.ILLUMINANCE,
+                      label: 'Luminosité ambiante',
+                      unit: 'lux',
+                    });
+                  }
+                  
+                  if (device.state.battery !== undefined) {
+                    availableSensors.push({
+                      type: SensorType.BATTERY,
+                      label: 'Batterie',
+                      unit: '%',
+                    });
+                  }
+                  
+                  if (device.state.voltage !== undefined) {
+                    availableSensors.push({
+                      type: SensorType.VOLTAGE,
+                      label: 'Tension',
+                      unit: 'V',
+                    });
+                  }
+                  
+                  if (device.state.linkquality !== undefined) {
+                    availableSensors.push({
+                      type: SensorType.LINKQUALITY,
+                      label: 'Qualité du signal',
+                      unit: '',
+                    });
+                  }
+                  
+                  return availableSensors.length > 0 ? (
+                    <Box sx={{ pr: 2.5 }}>
+                      <MultiSensorChart
+                        deviceId={device.ieeeAddress}
+                        availableSensors={availableSensors}
+                      />
+                    </Box>
+                  ) : (
+                    <Alert severity="info">
+                      Aucun capteur disponible pour cet appareil.
+                    </Alert>
+                  );
+                })()}
+              </CardContent>
+            )}
+
+            {/* Onglet Réglages avancés */}
+            {activeTab === 2 && advancedMode && device.meta?.exposes && (
+              <CardContent>
+                <AdvancedExposesSettings
+                  deviceId={device.ieeeAddress}
+                  friendlyName={device.friendlyName}
+                  exposes={device.meta.exposes}
+                  currentState={device.state || {}}
+                  onStateUpdate={async () => {
+                    // Rafraîchir les données de l'appareil
+                    try {
+                      const updated = await devicesService.getDevice(device.ieeeAddress);
+                      setDevice(updated);
+                      setIsOn(updated.state?.state === 'ON' || updated.state?.state === true);
+                      if (updated.state?.brightness !== undefined) {
+                        setBrightness(Math.round((updated.state.brightness / 255) * 100));
+                      }
+                    } catch (err) {
+                      console.error('Erreur lors du rafraîchissement:', err);
+                    }
+                  }}
                 />
               </CardContent>
-            </Card>
-          )}
-
-          {/* Graphique unifié des capteurs */}
-          {device.state && (() => {
-            const availableSensors: Array<{ type: SensorType; label: string; unit: string }> = [];
-            
-            if (device.state.temperature !== undefined) {
-              availableSensors.push({
-                type: SensorType.TEMPERATURE,
-                label: 'Température',
-                unit: '°C',
-              });
-            }
-            
-            if (device.state.humidity !== undefined) {
-              availableSensors.push({
-                type: SensorType.HUMIDITY,
-                label: 'Humidité',
-                unit: '%',
-              });
-            }
-            
-            if (device.state.pressure !== undefined) {
-              availableSensors.push({
-                type: SensorType.PRESSURE,
-                label: 'Pression',
-                unit: 'hPa',
-              });
-            }
-            
-            if (device.state.illuminance !== undefined) {
-              availableSensors.push({
-                type: SensorType.ILLUMINANCE,
-                label: 'Luminosité ambiante',
-                unit: 'lux',
-              });
-            }
-            
-            if (device.state.battery !== undefined) {
-              availableSensors.push({
-                type: SensorType.BATTERY,
-                label: 'Batterie',
-                unit: '%',
-              });
-            }
-            
-            if (device.state.voltage !== undefined) {
-              availableSensors.push({
-                type: SensorType.VOLTAGE,
-                label: 'Tension',
-                unit: 'V',
-              });
-            }
-            
-            if (device.state.linkquality !== undefined) {
-              availableSensors.push({
-                type: SensorType.LINKQUALITY,
-                label: 'Qualité du signal',
-                unit: '',
-              });
-            }
-            
-            return availableSensors.length > 0 ? (
-              <Box sx={{ mb: 3 }}>
-                <MultiSensorChart
-                  deviceId={device.ieeeAddress}
-                  availableSensors={availableSensors}
-                />
-              </Box>
-            ) : null;
-          })()}
+            )}
+          </Card>
         </Grid>
 
         <Grid item xs={12} md={4}>
