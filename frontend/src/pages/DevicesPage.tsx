@@ -86,6 +86,30 @@ export default function DevicesPage() {
     return `${mins}:${String(secs).padStart(2, '0')}`;
   };
 
+  // Vérifier l'état de la découverte au chargement de la page
+  useEffect(() => {
+    const checkDiscoveryStatus = async () => {
+      try {
+        const status = await devicesService.getDiscoveryStatus();
+        if (status.active) {
+          setDiscoveryActive(true);
+          // Si on a un temps restant, l'utiliser, sinon utiliser une valeur par défaut
+          if (status.timeRemaining !== undefined && status.timeRemaining > 0) {
+            setTimeRemaining(status.timeRemaining);
+          } else {
+            // Si on ne connaît pas le temps exact, on met une valeur par défaut
+            // et on laisse le timer continuer
+            setTimeRemaining(254);
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors de la vérification de l\'état de la découverte:', error);
+      }
+    };
+
+    checkDiscoveryStatus();
+  }, []);
+
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
     if (discoveryActive && timeRemaining > 0) {

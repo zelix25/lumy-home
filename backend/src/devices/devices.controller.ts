@@ -87,6 +87,12 @@ export class DevicesController {
     };
   }
 
+  @Get('discovery/status')
+  async getDiscoveryStatus() {
+    const status = await this.devicesService.getDiscoveryStatus();
+    return status;
+  }
+
   @Post('refresh-states')
   @HttpCode(HttpStatus.OK)
   async refreshStates() {

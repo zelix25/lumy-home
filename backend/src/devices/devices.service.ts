@@ -138,6 +138,10 @@ export class DevicesService {
     await this.zigbee2MqttService.stopPermitJoin();
   }
 
+  async getDiscoveryStatus(): Promise<{ active: boolean; timeRemaining?: number }> {
+    return this.zigbee2MqttService.getPermitJoinStatus();
+  }
+
   async refreshDeviceStates(): Promise<void> {
     // Forcer la récupération des états actuels
     await this.zigbee2MqttService.requestDeviceStates();

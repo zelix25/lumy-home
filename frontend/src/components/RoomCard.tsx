@@ -25,7 +25,9 @@ import {
 } from '@mui/icons-material';
 import { Device } from '../services/devices.service';
 import { devicesService } from '../services/devices.service';
+import { SensorType } from '../services/sensor-history.service';
 import i18n from '@/i18n';
+import RoomSensorChartModal from './RoomSensorChartModal';
 
 interface RoomCardProps {
   roomName: string;
@@ -43,9 +45,16 @@ interface RoomStats {
 }
 
 export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCardProps) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const [deviceStates, setDeviceStates] = useState<Record<string, boolean>>({});
   const [brightnessValues, setBrightnessValues] = useState<Record<string, number>>({});
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedSensor, setSelectedSensor] = useState<{
+    type: SensorType;
+    label: string;
+    unit: string;
+    color: string;
+  } | null>(null);
 
   // Filtrer le coordinateur
   const validDevices = useMemo(() => {
@@ -222,14 +231,32 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
               icon={<Thermostat sx={{ fontSize: 16 }} />}
               label={`${stats.temperature.toFixed(1)}°C`}
               size="small"
-              sx={{ fontSize: '12px' }}
+              sx={{ fontSize: '12px', cursor: 'pointer' }}
+              onClick={() => {
+                setSelectedSensor({
+                  type: SensorType.TEMPERATURE,
+                  label: i18n.t('devices.temperature'),
+                  unit: '°C',
+                  color: '#C4A5A5',
+                });
+                setModalOpen(true);
+              }}
             />
           )}
           {stats.humidity !== null && (
             <Chip
               label={`${Math.round(stats.humidity)}%`}
               size="small"
-              sx={{ fontSize: '12px' }}
+              sx={{ fontSize: '12px', cursor: 'pointer' }}
+              onClick={() => {
+                setSelectedSensor({
+                  type: SensorType.HUMIDITY,
+                  label: i18n.t('devices.humidity'),
+                  unit: '%',
+                  color: '#86A6A0',
+                });
+                setModalOpen(true);
+              }}
             />
           )}
           {stats.illuminance !== null && (
@@ -237,7 +264,16 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
               icon={<LightMode sx={{ fontSize: 16 }} />}
               label={`${Math.round(stats.illuminance)} lux`}
               size="small"
-              sx={{ fontSize: '12px' }}
+              sx={{ fontSize: '12px', cursor: 'pointer' }}
+              onClick={() => {
+                setSelectedSensor({
+                  type: SensorType.ILLUMINANCE,
+                  label: i18n.t('devices.illuminance'),
+                  unit: 'lux',
+                  color: '#9BBEB7',
+                });
+                setModalOpen(true);
+              }}
             />
           )}
           {stats.presence && (
@@ -342,6 +378,23 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
           </>
         )}
       </CardContent>
+
+      {/* Modal pour le graphique des capteurs */}
+      {selectedSensor && (
+        <RoomSensorChartModal
+          open={modalOpen}
+          onClose={() => {
+            setModalOpen(false);
+            setSelectedSensor(null);
+          }}
+          roomName={roomName}
+          devices={validDevices}
+          sensorType={selectedSensor.type}
+          sensorLabel={selectedSensor.label}
+          sensorUnit={selectedSensor.unit}
+          sensorColor={selectedSensor.color}
+        />
+      )}
     </Card>
   );
 }

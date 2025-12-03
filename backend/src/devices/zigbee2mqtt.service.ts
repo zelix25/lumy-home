@@ -45,6 +45,10 @@ export class Zigbee2MqttService implements OnModuleInit {
     vendor?: string;
     type: DeviceType;
   }> = [];
+  private permitJoinActive: boolean = false;
+  private permitJoinTimeRemaining: number = 0;
+  private permitJoinStartTime: Date | null = null;
+  private permitJoinDuration: number = 0;
 
   constructor(
     @InjectRepository(Device)
@@ -252,6 +256,24 @@ export class Zigbee2MqttService implements OnModuleInit {
         );
       } else if (message.topic === 'zigbee2mqtt/bridge/state') {
         // État du bridge
+        const bridgeState = message.payload as any;
+        if (typeof bridgeState === 'object' && bridgeState !== null) {
+          // Mettre à jour l'état de permit_join si présent
+          if ('permit_join' in bridgeState) {
+            const wasActive = this.permitJoinActive;
+            this.permitJoinActive = bridgeState.permit_join === true;
+            
+            // Si permit_join devient inactif, réinitialiser l'état
+            if (wasActive && !this.permitJoinActive) {
+              this.permitJoinTimeRemaining = 0;
+              this.permitJoinStartTime = null;
+              this.permitJoinDuration = 0;
+            }
+            // Si permit_join devient actif mais qu'on n'a pas de timestamp de début,
+            // on ne peut pas calculer le temps restant exactement
+            // mais on marque comme actif (le frontend gérera l'affichage)
+          }
+        }
         this.logger.debug(
           `État bridge Zigbee2MQTT: ${JSON.stringify(message.payload)}`,
           'Zigbee2MqttService',
@@ -974,6 +996,12 @@ export class Zigbee2MqttService implements OnModuleInit {
     
     this.mqttService.publish(topic, payload);
     
+    // Mettre à jour l'état local
+    this.permitJoinActive = true;
+    this.permitJoinTimeRemaining = actualDuration;
+    this.permitJoinStartTime = new Date();
+    this.permitJoinDuration = actualDuration;
+    
     this.logger.log(
       `🔍 Détection d'appareils activée: ${actualDuration}s (${Math.round(actualDuration / 60)} min)`,
       'Zigbee2MqttService',
@@ -1019,15 +1047,40 @@ export class Zigbee2MqttService implements OnModuleInit {
       'Zigbee2MqttService',
     );
     
-    this.logger.log(
-      'Détection d\'appareils désactivée',
-      'Zigbee2MqttService',
-    );
+    // Mettre à jour l'état local
+    this.permitJoinActive = false;
+    this.permitJoinTimeRemaining = 0;
+    this.permitJoinStartTime = null;
+    this.permitJoinDuration = 0;
   }
 
-  /**
-   * Enregistre les événements significatifs dans l'historique
-   */
+  public getPermitJoinStatus(): { active: boolean; timeRemaining?: number } {
+    if (!this.permitJoinActive || !this.permitJoinStartTime) {
+      return {
+        active: this.permitJoinActive,
+        timeRemaining: undefined,
+      };
+    }
+
+    // Calculer le temps restant en fonction du temps écoulé
+    const now = new Date();
+    const elapsedSeconds = Math.floor((now.getTime() - this.permitJoinStartTime.getTime()) / 1000);
+    const remaining = Math.max(0, this.permitJoinDuration - elapsedSeconds);
+
+    // Mettre à jour l'état si le temps est écoulé
+    if (remaining === 0) {
+      this.permitJoinActive = false;
+      this.permitJoinTimeRemaining = 0;
+      this.permitJoinStartTime = null;
+      this.permitJoinDuration = 0;
+    }
+
+    return {
+      active: this.permitJoinActive,
+      timeRemaining: remaining > 0 ? remaining : undefined,
+    };
+  }
+
   /**
    * Enregistre les données de capteurs dans l'historique
    */

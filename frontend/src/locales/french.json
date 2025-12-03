@@ -73,7 +73,10 @@
     "unsupported": "Cet appareil n'est pas entièrement supporté",
     "searchPlaceholder": "Rechercher un appareil ou une pièce...",
     "noDevicesDetected": "Aucun appareil Zigbee détecté",
-    "devicesWillBeDetectedAutomaticallyOnceConnected": "Les appareils Zigbee seront détectés automatiquement une fois connectés"
+    "devicesWillBeDetectedAutomaticallyOnceConnected": "Les appareils Zigbee seront détectés automatiquement une fois connectés",
+    "noDevicesFound": "Aucun appareil trouvé",
+    "tryModifyingSearchCriteria": "Essayez de modifier vos critères de recherche",
+    "discoveryStopped": "Détection arrêtée"
   },
   "deviceDetail": {
     "title": "Détails de l'appareil",

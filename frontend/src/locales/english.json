@@ -72,7 +72,10 @@
     "unsupported": "This device is not fully supported",
     "searchPlaceholder": "Search for a device or room...",
     "noDevicesDetected": "No Zigbee devices detected",
-    "devicesWillBeDetectedAutomaticallyOnceConnected": "Zigbee devices will be detected automatically once connected"
+    "devicesWillBeDetectedAutomaticallyOnceConnected": "Zigbee devices will be detected automatically once connected",
+    "noDevicesFound": "No devices found",
+    "tryModifyingSearchCriteria": "Try modifying your search criteria",
+    "discoveryStopped": "Discovery stopped"
   },
   "deviceDetail": {
     "title": "Device details",

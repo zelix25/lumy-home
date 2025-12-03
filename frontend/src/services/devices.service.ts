@@ -74,6 +74,10 @@ class DevicesService {
     return apiService.post<{ success: boolean; message: string }>('/devices/discovery/stop');
   }
 
+  async getDiscoveryStatus(): Promise<{ active: boolean; timeRemaining?: number }> {
+    return apiService.get<{ active: boolean; timeRemaining?: number }>('/devices/discovery/status');
+  }
+
   async sendMqttMessage(
     topic: string,
     payload: Record<string, any> | string,
