@@ -22,6 +22,10 @@ import { configValidationSchema } from './config/config.validation';
     // Configuration globale
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: [
+        `.env.${process.env.NODE_ENV || 'development'}`,
+        '.env',
+      ],
       validationSchema: configValidationSchema,
       validationOptions: {
         allowUnknown: true,

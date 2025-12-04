@@ -9,9 +9,9 @@ services:
     #   - "1883:1883"
     #   - "9001:9001"
     volumes:
-      - ./mosquitto/config:/mosquitto/config
-      - ./mosquitto/data:/mosquitto/data
-      - ./mosquitto/log:/mosquitto/log
+      - ./data/mosquitto/config:/mosquitto/config
+      - ./data/mosquitto/data:/mosquitto/data
+      - ./data/mosquitto/log:/mosquitto/log
     restart: unless-stopped
     networks:
       - homehub-network
@@ -23,7 +23,7 @@ services:
       depends_on:
         - mosquitto
       volumes:
-        - ./data:/app/data
+        - ./data/zigbee2mqtt:/app/data
         - /run/udev:/run/udev:ro
       ports:
         - "8080:8080" # Port de l'interface web Zigbee2MQTT
@@ -41,9 +41,11 @@ services:
     # Pour le développement local, décommentez la ligne suivante :
     # ports:
     #   - "3000:3000"
+    env_file:
+      - ./data/backend/.env
     volumes:
-      - ./backend/data:/app/data
-      - ./backend/logs:/app/logs
+      - ./data/backend/data:/app/data
+      - ./data/backend/logs:/app/logs
     depends_on:
       - mosquitto
     restart: unless-stopped
@@ -75,7 +77,7 @@ services:
     ports:
       - "11434:11434"
     volumes:
-      - ./gemma3_data:/root/.ollama  # stockage des modèles
+      - ./gemma3:/root/.ollama  # stockage des modèles
     entrypoint: >
       sh -c "
         ollama serve &
