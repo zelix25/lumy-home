@@ -635,6 +635,19 @@ export default function DeviceDetailPage() {
                       </Grid>
                     )}
                     
+                    {device.state.vibration !== undefined && (
+                      <Grid item xs={6}>
+                        <Box sx={{ p: 1.5, bgcolor: device.state.vibration ? 'warning.light' : 'background.default', borderRadius: 1, height: '100%' }}>
+                          <Typography variant="body2" fontWeight={500} gutterBottom>
+                            📳 Vibration
+                          </Typography>
+                          <Typography variant="h6" color={device.state.vibration ? 'warning.main' : 'text.secondary'}>
+                            {device.state.vibration ? 'Détectée' : 'Aucune'}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    )}
+                    
                     {device.state.water_leak !== undefined && (
                       <Grid item xs={6}>
                         <Box sx={{ p: 1.5, bgcolor: device.state.water_leak ? 'error.light' : 'background.default', borderRadius: 1, height: '100%' }}>

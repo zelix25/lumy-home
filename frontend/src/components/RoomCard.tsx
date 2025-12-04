@@ -125,7 +125,7 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
     (d) => d.status === 'online' && (d.type === 'light' || d.type === 'switch' || d.type === 'plug')
   );
   const sensorDevices = validDevices.filter(
-    (d) => d.status === 'online' && d.type === 'sensor'
+    (d) => d.status === 'online' && (d.type === 'sensor' || d.type === 'motion')
   );
 
   // Synchroniser les états des appareils avec les données
@@ -355,14 +355,24 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
                     >
                       {getDeviceIcon(device.type)}
                       <Typography variant="body2">{device.friendlyName}</Typography>
-                      {device.state?.contact !== undefined && (
-                        <Chip
-                          label={device.state.contact ? i18n.t('devices.closed') : i18n.t('devices.open')}
-                          size="small"
-                          color={device.state.contact ? 'success' : 'warning'}
-                          sx={{ fontSize: '10px', ml: 'auto' }}
-                        />
-                      )}
+                      <Box sx={{ ml: 'auto', display: 'flex', gap: 0.5 }}>
+                        {device.state?.contact !== undefined && (
+                          <Chip
+                            label={device.state.contact ? i18n.t('devices.closed') : i18n.t('devices.open')}
+                            size="small"
+                            color={device.state.contact ? 'success' : 'warning'}
+                            sx={{ fontSize: '10px' }}
+                          />
+                        )}
+                        {device.state?.vibration !== undefined && (
+                          <Chip
+                            label={device.state.vibration ? i18n.t('devices.detected') : i18n.t('devices.none')}
+                            size="small"
+                            color={device.state.vibration ? 'warning' : 'default'}
+                            sx={{ fontSize: '10px' }}
+                          />
+                        )}
+                      </Box>
                     </Box>
                   ))}
                 </Stack>
@@ -370,9 +380,15 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
             )}
 
             {/* Aucun appareil en ligne */}
-            {controllableDevices.length === 0 && sensorDevices.length === 0 && (
+            {controllableDevices.length === 0 && sensorDevices.length === 0 && stats.onlineDeviceCount === 0 && stats.deviceCount === 0 && (
               <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
                 {i18n.t('devices.noDevices')}
+              </Typography>
+            )}
+            {/* Appareils présents mais tous hors ligne */}
+            {controllableDevices.length === 0 && sensorDevices.length === 0 && stats.onlineDeviceCount === 0 && stats.deviceCount > 0 && (
+              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                {i18n.t('devices.allDevicesOffline')}
               </Typography>
             )}
           </>

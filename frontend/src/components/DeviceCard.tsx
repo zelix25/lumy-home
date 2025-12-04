@@ -296,6 +296,24 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
                 </Grid>
               )}
               
+              {/* Vibration */}
+              {device.state.vibration !== undefined && (
+                <Grid item xs={6}>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    {i18n.t('devices.vibration')}
+                  </Typography>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      fontWeight: 500,
+                      color: device.state.vibration ? 'warning.main' : 'text.secondary'
+                    }}
+                  >
+                    {device.state.vibration ? i18n.t('devices.detected') : i18n.t('devices.none')}
+                  </Typography>
+                </Grid>
+              )}
+              
               {/* Fuite d'eau */}
               {device.state.water_leak !== undefined && (
                 <Grid item xs={6}>
