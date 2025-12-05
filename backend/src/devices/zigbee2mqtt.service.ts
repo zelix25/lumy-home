@@ -49,6 +49,9 @@ export class Zigbee2MqttService implements OnModuleInit {
   private permitJoinTimeRemaining: number = 0;
   private permitJoinStartTime: Date | null = null;
   private permitJoinDuration: number = 0;
+  // Debounce pour les événements de bouton (éviter les déclenchements multiples)
+  private lastButtonPressTime: Map<string, number> = new Map();
+  private readonly BUTTON_DEBOUNCE_MS = 200; // 200ms de debounce
 
   constructor(
     @InjectRepository(Device)
@@ -577,7 +580,15 @@ export class Zigbee2MqttService implements OnModuleInit {
    * Déclenche les automatisations basées sur les événements Zigbee
    */
   private async triggerAutomations(device: Device, oldState: any, newState: any) {
-    if (!this.automationsService) return;
+    if (!this.automationsService) {
+      this.logger.debug('Service d\'automatisations non disponible, arrêt du déclenchement', 'Zigbee2MqttService');
+      return;
+    }
+
+    this.logger.debug(
+      `[AUTOMATION TRIGGER] Vérification des événements pour l'appareil: ${device.friendlyName} (${device.ieeeAddress})`,
+      'Zigbee2MqttService',
+    );
 
     // Détecter le type d'événement
     let eventType: string | null = null;
@@ -588,16 +599,25 @@ export class Zigbee2MqttService implements OnModuleInit {
       (oldState.occupancy !== true && oldState.occupancy !== 'true')
     ) {
       eventType = 'motion';
+      this.logger.log(
+        `[AUTOMATION TRIGGER] 🔔 MOUVEMENT détecté sur l'appareil "${device.friendlyName}" (${device.ieeeAddress}) - Ancien état: ${oldState.occupancy}, Nouvel état: ${newState.occupancy}`,
+        'Zigbee2MqttService',
+      );
       await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, newState);
     }
 
     // Détection de contact (porte/fenêtre)
     if (newState.contact !== undefined && oldState.contact !== newState.contact) {
       eventType = 'contact';
+      const isOpen = !newState.contact;
+      this.logger.log(
+        `[AUTOMATION TRIGGER] 🚪 CONTACT détecté sur l'appareil "${device.friendlyName}" (${device.ieeeAddress}) - Ancien état: ${oldState.contact ? 'fermé' : 'ouvert'}, Nouvel état: ${newState.contact ? 'fermé' : 'ouvert'} (${isOpen ? 'OUVERT' : 'FERMÉ'})`,
+        'Zigbee2MqttService',
+      );
       await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, {
         ...newState,
         contactChanged: true,
-        isOpen: !newState.contact, // contact: true = fermé, false = ouvert
+        isOpen: isOpen,
       });
     }
 
@@ -608,16 +628,102 @@ export class Zigbee2MqttService implements OnModuleInit {
       Math.abs(newState.temperature - oldState.temperature) > 0.5
     ) {
       eventType = 'temperature';
+      this.logger.log(
+        `[AUTOMATION TRIGGER] 🌡️ TEMPÉRATURE détectée sur l'appareil "${device.friendlyName}" (${device.ieeeAddress}) - Ancienne: ${oldState.temperature}°C, Nouvelle: ${newState.temperature}°C (différence: ${Math.abs(newState.temperature - oldState.temperature).toFixed(2)}°C)`,
+        'Zigbee2MqttService',
+      );
       await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, newState);
     }
 
     // Détection de bouton pressé
-    if (newState.action !== undefined && oldState.action !== newState.action) {
+    // Les boutons Zigbee peuvent utiliser différents champs : action, click, button_l, button_r, button_1, button_2, etc.
+    // Pour les interrupteurs/poussoirs, l'action "single" doit être détectée
+    const buttonFields = ['action', 'click', 'button_l', 'button_r', 'button_1', 'button_2', 'button_3', 'button_4'];
+    let buttonEventDetected = false;
+    let buttonField = null;
+    let buttonValue = null;
+    let oldButtonValue = null;
+
+    // Vérifier si l'appareil est de type SWITCH (Interrupteur) ou BUTTON (Poussoir)
+    const isSwitchOrButton = device.type === DeviceType.SWITCH || device.type === DeviceType.BUTTON;
+
+    // Vérifier le debounce pour éviter les déclenchements multiples
+    const now = Date.now();
+    const lastPressTime = this.lastButtonPressTime.get(device.ieeeAddress) || 0;
+    const timeSinceLastPress = now - lastPressTime;
+
+    for (const field of buttonFields) {
+      const newValue = newState[field];
+      const oldValue = oldState[field];
+      
+      // Détecter si un champ de bouton a changé ou est présent pour la première fois
+      if (newValue !== undefined) {
+        // Pour les interrupteurs/poussoirs, détecter spécifiquement l'action "single"
+        // IMPORTANT: Pour ces appareils, "single" est toujours la même valeur à chaque appui,
+        // donc on détecte chaque fois que "single" est présent dans le nouveau message,
+        // même si la valeur précédente était aussi "single" (car un nouveau message = nouvel appui)
+        // Mais on utilise un debounce pour éviter les déclenchements multiples
+        if (isSwitchOrButton && field === 'action' && newValue === 'single') {
+          // Vérifier le debounce : ne déclencher que si au moins BUTTON_DEBOUNCE_MS se sont écoulés
+          if (timeSinceLastPress >= this.BUTTON_DEBOUNCE_MS) {
+            buttonEventDetected = true;
+            buttonField = field;
+            buttonValue = newValue;
+            oldButtonValue = oldValue;
+            // Mettre à jour le timestamp du dernier appui
+            this.lastButtonPressTime.set(device.ieeeAddress, now);
+            this.logger.log(
+              `[AUTOMATION TRIGGER] 🔘 Action "single" détectée sur ${device.type === DeviceType.SWITCH ? 'interrupteur' : 'poussoir'} "${device.friendlyName}" (${device.ieeeAddress}) - Ancienne valeur: ${oldValue ?? 'undefined'}, Nouvelle valeur: ${newValue} (debounce: ${timeSinceLastPress}ms)`,
+              'Zigbee2MqttService',
+            );
+            break;
+          } else {
+            this.logger.debug(
+              `[AUTOMATION TRIGGER] ⏱️ Action "single" ignorée (debounce) sur "${device.friendlyName}" - ${timeSinceLastPress}ms depuis le dernier appui (minimum: ${this.BUTTON_DEBOUNCE_MS}ms)`,
+              'Zigbee2MqttService',
+            );
+          }
+        }
+        // Pour les autres boutons, détecter uniquement si la valeur a changé
+        else if (!isSwitchOrButton) {
+          // Si l'ancienne valeur n'existe pas ou est différente, c'est un événement
+          if (oldValue === undefined || oldValue !== newValue) {
+            if (newValue !== null && newValue !== '' && newValue !== false) {
+              // Vérifier le debounce pour les autres boutons aussi
+              if (timeSinceLastPress >= this.BUTTON_DEBOUNCE_MS) {
+                buttonEventDetected = true;
+                buttonField = field;
+                buttonValue = newValue;
+                oldButtonValue = oldValue;
+                // Mettre à jour le timestamp du dernier appui
+                this.lastButtonPressTime.set(device.ieeeAddress, now);
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (buttonEventDetected) {
       eventType = 'button';
+      this.logger.log(
+        `[AUTOMATION TRIGGER] 🔘 BOUTON détecté sur l'appareil "${device.friendlyName}" (${device.ieeeAddress}) - Type: ${device.type}, Champ: ${buttonField}, Ancienne valeur: ${oldButtonValue ?? 'undefined'}, Nouvelle valeur: ${buttonValue}`,
+        'Zigbee2MqttService',
+      );
       await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, {
         ...newState,
-        action: newState.action,
+        action: buttonValue, // Normaliser en 'action' pour la compatibilité
+        buttonField: buttonField, // Conserver le champ original pour le debug
+        buttonValue: buttonValue,
       });
+    }
+
+    if (!eventType) {
+      this.logger.debug(
+        `[AUTOMATION TRIGGER] Aucun événement déclencheur détecté pour l'appareil "${device.friendlyName}" (${device.ieeeAddress})`,
+        'Zigbee2MqttService',
+      );
     }
   }
 

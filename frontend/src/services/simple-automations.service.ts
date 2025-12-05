@@ -12,6 +12,7 @@ export enum AutomationTriggerType {
 export enum AutomationActionType {
   TURN_ON = 'turn_on',
   TURN_OFF = 'turn_off',
+  TOGGLE = 'toggle',
   SET_BRIGHTNESS = 'set_brightness',
   SET_COLOR = 'set_color',
   NOTIFY = 'notify',

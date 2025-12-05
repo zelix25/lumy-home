@@ -44,7 +44,8 @@ import { configValidationSchema } from './config/config.validation';
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
           migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
           synchronize: nodeEnv !== 'production',
-          logging: nodeEnv === 'development',
+          /* logging: nodeEnv === 'development',*/
+          logging: false,
         };
       },
       inject: [ConfigService],

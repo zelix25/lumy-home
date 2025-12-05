@@ -29,13 +29,17 @@ import {
   AutomationTriggerType,
   AutomationActionType,
   CreateAutomationDto,
+  UpdateAutomationDto,
+  Automation,
 } from '../services/simple-automations.service';
 import { useNotification } from '../hooks/useNotification';
+import { useEffect } from 'react';
 
 interface CreateSimpleAutomationDialogProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  automation?: Automation | null;
 }
 
 //const steps = ['trigger', 'device', 'action'];
@@ -44,6 +48,7 @@ export default function CreateSimpleAutomationDialog({
   open,
   onClose,
   onSuccess,
+  automation,
 }: CreateSimpleAutomationDialogProps) {
   const { t } = useTranslation();
   const { devices } = useDevices();
@@ -61,6 +66,47 @@ export default function CreateSimpleAutomationDialog({
   const [actionDeviceId, setActionDeviceId] = useState<string>('');
   const [brightness, setBrightness] = useState(100);
   const [notificationMessage, setNotificationMessage] = useState('');
+  const [turnOnDuration, setTurnOnDuration] = useState<number>(0);
+
+  const handleReset = () => {
+    setActiveStep(0);
+    setName('');
+    setDescription('');
+    setTriggerType('');
+    setTriggerDeviceId('');
+    setActionType('');
+    setActionDeviceId('');
+    setBrightness(100);
+    setNotificationMessage('');
+    setTurnOnDuration(0);
+    setError(null);
+  };
+
+  // Charger les données de l'automation si on est en mode édition
+  useEffect(() => {
+    if (automation && open) {
+      setName(automation.name);
+      setDescription(automation.description || '');
+      setTriggerType(automation.trigger.type);
+      setTriggerDeviceId(automation.trigger.deviceId || '');
+      setActionType(automation.actions[0]?.type || '');
+      setActionDeviceId(automation.actions[0]?.deviceId || '');
+      setBrightness(automation.actions[0]?.params?.brightness || 100);
+      setNotificationMessage(automation.actions[0]?.params?.message || '');
+      setTurnOnDuration(automation.actions[0]?.params?.duration || 0);
+      // Définir l'étape active selon les données chargées
+      if (automation.trigger.type && automation.trigger.deviceId) {
+        if (automation.actions[0]?.type) {
+          setActiveStep(2); // Toutes les étapes sont complètes
+        } else {
+          setActiveStep(1); // Trigger et device sont sélectionnés
+        }
+      }
+    } else if (!automation && open) {
+      // Réinitialiser si on est en mode création
+      handleReset();
+    }
+  }, [automation, open]);
 
   // Filtrer les appareils selon le type de déclencheur
   const getAvailableTriggerDevices = () => {
@@ -90,6 +136,8 @@ export default function CreateSimpleAutomationDialog({
       case AutomationActionType.SET_BRIGHTNESS:
       case AutomationActionType.SET_COLOR:
         return devices.filter((d) => d.type === 'light' || d.type === 'switch' || d.type === 'plug');
+      case AutomationActionType.TOGGLE:
+        return devices.filter((d) => d.type === 'switch');
       case AutomationActionType.NOTIFY:
         return []; // Pas besoin d'appareil pour les notifications
       default:
@@ -136,56 +184,81 @@ export default function CreateSimpleAutomationDialog({
       const triggerDevice = devices.find((d) => d.ieeeAddress === triggerDeviceId);
       const actionDevice = actionDeviceId ? devices.find((d) => d.ieeeAddress === actionDeviceId) : null;
 
-      const automation: CreateAutomationDto = {
-        name: name.trim(),
-        description: description.trim() || undefined,
-        trigger: {
-          type: triggerType as AutomationTriggerType,
-          deviceId: triggerDeviceId,
-          deviceName: triggerDevice?.friendlyName,
-        },
-        actions: [
-          {
-            type: actionType as AutomationActionType,
-            deviceId: actionDeviceId || '',
-            deviceName: actionDevice?.friendlyName,
-            params:
-              actionType === AutomationActionType.SET_BRIGHTNESS
-                ? { brightness }
-                : actionType === AutomationActionType.NOTIFY
-                ? { message: notificationMessage || t('automations.defaultNotification') }
-                : undefined,
+      if (automation) {
+        // Mode édition
+        const updateData: UpdateAutomationDto = {
+          name: name.trim(),
+          description: description.trim() || undefined,
+          trigger: {
+            type: triggerType as AutomationTriggerType,
+            deviceId: triggerDeviceId,
+            deviceName: triggerDevice?.friendlyName,
           },
-        ],
-      };
+          actions: [
+            {
+              type: actionType as AutomationActionType,
+              deviceId: actionDeviceId || '',
+              deviceName: actionDevice?.friendlyName,
+              params:
+                actionType === AutomationActionType.TURN_ON
+                  ? { duration: turnOnDuration }
+                  : actionType === AutomationActionType.SET_BRIGHTNESS
+                  ? { brightness }
+                  : actionType === AutomationActionType.NOTIFY
+                  ? { message: notificationMessage || t('automations.defaultNotification') }
+                  : undefined,
+            },
+          ],
+        };
 
-      await simpleAutomationsService.create(automation);
-      addNotification({
-        type: 'success',
-        title: t('automations.created'),
-        message: t('automations.createdMessage'),
-      });
+        await simpleAutomationsService.update(automation.id, updateData);
+        addNotification({
+          type: 'success',
+          title: t('automations.updated'),
+          message: t('automations.updatedMessage'),
+        });
+      } else {
+        // Mode création
+        const createData: CreateAutomationDto = {
+          name: name.trim(),
+          description: description.trim() || undefined,
+          trigger: {
+            type: triggerType as AutomationTriggerType,
+            deviceId: triggerDeviceId,
+            deviceName: triggerDevice?.friendlyName,
+          },
+          actions: [
+            {
+              type: actionType as AutomationActionType,
+              deviceId: actionDeviceId || '',
+              deviceName: actionDevice?.friendlyName,
+              params:
+                actionType === AutomationActionType.TURN_ON
+                  ? { duration: turnOnDuration }
+                  : actionType === AutomationActionType.SET_BRIGHTNESS
+                  ? { brightness }
+                  : actionType === AutomationActionType.NOTIFY
+                  ? { message: notificationMessage || t('automations.defaultNotification') }
+                  : undefined,
+            },
+          ],
+        };
+
+        await simpleAutomationsService.create(createData);
+        addNotification({
+          type: 'success',
+          title: t('automations.created'),
+          message: t('automations.createdMessage'),
+        });
+      }
       handleReset();
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.message || t('automations.createError'));
+      setError(err.message || (automation ? t('automations.updateError') : t('automations.createError')));
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleReset = () => {
-    setActiveStep(0);
-    setName('');
-    setDescription('');
-    setTriggerType('');
-    setTriggerDeviceId('');
-    setActionType('');
-    setActionDeviceId('');
-    setBrightness(100);
-    setNotificationMessage('');
-    setError(null);
   };
 
   const handleClose = () => {
@@ -214,6 +287,8 @@ export default function CreateSimpleAutomationDialog({
         return t('automations.actionTurnOn');
       case AutomationActionType.TURN_OFF:
         return t('automations.actionTurnOff');
+      case AutomationActionType.TOGGLE:
+        return t('automations.actionToggle');
       case AutomationActionType.SET_BRIGHTNESS:
         return t('automations.actionSetBrightness');
       case AutomationActionType.SET_COLOR:
@@ -227,7 +302,7 @@ export default function CreateSimpleAutomationDialog({
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>{t('automations.createAutomation')}</DialogTitle>
+      <DialogTitle>{automation ? t('automations.editAutomation') : t('automations.createAutomation')}</DialogTitle>
       <DialogContent>
         <Box sx={{ mb: 3 }}>
           <TextField
@@ -357,29 +432,45 @@ export default function CreateSimpleAutomationDialog({
               </Typography>
               <Stack spacing={1} sx={{ mb: 3 }}>
                 {Object.values(AutomationActionType).map((type) => (
-                  <Chip
-                    key={type}
-                    label={getActionTypeLabel(type)}
-                    onClick={() => {
-                      setActionType(type);
-                      setActionDeviceId('');
-                      setError(null);
-                    }}
-                    color={actionType === type ? 'primary' : 'default'}
-                    variant={actionType === type ? 'filled' : 'outlined'}
-                    sx={{
-                      justifyContent: 'flex-start',
-                      height: 'auto',
-                      py: 1.5,
-                      ...(actionType === type && {
-                        bgcolor: 'primary.dark',
-                        color: 'white',
-                        '&:hover': {
+                  <Box key={type}>
+                    <Chip
+                      label={getActionTypeLabel(type)}
+                      onClick={() => {
+                        setActionType(type);
+                        setActionDeviceId('');
+                        setError(null);
+                      }}
+                      color={actionType === type ? 'primary' : 'default'}
+                      variant={actionType === type ? 'filled' : 'outlined'}
+                      sx={{
+                        justifyContent: 'flex-start',
+                        height: 'auto',
+                        py: 1.5,
+                        width: '100%',
+                        ...(actionType === type && {
                           bgcolor: 'primary.dark',
-                        },
-                      }),
-                    }}
-                  />
+                          color: 'white',
+                          '&:hover': {
+                            bgcolor: 'primary.dark',
+                          },
+                        }),
+                      }}
+                    />
+                    {type === AutomationActionType.TURN_ON && actionType === type && (
+                      <Box sx={{ mt: 2, ml: 2, mb: 1 }}>
+                        <TextField
+                          type="number"
+                          label={t('automations.duration')}
+                          value={turnOnDuration}
+                          onChange={(e) => setTurnOnDuration(Math.max(0, parseInt(e.target.value) || 0))}
+                          inputProps={{ min: 0, step: 1 }}
+                          size="small"
+                          sx={{ width: 200 }}
+                          helperText={turnOnDuration === 0 ? t('automations.durationInfinite') : t('automations.durationSeconds', { seconds: turnOnDuration })}
+                        />
+                      </Box>
+                    )}
+                  </Box>
                 ))}
               </Stack>
 
@@ -452,7 +543,7 @@ export default function CreateSimpleAutomationDialog({
                   sx={{ ml: 1 }}
                   disabled={loading || !actionType || (actionType !== AutomationActionType.NOTIFY && !actionDeviceId)}
                 >
-                  {loading ? t('common.loading') : t('automations.create')}
+                  {loading ? t('common.loading') : automation ? t('common.save') : t('automations.create')}
                 </Button>
               </Box>
             </StepContent>

@@ -15,7 +15,7 @@ import { User } from './auth/entities/user.entity';
 config();
 
 const configService = new ConfigService();
-const dbPath = configService.get<string>('DATABASE_PATH', 'data/homehub.db');
+const dbPath = configService.get<string>('DATABASE_PATH', 'data/exohome.db');
 const nodeEnv = configService.get<string>('NODE_ENV', 'development');
 
 export const AppDataSource = new DataSource({
@@ -34,6 +34,6 @@ export const AppDataSource = new DataSource({
   ],
   migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
   synchronize: nodeEnv !== 'production',
-  logging: nodeEnv === 'development',
+  logging: false, /*nodeEnv === 'development',*/
 });
 

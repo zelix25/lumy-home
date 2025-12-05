@@ -165,6 +165,448 @@
     "model": "ZNLDP12LM",
     "type": "light",
     "comment": "Xiaomi Aqara LED bulb"
+  },
+  {
+    "model": "ZBMINIR2",
+    "type": "switch",
+    "comment": "SONOFF Push Button"
+  },
+  {
+    "model": "SRTS-A01",
+    "type": "thermostat",
+    "comment": "Aqara Smart radiator thermostat E1"
+  },
+  {
+    "model": "TRADFRI bulb E27 WW 806lm",
+    "type": "light",
+    "vendor": "IKEA",
+    "comment": "IKEA TRADFRI white bulb"
+  },
+  {
+    "model": "TRADFRI bulb E27 WS opal 980lm",
+    "type": "light",
+    "vendor": "IKEA",
+    "comment": "IKEA TRADFRI white spectrum bulb"
+  },
+  {
+    "model": "TRADFRI bulb E27 CWS opal 600lm",
+    "type": "light",
+    "vendor": "IKEA",
+    "comment": "IKEA TRADFRI color bulb"
+  },
+  {
+    "model": "TRADFRI bulb E14 WS opal 600lm",
+    "type": "light",
+    "vendor": "IKEA",
+    "comment": "IKEA TRADFRI E14 white spectrum"
+  },
+  {
+    "model": "TRADFRI control outlet",
+    "type": "plug",
+    "vendor": "IKEA",
+    "comment": "IKEA TRADFRI smart plug"
+  },
+  {
+    "model": "TRADFRI remote control",
+    "type": "button",
+    "vendor": "IKEA",
+    "comment": "IKEA TRADFRI remote"
+  },
+  {
+    "model": "TRADFRI wireless dimmer",
+    "type": "button",
+    "vendor": "IKEA",
+    "comment": "IKEA TRADFRI dimmer"
+  },
+  {
+    "model": "TRADFRI motion sensor",
+    "type": "motion",
+    "vendor": "IKEA",
+    "comment": "IKEA TRADFRI motion sensor"
+  },
+  {
+    "model": "TRADFRI on/off switch",
+    "type": "switch",
+    "vendor": "IKEA",
+    "comment": "IKEA TRADFRI on/off switch"
+  },
+  {
+    "model": "TRADFRI signal repeater",
+    "type": "sensor",
+    "vendor": "IKEA",
+    "comment": "IKEA TRADFRI repeater"
+  },
+  {
+    "model": "LCT024",
+    "type": "light",
+    "vendor": "Philips",
+    "comment": "Philips Hue color"
+  },
+  {
+    "model": "LCT012",
+    "type": "light",
+    "vendor": "Philips",
+    "comment": "Philips Hue color E14"
+  },
+  {
+    "model": "LCT003",
+    "type": "light",
+    "vendor": "Philips",
+    "comment": "Philips Hue color"
+  },
+  {
+    "model": "LCT010",
+    "type": "light",
+    "vendor": "Philips",
+    "comment": "Philips Hue color"
+  },
+  {
+    "model": "LCT014",
+    "type": "light",
+    "vendor": "Philips",
+    "comment": "Philips Hue color"
+  },
+  {
+    "model": "LWB006",
+    "type": "light",
+    "vendor": "Philips",
+    "comment": "Philips Hue white"
+  },
+  {
+    "model": "LWB010",
+    "type": "light",
+    "vendor": "Philips",
+    "comment": "Philips Hue white"
+  },
+  {
+    "model": "RWL021",
+    "type": "button",
+    "vendor": "Philips",
+    "comment": "Philips Hue dimmer switch"
+  },
+  {
+    "model": "RWL022",
+    "type": "button",
+    "vendor": "Philips",
+    "comment": "Philips Hue dimmer switch"
+  },
+  {
+    "model": "ROM001",
+    "type": "button",
+    "vendor": "Philips",
+    "comment": "Philips Hue smart button"
+  },
+  {
+    "model": "HOM001",
+    "type": "button",
+    "vendor": "Philips",
+    "comment": "Philips Hue smart button"
+  },
+  {
+    "model": "1742930P7",
+    "type": "plug",
+    "vendor": "Philips",
+    "comment": "Philips Hue smart plug"
+  },
+  {
+    "model": "9290011370",
+    "type": "plug",
+    "vendor": "Philips",
+    "comment": "Philips Hue smart plug"
+  },
+  {
+    "model": "9290012573A",
+    "type": "plug",
+    "vendor": "Philips",
+    "comment": "Philips Hue smart plug"
+  },
+  {
+    "model": "WXKG03LM",
+    "type": "switch",
+    "comment": "Xiaomi Aqara double key wireless wall switch"
+  },
+  {
+    "model": "QBKG03LM",
+    "type": "switch",
+    "comment": "Xiaomi Aqara single key wired wall switch"
+  },
+  {
+    "model": "QBKG04LM",
+    "type": "switch",
+    "comment": "Xiaomi Aqara double key wired wall switch"
+  },
+  {
+    "model": "SNZB-02P",
+    "type": "door",
+    "comment": "Sonoff door/window sensor"
+  },
+  {
+    "model": "SNZB-05P",
+    "type": "motion",
+    "comment": "Sonoff motion sensor"
+  },
+  {
+    "model": "SNZB-06P",
+    "type": "button",
+    "comment": "Sonoff wireless button"
+  },
+  {
+    "model": "S31ZB",
+    "type": "plug",
+    "comment": "Sonoff S31ZB smart plug"
+  },
+  {
+    "model": "S40ZB",
+    "type": "plug",
+    "comment": "Sonoff S40ZB smart plug"
+  },
+  {
+    "model": "S26RZB",
+    "type": "plug",
+    "comment": "Sonoff S26RZB smart plug"
+  },
+  {
+    "model": "S31ZB",
+    "type": "plug",
+    "comment": "Sonoff S31ZB smart plug"
+  },
+  {
+    "model": "ZNCZ04LM",
+    "type": "plug",
+    "comment": "Xiaomi Aqara smart plug"
+  },
+  {
+    "model": "DJT11LM",
+    "type": "button",
+    "comment": "Xiaomi Aqara vibration sensor"
+  },
+  {
+    "model": "SJCGQ11LM",
+    "type": "sensor",
+    "comment": "Xiaomi Aqara water leak sensor"
+  },
+  {
+    "model": "JTYJ-GD-01LM/BW",
+    "type": "sensor",
+    "comment": "Xiaomi Aqara smoke detector"
+  },
+  {
+    "model": "JTQJ-BF-01LM/BW",
+    "type": "sensor",
+    "comment": "Xiaomi Aqara gas detector"
+  },
+  {
+    "model": "CGDK2",
+    "type": "button",
+    "comment": "Xiaomi Aqara cube controller"
+  },
+  {
+    "model": "MFKZQ01LM",
+    "type": "button",
+    "comment": "Xiaomi Aqara cube controller"
+  },
+  {
+    "model": "WSDCGQ01LM",
+    "type": "temperature",
+    "comment": "Xiaomi Aqara temperature/humidity sensor"
+  },
+  {
+    "model": "WSDCGQ03LM",
+    "type": "temperature",
+    "comment": "Xiaomi Aqara temperature/humidity sensor"
+  },
+  {
+    "model": "LLKZMK11LM",
+    "type": "sensor",
+    "comment": "Xiaomi Aqara light sensor"
+  },
+  {
+    "model": "GZCGQ01LM",
+    "type": "sensor",
+    "comment": "Xiaomi Aqara illuminance sensor"
+  },
+  {
+    "model": "RTCZCGQ11LM",
+    "type": "motion",
+    "comment": "Xiaomi Aqara PIR sensor"
+  },
+  {
+    "model": "ZNMS12LM",
+    "type": "motion",
+    "comment": "Xiaomi Aqara motion sensor"
+  },
+  {
+    "model": "ZNMS13LM",
+    "type": "motion",
+    "comment": "Xiaomi Aqara motion sensor"
+  },
+  {
+    "model": "ZNCLDJ11LM",
+    "type": "light",
+    "comment": "Xiaomi Aqara LED strip"
+  },
+  {
+    "model": "ZNLDP12LM",
+    "type": "light",
+    "comment": "Xiaomi Aqara LED bulb"
+  },
+  {
+    "model": "ZNDDMK11LM",
+    "type": "light",
+    "comment": "Xiaomi Aqara dimmer switch"
+  },
+  {
+    "model": "ZNCZ12LM",
+    "type": "plug",
+    "comment": "Xiaomi Aqara smart plug"
+  },
+  {
+    "model": "ZNCZ11LM",
+    "type": "plug",
+    "comment": "Xiaomi Aqara smart plug"
+  },
+  {
+    "model": "ZNCZ03LM",
+    "type": "plug",
+    "comment": "Xiaomi Aqara smart plug"
+  },
+  {
+    "model": "ZNCZ04LM",
+    "type": "plug",
+    "comment": "Xiaomi Aqara smart plug"
+  },
+  {
+    "model": "OSRAM LIGHTIFY A19 Tunable White",
+    "type": "light",
+    "vendor": "OSRAM",
+    "comment": "OSRAM Smart+ classic E27"
+  },
+  {
+    "model": "AC0251100NJ",
+    "type": "light",
+    "vendor": "OSRAM",
+    "comment": "OSRAM Smart+ classic E27"
+  },
+  {
+    "model": "AC03642",
+    "type": "light",
+    "vendor": "OSRAM",
+    "comment": "OSRAM Smart+ classic E27"
+  },
+  {
+    "model": "AC03645",
+    "type": "light",
+    "vendor": "OSRAM",
+    "comment": "OSRAM Smart+ classic E27"
+  },
+  {
+    "model": "AC03647",
+    "type": "light",
+    "vendor": "OSRAM",
+    "comment": "OSRAM Smart+ classic E27"
+  },
+  {
+    "model": "Plug 01",
+    "type": "plug",
+    "vendor": "OSRAM",
+    "comment": "OSRAM Smart+ plug"
+  },
+  {
+    "model": "Motion Sensor-A",
+    "type": "motion",
+    "vendor": "OSRAM",
+    "comment": "OSRAM Smart+ motion sensor"
+  },
+  {
+    "model": "Switch Mini",
+    "type": "button",
+    "vendor": "OSRAM",
+    "comment": "OSRAM Smart+ switch mini"
+  },
+  {
+    "model": "Gardenpole RGBW",
+    "type": "light",
+    "vendor": "OSRAM",
+    "comment": "OSRAM Smart+ gardenpole"
+  },
+  {
+    "model": "S20",
+    "type": "plug",
+    "comment": "Sonoff S20 smart plug"
+  },
+  {
+    "model": "S31",
+    "type": "plug",
+    "comment": "Sonoff S31 smart plug"
+  },
+  {
+    "model": "S26",
+    "type": "plug",
+    "comment": "Sonoff S26 smart plug"
+  },
+  {
+    "model": "S40",
+    "type": "plug",
+    "comment": "Sonoff S40 smart plug"
+  },
+  {
+    "model": "BASICZBR3",
+    "type": "switch",
+    "comment": "Sonoff Basic ZBR3"
+  },
+  {
+    "model": "ZBMINI",
+    "type": "switch",
+    "comment": "Sonoff ZBMINI switch"
+  },
+  {
+    "model": "ZBMINIL2",
+    "type": "switch",
+    "comment": "Sonoff ZBMINIL2 switch"
+  },
+  {
+    "model": "ZBMINIL2",
+    "type": "switch",
+    "comment": "Sonoff ZBMINIL2 switch"
+  },
+  {
+    "model": "ZBMINIL2",
+    "type": "switch",
+    "comment": "Sonoff ZBMINIL2 switch"
+  },
+  {
+    "model": "T1EU",
+    "type": "switch",
+    "comment": "Sonoff T1EU switch"
+  },
+  {
+    "model": "T1US",
+    "type": "switch",
+    "comment": "Sonoff T1US switch"
+  },
+  {
+    "model": "TH10",
+    "type": "temperature",
+    "comment": "Sonoff TH10 temperature/humidity"
+  },
+  {
+    "model": "TH16",
+    "type": "temperature",
+    "comment": "Sonoff TH16 temperature/humidity"
+  },
+  {
+    "model": "SNZB-02",
+    "type": "door",
+    "comment": "Sonoff door/window sensor"
+  },
+  {
+    "model": "SNZB-05",
+    "type": "motion",
+    "comment": "Sonoff motion sensor"
+  },
+  {
+    "model": "SNZB-06",
+    "type": "button",
+    "comment": "Sonoff wireless button"
   }
 ]
-

@@ -10,6 +10,12 @@ import {
   MenuItem,
   Chip,
   Stack,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
 } from '@mui/material';
 import {
   MoreVert as MoreVertIcon,
@@ -41,6 +47,7 @@ export default function SimpleAutomationCard({
   const { addNotification } = useNotification();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [loading, setLoading] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -74,10 +81,13 @@ export default function SimpleAutomationCard({
     }
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm(t('automations.confirmDelete'))) {
-      return;
-    }
+  const handleDeleteClick = () => {
+    handleMenuClose();
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    setDeleteDialogOpen(false);
     setLoading(true);
     try {
       await simpleAutomationsService.delete(automation.id);
@@ -95,8 +105,11 @@ export default function SimpleAutomationCard({
       });
     } finally {
       setLoading(false);
-      handleMenuClose();
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
   };
 
   const getTriggerDescription = () => {
@@ -121,9 +134,18 @@ export default function SimpleAutomationCard({
 
     switch (action.type) {
       case AutomationActionType.TURN_ON:
+        const duration = action.params?.duration;
+        if (duration && duration > 0) {
+          return t('automations.thenTurnOnWithDuration', { 
+            device: action.deviceName || action.deviceId,
+            seconds: duration 
+          });
+        }
         return t('automations.thenTurnOn', { device: action.deviceName || action.deviceId });
       case AutomationActionType.TURN_OFF:
         return t('automations.thenTurnOff', { device: action.deviceName || action.deviceId });
+      case AutomationActionType.TOGGLE:
+        return t('automations.thenToggle', { device: action.deviceName || action.deviceId });
       case AutomationActionType.SET_BRIGHTNESS:
         return t('automations.thenSetBrightness', {
           device: action.deviceName || action.deviceId,
@@ -200,11 +222,41 @@ export default function SimpleAutomationCard({
               {t('common.edit')}
             </MenuItem>
           )}
-          <MenuItem onClick={handleDelete}>
+          <MenuItem onClick={handleDeleteClick}>
             <DeleteIcon sx={{ mr: 1 }} fontSize="small" />
             {t('common.delete')}
           </MenuItem>
         </Menu>
+
+        {/* Modal de confirmation de suppression */}
+        <Dialog
+          open={deleteDialogOpen}
+          onClose={handleDeleteCancel}
+          aria-labelledby="delete-dialog-title"
+          aria-describedby="delete-dialog-description"
+        >
+          <DialogTitle id="delete-dialog-title">
+            {t('automations.confirmDeleteTitle')}
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText id="delete-dialog-description">
+              {t('automations.confirmDelete', { name: automation.name })}
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleDeleteCancel} color="inherit">
+              {t('common.cancel')}
+            </Button>
+            <Button
+              onClick={handleDeleteConfirm}
+              color="error"
+              variant="contained"
+              disabled={loading}
+            >
+              {t('common.delete')}
+            </Button>
+          </DialogActions>
+        </Dialog>
       </CardContent>
     </Card>
   );

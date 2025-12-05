@@ -23,6 +23,7 @@ export default function ScenesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editingAutomation, setEditingAutomation] = useState<Automation | null>(null);
 
   const fetchAutomations = async () => {
     setLoading(true);
@@ -48,6 +49,17 @@ export default function ScenesPage() {
 
   const handleCreateSuccess = () => {
     fetchAutomations();
+    setEditingAutomation(null);
+  };
+
+  const handleEdit = (automation: Automation) => {
+    setEditingAutomation(automation);
+    setCreateDialogOpen(true);
+  };
+
+  const handleDialogClose = () => {
+    setCreateDialogOpen(false);
+    setEditingAutomation(null);
   };
 
   if (loading) {
@@ -111,6 +123,7 @@ export default function ScenesPage() {
               <SimpleAutomationCard
                 automation={automation}
                 onUpdate={fetchAutomations}
+                onEdit={handleEdit}
               />
             </Grid>
           ))}
@@ -119,8 +132,9 @@ export default function ScenesPage() {
 
       <CreateSimpleAutomationDialog
         open={createDialogOpen}
-        onClose={() => setCreateDialogOpen(false)}
+        onClose={handleDialogClose}
         onSuccess={handleCreateSuccess}
+        automation={editingAutomation}
       />
     </Box>
   );
