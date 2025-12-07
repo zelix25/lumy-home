@@ -28,13 +28,81 @@ export class SettingsService {
         logout_delay: 0,
         hostname: '',
         setup: false,
-      });
+        city: null,
+        zipCode: null,
+        country: null,
+        latitude: null,
+        longitude: null,
+      } as Partial<Settings>);
       const saved = await this.settingsRepository.save(defaultSettings);
       this.logger.log('Paramètres par défaut créés', 'SettingsService');
       return saved;
     }
 
     return settings;
+  }
+
+  /**
+   * Convertit une adresse en coordonnées GPS (géocodage)
+   */
+  private async geocodeAddress(
+    city?: string,
+    zipCode?: string,
+    country?: string,
+  ): Promise<{ latitude: number; longitude: number } | null> {
+    // Construire l'adresse à partir des informations disponibles
+    const addressParts: string[] = [];
+    if (zipCode) addressParts.push(zipCode);
+    if (city) addressParts.push(city);
+    if (country) addressParts.push(country);
+
+    if (addressParts.length === 0) {
+      return null;
+    }
+
+    const address = addressParts.join(', ');
+
+    try {
+      // Utiliser l'API Nominatim (OpenStreetMap) - gratuite et sans clé API
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`;
+      
+      this.logger.log(`Géocodage de l'adresse: ${address}`, 'SettingsService');
+      
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'ExoHome/1.0', // Nominatim exige un User-Agent
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        const result = data[0];
+        const latitude = parseFloat(result.lat);
+        const longitude = parseFloat(result.lon);
+
+        this.logger.log(
+          `Coordonnées trouvées: ${latitude}, ${longitude} pour ${address}`,
+          'SettingsService',
+        );
+
+        return { latitude, longitude };
+      } else {
+        this.logger.warn(`Aucun résultat trouvé pour l'adresse: ${address}`, 'SettingsService');
+        return null;
+      }
+    } catch (error) {
+      this.logger.error(
+        `Erreur lors du géocodage de l'adresse ${address}: ${error.message}`,
+        error.stack,
+        'SettingsService',
+      );
+      return null;
+    }
   }
 
   /**
@@ -45,6 +113,22 @@ export class SettingsService {
       order: { updatedAt: 'DESC' },
       take: 1,
     });
+
+    // Si les coordonnées ne sont pas fournies mais que l'adresse est modifiée, faire le géocodage
+    if (
+      (dto.city !== undefined || dto.zipCode !== undefined || dto.country !== undefined) &&
+      (dto.latitude === undefined && dto.longitude === undefined)
+    ) {
+      const city = dto.city ?? existingSettings?.city ?? undefined;
+      const zipCode = dto.zipCode ?? existingSettings?.zipCode ?? undefined;
+      const country = dto.country ?? existingSettings?.country ?? undefined;
+
+      const coordinates = await this.geocodeAddress(city, zipCode, country);
+      if (coordinates) {
+        dto.latitude = coordinates.latitude;
+        dto.longitude = coordinates.longitude;
+      }
+    }
 
     if (existingSettings) {
       // Mettre à jour les paramètres existants
@@ -59,7 +143,12 @@ export class SettingsService {
       logout_delay: dto.logout_delay ?? 0,
       hostname: dto.hostname ?? '',
       setup: dto.setup ?? false,
-    });
+      city: dto.city ?? null,
+      zipCode: dto.zipCode ?? null,
+      country: dto.country ?? null,
+      latitude: dto.latitude ?? null,
+      longitude: dto.longitude ?? null,
+    } as Partial<Settings>);
     const saved = await this.settingsRepository.save(newSettings);
     this.logger.log('Paramètres créés', 'SettingsService');
     return saved;

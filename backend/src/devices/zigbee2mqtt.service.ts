@@ -719,6 +719,83 @@ export class Zigbee2MqttService implements OnModuleInit {
       });
     }
 
+    // Détection de vibration
+    if (newState.vibration !== undefined && oldState.vibration !== newState.vibration) {
+      eventType = 'vibration';
+      this.logger.log(
+        `[AUTOMATION TRIGGER] 📳 VIBRATION détectée sur l'appareil "${device.friendlyName}" (${device.ieeeAddress}) - Ancien état: ${oldState.vibration}, Nouvel état: ${newState.vibration}`,
+        'Zigbee2MqttService',
+      );
+      await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, newState);
+    }
+
+    // Détection de luminosité (illuminance)
+    if (
+      newState.illuminance !== undefined &&
+      oldState.illuminance !== undefined &&
+      Math.abs(newState.illuminance - oldState.illuminance) > 10
+    ) {
+      eventType = 'illuminance';
+      this.logger.log(
+        `[AUTOMATION TRIGGER] 💡 LUMINOSITÉ détectée sur l'appareil "${device.friendlyName}" (${device.ieeeAddress}) - Ancienne: ${oldState.illuminance} lux, Nouvelle: ${newState.illuminance} lux`,
+        'Zigbee2MqttService',
+      );
+      await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, newState);
+    }
+
+    // Détection d'humidité
+    if (
+      newState.humidity !== undefined &&
+      oldState.humidity !== undefined &&
+      Math.abs(newState.humidity - oldState.humidity) > 2
+    ) {
+      eventType = 'humidity';
+      this.logger.log(
+        `[AUTOMATION TRIGGER] 💧 HUMIDITÉ détectée sur l'appareil "${device.friendlyName}" (${device.ieeeAddress}) - Ancienne: ${oldState.humidity}%, Nouvelle: ${newState.humidity}%`,
+        'Zigbee2MqttService',
+      );
+      await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, newState);
+    }
+
+    // Détection de fuite d'eau
+    if (
+      (newState.water_leak === true || newState.water === true) &&
+      (oldState.water_leak !== true && oldState.water !== true)
+    ) {
+      eventType = 'water_leak';
+      this.logger.log(
+        `[AUTOMATION TRIGGER] 💦 FUITE D'EAU détectée sur l'appareil "${device.friendlyName}" (${device.ieeeAddress})`,
+        'Zigbee2MqttService',
+      );
+      await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, newState);
+    }
+
+    // Détection de fumée
+    if (
+      (newState.smoke === true || newState.smoke_detected === true) &&
+      (oldState.smoke !== true && oldState.smoke_detected !== true)
+    ) {
+      eventType = 'smoke';
+      this.logger.log(
+        `[AUTOMATION TRIGGER] 🔥 FUMÉE détectée sur l'appareil "${device.friendlyName}" (${device.ieeeAddress})`,
+        'Zigbee2MqttService',
+      );
+      await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, newState);
+    }
+
+    // Détection de gaz
+    if (
+      (newState.gas === true || newState.gas_detected === true) &&
+      (oldState.gas !== true && oldState.gas_detected !== true)
+    ) {
+      eventType = 'gas';
+      this.logger.log(
+        `[AUTOMATION TRIGGER] ⛽ GAZ détecté sur l'appareil "${device.friendlyName}" (${device.ieeeAddress})`,
+        'Zigbee2MqttService',
+      );
+      await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, newState);
+    }
+
     if (!eventType) {
       this.logger.debug(
         `[AUTOMATION TRIGGER] Aucun événement déclencheur détecté pour l'appareil "${device.friendlyName}" (${device.ieeeAddress})`,

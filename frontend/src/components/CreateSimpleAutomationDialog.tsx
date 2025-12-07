@@ -21,7 +21,11 @@ import {
   ListItemText,
   ListItemButton,
   Divider,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useTranslation } from 'react-i18next';
 import { useDevices } from '../hooks/useDevices';
 import {
@@ -65,6 +69,8 @@ export default function CreateSimpleAutomationDialog({
   const [actionType, setActionType] = useState<AutomationActionType | ''>('');
   const [actionDeviceId, setActionDeviceId] = useState<string>('');
   const [brightness, setBrightness] = useState(100);
+  const [colorTemp, setColorTemp] = useState(370);
+  const [thermostatTemp, setThermostatTemp] = useState(20);
   const [notificationMessage, setNotificationMessage] = useState('');
   const [turnOnDuration, setTurnOnDuration] = useState<number>(0);
 
@@ -77,6 +83,8 @@ export default function CreateSimpleAutomationDialog({
     setActionType('');
     setActionDeviceId('');
     setBrightness(100);
+    setColorTemp(370);
+    setThermostatTemp(20);
     setNotificationMessage('');
     setTurnOnDuration(0);
     setError(null);
@@ -92,6 +100,8 @@ export default function CreateSimpleAutomationDialog({
       setActionType(automation.actions[0]?.type || '');
       setActionDeviceId(automation.actions[0]?.deviceId || '');
       setBrightness(automation.actions[0]?.params?.brightness || 100);
+      setColorTemp(automation.actions[0]?.params?.color_temp || 370);
+      setThermostatTemp(automation.actions[0]?.params?.temperature || 20);
       setNotificationMessage(automation.actions[0]?.params?.message || '');
       setTurnOnDuration(automation.actions[0]?.params?.duration || 0);
       // Définir l'étape active selon les données chargées
@@ -121,6 +131,20 @@ export default function CreateSimpleAutomationDialog({
         return devices.filter((d) => d.type === 'temperature' || d.type === 'sensor');
       case AutomationTriggerType.BUTTON:
         return devices.filter((d) => d.type === 'button' || d.type === 'switch');
+      case AutomationTriggerType.VIBRATION:
+        return devices.filter((d) => d.type === 'sensor' || d.state?.vibration !== undefined);
+      case AutomationTriggerType.ILLUMINANCE:
+        return devices.filter((d) => d.type === 'sensor' || d.state?.illuminance !== undefined);
+      case AutomationTriggerType.HUMIDITY:
+        return devices.filter((d) => d.type === 'temperature' || d.type === 'sensor');
+      case AutomationTriggerType.WATER_LEAK:
+        return devices.filter((d) => d.type === 'sensor');
+      case AutomationTriggerType.SMOKE:
+        return devices.filter((d) => d.type === 'sensor');
+      case AutomationTriggerType.GAS:
+        return devices.filter((d) => d.type === 'sensor');
+      case AutomationTriggerType.SUNRISE_SUNSET:
+        return []; // Pas besoin d'appareil pour le lever/coucher du soleil
       default:
         return [];
     }
@@ -135,9 +159,12 @@ export default function CreateSimpleAutomationDialog({
       case AutomationActionType.TURN_OFF:
       case AutomationActionType.SET_BRIGHTNESS:
       case AutomationActionType.SET_COLOR:
+      case AutomationActionType.SET_COLOR_TEMP:
         return devices.filter((d) => d.type === 'light' || d.type === 'switch' || d.type === 'plug');
       case AutomationActionType.TOGGLE:
-        return devices.filter((d) => d.type === 'switch');
+        return devices.filter((d) => d.type === 'switch' || d.type === 'plug');
+      case AutomationActionType.SET_THERMOSTAT:
+        return devices.filter((d) => d.type === 'thermostat');
       case AutomationActionType.NOTIFY:
         return []; // Pas besoin d'appareil pour les notifications
       default:
@@ -148,6 +175,12 @@ export default function CreateSimpleAutomationDialog({
   const handleNext = () => {
     if (activeStep === 0 && !triggerType) {
       setError(t('automations.selectTrigger'));
+      return;
+    }
+    // Si le déclencheur est SUNRISE_SUNSET, on saute l'étape de sélection d'appareil (pas besoin d'appareil)
+    if (activeStep === 0 && triggerType === AutomationTriggerType.SUNRISE_SUNSET) {
+      setError(null);
+      setActiveStep(2); // Passer directement à l'étape 3 (action)
       return;
     }
     if (activeStep === 1 && !triggerDeviceId) {
@@ -168,7 +201,13 @@ export default function CreateSimpleAutomationDialog({
 
   const handleBack = () => {
     setError(null);
-    setActiveStep((prev) => prev - 1);
+    // Si on revient en arrière depuis l'étape 3 (action) et que le déclencheur est SUNRISE_SUNSET,
+    // on revient directement à l'étape 1 (déclencheur) car l'étape 2 (appareil) est sautée
+    if (activeStep === 2 && triggerType === AutomationTriggerType.SUNRISE_SUNSET) {
+      setActiveStep(0);
+    } else {
+      setActiveStep((prev) => prev - 1);
+    }
   };
 
   const handleCreate = async () => {
@@ -181,7 +220,7 @@ export default function CreateSimpleAutomationDialog({
     setError(null);
 
     try {
-      const triggerDevice = devices.find((d) => d.ieeeAddress === triggerDeviceId);
+      const triggerDevice = triggerDeviceId ? devices.find((d) => d.ieeeAddress === triggerDeviceId) : null;
       const actionDevice = actionDeviceId ? devices.find((d) => d.ieeeAddress === actionDeviceId) : null;
 
       if (automation) {
@@ -204,6 +243,10 @@ export default function CreateSimpleAutomationDialog({
                   ? { duration: turnOnDuration }
                   : actionType === AutomationActionType.SET_BRIGHTNESS
                   ? { brightness }
+                  : actionType === AutomationActionType.SET_COLOR_TEMP
+                  ? { color_temp: colorTemp }
+                  : actionType === AutomationActionType.SET_THERMOSTAT
+                  ? { temperature: thermostatTemp }
                   : actionType === AutomationActionType.NOTIFY
                   ? { message: notificationMessage || t('automations.defaultNotification') }
                   : undefined,
@@ -237,6 +280,10 @@ export default function CreateSimpleAutomationDialog({
                   ? { duration: turnOnDuration }
                   : actionType === AutomationActionType.SET_BRIGHTNESS
                   ? { brightness }
+                  : actionType === AutomationActionType.SET_COLOR_TEMP
+                  ? { color_temp: colorTemp }
+                  : actionType === AutomationActionType.SET_THERMOSTAT
+                  ? { temperature: thermostatTemp }
                   : actionType === AutomationActionType.NOTIFY
                   ? { message: notificationMessage || t('automations.defaultNotification') }
                   : undefined,
@@ -276,6 +323,20 @@ export default function CreateSimpleAutomationDialog({
         return t('automations.triggerTemperature');
       case AutomationTriggerType.BUTTON:
         return t('automations.triggerButton');
+      case AutomationTriggerType.VIBRATION:
+        return t('automations.triggerVibration');
+      case AutomationTriggerType.ILLUMINANCE:
+        return t('automations.triggerIlluminance');
+      case AutomationTriggerType.HUMIDITY:
+        return t('automations.triggerHumidity');
+      case AutomationTriggerType.WATER_LEAK:
+        return t('automations.triggerWaterLeak');
+      case AutomationTriggerType.SMOKE:
+        return t('automations.triggerSmoke');
+      case AutomationTriggerType.GAS:
+        return t('automations.triggerGas');
+      case AutomationTriggerType.SUNRISE_SUNSET:
+        return t('automations.triggerSunriseSunset');
       default:
         return type;
     }
@@ -293,6 +354,10 @@ export default function CreateSimpleAutomationDialog({
         return t('automations.actionSetBrightness');
       case AutomationActionType.SET_COLOR:
         return t('automations.actionSetColor');
+      case AutomationActionType.SET_COLOR_TEMP:
+        return t('automations.actionSetColorTemp');
+      case AutomationActionType.SET_THERMOSTAT:
+        return t('automations.actionSetThermostat');
       case AutomationActionType.NOTIFY:
         return t('automations.actionNotify');
       default:
@@ -338,33 +403,131 @@ export default function CreateSimpleAutomationDialog({
                 {t('automations.stepTriggerDescription')}
               </Typography>
               <Stack spacing={1}>
-                 {Object.values(AutomationTriggerType)
-                   .filter((type) => type !== AutomationTriggerType.TIME && type !== AutomationTriggerType.MANUAL)
-                   .map((type) => (
-                     <Chip
-                       key={type}
-                       label={getTriggerTypeLabel(type)}
-                       onClick={() => {
-                         setTriggerType(type);
-                         setTriggerDeviceId('');
-                         setError(null);
-                       }}
-                       color={triggerType === type ? 'primary' : 'default'}
-                       variant={triggerType === type ? 'filled' : 'outlined'}
-                       sx={{
-                         justifyContent: 'flex-start',
-                         height: 'auto',
-                         py: 1.5,
-                         ...(triggerType === type && {
-                           bgcolor: 'primary.dark',
-                           color: 'white',
-                           '&:hover': {
-                             bgcolor: 'primary.dark',
-                           },
-                         }),
-                       }}
-                     />
-                   ))}
+                {/* Groupe Détection */}
+                <Accordion defaultExpanded>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      {t('automations.triggerGroupDetection')}
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Stack spacing={1}>
+                      {[
+                        AutomationTriggerType.MOTION,
+                        AutomationTriggerType.CONTACT,
+                        AutomationTriggerType.VIBRATION,
+                        AutomationTriggerType.WATER_LEAK,
+                        AutomationTriggerType.SMOKE,
+                        AutomationTriggerType.GAS,
+                      ].map((type) => (
+                        <Chip
+                          key={type}
+                          label={getTriggerTypeLabel(type)}
+                          onClick={() => {
+                            setTriggerType(type);
+                            setTriggerDeviceId('');
+                            setError(null);
+                          }}
+                          color={triggerType === type ? 'primary' : 'default'}
+                          variant={triggerType === type ? 'filled' : 'outlined'}
+                          sx={{
+                            justifyContent: 'flex-start',
+                            height: 'auto',
+                            py: 1.5,
+                            ...(triggerType === type && {
+                              bgcolor: 'primary.dark',
+                              color: 'white',
+                              '&:hover': {
+                                bgcolor: 'primary.dark',
+                              },
+                            }),
+                          }}
+                        />
+                      ))}
+                    </Stack>
+                  </AccordionDetails>
+                </Accordion>
+
+                {/* Groupe Environnement */}
+                <Accordion>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      {t('automations.triggerGroupEnvironment')}
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Stack spacing={1}>
+                      {[
+                        AutomationTriggerType.TEMPERATURE,
+                        AutomationTriggerType.ILLUMINANCE,
+                        AutomationTriggerType.HUMIDITY,
+                        AutomationTriggerType.SUNRISE_SUNSET,
+                      ].map((type) => (
+                        <Chip
+                          key={type}
+                          label={getTriggerTypeLabel(type)}
+                          onClick={() => {
+                            setTriggerType(type);
+                            setTriggerDeviceId('');
+                            setError(null);
+                          }}
+                          color={triggerType === type ? 'primary' : 'default'}
+                          variant={triggerType === type ? 'filled' : 'outlined'}
+                          sx={{
+                            justifyContent: 'flex-start',
+                            height: 'auto',
+                            py: 1.5,
+                            ...(triggerType === type && {
+                              bgcolor: 'primary.dark',
+                              color: 'white',
+                              '&:hover': {
+                                bgcolor: 'primary.dark',
+                              },
+                            }),
+                          }}
+                        />
+                      ))}
+                    </Stack>
+                  </AccordionDetails>
+                </Accordion>
+
+                {/* Groupe Interaction */}
+                <Accordion>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      {t('automations.triggerGroupInteraction')}
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Stack spacing={1}>
+                      {[AutomationTriggerType.BUTTON].map((type) => (
+                        <Chip
+                          key={type}
+                          label={getTriggerTypeLabel(type)}
+                          onClick={() => {
+                            setTriggerType(type);
+                            setTriggerDeviceId('');
+                            setError(null);
+                          }}
+                          color={triggerType === type ? 'primary' : 'default'}
+                          variant={triggerType === type ? 'filled' : 'outlined'}
+                          sx={{
+                            justifyContent: 'flex-start',
+                            height: 'auto',
+                            py: 1.5,
+                            ...(triggerType === type && {
+                              bgcolor: 'primary.dark',
+                              color: 'white',
+                              '&:hover': {
+                                bgcolor: 'primary.dark',
+                              },
+                            }),
+                          }}
+                        />
+                      ))}
+                    </Stack>
+                  </AccordionDetails>
+                </Accordion>
               </Stack>
               <Box sx={{ mt: 2 }}>
                 {activeStep > 0 && (
@@ -384,44 +547,46 @@ export default function CreateSimpleAutomationDialog({
           </Step>
 
           {/* Étape 2: Choisir un appareil déclencheur */}
-          <Step>
-            <StepLabel>{t('automations.stepDevice')}</StepLabel>
-            <StepContent>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                {t('automations.stepDeviceDescription')}
-              </Typography>
-              {triggerType && (
-                <List>
-                  {getAvailableTriggerDevices().map((device) => (
-                    <ListItem key={device.ieeeAddress} disablePadding>
-                      <ListItemButton
-                        selected={triggerDeviceId === device.ieeeAddress}
-                        onClick={() => {
-                          setTriggerDeviceId(device.ieeeAddress);
-                          setError(null);
-                        }}
-                      >
-                        <ListItemText
-                          primary={device.friendlyName || device.ieeeAddress}
-                        />
-                      </ListItemButton>
-                    </ListItem>
-                  ))}
-                </List>
-              )}
-              {triggerType && getAvailableTriggerDevices().length === 0 && (
-                <Alert severity="info">{t('automations.noDevicesAvailable')}</Alert>
-              )}
-              <Box sx={{ mt: 2 }}>
-                <Button onClick={handleBack} size="small">
-                  {t('common.back')}
-                </Button>
-                <Button variant="contained" onClick={handleNext} sx={{ ml: 1 }} disabled={!triggerDeviceId}>
-                  {t('common.next')}
-                </Button>
-              </Box>
-            </StepContent>
-          </Step>
+          {triggerType !== AutomationTriggerType.SUNRISE_SUNSET && (
+            <Step>
+              <StepLabel>{t('automations.stepDevice')}</StepLabel>
+              <StepContent>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  {t('automations.stepDeviceDescription')}
+                </Typography>
+                {triggerType && (
+                  <List>
+                    {getAvailableTriggerDevices().map((device) => (
+                      <ListItem key={device.ieeeAddress} disablePadding>
+                        <ListItemButton
+                          selected={triggerDeviceId === device.ieeeAddress}
+                          onClick={() => {
+                            setTriggerDeviceId(device.ieeeAddress);
+                            setError(null);
+                          }}
+                        >
+                          <ListItemText
+                            primary={device.friendlyName || device.ieeeAddress}
+                          />
+                        </ListItemButton>
+                      </ListItem>
+                    ))}
+                  </List>
+                )}
+                {triggerType && getAvailableTriggerDevices().length === 0 && (
+                  <Alert severity="info">{t('automations.noDevicesAvailable')}</Alert>
+                )}
+                <Box sx={{ mt: 2 }}>
+                  <Button onClick={handleBack} size="small">
+                    {t('common.back')}
+                  </Button>
+                  <Button variant="contained" onClick={handleNext} sx={{ ml: 1 }} disabled={!triggerDeviceId}>
+                    {t('common.next')}
+                  </Button>
+                </Box>
+              </StepContent>
+            </Step>
+          )}
 
           {/* Étape 3: Choisir une action */}
           <Step>
@@ -514,6 +679,45 @@ export default function CreateSimpleAutomationDialog({
                     max={100}
                     valueLabelDisplay="auto"
                     valueLabelFormat={(value) => `${value}%`}
+                  />
+                </>
+              )}
+
+              {actionType === AutomationActionType.SET_COLOR_TEMP && (
+                <>
+                  <Divider sx={{ my: 2 }} />
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    {t('automations.colorTemp')}
+                  </Typography>
+                  <Slider
+                    value={colorTemp}
+                    onChange={(_, value) => setColorTemp(value as number)}
+                    min={153}
+                    max={500}
+                    valueLabelDisplay="auto"
+                    valueLabelFormat={(value) => `${value}K`}
+                  />
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                    {t('automations.colorTempDescription')}
+                  </Typography>
+                </>
+              )}
+
+              {actionType === AutomationActionType.SET_THERMOSTAT && (
+                <>
+                  <Divider sx={{ my: 2 }} />
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    {t('automations.thermostatTemp')}
+                  </Typography>
+                  <TextField
+                    type="number"
+                    label={t('automations.temperature')}
+                    value={thermostatTemp}
+                    onChange={(e) => setThermostatTemp(parseFloat(e.target.value) || 20)}
+                    inputProps={{ min: 5, max: 35, step: 0.5 }}
+                    size="small"
+                    sx={{ width: 200 }}
+                    helperText={t('automations.thermostatTempDescription')}
                   />
                 </>
               )}

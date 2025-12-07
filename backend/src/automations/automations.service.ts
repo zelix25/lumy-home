@@ -293,6 +293,134 @@ export class AutomationsService implements OnModuleInit {
         );
         return shouldTrigger;
 
+      case AutomationTriggerType.VIBRATION:
+        shouldTrigger = eventType === 'vibration' || eventData.vibration !== undefined;
+        this.logger.debug(
+          `[AUTOMATION CHECK] Type VIBRATION - eventType: ${eventType}, vibration: ${eventData.vibration}, Résultat: ${shouldTrigger}`,
+          'AutomationsService',
+        );
+        return shouldTrigger;
+
+      case AutomationTriggerType.ILLUMINANCE:
+        if (eventType !== 'illuminance' && !eventData.illuminance) {
+          this.logger.debug(
+            `[AUTOMATION CHECK] Type LUMINOSITÉ - Pas de luminosité dans l'événement, Résultat: false`,
+            'AutomationsService',
+          );
+          return false;
+        }
+        // Vérifier les conditions de luminosité si définies
+        if (trigger.condition?.operator && trigger.condition?.value) {
+          const illuminance = eventData.illuminance;
+          const value = trigger.condition.value;
+          const operator = trigger.condition.operator;
+          let conditionMet = false;
+          switch (operator) {
+            case '>':
+              conditionMet = illuminance > value;
+              break;
+            case '<':
+              conditionMet = illuminance < value;
+              break;
+            case '>=':
+              conditionMet = illuminance >= value;
+              break;
+            case '<=':
+              conditionMet = illuminance <= value;
+              break;
+            case '==':
+              conditionMet = illuminance === value;
+              break;
+          }
+          this.logger.debug(
+            `[AUTOMATION CHECK] Type LUMINOSITÉ - Condition: ${illuminance} ${operator} ${value}, Résultat: ${conditionMet}`,
+            'AutomationsService',
+          );
+          return conditionMet;
+        }
+        this.logger.debug(
+          `[AUTOMATION CHECK] Type LUMINOSITÉ - Pas de condition spécifique, Résultat: true`,
+          'AutomationsService',
+        );
+        return true;
+
+      case AutomationTriggerType.HUMIDITY:
+        if (eventType !== 'humidity' && !eventData.humidity) {
+          this.logger.debug(
+            `[AUTOMATION CHECK] Type HUMIDITÉ - Pas d'humidité dans l'événement, Résultat: false`,
+            'AutomationsService',
+          );
+          return false;
+        }
+        // Vérifier les conditions d'humidité si définies
+        if (trigger.condition?.operator && trigger.condition?.value) {
+          const humidity = eventData.humidity;
+          const value = trigger.condition.value;
+          const operator = trigger.condition.operator;
+          let conditionMet = false;
+          switch (operator) {
+            case '>':
+              conditionMet = humidity > value;
+              break;
+            case '<':
+              conditionMet = humidity < value;
+              break;
+            case '>=':
+              conditionMet = humidity >= value;
+              break;
+            case '<=':
+              conditionMet = humidity <= value;
+              break;
+            case '==':
+              conditionMet = humidity === value;
+              break;
+          }
+          this.logger.debug(
+            `[AUTOMATION CHECK] Type HUMIDITÉ - Condition: ${humidity} ${operator} ${value}, Résultat: ${conditionMet}`,
+            'AutomationsService',
+          );
+          return conditionMet;
+        }
+        this.logger.debug(
+          `[AUTOMATION CHECK] Type HUMIDITÉ - Pas de condition spécifique, Résultat: true`,
+          'AutomationsService',
+        );
+        return true;
+
+      case AutomationTriggerType.WATER_LEAK:
+        shouldTrigger = eventType === 'water_leak' || eventData.water_leak !== undefined || eventData.water === true;
+        this.logger.debug(
+          `[AUTOMATION CHECK] Type FUITE D'EAU - eventType: ${eventType}, water_leak: ${eventData.water_leak}, water: ${eventData.water}, Résultat: ${shouldTrigger}`,
+          'AutomationsService',
+        );
+        return shouldTrigger;
+
+      case AutomationTriggerType.SMOKE:
+        shouldTrigger = eventType === 'smoke' || eventData.smoke !== undefined || eventData.smoke_detected === true;
+        this.logger.debug(
+          `[AUTOMATION CHECK] Type FUMÉE - eventType: ${eventType}, smoke: ${eventData.smoke}, smoke_detected: ${eventData.smoke_detected}, Résultat: ${shouldTrigger}`,
+          'AutomationsService',
+        );
+        return shouldTrigger;
+
+      case AutomationTriggerType.GAS:
+        shouldTrigger = eventType === 'gas' || eventData.gas !== undefined || eventData.gas_detected === true;
+        this.logger.debug(
+          `[AUTOMATION CHECK] Type GAZ - eventType: ${eventType}, gas: ${eventData.gas}, gas_detected: ${eventData.gas_detected}, Résultat: ${shouldTrigger}`,
+          'AutomationsService',
+        );
+        return shouldTrigger;
+
+      case AutomationTriggerType.SUNRISE_SUNSET:
+        // Le lever/coucher du soleil sera géré par un système de cron job
+        // Pour l'instant, on vérifie si l'événement est de type 'sunrise' ou 'sunset'
+        shouldTrigger = eventType === 'sunrise' || eventType === 'sunset' || eventData.sunrise || eventData.sunset;
+        this.logger.debug(
+          `[AUTOMATION CHECK] Type LEVER/COUCHER DU SOLEIL - eventType: ${eventType}, sunrise: ${eventData.sunrise}, sunset: ${eventData.sunset}, Résultat: ${shouldTrigger}`,
+          'AutomationsService',
+        );
+        return shouldTrigger;
+
       default:
         this.logger.debug(
           `[AUTOMATION CHECK] ❌ Type de déclencheur non supporté: ${trigger.type}`,
@@ -492,13 +620,24 @@ export class AutomationsService implements OnModuleInit {
           break;
 
         case AutomationActionType.TURN_OFF:
+          const turnOffDevice = await this.devicesService.findOne(deviceId);
+          // Annuler le timer d'extinction automatique s'il existe
+          const turnOffTimer = this.turnOffTimers.get(deviceId);
+          if (turnOffTimer) {
+            clearTimeout(turnOffTimer);
+            this.turnOffTimers.delete(deviceId);
+            this.logger.debug(
+              `[AUTOMATION ACTION] ⏱️ Timer d'extinction automatique annulé pour l'appareil ${deviceId}`,
+              'AutomationsService',
+            );
+          }
           this.logger.log(
-            `[AUTOMATION ACTION] 🔌 Commande: Éteindre l'appareil ${deviceId}`,
+            `[AUTOMATION ACTION] 🔌 Commande: Éteindre l'appareil ${turnOffDevice.friendlyName} (${deviceId})`,
             'AutomationsService',
           );
-          await this.zigbee2MqttService.sendCommand(deviceId, { state: 'OFF' });
+          await this.zigbee2MqttService.sendCommand(turnOffDevice.friendlyName, { state: 'OFF' });
           this.logger.log(
-            `[AUTOMATION ACTION] ✅ Commande "OFF" envoyée avec succès à l'appareil ${deviceId}`,
+            `[AUTOMATION ACTION] ✅ Commande "OFF" envoyée avec succès à l'appareil ${turnOffDevice.friendlyName} (${deviceId})`,
             'AutomationsService',
           );
           break;
@@ -524,16 +663,17 @@ export class AutomationsService implements OnModuleInit {
           if (!params?.brightness) {
             throw new BadRequestException('Le paramètre brightness est requis');
           }
+          const brightnessDevice = await this.devicesService.findOne(deviceId);
           this.logger.log(
-            `[AUTOMATION ACTION] 🌟 Commande: Régler la luminosité de l'appareil ${deviceId} à ${params.brightness}%`,
+            `[AUTOMATION ACTION] 🌟 Commande: Régler la luminosité de l'appareil ${brightnessDevice.friendlyName} (${deviceId}) à ${params.brightness}%`,
             'AutomationsService',
           );
-          await this.zigbee2MqttService.sendCommand(deviceId, {
+          await this.zigbee2MqttService.sendCommand(brightnessDevice.friendlyName, {
             state: 'ON',
             brightness: params.brightness,
           });
           this.logger.log(
-            `[AUTOMATION ACTION] ✅ Commande de luminosité (${params.brightness}%) envoyée avec succès à l'appareil ${deviceId}`,
+            `[AUTOMATION ACTION] ✅ Commande de luminosité (${params.brightness}%) envoyée avec succès à l'appareil ${brightnessDevice.friendlyName} (${deviceId})`,
             'AutomationsService',
           );
           break;
@@ -542,16 +682,54 @@ export class AutomationsService implements OnModuleInit {
           if (!params?.color) {
             throw new BadRequestException('Le paramètre color est requis');
           }
+          const colorDevice = await this.devicesService.findOne(deviceId);
           this.logger.log(
-            `[AUTOMATION ACTION] 🎨 Commande: Changer la couleur de l'appareil ${deviceId} en ${params.color}`,
+            `[AUTOMATION ACTION] 🎨 Commande: Changer la couleur de l'appareil ${colorDevice.friendlyName} (${deviceId}) en ${params.color}`,
             'AutomationsService',
           );
-          await this.zigbee2MqttService.sendCommand(deviceId, {
+          await this.zigbee2MqttService.sendCommand(colorDevice.friendlyName, {
             state: 'ON',
             color: params.color,
           });
           this.logger.log(
-            `[AUTOMATION ACTION] ✅ Commande de couleur (${params.color}) envoyée avec succès à l'appareil ${deviceId}`,
+            `[AUTOMATION ACTION] ✅ Commande de couleur (${params.color}) envoyée avec succès à l'appareil ${colorDevice.friendlyName} (${deviceId})`,
+            'AutomationsService',
+          );
+          break;
+
+        case AutomationActionType.SET_COLOR_TEMP:
+          if (!params?.color_temp) {
+            throw new BadRequestException('Le paramètre color_temp est requis');
+          }
+          const colorTempDevice = await this.devicesService.findOne(deviceId);
+          this.logger.log(
+            `[AUTOMATION ACTION] 🌡️ Commande: Régler la température de couleur de l'appareil ${colorTempDevice.friendlyName} (${deviceId}) à ${params.color_temp}`,
+            'AutomationsService',
+          );
+          await this.zigbee2MqttService.sendCommand(colorTempDevice.friendlyName, {
+            state: 'ON',
+            color_temp: params.color_temp,
+          });
+          this.logger.log(
+            `[AUTOMATION ACTION] ✅ Commande de température de couleur (${params.color_temp}) envoyée avec succès à l'appareil ${colorTempDevice.friendlyName} (${deviceId})`,
+            'AutomationsService',
+          );
+          break;
+
+        case AutomationActionType.SET_THERMOSTAT:
+          if (!params?.temperature) {
+            throw new BadRequestException('Le paramètre temperature est requis');
+          }
+          const thermostatDevice = await this.devicesService.findOne(deviceId);
+          this.logger.log(
+            `[AUTOMATION ACTION] 🌡️ Commande: Régler le thermostat ${thermostatDevice.friendlyName} (${deviceId}) à ${params.temperature}°C`,
+            'AutomationsService',
+          );
+          await this.zigbee2MqttService.sendCommand(thermostatDevice.friendlyName, {
+            current_heating_setpoint: params.temperature,
+          });
+          this.logger.log(
+            `[AUTOMATION ACTION] ✅ Commande de thermostat (${params.temperature}°C) envoyée avec succès à l'appareil ${thermostatDevice.friendlyName} (${deviceId})`,
             'AutomationsService',
           );
           break;

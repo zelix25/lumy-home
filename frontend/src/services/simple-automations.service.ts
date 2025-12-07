@@ -5,6 +5,13 @@ export enum AutomationTriggerType {
   CONTACT = 'contact',
   TEMPERATURE = 'temperature',
   BUTTON = 'button',
+  VIBRATION = 'vibration',
+  ILLUMINANCE = 'illuminance',
+  HUMIDITY = 'humidity',
+  WATER_LEAK = 'water_leak',
+  SMOKE = 'smoke',
+  GAS = 'gas',
+  SUNRISE_SUNSET = 'sunrise_sunset',
   TIME = 'time',
   MANUAL = 'manual',
 }
@@ -15,6 +22,8 @@ export enum AutomationActionType {
   TOGGLE = 'toggle',
   SET_BRIGHTNESS = 'set_brightness',
   SET_COLOR = 'set_color',
+  SET_COLOR_TEMP = 'set_color_temp',
+  SET_THERMOSTAT = 'set_thermostat',
   NOTIFY = 'notify',
 }
 

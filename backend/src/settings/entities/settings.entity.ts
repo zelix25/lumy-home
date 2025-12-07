@@ -20,6 +20,21 @@ export class Settings {
   @Column({ type: 'boolean', default: 1 })
   setup: boolean;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  city: string | null;
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  zipCode: string | null;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  country: string | null;
+
+  @Column({ type: 'decimal', precision: 10, scale: 8, nullable: true })
+  latitude: number | null;
+
+  @Column({ type: 'decimal', precision: 11, scale: 8, nullable: true })
+  longitude: number | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

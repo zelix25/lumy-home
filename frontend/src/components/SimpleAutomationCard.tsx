@@ -123,6 +123,20 @@ export default function SimpleAutomationCard({
         return t('automations.whenTemperature', { device: trigger.deviceName || trigger.deviceId });
       case AutomationTriggerType.BUTTON:
         return t('automations.whenButton', { device: trigger.deviceName || trigger.deviceId });
+      case AutomationTriggerType.VIBRATION:
+        return t('automations.whenVibration', { device: trigger.deviceName || trigger.deviceId });
+      case AutomationTriggerType.ILLUMINANCE:
+        return t('automations.whenIlluminance', { device: trigger.deviceName || trigger.deviceId });
+      case AutomationTriggerType.HUMIDITY:
+        return t('automations.whenHumidity', { device: trigger.deviceName || trigger.deviceId });
+      case AutomationTriggerType.WATER_LEAK:
+        return t('automations.whenWaterLeak', { device: trigger.deviceName || trigger.deviceId });
+      case AutomationTriggerType.SMOKE:
+        return t('automations.whenSmoke', { device: trigger.deviceName || trigger.deviceId });
+      case AutomationTriggerType.GAS:
+        return t('automations.whenGas', { device: trigger.deviceName || trigger.deviceId });
+      case AutomationTriggerType.SUNRISE_SUNSET:
+        return t('automations.whenSunriseSunset');
       default:
         return `${trigger.type}: ${trigger.deviceName || trigger.deviceId}`;
     }
@@ -153,6 +167,16 @@ export default function SimpleAutomationCard({
         });
       case AutomationActionType.SET_COLOR:
         return t('automations.thenSetColor', { device: action.deviceName || action.deviceId });
+      case AutomationActionType.SET_COLOR_TEMP:
+        return t('automations.thenSetColorTemp', {
+          device: action.deviceName || action.deviceId,
+          colorTemp: action.params?.color_temp || 370,
+        });
+      case AutomationActionType.SET_THERMOSTAT:
+        return t('automations.thenSetThermostat', {
+          device: action.deviceName || action.deviceId,
+          temperature: action.params?.temperature || 20,
+        });
       case AutomationActionType.NOTIFY:
         return t('automations.thenNotify', { message: action.params?.message || '' });
       default:
