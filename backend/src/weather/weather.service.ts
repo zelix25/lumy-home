@@ -132,14 +132,52 @@ export class WeatherService implements OnModuleInit {
         const relative_humidity_2m = hourlyForDay.humidity;
         const wind_speed_10m = hourlyForDay.windSpeed;
 
-        // Vérifier si une entrée existe déjà
-        const existing = await this.weatherRepository.findOne({
-          where: {
-            latitude,
-            longitude,
-            date,
-          },
-        });
+        // Vérifier si une entrée existe déjà (utiliser la même logique que getTodayWeather)
+        const dateStrForQuery = date.toISOString().split('T')[0];
+        let existing = await this.weatherRepository
+          .createQueryBuilder('weather')
+          .where('weather.latitude = :latitude', { latitude })
+          .andWhere('weather.longitude = :longitude', { longitude })
+          .andWhere("strftime('%Y-%m-%d', weather.date) = :dateStr", { dateStr: dateStrForQuery })
+          .getOne();
+
+        // Si la première méthode ne fonctionne pas, essayer avec DATE()
+        if (!existing) {
+          existing = await this.weatherRepository
+            .createQueryBuilder('weather')
+            .where('weather.latitude = :latitude', { latitude })
+            .andWhere('weather.longitude = :longitude', { longitude })
+            .andWhere('DATE(weather.date) = :dateStr', { dateStr: dateStrForQuery })
+            .getOne();
+        }
+
+        // Si toujours rien, récupérer toutes les données et comparer manuellement
+        if (!existing) {
+          const allWeatherForLocation = await this.weatherRepository.find({
+            where: {
+              latitude,
+              longitude,
+            },
+          });
+
+          for (const weather of allWeatherForLocation) {
+            const weatherDate: any = weather.date;
+            let weatherDateStr: string;
+            
+            if (weatherDate instanceof Date) {
+              weatherDateStr = weatherDate.toISOString().split('T')[0];
+            } else if (typeof weatherDate === 'string') {
+              weatherDateStr = weatherDate.split('T')[0].split(' ')[0];
+            } else {
+              weatherDateStr = String(weatherDate).split('T')[0].split(' ')[0];
+            }
+
+            if (weatherDateStr === dateStrForQuery) {
+              existing = weather;
+              break;
+            }
+          }
+        }
 
         const weatherData = {
           latitude,
@@ -238,21 +276,162 @@ export class WeatherService implements OnModuleInit {
    * Récupère les données météo d'aujourd'hui
    */
   async getTodayWeather(): Promise<Weather | null> {
-    const settings = await this.settingsService.getSettings();
-    if (!settings.latitude || !settings.longitude) {
+    try {
+      const settings = await this.settingsService.getSettings();
+      
+      if (!settings.latitude || !settings.longitude) {
+        this.logger.warn(
+          `⚠ Coordonnées GPS non configurées. Latitude: ${settings.latitude}, Longitude: ${settings.longitude}`,
+          'WeatherService',
+        );
+        return null;
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayStr = today.toISOString().split('T')[0]; // Format YYYY-MM-DD
+
+      this.logger.log(
+        `🔍 Recherche météo pour aujourd'hui (${todayStr}) aux coordonnées: ${settings.latitude}, ${settings.longitude}`,
+        'WeatherService',
+      );
+
+      // SQLite stocke les dates comme des chaînes, utiliser une comparaison de chaîne
+      // Essayer plusieurs méthodes pour être sûr de trouver la date
+      let result = await this.weatherRepository
+        .createQueryBuilder('weather')
+        .where('weather.latitude = :latitude', { latitude: settings.latitude })
+        .andWhere('weather.longitude = :longitude', { longitude: settings.longitude })
+        .andWhere("strftime('%Y-%m-%d', weather.date) = :today", { today: todayStr })
+        .getOne();
+      
+      // Si la première méthode ne fonctionne pas, essayer avec DATE()
+      if (!result) {
+        result = await this.weatherRepository
+          .createQueryBuilder('weather')
+          .where('weather.latitude = :latitude', { latitude: settings.latitude })
+          .andWhere('weather.longitude = :longitude', { longitude: settings.longitude })
+          .andWhere('DATE(weather.date) = :today', { today: todayStr })
+          .getOne();
+      }
+
+      // Si toujours rien, récupérer toutes les données et comparer manuellement
+      if (!result) {
+        const allWeatherForLocation = await this.weatherRepository.find({
+          where: {
+            latitude: settings.latitude,
+            longitude: settings.longitude,
+          },
+        });
+
+        this.logger.log(
+          `🔍 ${allWeatherForLocation.length} enregistrement(s) météo trouvé(s) pour ces coordonnées`,
+          'WeatherService',
+        );
+
+        // Comparer les dates en format string
+        for (const weather of allWeatherForLocation) {
+          const weatherDate: any = weather.date;
+          let weatherDateStr: string;
+          
+          if (weatherDate instanceof Date) {
+            weatherDateStr = weatherDate.toISOString().split('T')[0];
+          } else if (typeof weatherDate === 'string') {
+            weatherDateStr = weatherDate.split('T')[0].split(' ')[0];
+          } else {
+            weatherDateStr = String(weatherDate).split('T')[0].split(' ')[0];
+          }
+
+          this.logger.log(
+            `  📅 Date en base: ${weatherDateStr} (recherche: ${todayStr})`,
+            'WeatherService',
+          );
+
+          if (weatherDateStr === todayStr) {
+            this.logger.log('✓ Données trouvées avec comparaison manuelle de dates', 'WeatherService');
+            result = weather;
+            break;
+          }
+        }
+      }
+
+      if (result) {
+        this.logger.log(
+          `✓ Données météo trouvées pour aujourd'hui`,
+          'WeatherService',
+        );
+      } else {
+        this.logger.warn(
+          `⚠ Aucune donnée météo trouvée pour aujourd'hui (${today.toISOString().split('T')[0]})`,
+          'WeatherService',
+        );
+        
+        // Fallback : récupérer la date la plus récente disponible
+        const allWeatherForLocation = await this.weatherRepository.find({
+          where: {
+            latitude: settings.latitude,
+            longitude: settings.longitude,
+          },
+          order: {
+            date: 'DESC',
+          },
+          take: 1,
+        });
+
+        if (allWeatherForLocation.length > 0) {
+          const latestWeather = allWeatherForLocation[0];
+          const latestDate: any = latestWeather.date;
+          let latestDateStr: string;
+          
+          if (latestDate instanceof Date) {
+            latestDateStr = latestDate.toISOString().split('T')[0];
+          } else if (typeof latestDate === 'string') {
+            latestDateStr = latestDate.split('T')[0].split(' ')[0];
+          } else {
+            latestDateStr = String(latestDate).split('T')[0].split(' ')[0];
+          }
+
+          this.logger.log(
+            `ℹ Utilisation de la date la plus récente disponible: ${latestDateStr} (au lieu de ${todayStr})`,
+            'WeatherService',
+          );
+          
+          // Retourner la date la plus récente si elle est dans une plage raisonnable
+          // (jusqu'à 7 jours dans le passé ou dans le futur, pour gérer les problèmes de date système)
+          const latestDateObj = new Date(latestDateStr + 'T00:00:00');
+          const daysDiff = Math.floor((latestDateObj.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+          
+          // Accepter les dates dans une plage de -7 à +7 jours (pour gérer les problèmes de date système)
+          if (Math.abs(daysDiff) <= 7) {
+            this.logger.log(
+              `✓ Retour de la météo la plus récente (${daysDiff > 0 ? '+' : ''}${daysDiff} jour(s) d'écart par rapport à la date système)`,
+              'WeatherService',
+            );
+            return latestWeather;
+          } else {
+            this.logger.warn(
+              `⚠ La date la plus récente (${latestDateStr}) est trop éloignée (${daysDiff} jours) de la date système`,
+              'WeatherService',
+            );
+          }
+        } else {
+          this.logger.warn(
+            '⚠ Aucune donnée météo en base de données. Le service de mise à jour météo a-t-il été exécuté ?',
+            'WeatherService',
+          );
+        }
+      }
+      
+      // S'assurer de retourner null explicitement si aucun résultat
+      return result ?? null;
+    } catch (error) {
+      this.logger.error(
+        `✗ Erreur lors de la récupération de la météo d'aujourd'hui: ${error.message}`,
+        error.stack,
+        'WeatherService',
+      );
       return null;
     }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    return await this.weatherRepository.findOne({
-      where: {
-        latitude: settings.latitude,
-        longitude: settings.longitude,
-        date: today,
-      },
-    });
   }
 
   /**
@@ -295,6 +474,60 @@ export class WeatherService implements OnModuleInit {
       },
       take: limit,
     });
+  }
+
+  /**
+   * Récupère des informations de diagnostic
+   */
+  async getDebugInfo(): Promise<{
+    hasCoordinates: boolean;
+    coordinates: { latitude: number | null; longitude: number | null } | null;
+    todayWeatherExists: boolean;
+    totalWeatherRecords: number;
+    lastWeatherDate: string | null;
+  }> {
+    const settings = await this.settingsService.getSettings();
+    const hasCoordinates = !!(settings.latitude && settings.longitude);
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    let todayWeatherExists = false;
+    if (hasCoordinates) {
+      const todayWeather = await this.getTodayWeather();
+      todayWeatherExists = !!todayWeather;
+    }
+
+    const allWeather = await this.weatherRepository.find({
+      order: { date: 'DESC' },
+      take: 1,
+    });
+
+    // Gérer le cas où date peut être une chaîne (SQLite) ou un objet Date
+    let lastWeatherDate: string | null = null;
+    if (allWeather.length > 0 && allWeather[0].date) {
+      const dateValue: any = allWeather[0].date;
+      if (dateValue instanceof Date) {
+        lastWeatherDate = dateValue.toISOString().split('T')[0];
+      } else if (typeof dateValue === 'string') {
+        // Si c'est une chaîne, extraire la partie date (YYYY-MM-DD)
+        lastWeatherDate = dateValue.split('T')[0].split(' ')[0];
+      } else {
+        // Fallback : convertir en string
+        const dateStr = String(dateValue);
+        lastWeatherDate = dateStr.split('T')[0].split(' ')[0];
+      }
+    }
+
+    return {
+      hasCoordinates,
+      coordinates: hasCoordinates
+        ? { latitude: settings.latitude, longitude: settings.longitude }
+        : null,
+      todayWeatherExists,
+      totalWeatherRecords: await this.weatherRepository.count(),
+      lastWeatherDate,
+    };
   }
 }
 

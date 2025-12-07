@@ -46,7 +46,31 @@ class ApiService {
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    return response.json();
+    
+    // Si la réponse est 204 No Content, retourner null
+    if (response.status === 204) {
+      return null as T;
+    }
+    
+    // Vérifier le type de contenu
+    const contentType = response.headers.get('content-type');
+    if (!contentType?.includes('application/json')) {
+      return null as T;
+    }
+    
+    // Vérifier si la réponse a du contenu avant de parser en JSON
+    const text = await response.text();
+    if (!text || text.trim() === '') {
+      return null as T;
+    }
+    
+    try {
+      return JSON.parse(text);
+    } catch (error) {
+      // Si le parsing échoue, retourner null au lieu de lancer une erreur
+      console.warn('Failed to parse JSON response:', text);
+      return null as T;
+    }
   }
 
   async post<T>(endpoint: string, data?: unknown): Promise<T> {

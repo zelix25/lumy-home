@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query } from '@nestjs/common';
+import { Controller, Get, Post, Query, HttpCode, HttpStatus } from '@nestjs/common';
 import { WeatherService } from './weather.service';
 import { Weather } from './entities/weather.entity';
 
@@ -7,8 +7,11 @@ export class WeatherController {
   constructor(private readonly weatherService: WeatherService) {}
 
   @Get('today')
+  @HttpCode(HttpStatus.OK)
   async getTodayWeather(): Promise<Weather | null> {
-    return await this.weatherService.getTodayWeather();
+    const result = await this.weatherService.getTodayWeather();
+    // S'assurer que null est retourné explicitement (NestJS le sérialisera en JSON)
+    return result ?? null;
   }
 
   @Post('update')
@@ -21,6 +24,17 @@ export class WeatherController {
   async getWeatherHistory(@Query('limit') limit?: string): Promise<Weather[]> {
     const limitNum = limit ? parseInt(limit, 10) : 30;
     return await this.weatherService.getWeatherHistory(limitNum);
+  }
+
+  @Get('debug')
+  async getDebugInfo(): Promise<{
+    hasCoordinates: boolean;
+    coordinates: { latitude: number | null; longitude: number | null } | null;
+    todayWeatherExists: boolean;
+    totalWeatherRecords: number;
+    lastWeatherDate: string | null;
+  }> {
+    return await this.weatherService.getDebugInfo();
   }
 }
 

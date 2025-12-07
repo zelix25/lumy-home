@@ -11,6 +11,7 @@ import { devicesService, DeviceStats, Device } from '../services/devices.service
 import { useDevices } from '../hooks/useDevices';
 import PlanViewMode from '../components/PlanViewMode';
 import RoomCard from '../components/RoomCard';
+import WeatherCard from '../components/WeatherCard';
 import i18n from '@/i18n';
 
 export default function HomePage() {
@@ -247,6 +248,11 @@ export default function HomePage() {
                   </Card>
                 </Grid>
               ))}
+
+              {/* Carte météo */}
+              <Grid item xs={12} md={6} lg={4}>
+                <WeatherCard />
+              </Grid>
 
               {/* Cartes par pièce */}
               {Object.entries(devicesByRoom).map(([roomName, roomDevices]) => (

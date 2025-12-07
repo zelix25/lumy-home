@@ -35,6 +35,7 @@ import AddIcon from '@mui/icons-material/Add';
 import { devicesService, Device } from '../services/devices.service';
 import { roomsService, Room } from '../services/rooms.service';
 import { useWebSocket } from '../hooks/useWebSocket';
+import { useDevices } from '../hooks/useDevices';
 import MultiSensorChart from '../components/MultiSensorChart';
 import { SensorType } from '../services/sensor-history.service';
 import AdvancedExposesSettings from '../components/AdvancedExposesSettings';
@@ -61,6 +62,7 @@ export default function DeviceDetailPage() {
   const [device, setDevice] = useState<Device | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
   const [friendlyName, setFriendlyName] = useState('');
   const [room, setRoom] = useState('');
   const [brightness, setBrightness] = useState(100);
@@ -74,6 +76,7 @@ export default function DeviceDetailPage() {
   const [advancedMode, setAdvancedMode] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const { isConnected, socket } = useWebSocket();
+  const { devices: allDevices } = useDevices();
 
   useEffect(() => {
     if (!ieeeAddress) return;
@@ -147,11 +150,33 @@ export default function DeviceDetailPage() {
 
   const handleSaveName = async () => {
     if (!ieeeAddress) return;
+    
+    // Vérifier l'unicité du nom
+    const trimmedName = friendlyName.trim();
+    if (!trimmedName) {
+      setNameError('Le nom ne peut pas être vide');
+      return;
+    }
+
+    // Vérifier si un autre appareil a déjà ce nom
+    const existingDevice = allDevices.find(
+      (d) => d.friendlyName.toLowerCase() === trimmedName.toLowerCase() && d.ieeeAddress !== ieeeAddress
+    );
+
+    if (existingDevice) {
+      setNameError(`Un appareil avec le nom "${trimmedName}" existe déjà`);
+      return;
+    }
+
+    setNameError(null);
+    
     try {
-      const updated = await devicesService.updateFriendlyName(ieeeAddress, friendlyName);
+      const updated = await devicesService.updateFriendlyName(ieeeAddress, trimmedName);
       setDevice(updated);
-    } catch (err) {
+      setFriendlyName(trimmedName);
+    } catch (err: any) {
       console.error('Erreur lors de la mise à jour du nom:', err);
+      setNameError(err.message || 'Erreur lors de la mise à jour du nom');
     }
   };
 
@@ -308,7 +333,12 @@ export default function DeviceDetailPage() {
                     fullWidth
                     label="Nom de l'appareil"
                     value={friendlyName}
-                    onChange={(e) => setFriendlyName(e.target.value)}
+                    onChange={(e) => {
+                      setFriendlyName(e.target.value);
+                      setNameError(null); // Réinitialiser l'erreur lors de la saisie
+                    }}
+                    error={!!nameError}
+                    helperText={nameError}
                     sx={{ mb: 1 }}
                   />
                   <Button
@@ -316,6 +346,7 @@ export default function DeviceDetailPage() {
                     startIcon={<SaveIcon />}
                     onClick={handleSaveName}
                     size="small"
+                    disabled={!friendlyName.trim() || friendlyName.trim() === device.friendlyName}
                   >
                     Enregistrer le nom
                   </Button>

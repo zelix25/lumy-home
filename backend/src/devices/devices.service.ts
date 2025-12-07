@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Device } from './entities/device.entity';
@@ -43,6 +43,19 @@ export class DevicesService {
   ): Promise<Device> {
     const device = await this.findOne(ieeeAddress);
     const oldFriendlyName = device.friendlyName;
+
+    // Si le nom change, vérifier qu'il n'existe pas déjà
+    if (friendlyName !== oldFriendlyName) {
+      const existingDevice = await this.deviceRepository.findOne({
+        where: { friendlyName },
+      });
+
+      if (existingDevice && existingDevice.ieeeAddress !== ieeeAddress) {
+        throw new ConflictException(
+          `Un appareil avec le nom "${friendlyName}" existe déjà`,
+        );
+      }
+    }
 
     device.friendlyName = friendlyName;
     await this.deviceRepository.save(device);
