@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { LoggerModule } from './logger/logger.module';
@@ -15,6 +16,7 @@ import { AuthModule } from './auth/auth.module';
 import { SettingsModule } from './settings/settings.module';
 import { AutomationsModule } from './automations/automations.module';
 import { RoomsModule } from './rooms/rooms.module';
+import { WeatherModule } from './weather/weather.module';
 import { configValidationSchema } from './config/config.validation';
 
 @Module({
@@ -50,6 +52,8 @@ import { configValidationSchema } from './config/config.validation';
       },
       inject: [ConfigService],
     }),
+    // Module de planification pour les tâches cron
+    ScheduleModule.forRoot(),
     // Modules personnalisés
     LoggerModule,
     MqttModule,
@@ -63,6 +67,7 @@ import { configValidationSchema } from './config/config.validation';
     SettingsModule,
     AutomationsModule,
     RoomsModule,
+    WeatherModule,
   ],
   controllers: [AppController],
   providers: [AppService],
