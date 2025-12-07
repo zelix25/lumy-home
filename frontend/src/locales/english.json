@@ -19,7 +19,8 @@
     "loading": "Loading...",
     "error": "Error",
     "success": "Success",
-    "skip": "Skip"
+    "skip": "Skip",
+    "none": "None"
   },
   "devices": {
     "title": "Devices",
@@ -129,7 +130,8 @@
     "noScenesCreated": "No scenes created",
     "noScenesCreatedHint": "Create your first scene or automation to get started",
     "createScene": "Create scene",
-    "createAutomation": "Create automation"
+    "createAutomation": "Create automation",
+    "nodeMode": "Node mode"
   },
   "assistant": {
     "title": "AI Assistant",
@@ -398,6 +400,8 @@
     "categoryOther": "Other",
     "categoryOtherDescription": "Other types of automations",
     "selectActionDevices": "Select one or more devices to activate",
+    "operator": "Operator",
+    "value": "Value",
     "selectedDevicesCount": "{{count}} device(s) selected",
     "selected": "Selected",
     "selectTrigger": "Please select a trigger type",
@@ -480,7 +484,27 @@
     "thenSetThermostat": "Then set thermostat {{device}} to {{temperature}}°C",
     "thenNotify": "Then send notification: {{message}}",
     "sunriseSunsetInfoTitle": "Weather data",
-    "sunriseSunsetInfo": "Sunrise and sunset times are automatically retrieved from weather data. Perfect for automating shutters opening/closing, outdoor lighting, etc."
+    "sunriseSunsetInfo": "Sunrise and sunset times are automatically retrieved from weather data. Perfect for automating shutters opening/closing, outdoor lighting, etc.",
+    "nodeEditor": {
+      "title": "Node Editor",
+      "addTrigger": "Add trigger",
+      "addAction": "Add action",
+      "actionType": "Action type",
+      "addCondition": "Add condition",
+      "condition": "Condition",
+      "nodeSettings": "Node settings",
+      "selectNodeToConfigure": "Select a node to configure it",
+      "noTriggerNode": "At least one trigger node is required",
+      "noActionNode": "At least one action node is required",
+      "noConnectedActions": "No actions connected to trigger",
+      "doubleClickToAdd": "Double-click to add a node",
+      "connectNodes": "Connect nodes by dragging from connection points",
+      "triggerType": "Trigger type",
+      "triggerTime": "Time",
+      "triggerManual": "Manual",
+      "triggerTimeDescription": "The time at which the trigger will be activated",
+      "triggerManualDescription": "The trigger will be activated manually"
+    }
   },
   "weather": {
     "title": "Weather",

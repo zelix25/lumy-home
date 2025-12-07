@@ -20,7 +20,8 @@
     "error": "Erreur",
     "success": "Succès",
     "skip": "Passer",
-    "create": "Ajouter"
+    "create": "Ajouter",
+    "none": "Aucun"
   },
   "devices": {
     "title": "Appareils",
@@ -130,7 +131,8 @@
     "noScenesCreated": "Aucune scène créée",
     "noScenesCreatedHint": "Créez votre première scène ou automatisation pour commencer",
     "createScene": "Créer une scène",
-    "createAutomation": "Créer une automatisation"
+    "createAutomation": "Créer une automatisation",
+    "nodeMode": "Mode noeud"
   },
   "assistant": {
     "title": "Assistant IA",
@@ -399,6 +401,8 @@
     "categoryOther": "Autre",
     "categoryOtherDescription": "Autres types d'automatisations",
     "selectActionDevices": "Sélectionnez un ou plusieurs appareils à activer",
+    "operator": "Opérateur",
+    "value": "Valeur",
     "selectedDevicesCount": "{{count}} appareil(s) sélectionné(s)",
     "selected": "Sélectionné",
     "selectTrigger": "Veuillez sélectionner un type de déclencheur",
@@ -481,7 +485,27 @@
     "thenSetThermostat": "Alors régler thermostat {{device}} à {{temperature}}°C",
     "thenNotify": "Alors envoyer notification : {{message}}",
     "sunriseSunsetInfoTitle": "Données météo",
-    "sunriseSunsetInfo": "Les heures de lever et coucher du soleil sont récupérées automatiquement depuis les données météo. Parfait pour automatiser l'ouverture/fermeture des volets, l'éclairage extérieur, etc."
+    "sunriseSunsetInfo": "Les heures de lever et coucher du soleil sont récupérées automatiquement depuis les données météo. Parfait pour automatiser l'ouverture/fermeture des volets, l'éclairage extérieur, etc.",
+    "nodeEditor": {
+      "title": "Éditeur de noeuds",
+      "addTrigger": "Ajouter un déclencheur",
+      "addAction": "Ajouter une action",
+      "actionType": "Type d'action",
+      "addCondition": "Ajouter une condition",
+      "condition": "Condition",
+      "nodeSettings": "Paramètres du noeud",
+      "selectNodeToConfigure": "Sélectionnez un noeud pour le configurer",
+      "noTriggerNode": "Au moins un noeud déclencheur est requis",
+      "noActionNode": "Au moins un noeud action est requis",
+      "noConnectedActions": "Aucune action connectée au déclencheur",
+      "doubleClickToAdd": "Double-cliquez pour ajouter un noeud",
+      "connectNodes": "Connectez les noeuds en glissant depuis les points de connexion",
+      "triggerType": "Type de déclencheur",
+      "triggerTime": "Horaire",
+      "triggerManual": "Manuel",
+      "triggerTimeDescription": "L'heure à laquelle le déclencheur sera activé",
+      "triggerManualDescription": "Le déclencheur sera activé manuellement"
+    }
   },
   "weather": {
     "title": "Météo",
