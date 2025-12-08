@@ -2,8 +2,6 @@ import { useState } from 'react';
 import {
   Box,
   Typography,
-  Card,
-  CardContent,
   TextField,
   Button,
   Switch,
@@ -352,69 +350,63 @@ export default function AdvancedExposesSettings({
 
   if (!exposes || exposes.length === 0) {
     return (
-      <Card>
-        <CardContent>
-          <Alert severity="info">
-            Aucune exposition configurable disponible pour cet appareil.
-          </Alert>
-        </CardContent>
-      </Card>
+      <Alert severity="info">
+        Aucune exposition configurable disponible pour cet appareil.
+      </Alert>
     );
   }
 
   return (
-    <Card>
-      <CardContent>
-        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6" sx={{ fontWeight: 500 }}>
-            Réglages avancés (Expositions Zigbee2MQTT)
-          </Typography>
-          {Object.keys(pendingChanges).length > 0 && (
-            <Button
-              variant="contained"
-              startIcon={<SaveIcon />}
-              onClick={handleSave}
-              disabled={saving}
-              size="small"
-            >
-              {saving ? 'Enregistrement...' : `Enregistrer (${Object.keys(pendingChanges).length})`}
-            </Button>
-          )}
-        </Box>
-
-        <Divider sx={{ mb: 3 }} />
-
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
-
-        {success && (
-          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(false)}>
-            Paramètres enregistrés avec succès
-          </Alert>
-        )}
-
-        <Box>
-          {exposes.map((expose, index) => renderExpose(expose, index))}
-        </Box>
-
+    <Box>
+      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant="h6" sx={{ fontWeight: 500 }}>
+          Réglages avancés (Expositions Zigbee2MQTT)
+        </Typography>
         {Object.keys(pendingChanges).length > 0 && (
-          <Box sx={{ mt: 3, pt: 2, borderTop: 1, borderColor: 'divider' }}>
-            <Button
-              variant="contained"
-              startIcon={<SaveIcon />}
-              onClick={handleSave}
-              disabled={saving}
-              fullWidth
-            >
-              {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}
-            </Button>
-          </Box>
+          <Button
+            variant="contained"
+            startIcon={<SaveIcon />}
+            onClick={handleSave}
+            disabled={saving}
+            size="small"
+          >
+            {saving ? 'Enregistrement...' : `Enregistrer (${Object.keys(pendingChanges).length})`}
+          </Button>
         )}
-      </CardContent>
-    </Card>
+      </Box>
+
+      <Divider sx={{ mb: 3 }} />
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(false)}>
+          Paramètres enregistrés avec succès
+        </Alert>
+      )}
+
+      <Box>
+        {exposes.map((expose, index) => renderExpose(expose, index))}
+      </Box>
+
+      {Object.keys(pendingChanges).length > 0 && (
+        <Box sx={{ mt: 3, pt: 2, borderTop: 1, borderColor: 'divider' }}>
+          <Button
+            variant="contained"
+            startIcon={<SaveIcon />}
+            onClick={handleSave}
+            disabled={saving}
+            fullWidth
+          >
+            {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}
+          </Button>
+        </Box>
+      )}
+    </Box>
   );
 }
 

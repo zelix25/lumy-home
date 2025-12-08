@@ -9,7 +9,7 @@ import { LoggerService } from '../logger/logger.service';
 
 @Injectable()
 export class DevicesService implements OnModuleInit {
-  private readonly OFFLINE_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes en millisecondes
+  private readonly OFFLINE_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000; // 7 jours en millisecondes
 
   constructor(
     @InjectRepository(Device)
@@ -212,7 +212,7 @@ export class DevicesService implements OnModuleInit {
   }
 
   /**
-   * Vérifie périodiquement les appareils et les passe en OFFLINE s'ils n'ont pas donné signe de vie depuis 10 minutes
+   * Vérifie périodiquement les appareils et les passe en OFFLINE s'ils n'ont pas donné signe de vie depuis 7 jours
    * Exécuté toutes les minutes
    */
   @Cron(CronExpression.EVERY_MINUTE)
@@ -221,7 +221,7 @@ export class DevicesService implements OnModuleInit {
       const now = new Date();
       const thresholdDate = new Date(now.getTime() - this.OFFLINE_THRESHOLD_MS);
 
-      // Trouver tous les appareils en ligne qui n'ont pas été mis à jour depuis 10 minutes
+      // Trouver tous les appareils en ligne qui n'ont pas été mis à jour depuis 7 jours
       const devicesToMarkOffline = await this.deviceRepository.find({
         where: {
           status: DeviceStatus.ONLINE,

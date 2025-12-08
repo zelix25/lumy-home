@@ -529,7 +529,7 @@ export default function DeviceDetailPage() {
 
             {/* Onglet Réglages avancés */}
             {activeTab === 2 && advancedMode && device.meta?.exposes && (
-              <CardContent>
+              <Box sx={{ p: 3 }}>
                 <AdvancedExposesSettings
                   deviceId={device.ieeeAddress}
                   friendlyName={device.friendlyName}
@@ -549,7 +549,7 @@ export default function DeviceDetailPage() {
                     }
                   }}
                 />
-              </CardContent>
+              </Box>
             )}
           </Card>
         </Grid>

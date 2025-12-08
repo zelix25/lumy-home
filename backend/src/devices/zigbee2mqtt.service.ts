@@ -924,33 +924,102 @@ export class Zigbee2MqttService implements OnModuleInit {
 
   /**
    * Détermine le type d'appareil en se basant principalement sur les données Zigbee2MQTT
-   * (exposes, type) plutôt que sur un fichier de mapping statique
+   * (exposes, type, model, vendor) avec des regex et patterns améliorés
    */
   private normalizeDeviceType(device: ZigbeeDevice): DeviceType {
     const friendlyName = device.friendly_name?.toLowerCase() || '';
     const type = device.type?.toLowerCase() || '';
     const exposes = device.definition?.exposes || [];
     const exposesStr = JSON.stringify(exposes).toLowerCase();
+    const model = device.definition?.model?.toLowerCase() || '';
+    const vendor = device.definition?.vendor?.toLowerCase() || '';
+    const description = device.definition?.description?.toLowerCase() || '';
+    
+    // Créer une chaîne combinée pour les recherches regex
+    const combinedStr = `${friendlyName} ${type} ${model} ${vendor} ${description} ${exposesStr}`.toLowerCase();
+
+    // Définir les patterns regex réutilisables
+    const vibrationPattern = /\b(vibration|vibrate|tilt|shock|impact)\b/i;
+    const coverPattern = /\b(cover|blind|shutter|curtain|window_covering|lift|position|tilt)\b/i;
+    const modelPatterns = {
+      vibration: /\b(vibration|vibrate|shock|tilt|rqbz|sjcgq|sjcgq11lm|sjcgq12lm)\b/i,
+      cover: /\b(cover|blind|shutter|curtain|moes|tuya|_ts|_tz|motor|lift|position)\b/i,
+      motion: /\b(motion|pir|presence|occupancy|rtcgq|sml001|sml002)\b/i,
+      contact: /\b(contact|door|window|magnet|mccgq|sensor_magnet)\b/i,
+      button: /\b(button|remote|switch_remote|wxcjkg|wxcjkg11lm|wxcjkg12lm|wxcjkg13lm)\b/i,
+    };
 
     // 1. Détection par exposes (le plus fiable - données directes de Zigbee2MQTT)
     if (exposes.length > 0) {
-      // Détection des lumières
-      if (exposes.some((e: any) => {
-        if (e.type === 'light') return true;
-        if (e.features?.some((f: any) => f.type === 'light' || f.name === 'state')) return true;
-        return false;
-      })) {
+      // PRIORITÉ 1: Détection des capteurs de vibration (avant les boutons)
+      // Regex pour détecter vibration dans exposes, model, description
+      if (vibrationPattern.test(exposesStr) || 
+          vibrationPattern.test(model) || 
+          vibrationPattern.test(description) ||
+          exposes.some((e: any) => {
+            const eStr = JSON.stringify(e).toLowerCase();
+            return eStr.includes('vibration') || eStr.includes('tilt') || 
+                   e.name?.toLowerCase().includes('vibration') ||
+                   e.property?.toLowerCase().includes('vibration');
+          })) {
         this.logger.debug(
-          `Type détecté par exposes: LIGHT pour ${device.friendly_name}`,
+          `Type détecté par exposes/model: SENSOR (vibration) pour ${device.friendly_name}`,
           'Zigbee2MqttService',
         );
-        return DeviceType.LIGHT;
+        return DeviceType.SENSOR;
       }
 
-      // Détection des interrupteurs
+      // PRIORITÉ 2: Détection des volets roulants / contacteurs (cover, window_covering, lift)
+      // Regex pour détecter cover/blind/shutter dans exposes, model, description
+      const isCover = coverPattern.test(exposesStr) || 
+                      coverPattern.test(model) || 
+                      coverPattern.test(description) ||
+                      exposes.some((e: any) => {
+                        return e.type === 'cover' || 
+                               e.type === 'window_covering' ||
+                               e.name?.toLowerCase().includes('cover') ||
+                               e.name?.toLowerCase().includes('lift') ||
+                               e.name?.toLowerCase().includes('position');
+                      });
+      
+      // Si c'est un cover mais qu'il a aussi des features de switch/light, c'est probablement un contacteur de volet
+      if (isCover) {
+        // Les contacteurs de volet peuvent être classés comme SWITCH car ils contrôlent un moteur
+        this.logger.debug(
+          `Type détecté par exposes/model: SWITCH (cover/blind controller) pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
+        return DeviceType.SWITCH;
+      }
+
+      // PRIORITÉ 3: Détection des lumières (mais pas si c'est un cover)
+      if (exposes.some((e: any) => {
+        if (e.type === 'light') return true;
+        if (e.features?.some((f: any) => f.type === 'light' || (f.name === 'state' && !isCover))) return true;
+        return false;
+      })) {
+        // Vérifier que ce n'est pas un cover qui a aussi des features de light
+        if (!isCover) {
+          this.logger.debug(
+            `Type détecté par exposes: LIGHT pour ${device.friendly_name}`,
+            'Zigbee2MqttService',
+          );
+          return DeviceType.LIGHT;
+        }
+      }
+
+      // PRIORITÉ 4: Détection des interrupteurs et boutons
       if (exposes.some((e: any) => e.type === 'switch' || e.name === 'state')) {
-        // Vérifier si c'est un bouton ou un interrupteur
-        if (exposesStr.includes('action') || exposesStr.includes('click') || exposesStr.includes('button')) {
+        // Vérifier si c'est un bouton (action, click, button dans exposes)
+        // Mais exclure les capteurs de vibration qui peuvent avoir des actions
+        const hasAction = exposesStr.includes('action') || 
+                         exposesStr.includes('click') || 
+                         exposesStr.includes('button');
+        const isVibrationSensor = vibrationPattern.test(exposesStr) || 
+                                 vibrationPattern.test(model) || 
+                                 vibrationPattern.test(description);
+        
+        if (hasAction && !isVibrationSensor) {
           this.logger.debug(
             `Type détecté par exposes: BUTTON pour ${device.friendly_name}`,
             'Zigbee2MqttService',
@@ -1016,23 +1085,9 @@ export class Zigbee2MqttService implements OnModuleInit {
         return DeviceType.PLUG;
       }
 
-      // Détection des boutons
-      if (exposesStr.includes('action') || exposesStr.includes('click') || exposesStr.includes('button')) {
-        this.logger.debug(
-          `Type détecté par exposes: BUTTON pour ${device.friendly_name}`,
-          'Zigbee2MqttService',
-        );
-        return DeviceType.BUTTON;
-      }
+      // Note: La détection des boutons est maintenant dans PRIORITÉ 4 (déjà traitée ci-dessus)
 
-      // Détection des capteurs de vibration
-      if (exposesStr.includes('vibration') || exposesStr.includes('tilt')) {
-        this.logger.debug(
-          `Type détecté par exposes: SENSOR (vibration) pour ${device.friendly_name}`,
-          'Zigbee2MqttService',
-        );
-        return DeviceType.SENSOR;
-      }
+      // Note: La détection des capteurs de vibration est maintenant en PRIORITÉ 1 (déjà traitée ci-dessus)
 
       // Détection des capteurs de fuite d'eau
       if (exposesStr.includes('water') || exposesStr.includes('leak')) {
@@ -1063,14 +1118,48 @@ export class Zigbee2MqttService implements OnModuleInit {
       }
     }
 
-    // 2. Détection par type Zigbee2MQTT (si exposes n'est pas disponible)
+    // 2. Détection par model/vendor avec regex (si exposes n'est pas suffisant)
+    // Vérifier les patterns dans model, vendor, description
+    if (modelPatterns.vibration.test(model) || 
+        modelPatterns.vibration.test(vendor) || 
+        modelPatterns.vibration.test(description)) {
+      this.logger.debug(
+        `Type détecté par model/vendor: SENSOR (vibration) pour ${device.friendly_name}`,
+        'Zigbee2MqttService',
+      );
+      return DeviceType.SENSOR;
+    }
+
+    if (modelPatterns.cover.test(model) || 
+        modelPatterns.cover.test(vendor) || 
+        modelPatterns.cover.test(description)) {
+      this.logger.debug(
+        `Type détecté par model/vendor: SWITCH (cover/blind) pour ${device.friendly_name}`,
+        'Zigbee2MqttService',
+      );
+      return DeviceType.SWITCH;
+    }
+
+    // 3. Détection par type Zigbee2MQTT (si exposes n'est pas disponible)
     if (type) {
-      if (type.includes('light') || type === 'light') {
+      // Vérifier d'abord si c'est un cover dans le type
+      if (type.includes('cover') || type.includes('window_covering') || type.includes('blind')) {
         this.logger.debug(
-          `Type détecté par type Zigbee2MQTT: LIGHT pour ${device.friendly_name}`,
+          `Type détecté par type Zigbee2MQTT: SWITCH (cover) pour ${device.friendly_name}`,
           'Zigbee2MqttService',
         );
-        return DeviceType.LIGHT;
+        return DeviceType.SWITCH;
+      }
+      
+      if (type.includes('light') || type === 'light') {
+        // Vérifier que ce n'est pas un cover
+        if (!coverPattern.test(combinedStr)) {
+          this.logger.debug(
+            `Type détecté par type Zigbee2MQTT: LIGHT pour ${device.friendly_name}`,
+            'Zigbee2MqttService',
+          );
+          return DeviceType.LIGHT;
+        }
       }
       if (type.includes('switch') || type === 'switch') {
         this.logger.debug(
@@ -1080,8 +1169,12 @@ export class Zigbee2MqttService implements OnModuleInit {
         return DeviceType.SWITCH;
       }
       if (type.includes('sensor') || type === 'sensor') {
-        // Essayer de déterminer le type de capteur
-        if (friendlyName.includes('motion') || friendlyName.includes('mouvement') || 
+        // Essayer de déterminer le type de capteur avec regex
+        if (modelPatterns.vibration.test(combinedStr)) {
+          return DeviceType.SENSOR;
+        }
+        if (modelPatterns.motion.test(combinedStr) || 
+            friendlyName.includes('motion') || friendlyName.includes('mouvement') || 
             friendlyName.includes('pir') || friendlyName.includes('presence')) {
           return DeviceType.MOTION;
         }
@@ -1089,7 +1182,8 @@ export class Zigbee2MqttService implements OnModuleInit {
             friendlyName.includes('humidity') || friendlyName.includes('humidité')) {
           return DeviceType.TEMPERATURE;
         }
-        if (friendlyName.includes('door') || friendlyName.includes('porte')) {
+        if (modelPatterns.contact.test(combinedStr) || 
+            friendlyName.includes('door') || friendlyName.includes('porte')) {
           return DeviceType.DOOR;
         }
         if (friendlyName.includes('window') || friendlyName.includes('fenêtre')) {
@@ -1109,11 +1203,14 @@ export class Zigbee2MqttService implements OnModuleInit {
         return DeviceType.PLUG;
       }
       if (type.includes('button') || type === 'button') {
-        this.logger.debug(
-          `Type détecté par type Zigbee2MQTT: BUTTON pour ${device.friendly_name}`,
-          'Zigbee2MqttService',
-        );
-        return DeviceType.BUTTON;
+        // Vérifier que ce n'est pas un capteur de vibration
+        if (!modelPatterns.vibration.test(combinedStr)) {
+          this.logger.debug(
+            `Type détecté par type Zigbee2MQTT: BUTTON pour ${device.friendly_name}`,
+            'Zigbee2MqttService',
+          );
+          return DeviceType.BUTTON;
+        }
       }
     }
 

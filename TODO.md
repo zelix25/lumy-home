@@ -259,3 +259,5 @@ Cela donne une expérience identique côté utilisateur (HomeHub → /ai/query),
 * [ ] Creer un mode tablette
 * [ ] Dans paramettre choix des capteur a afficher
 * [ ] Mode avancer pour modifier les parametre des capteurs
+* [ ] Envoie de message par telegram
+* [ ] Id unique des device pour ne plus utiliser le freindly name
