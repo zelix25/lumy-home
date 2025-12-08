@@ -1,8 +1,6 @@
 import { Injectable, OnModuleInit, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import { LoggerService } from '../logger/logger.service';
 import { MqttService } from '../mqtt/mqtt.service';
 import { WebsocketGateway } from '../websocket/websocket.gateway';
@@ -70,40 +68,13 @@ export class Zigbee2MqttService implements OnModuleInit {
   }
 
   private loadDeviceTypeMapping(): void {
-    try {
-      // Essayer d'abord depuis __dirname (après compilation dans dist/)
-      let mappingPath = join(__dirname, 'device-type-mapping.json');
-      
-      // Si le fichier n'existe pas, essayer depuis le répertoire source (en développement)
-      try {
-        readFileSync(mappingPath, 'utf-8');
-      } catch {
-        mappingPath = join(process.cwd(), 'src', 'devices', 'device-type-mapping.json');
-      }
-      
-      const mappingFile = readFileSync(mappingPath, 'utf-8');
-      const mappings = JSON.parse(mappingFile);
-
-      // Convertir les types string en DeviceType enum
-      this.deviceTypeMapping = mappings.map((m: any) => ({
-        model: m.model,
-        vendor: m.vendor,
-        type: DeviceType[m.type.toUpperCase() as keyof typeof DeviceType] || DeviceType.UNKNOWN,
-      }));
-
-      this.logger.log(
-        `✅ ${this.deviceTypeMapping.length} mappings de types d'appareils chargés depuis ${mappingPath}`,
-        'Zigbee2MqttService',
-      );
-    } catch (error) {
-      this.logger.error(
-        `Erreur lors du chargement du fichier de mapping: ${error.message}`,
-        error.stack,
-        'Zigbee2MqttService',
-      );
-      // Utiliser un tableau vide en cas d'erreur
-      this.deviceTypeMapping = [];
-    }
+    // Le fichier de mapping n'est plus utilisé - on utilise directement les données Zigbee2MQTT
+    // Conservé pour compatibilité mais vide
+    this.deviceTypeMapping = [];
+    this.logger.log(
+      'Détection de type d\'appareil basée sur les données Zigbee2MQTT (exposes, type)',
+      'Zigbee2MqttService',
+    );
   }
 
   getMqttStatus() {
@@ -951,98 +922,273 @@ export class Zigbee2MqttService implements OnModuleInit {
   }
 
 
+  /**
+   * Détermine le type d'appareil en se basant principalement sur les données Zigbee2MQTT
+   * (exposes, type) plutôt que sur un fichier de mapping statique
+   */
   private normalizeDeviceType(device: ZigbeeDevice): DeviceType {
-    const friendlyName = device.friendly_name.toLowerCase();
+    const friendlyName = device.friendly_name?.toLowerCase() || '';
     const type = device.type?.toLowerCase() || '';
-    const model = device.definition?.model?.toLowerCase() || '';
-    const vendor = device.definition?.vendor?.toLowerCase() || '';
+    const exposes = device.definition?.exposes || [];
+    const exposesStr = JSON.stringify(exposes).toLowerCase();
 
-    // 1. Vérifier le tableau de correspondance par modèle/vendor
-    for (const mapping of this.deviceTypeMapping) {
-      const mappingModel = mapping.model.toLowerCase();
-      const mappingVendor = mapping.vendor?.toLowerCase();
-      
-      if (model.includes(mappingModel) || model === mappingModel) {
-        // Si un vendor est spécifié, vérifier qu'il correspond aussi
-        if (mappingVendor) {
-          if (vendor.includes(mappingVendor) || vendor === mappingVendor) {
-            this.logger.debug(
-              `Type détecté par mapping: ${mapping.model} (${mapping.vendor}) -> ${mapping.type}`,
-              'Zigbee2MqttService',
-            );
-            return mapping.type;
-          }
-        } else {
-          // Pas de vendor spécifié, accepter n'importe quel vendor
-          this.logger.debug(
-            `Type détecté par mapping: ${mapping.model} -> ${mapping.type}`,
-            'Zigbee2MqttService',
-          );
-          return mapping.type;
-        }
-      }
-    }
-
-    // 2. Détection par type Zigbee2MQTT
-    if (type.includes('light') || friendlyName.includes('light') || friendlyName.includes('ampoule')) {
-      return DeviceType.LIGHT;
-    }
-    if (type.includes('switch') || friendlyName.includes('switch') || friendlyName.includes('interrupteur')) {
-      return DeviceType.SWITCH;
-    }
-    if (type.includes('sensor') || friendlyName.includes('sensor') || friendlyName.includes('capteur')) {
-      if (friendlyName.includes('motion') || friendlyName.includes('mouvement')) {
-        return DeviceType.MOTION;
-      }
-      if (friendlyName.includes('temperature') || friendlyName.includes('température')) {
-        return DeviceType.TEMPERATURE;
-      }
-      if (friendlyName.includes('door') || friendlyName.includes('porte')) {
-        return DeviceType.DOOR;
-      }
-      if (friendlyName.includes('window') || friendlyName.includes('fenêtre')) {
-        return DeviceType.WINDOW;
-      }
-      return DeviceType.SENSOR;
-    }
-    if (type.includes('plug') || friendlyName.includes('plug') || friendlyName.includes('prise')) {
-      return DeviceType.PLUG;
-    }
-    if (type.includes('button') || friendlyName.includes('button') || friendlyName.includes('bouton')) {
-      return DeviceType.BUTTON;
-    }
-
-    // 3. Détection par exposes
-    if (device.definition?.exposes) {
-      const exposes = device.definition.exposes;
-      if (exposes.some((e: any) => e.type === 'light' || e.features?.some((f: any) => f.type === 'light'))) {
+    // 1. Détection par exposes (le plus fiable - données directes de Zigbee2MQTT)
+    if (exposes.length > 0) {
+      // Détection des lumières
+      if (exposes.some((e: any) => {
+        if (e.type === 'light') return true;
+        if (e.features?.some((f: any) => f.type === 'light' || f.name === 'state')) return true;
+        return false;
+      })) {
+        this.logger.debug(
+          `Type détecté par exposes: LIGHT pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
         return DeviceType.LIGHT;
       }
-      if (exposes.some((e: any) => e.type === 'switch')) {
+
+      // Détection des interrupteurs
+      if (exposes.some((e: any) => e.type === 'switch' || e.name === 'state')) {
+        // Vérifier si c'est un bouton ou un interrupteur
+        if (exposesStr.includes('action') || exposesStr.includes('click') || exposesStr.includes('button')) {
+          this.logger.debug(
+            `Type détecté par exposes: BUTTON pour ${device.friendly_name}`,
+            'Zigbee2MqttService',
+          );
+          return DeviceType.BUTTON;
+        }
+        this.logger.debug(
+          `Type détecté par exposes: SWITCH pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
         return DeviceType.SWITCH;
       }
-    }
 
-    // 4. Détection par exposes (vérification plus approfondie)
-    if (device.definition?.exposes) {
-      const exposes = device.definition.exposes;
-      const exposesStr = JSON.stringify(exposes).toLowerCase();
-      
-      // Vérifier la présence de features spécifiques
-      if (exposesStr.includes('presence') || exposesStr.includes('occupancy')) {
+      // Détection des capteurs de mouvement
+      if (exposesStr.includes('presence') || exposesStr.includes('occupancy') || exposesStr.includes('motion')) {
+        this.logger.debug(
+          `Type détecté par exposes: MOTION pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
         return DeviceType.MOTION;
       }
+
+      // Détection des capteurs de température/humidité
       if (exposesStr.includes('temperature') && exposesStr.includes('humidity')) {
+        this.logger.debug(
+          `Type détecté par exposes: TEMPERATURE pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
         return DeviceType.TEMPERATURE;
       }
+
+      // Détection des capteurs de contact (porte/fenêtre)
       if (exposesStr.includes('contact')) {
+        // Distinguer porte et fenêtre par le nom si possible
+        if (friendlyName.includes('window') || friendlyName.includes('fenêtre')) {
+          this.logger.debug(
+            `Type détecté par exposes: WINDOW pour ${device.friendly_name}`,
+            'Zigbee2MqttService',
+          );
+          return DeviceType.WINDOW;
+        }
+        this.logger.debug(
+          `Type détecté par exposes: DOOR pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
         return DeviceType.DOOR;
       }
-      if (exposesStr.includes('illuminance')) {
+
+      // Détection des prises (prises intelligentes avec mesure de puissance)
+      if (exposesStr.includes('power') && (exposesStr.includes('switch') || exposesStr.includes('state'))) {
+        this.logger.debug(
+          `Type détecté par exposes: PLUG pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
+        return DeviceType.PLUG;
+      }
+      // Détection des prises simples (juste un switch/outlet)
+      if (exposes.some((e: any) => e.type === 'outlet' || (e.type === 'switch' && !exposesStr.includes('button')))) {
+        this.logger.debug(
+          `Type détecté par exposes: PLUG pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
+        return DeviceType.PLUG;
+      }
+
+      // Détection des boutons
+      if (exposesStr.includes('action') || exposesStr.includes('click') || exposesStr.includes('button')) {
+        this.logger.debug(
+          `Type détecté par exposes: BUTTON pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
+        return DeviceType.BUTTON;
+      }
+
+      // Détection des capteurs de vibration
+      if (exposesStr.includes('vibration') || exposesStr.includes('tilt')) {
+        this.logger.debug(
+          `Type détecté par exposes: SENSOR (vibration) pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
+        return DeviceType.SENSOR;
+      }
+
+      // Détection des capteurs de fuite d'eau
+      if (exposesStr.includes('water') || exposesStr.includes('leak')) {
+        this.logger.debug(
+          `Type détecté par exposes: SENSOR (water leak) pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
+        return DeviceType.SENSOR;
+      }
+
+      // Détection des capteurs de fumée/gaz
+      if (exposesStr.includes('smoke') || exposesStr.includes('gas')) {
+        this.logger.debug(
+          `Type détecté par exposes: SENSOR (smoke/gas) pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
+        return DeviceType.SENSOR;
+      }
+
+      // Détection des capteurs génériques (luminosité, pression, batterie, etc.)
+      if (exposesStr.includes('illuminance') || exposesStr.includes('luminosity') || 
+          exposesStr.includes('pressure') || (exposesStr.includes('battery') && !exposesStr.includes('button'))) {
+        this.logger.debug(
+          `Type détecté par exposes: SENSOR pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
         return DeviceType.SENSOR;
       }
     }
 
+    // 2. Détection par type Zigbee2MQTT (si exposes n'est pas disponible)
+    if (type) {
+      if (type.includes('light') || type === 'light') {
+        this.logger.debug(
+          `Type détecté par type Zigbee2MQTT: LIGHT pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
+        return DeviceType.LIGHT;
+      }
+      if (type.includes('switch') || type === 'switch') {
+        this.logger.debug(
+          `Type détecté par type Zigbee2MQTT: SWITCH pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
+        return DeviceType.SWITCH;
+      }
+      if (type.includes('sensor') || type === 'sensor') {
+        // Essayer de déterminer le type de capteur
+        if (friendlyName.includes('motion') || friendlyName.includes('mouvement') || 
+            friendlyName.includes('pir') || friendlyName.includes('presence')) {
+          return DeviceType.MOTION;
+        }
+        if (friendlyName.includes('temperature') || friendlyName.includes('température') ||
+            friendlyName.includes('humidity') || friendlyName.includes('humidité')) {
+          return DeviceType.TEMPERATURE;
+        }
+        if (friendlyName.includes('door') || friendlyName.includes('porte')) {
+          return DeviceType.DOOR;
+        }
+        if (friendlyName.includes('window') || friendlyName.includes('fenêtre')) {
+          return DeviceType.WINDOW;
+        }
+        this.logger.debug(
+          `Type détecté par type Zigbee2MQTT: SENSOR pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
+        return DeviceType.SENSOR;
+      }
+      if (type.includes('plug') || type === 'plug' || type.includes('outlet')) {
+        this.logger.debug(
+          `Type détecté par type Zigbee2MQTT: PLUG pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
+        return DeviceType.PLUG;
+      }
+      if (type.includes('button') || type === 'button') {
+        this.logger.debug(
+          `Type détecté par type Zigbee2MQTT: BUTTON pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
+        return DeviceType.BUTTON;
+      }
+    }
+
+    // 3. Détection par nom friendly (dernier recours)
+    if (friendlyName.includes('light') || friendlyName.includes('ampoule') || friendlyName.includes('bulb') || 
+        friendlyName.includes('lamp') || friendlyName.includes('lampe')) {
+      this.logger.debug(
+        `Type détecté par nom: LIGHT pour ${device.friendly_name}`,
+        'Zigbee2MqttService',
+      );
+      return DeviceType.LIGHT;
+    }
+    if (friendlyName.includes('switch') || friendlyName.includes('interrupteur')) {
+      this.logger.debug(
+        `Type détecté par nom: SWITCH pour ${device.friendly_name}`,
+        'Zigbee2MqttService',
+      );
+      return DeviceType.SWITCH;
+    }
+    if (friendlyName.includes('plug') || friendlyName.includes('prise') || friendlyName.includes('socket')) {
+      this.logger.debug(
+        `Type détecté par nom: PLUG pour ${device.friendly_name}`,
+        'Zigbee2MqttService',
+      );
+      return DeviceType.PLUG;
+    }
+    if (friendlyName.includes('button') || friendlyName.includes('bouton') || friendlyName.includes('remote')) {
+      this.logger.debug(
+        `Type détecté par nom: BUTTON pour ${device.friendly_name}`,
+        'Zigbee2MqttService',
+      );
+      return DeviceType.BUTTON;
+    }
+    if (friendlyName.includes('motion') || friendlyName.includes('mouvement') || friendlyName.includes('pir')) {
+      this.logger.debug(
+        `Type détecté par nom: MOTION pour ${device.friendly_name}`,
+        'Zigbee2MqttService',
+      );
+      return DeviceType.MOTION;
+    }
+    if (friendlyName.includes('temperature') || friendlyName.includes('température') ||
+        friendlyName.includes('humidity') || friendlyName.includes('humidité')) {
+      this.logger.debug(
+        `Type détecté par nom: TEMPERATURE pour ${device.friendly_name}`,
+        'Zigbee2MqttService',
+      );
+      return DeviceType.TEMPERATURE;
+    }
+    if (friendlyName.includes('door') || friendlyName.includes('porte')) {
+      this.logger.debug(
+        `Type détecté par nom: DOOR pour ${device.friendly_name}`,
+        'Zigbee2MqttService',
+      );
+      return DeviceType.DOOR;
+    }
+    if (friendlyName.includes('window') || friendlyName.includes('fenêtre')) {
+      this.logger.debug(
+        `Type détecté par nom: WINDOW pour ${device.friendly_name}`,
+        'Zigbee2MqttService',
+      );
+      return DeviceType.WINDOW;
+    }
+    if (friendlyName.includes('sensor') || friendlyName.includes('capteur')) {
+      this.logger.debug(
+        `Type détecté par nom: SENSOR pour ${device.friendly_name}`,
+        'Zigbee2MqttService',
+      );
+      return DeviceType.SENSOR;
+    }
+
+    // Si aucun type n'a pu être déterminé, logger un avertissement
+    this.logger.warn(
+      `Impossible de déterminer le type pour ${device.friendly_name} (type: ${type}, exposes: ${exposes.length} features)`,
+      'Zigbee2MqttService',
+    );
     return DeviceType.UNKNOWN;
   }
 
