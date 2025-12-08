@@ -377,7 +377,7 @@
   },
   {
     "model": "DJT11LM",
-    "type": "button",
+    "type": "sensor",
     "comment": "Xiaomi Aqara vibration sensor"
   },
   {

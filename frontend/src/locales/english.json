@@ -503,7 +503,23 @@
       "triggerTime": "Time",
       "triggerManual": "Manual",
       "triggerTimeDescription": "The time at which the trigger will be activated",
-      "triggerManualDescription": "The trigger will be activated manually"
+      "triggerManualDescription": "The trigger will be activated manually",
+      "noCompatibleDevices": "No compatible devices",
+      "noCompatibleDevicesWarning": "No compatible devices are available. Make sure devices are online and supported.",
+      "duration": "Duration (s)",
+      "durationHelp": "Duration in seconds before automatic turn off. 0 = infinite (no automatic turn off)",
+      "durationInfinite": "Infinite (no automatic turn off)",
+      "durationSeconds": "Will automatically turn off after {{seconds}} second(s)",
+      "helpTitle": "How to create an automation?",
+      "helpStep1": "1. Right-click on the workspace to add a trigger (e.g., motion, button, temperature...)",
+      "helpStep2": "2. Right-click to add one or more actions (e.g., turn on a light, send a notification...)",
+      "helpStep3": "3. Connect nodes by dragging from the blue point of the trigger to the purple point of the action",
+      "helpStep4": "4. Click on each node to configure it: choose the type and device",
+      "helpStep5": "5. Give a name to your automation and save",
+      "helpTip": "💡 Tip: Only devices compatible with the selected trigger type are displayed",
+      "emptyState": "Start by adding a trigger by right-clicking on the workspace",
+      "selectDeviceHelp": "Select the device that will trigger this automation",
+      "selectActionDeviceHelp": "Select the device on which this action will be performed"
     }
   },
   "weather": {

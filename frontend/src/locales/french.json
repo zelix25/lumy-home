@@ -504,7 +504,23 @@
       "triggerTime": "Horaire",
       "triggerManual": "Manuel",
       "triggerTimeDescription": "L'heure à laquelle le déclencheur sera activé",
-      "triggerManualDescription": "Le déclencheur sera activé manuellement"
+      "triggerManualDescription": "Le déclencheur sera activé manuellement",
+      "noCompatibleDevices": "Aucun appareil compatible",
+      "noCompatibleDevicesWarning": "Aucun appareil compatible n'est disponible. Assurez-vous que les appareils sont en ligne et supportés.",
+      "duration": "Durée (s)",
+      "durationHelp": "Durée en secondes avant extinction automatique. 0 = infini (pas d'extinction automatique)",
+      "durationInfinite": "Infini (pas d'extinction automatique)",
+      "durationSeconds": "S'éteindra automatiquement après {{seconds}} seconde(s)",
+      "helpTitle": "Comment créer une automatisation ?",
+      "helpStep1": "1. Clic droit sur la zone de travail pour ajouter un déclencheur (ex: mouvement, bouton, température...)",
+      "helpStep2": "2. Clic droit pour ajouter une ou plusieurs actions (ex: allumer une lumière, envoyer une notification...)",
+      "helpStep3": "3. Connectez les noeuds en glissant depuis le point bleu du déclencheur vers le point violet de l'action",
+      "helpStep4": "4. Cliquez sur chaque noeud pour le configurer : choisissez le type et l'appareil",
+      "helpStep5": "5. Donnez un nom à votre automatisation et sauvegardez",
+      "helpTip": "💡 Astuce : Seuls les appareils compatibles avec le type de déclencheur sélectionné sont affichés",
+      "emptyState": "Commencez par ajouter un déclencheur en faisant un clic droit sur la zone de travail",
+      "selectDeviceHelp": "Sélectionnez l'appareil qui déclenchera cette automatisation",
+      "selectActionDeviceHelp": "Sélectionnez l'appareil sur lequel cette action sera effectuée"
     }
   },
   "weather": {

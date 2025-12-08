@@ -17,6 +17,13 @@ import {
   FormControl,
   InputLabel,
   Select,
+  Alert,
+  Collapse,
+  Tooltip,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
@@ -24,6 +31,29 @@ import {
   ZoomIn as ZoomInIcon,
   ZoomOut as ZoomOutIcon,
   FitScreen as FitScreenIcon,
+  HelpOutline as HelpOutlineIcon,
+  Lightbulb as LightbulbIcon,
+  DirectionsRun as MotionIcon,
+  Lock as ContactIcon,
+  Thermostat as TemperatureIcon,
+  TouchApp as ButtonIcon,
+  Vibration as VibrationIcon,
+  WbSunny as IlluminanceIcon,
+  WaterDrop as HumidityIcon,
+  LeakAdd as WaterLeakIcon,
+  LocalFireDepartment as SmokeIcon,
+  GasMeter as GasIcon,
+  WbTwilight as SunriseSunsetIcon,
+  AccessTime as TimeIcon,
+  Settings as ManualIcon,
+  PowerSettingsNew as TurnOnIcon,
+  PowerOff as TurnOffIcon,
+  SwapHoriz as ToggleIcon,
+  Brightness6 as BrightnessIcon,
+  Palette as ColorIcon,
+  WbIncandescent as ColorTempIcon,
+  AcUnit as ThermostatIcon,
+  Notifications as NotifyIcon,
 } from '@mui/icons-material';
 import ReactFlow, {
   Node,
@@ -54,6 +84,70 @@ import {
   simpleAutomationsService,
 } from '../services/simple-automations.service';
 import { useNotification } from '../hooks/useNotification';
+import {
+  getCompatibleDevicesForTrigger,
+  getCompatibleDevicesForAction,
+  getTriggerDescription,
+} from '../utils/deviceFilter';
+import { Info as InfoIcon } from '@mui/icons-material';
+
+// Fonction pour obtenir l'icône selon le type de déclencheur
+const getTriggerIcon = (triggerType: AutomationTriggerType) => {
+  switch (triggerType) {
+    case AutomationTriggerType.MOTION:
+      return <MotionIcon />;
+    case AutomationTriggerType.CONTACT:
+      return <ContactIcon />;
+    case AutomationTriggerType.TEMPERATURE:
+      return <TemperatureIcon />;
+    case AutomationTriggerType.BUTTON:
+      return <ButtonIcon />;
+    case AutomationTriggerType.VIBRATION:
+      return <VibrationIcon />;
+    case AutomationTriggerType.ILLUMINANCE:
+      return <IlluminanceIcon />;
+    case AutomationTriggerType.HUMIDITY:
+      return <HumidityIcon />;
+    case AutomationTriggerType.WATER_LEAK:
+      return <WaterLeakIcon />;
+    case AutomationTriggerType.SMOKE:
+      return <SmokeIcon />;
+    case AutomationTriggerType.GAS:
+      return <GasIcon />;
+    case AutomationTriggerType.SUNRISE_SUNSET:
+      return <SunriseSunsetIcon />;
+    case AutomationTriggerType.TIME:
+      return <TimeIcon />;
+    case AutomationTriggerType.MANUAL:
+      return <ManualIcon />;
+    default:
+      return <HelpOutlineIcon />;
+  }
+};
+
+// Fonction pour obtenir l'icône selon le type d'action
+const getActionIcon = (actionType: AutomationActionType) => {
+  switch (actionType) {
+    case AutomationActionType.TURN_ON:
+      return <TurnOnIcon />;
+    case AutomationActionType.TURN_OFF:
+      return <TurnOffIcon />;
+    case AutomationActionType.TOGGLE:
+      return <ToggleIcon />;
+    case AutomationActionType.SET_BRIGHTNESS:
+      return <BrightnessIcon />;
+    case AutomationActionType.SET_COLOR:
+      return <ColorIcon />;
+    case AutomationActionType.SET_COLOR_TEMP:
+      return <ColorTempIcon />;
+    case AutomationActionType.SET_THERMOSTAT:
+      return <ThermostatIcon />;
+    case AutomationActionType.NOTIFY:
+      return <NotifyIcon />;
+    default:
+      return <HelpOutlineIcon />;
+  }
+};
 
 interface NodeEditorDialogProps {
   open: boolean;
@@ -78,6 +172,7 @@ interface ActionNodeData {
   deviceId?: string;
   deviceName?: string;
   params?: Record<string, any>;
+  duration?: number; // Durée en secondes pour l'action TURN_ON (0 = infini)
 }
 
 interface ConditionNodeData {
@@ -87,6 +182,8 @@ interface ConditionNodeData {
 
 // Composants de noeuds personnalisés
 const TriggerNode = ({ data }: { data: TriggerNodeData }) => {
+  const triggerIcon = getTriggerIcon(data.triggerType);
+  
   return (
     <Paper
       sx={{
@@ -98,11 +195,33 @@ const TriggerNode = ({ data }: { data: TriggerNodeData }) => {
         position: 'relative',
       }}
     >
-      <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-        {data.label}
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 32,
+            height: 32,
+            borderRadius: '50%',
+            bgcolor: '#2196F3',
+            color: 'white',
+          }}
+        >
+          {triggerIcon}
+        </Box>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600, flex: 1 }}>
+          {data.label}
+        </Typography>
+      </Box>
       {data.deviceName && (
-        <Chip label={data.deviceName} size="small" sx={{ mt: 0.5 }} />
+        <Chip 
+          label={data.deviceName} 
+          size="small" 
+          sx={{ mt: 0.5, width: '100%' }}
+          color="primary"
+          variant="outlined"
+        />
       )}
       {/* Handle de sortie à droite */}
       <Handle
@@ -120,6 +239,8 @@ const TriggerNode = ({ data }: { data: TriggerNodeData }) => {
 };
 
 const ActionNode = ({ data }: { data: ActionNodeData }) => {
+  const actionIcon = getActionIcon(data.actionType);
+  
   return (
     <Paper
       sx={{
@@ -131,11 +252,33 @@ const ActionNode = ({ data }: { data: ActionNodeData }) => {
         position: 'relative',
       }}
     >
-      <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-        {data.label}
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 32,
+            height: 32,
+            borderRadius: '50%',
+            bgcolor: '#9C27B0',
+            color: 'white',
+          }}
+        >
+          {actionIcon}
+        </Box>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600, flex: 1 }}>
+          {data.label}
+        </Typography>
+      </Box>
       {data.deviceName && (
-        <Chip label={data.deviceName} size="small" sx={{ mt: 0.5 }} />
+        <Chip 
+          label={data.deviceName} 
+          size="small" 
+          sx={{ mt: 0.5, width: '100%' }}
+          color="secondary"
+          variant="outlined"
+        />
       )}
       {/* Handle d'entrée à gauche */}
       <Handle
@@ -164,6 +307,12 @@ const ActionNode = ({ data }: { data: ActionNodeData }) => {
 };
 
 const ConditionNode = ({ data }: { data: ConditionNodeData }) => {
+  const conditionIcon = data.condition === 'AND' ? (
+    <Typography variant="h6" sx={{ fontWeight: 700 }}>&&</Typography>
+  ) : (
+    <Typography variant="h6" sx={{ fontWeight: 700 }}>||</Typography>
+  );
+  
   return (
     <Paper
       sx={{
@@ -176,10 +325,31 @@ const ConditionNode = ({ data }: { data: ConditionNodeData }) => {
         position: 'relative',
       }}
     >
-      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-        {data.label}
-      </Typography>
-      <Chip label={data.condition} size="small" sx={{ mt: 1 }} color="warning" />
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 40,
+            height: 40,
+            borderRadius: '50%',
+            bgcolor: '#FF9800',
+            color: 'white',
+          }}
+        >
+          {conditionIcon}
+        </Box>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+          {data.label}
+        </Typography>
+        <Chip 
+          label={data.condition} 
+          size="small" 
+          sx={{ mt: 0.5 }} 
+          color="warning" 
+        />
+      </Box>
       {/* Handle d'entrée à gauche */}
       <Handle
         type="target"
@@ -383,22 +553,12 @@ export default function NodeEditorDialog({
   const [description, setDescription] = useState('');
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [showHelp, setShowHelp] = useState(true);
 
-  // Initialiser les noeuds avec un noeud trigger par défaut
+  // Initialiser les noeuds sans déclencheur par défaut
   const initialNodes: Node[] = useMemo(
-    () => [
-      {
-        id: 'trigger-1',
-        type: 'trigger',
-        position: { x: 250, y: 100 },
-        data: {
-          label: t('automations.triggerMotion'),
-          triggerType: AutomationTriggerType.MOTION,
-        },
-        sourcePosition: Position.Right,
-      },
-    ],
-    [t],
+    () => [],
+    [],
   );
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
@@ -408,6 +568,28 @@ export default function NodeEditorDialog({
     return nodes.find((n) => n.id === selectedNodeId) || null;
   }, [nodes, selectedNodeId]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+
+  // Calculer les valeurs pour le trigger sélectionné
+  const triggerSettings = useMemo(() => {
+    if (!selectedNode || selectedNode.type !== 'trigger') return null;
+    const triggerData = selectedNode.data as TriggerNodeData;
+    const compatibleDevices = getCompatibleDevicesForTrigger(devices, triggerData.triggerType);
+    const needsDevice = 
+      triggerData.triggerType !== AutomationTriggerType.SUNRISE_SUNSET &&
+      triggerData.triggerType !== AutomationTriggerType.TIME &&
+      triggerData.triggerType !== AutomationTriggerType.MANUAL;
+    const description = getTriggerDescription(triggerData.triggerType);
+    return { triggerData, compatibleDevices, needsDevice, description };
+  }, [selectedNode, devices]);
+
+  // Calculer les valeurs pour l'action sélectionnée
+  const actionSettings = useMemo(() => {
+    if (!selectedNode || selectedNode.type !== 'action') return null;
+    const actionData = selectedNode.data as ActionNodeData;
+    const compatibleDevices = getCompatibleDevicesForAction(devices, actionData.actionType);
+    const needsDevice = actionData.actionType !== AutomationActionType.NOTIFY;
+    return { actionData, compatibleDevices, needsDevice };
+  }, [selectedNode, devices]);
 
   // Styles personnalisés pour les edges (connexions)
   const defaultEdgeOptions = useMemo(
@@ -512,11 +694,18 @@ export default function NodeEditorDialog({
     const actions = finalActionIds.map((actionId) => {
       const actionNode = nodes.find((n) => n.id === actionId);
       const actionData = actionNode?.data as ActionNodeData;
+      const params = { ...actionData.params };
+      
+      // Ajouter la durée pour l'action TURN_ON
+      if (actionData.actionType === AutomationActionType.TURN_ON && actionData.duration !== undefined) {
+        params.duration = actionData.duration;
+      }
+      
       return {
         type: actionData.actionType,
         deviceId: actionData.deviceId || '',
         deviceName: actionData.deviceName,
-        params: actionData.params,
+        params: Object.keys(params).length > 0 ? params : undefined,
       };
     });
 
@@ -583,6 +772,82 @@ export default function NodeEditorDialog({
         </Box>
       </DialogTitle>
       <DialogContent>
+        {/* Bannière d'aide */}
+        <Alert 
+          severity="info" 
+          icon={<HelpOutlineIcon />}
+          sx={{ mb: 2 }}
+          action={
+            <IconButton
+              aria-label="close"
+              color="inherit"
+              size="small"
+              onClick={() => setShowHelp(!showHelp)}
+            >
+              {showHelp ? '▼' : '▲'}
+            </IconButton>
+          }
+        >
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+            {t('automations.nodeEditor.helpTitle')}
+          </Typography>
+          <Collapse in={showHelp}>
+            <List dense sx={{ py: 0 }}>
+              <ListItem sx={{ py: 0.5, px: 0 }}>
+                <ListItemIcon sx={{ minWidth: 32 }}>
+                  <Typography variant="body2" color="text.secondary">1.</Typography>
+                </ListItemIcon>
+                <ListItemText 
+                  primary={t('automations.nodeEditor.helpStep1')}
+                  primaryTypographyProps={{ variant: 'body2' }}
+                />
+              </ListItem>
+              <ListItem sx={{ py: 0.5, px: 0 }}>
+                <ListItemIcon sx={{ minWidth: 32 }}>
+                  <Typography variant="body2" color="text.secondary">2.</Typography>
+                </ListItemIcon>
+                <ListItemText 
+                  primary={t('automations.nodeEditor.helpStep2')}
+                  primaryTypographyProps={{ variant: 'body2' }}
+                />
+              </ListItem>
+              <ListItem sx={{ py: 0.5, px: 0 }}>
+                <ListItemIcon sx={{ minWidth: 32 }}>
+                  <Typography variant="body2" color="text.secondary">3.</Typography>
+                </ListItemIcon>
+                <ListItemText 
+                  primary={t('automations.nodeEditor.helpStep3')}
+                  primaryTypographyProps={{ variant: 'body2' }}
+                />
+              </ListItem>
+              <ListItem sx={{ py: 0.5, px: 0 }}>
+                <ListItemIcon sx={{ minWidth: 32 }}>
+                  <Typography variant="body2" color="text.secondary">4.</Typography>
+                </ListItemIcon>
+                <ListItemText 
+                  primary={t('automations.nodeEditor.helpStep4')}
+                  primaryTypographyProps={{ variant: 'body2' }}
+                />
+              </ListItem>
+              <ListItem sx={{ py: 0.5, px: 0 }}>
+                <ListItemIcon sx={{ minWidth: 32 }}>
+                  <Typography variant="body2" color="text.secondary">5.</Typography>
+                </ListItemIcon>
+                <ListItemText 
+                  primary={t('automations.nodeEditor.helpStep5')}
+                  primaryTypographyProps={{ variant: 'body2' }}
+                />
+              </ListItem>
+            </List>
+            <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <LightbulbIcon sx={{ fontSize: 16, color: 'warning.main' }} />
+              <Typography variant="caption" color="text.secondary">
+                {t('automations.nodeEditor.helpTip')}
+              </Typography>
+            </Box>
+          </Collapse>
+        </Alert>
+
         <Box sx={{ mb: 2 }}>
           <TextField
             label={t('automations.name')}
@@ -591,6 +856,7 @@ export default function NodeEditorDialog({
             fullWidth
             required
             sx={{ mb: 2 }}
+            helperText={t('automations.name') + ' ' + t('automations.nodeEditor.helpStep5')}
           />
           <TextField
             label={t('automations.description')}
@@ -599,159 +865,247 @@ export default function NodeEditorDialog({
             fullWidth
             multiline
             rows={2}
+            helperText={t('automations.description') + ' (optionnel)'}
           />
         </Box>
 
-        <Box sx={{ height: 600, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-          <ReactFlowProvider>
-            <FlowContent
-              nodes={nodes}
-              setNodes={setNodes}
-              edges={edges}
-              setEdges={setEdges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              handleConnect={handleConnect}
-              menuPosition={menuPosition}
-              setMenuPosition={setMenuPosition}
-              selectedNodeId={selectedNodeId}
-              setSelectedNodeId={setSelectedNodeId}
-              devices={devices}
-              t={t}
-              defaultEdgeOptions={defaultEdgeOptions}
-            />
-          </ReactFlowProvider>
-        </Box>
-
-        {selectedNode && (
-          <Paper sx={{ mt: 2, p: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                {t('automations.nodeEditor.nodeSettings')}
-              </Typography>
-              <IconButton
-                size="small"
-                color="error"
-                onClick={() => selectedNodeId && handleDeleteNode(selectedNodeId)}
+        <Box sx={{ display: 'flex', gap: 2, height: 600 }}>
+          {/* Zone d'édition ReactFlow */}
+          <Box sx={{ flex: 1, border: '1px solid #e0e0e0', borderRadius: 1, position: 'relative' }}>
+            {nodes.length === 0 && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  zIndex: 10,
+                  textAlign: 'center',
+                  pointerEvents: 'none',
+                  width: '80%',
+                  maxWidth: 500,
+                }}
               >
-                <DeleteIcon />
-              </IconButton>
-            </Box>
-            {selectedNode.type === 'trigger' && (
+                <Paper
+                  sx={{
+                    p: 4,
+                    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                    boxShadow: 4,
+                    borderRadius: 2,
+                  }}
+                >
+                  <HelpOutlineIcon sx={{ fontSize: 64, color: 'primary.main', mb: 2 }} />
+                  <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
+                    {t('automations.nodeEditor.emptyState')}
+                  </Typography>
+                  <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                    {t('automations.nodeEditor.helpStep1')}
+                  </Typography>
+                  <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      💡 {t('automations.nodeEditor.helpTip')}
+                    </Typography>
+                  </Box>
+                </Paper>
+              </Box>
+            )}
+            <ReactFlowProvider>
+              <FlowContent
+                nodes={nodes}
+                setNodes={setNodes}
+                edges={edges}
+                setEdges={setEdges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                handleConnect={handleConnect}
+                menuPosition={menuPosition}
+                setMenuPosition={setMenuPosition}
+                selectedNodeId={selectedNodeId}
+                setSelectedNodeId={setSelectedNodeId}
+                devices={devices}
+                t={t}
+                defaultEdgeOptions={defaultEdgeOptions}
+              />
+            </ReactFlowProvider>
+          </Box>
+
+          {/* Panneau de paramètres à droite */}
+          <Paper 
+            sx={{ 
+              width: 350,
+              p: 2,
+              display: 'flex',
+              flexDirection: 'column',
+              overflowY: 'auto',
+              maxHeight: '100%',
+            }}
+            elevation={3}
+          >
+            {selectedNode ? (
+              <>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                    {t('automations.nodeEditor.nodeSettings')}
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => selectedNodeId && handleDeleteNode(selectedNodeId)}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
+            {triggerSettings && (
               <Stack spacing={2}>
                 <FormControl fullWidth>
-                  <InputLabel>{t('automations.nodeEditor.triggerType')}</InputLabel>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
+                      {t('automations.nodeEditor.triggerType')}
+                    </Typography>
+                    <Tooltip title={t('automations.nodeEditor.helpStep4')} arrow>
+                      <HelpOutlineIcon sx={{ fontSize: 16, color: 'text.secondary', cursor: 'help' }} />
+                    </Tooltip>
+                  </Box>
                   <Select
-                    value={(selectedNode.data as TriggerNodeData).triggerType}
+                    value={triggerSettings.triggerData.triggerType}
                     label={t('automations.nodeEditor.triggerType')}
+                    displayEmpty
                     onChange={(e) => {
-                      const triggerType = e.target.value as AutomationTriggerType;
-                      const triggerLabels: Record<AutomationTriggerType, string> = {
-                        [AutomationTriggerType.MOTION]: t('automations.triggerMotion'),
-                        [AutomationTriggerType.CONTACT]: t('automations.triggerContact'),
-                        [AutomationTriggerType.TEMPERATURE]: t('automations.triggerTemperature'),
-                        [AutomationTriggerType.BUTTON]: t('automations.triggerButton'),
-                        [AutomationTriggerType.VIBRATION]: t('automations.triggerVibration'),
-                        [AutomationTriggerType.ILLUMINANCE]: t('automations.triggerIlluminance'),
-                        [AutomationTriggerType.HUMIDITY]: t('automations.triggerHumidity'),
-                        [AutomationTriggerType.WATER_LEAK]: t('automations.triggerWaterLeak'),
-                        [AutomationTriggerType.SMOKE]: t('automations.triggerSmoke'),
-                        [AutomationTriggerType.GAS]: t('automations.triggerGas'),
-                        [AutomationTriggerType.SUNRISE_SUNSET]: t('automations.triggerSunriseSunset'),
-                        [AutomationTriggerType.TIME]: t('automations.triggerTime'),
-                        [AutomationTriggerType.MANUAL]: t('automations.triggerManual'),
-                      };
-                      setNodes((nds) =>
-                        nds.map((node) =>
-                          node.id === selectedNodeId
-                            ? {
-                                ...node,
-                                data: {
-                                  ...node.data,
-                                  triggerType,
-                                  label: triggerLabels[triggerType] || triggerType,
-                                },
-                              }
-                            : node,
-                        ),
-                      );
-                    }}
-                  >
-                    {Object.values(AutomationTriggerType).map((type) => {
-                      const triggerLabels: Record<AutomationTriggerType, string> = {
-                        [AutomationTriggerType.MOTION]: t('automations.triggerMotion'),
-                        [AutomationTriggerType.CONTACT]: t('automations.triggerContact'),
-                        [AutomationTriggerType.TEMPERATURE]: t('automations.triggerTemperature'),
-                        [AutomationTriggerType.BUTTON]: t('automations.triggerButton'),
-                        [AutomationTriggerType.VIBRATION]: t('automations.triggerVibration'),
-                        [AutomationTriggerType.ILLUMINANCE]: t('automations.triggerIlluminance'),
-                        [AutomationTriggerType.HUMIDITY]: t('automations.triggerHumidity'),
-                        [AutomationTriggerType.WATER_LEAK]: t('automations.triggerWaterLeak'),
-                        [AutomationTriggerType.SMOKE]: t('automations.triggerSmoke'),
-                        [AutomationTriggerType.GAS]: t('automations.triggerGas'),
-                        [AutomationTriggerType.SUNRISE_SUNSET]: t('automations.triggerSunriseSunset'),
-                        [AutomationTriggerType.TIME]: t('automations.triggerTime'),
-                        [AutomationTriggerType.MANUAL]: t('automations.triggerManual'),
-                      };
-                      return (
-                        <MenuItem key={type} value={type}>
-                          {triggerLabels[type] || type}
+                        const triggerType = e.target.value as AutomationTriggerType;
+                        const triggerLabels: Record<AutomationTriggerType, string> = {
+                          [AutomationTriggerType.MOTION]: t('automations.triggerMotion'),
+                          [AutomationTriggerType.CONTACT]: t('automations.triggerContact'),
+                          [AutomationTriggerType.TEMPERATURE]: t('automations.triggerTemperature'),
+                          [AutomationTriggerType.BUTTON]: t('automations.triggerButton'),
+                          [AutomationTriggerType.VIBRATION]: t('automations.triggerVibration'),
+                          [AutomationTriggerType.ILLUMINANCE]: t('automations.triggerIlluminance'),
+                          [AutomationTriggerType.HUMIDITY]: t('automations.triggerHumidity'),
+                          [AutomationTriggerType.WATER_LEAK]: t('automations.triggerWaterLeak'),
+                          [AutomationTriggerType.SMOKE]: t('automations.triggerSmoke'),
+                          [AutomationTriggerType.GAS]: t('automations.triggerGas'),
+                          [AutomationTriggerType.SUNRISE_SUNSET]: t('automations.triggerSunriseSunset'),
+                          [AutomationTriggerType.TIME]: t('automations.triggerTime'),
+                          [AutomationTriggerType.MANUAL]: t('automations.triggerManual'),
+                        };
+                        setNodes((nds) =>
+                          nds.map((node) =>
+                            node.id === selectedNodeId
+                              ? {
+                                  ...node,
+                                  data: {
+                                    ...node.data,
+                                    triggerType,
+                                    label: triggerLabels[triggerType] || triggerType,
+                                    // Réinitialiser l'appareil si le type change
+                                    deviceId: undefined,
+                                    deviceName: undefined,
+                                  },
+                                }
+                              : node,
+                          ),
+                        );
+                      }}
+                    >
+                      {Object.values(AutomationTriggerType).map((type) => {
+                        const triggerLabels: Record<AutomationTriggerType, string> = {
+                          [AutomationTriggerType.MOTION]: t('automations.triggerMotion'),
+                          [AutomationTriggerType.CONTACT]: t('automations.triggerContact'),
+                          [AutomationTriggerType.TEMPERATURE]: t('automations.triggerTemperature'),
+                          [AutomationTriggerType.BUTTON]: t('automations.triggerButton'),
+                          [AutomationTriggerType.VIBRATION]: t('automations.triggerVibration'),
+                          [AutomationTriggerType.ILLUMINANCE]: t('automations.triggerIlluminance'),
+                          [AutomationTriggerType.HUMIDITY]: t('automations.triggerHumidity'),
+                          [AutomationTriggerType.WATER_LEAK]: t('automations.triggerWaterLeak'),
+                          [AutomationTriggerType.SMOKE]: t('automations.triggerSmoke'),
+                          [AutomationTriggerType.GAS]: t('automations.triggerGas'),
+                          [AutomationTriggerType.SUNRISE_SUNSET]: t('automations.triggerSunriseSunset'),
+                          [AutomationTriggerType.TIME]: t('automations.triggerTime'),
+                          [AutomationTriggerType.MANUAL]: t('automations.triggerManual'),
+                        };
+                        return (
+                          <MenuItem key={type} value={type}>
+                            {triggerLabels[type] || type}
+                          </MenuItem>
+                        );
+                      })}
+                    </Select>
+                  </FormControl>
+
+                  {/* Description du déclencheur */}
+                  {triggerSettings.description && (
+                    <Alert 
+                      severity="info" 
+                      icon={<InfoIcon />}
+                      sx={{ 
+                        '& .MuiAlert-message': { 
+                          fontSize: '0.875rem',
+                          lineHeight: 1.5,
+                        } 
+                      }}
+                    >
+                      {triggerSettings.description}
+                    </Alert>
+                  )}
+
+                  {/* Sélection de l'appareil (uniquement si nécessaire) */}
+                  {triggerSettings.needsDevice && (
+                    <FormControl fullWidth>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
+                          {t('automations.selectTriggerDevice')}
+                        </Typography>
+                        <Tooltip title={t('automations.nodeEditor.selectDeviceHelp')} arrow>
+                          <HelpOutlineIcon sx={{ fontSize: 16, color: 'text.secondary', cursor: 'help' }} />
+                        </Tooltip>
+                      </Box>
+                      <Select
+                        value={triggerSettings.triggerData.deviceId || ''}
+                        displayEmpty
+                        onChange={(e) => {
+                          const device = devices.find((d) => d.ieeeAddress === e.target.value);
+                          setNodes((nds) =>
+                            nds.map((node) =>
+                              node.id === selectedNodeId
+                                ? {
+                                    ...node,
+                                    data: {
+                                      ...node.data,
+                                      deviceId: e.target.value,
+                                      deviceName: device?.friendlyName,
+                                    },
+                                  }
+                                : node,
+                            ),
+                          );
+                        }}
+                      >
+                        <MenuItem value="">
+                          <em>{t('common.none')}</em>
                         </MenuItem>
-                      );
-                    })}
-                  </Select>
-                </FormControl>
-                <FormControl fullWidth>
-                  <InputLabel>{t('automations.selectTriggerDevice')}</InputLabel>
-                  <Select
-                    value={selectedNode ? ((selectedNode.data as TriggerNodeData).deviceId || '') : ''}
-                    label={t('automations.selectTriggerDevice')}
-                    onChange={(e) => {
-                      const device = devices.find((d) => d.ieeeAddress === e.target.value);
-                      setNodes((nds) =>
-                        nds.map((node) =>
-                          node.id === selectedNodeId
-                            ? {
-                                ...node,
-                                data: {
-                                  ...node.data,
-                                  deviceId: e.target.value,
-                                  deviceName: device?.friendlyName,
-                                },
-                              }
-                            : node,
-                        ),
-                      );
-                    }}
-                  >
-                    <MenuItem value="">{t('common.none')}</MenuItem>
-                    {devices
-                      .filter((d) => {
-                        const triggerType = selectedNode ? (selectedNode.data as TriggerNodeData).triggerType : AutomationTriggerType.MOTION;
-                        // Filtrer selon le type de déclencheur
-                        if (triggerType === AutomationTriggerType.MOTION) {
-                          return d.type === 'motion' || d.type === 'sensor';
-                        }
-                        if (triggerType === AutomationTriggerType.CONTACT) {
-                          return d.type === 'door' || d.type === 'window';
-                        }
-                        if (triggerType === AutomationTriggerType.BUTTON) {
-                          return d.type === 'button' || d.type === 'switch';
-                        }
-                        if (triggerType === AutomationTriggerType.TEMPERATURE || 
-                            triggerType === AutomationTriggerType.ILLUMINANCE || 
-                            triggerType === AutomationTriggerType.HUMIDITY) {
-                          return d.type === 'sensor' || d.type === 'temperature' || d.type === 'illuminance' || d.type === 'humidity';
-                        }
-                        return true;
-                      })
-                      .map((device) => (
-                        <MenuItem key={device.ieeeAddress} value={device.ieeeAddress}>
-                          {device.friendlyName || device.ieeeAddress}
-                        </MenuItem>
-                      ))}
-                  </Select>
-                </FormControl>
+                        {triggerSettings.compatibleDevices.length === 0 ? (
+                          <MenuItem disabled>
+                            {t('automations.nodeEditor.noCompatibleDevices')}
+                          </MenuItem>
+                        ) : (
+                          triggerSettings.compatibleDevices.map((device) => (
+                            <MenuItem key={device.ieeeAddress} value={device.ieeeAddress}>
+                              {device.friendlyName || device.ieeeAddress}
+                              {device.room && (
+                                <Typography variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
+                                  ({device.room})
+                                </Typography>
+                              )}
+                            </MenuItem>
+                          ))
+                        )}
+                      </Select>
+                      {triggerSettings.compatibleDevices.length === 0 && triggerSettings.needsDevice && (
+                        <Alert severity="warning" sx={{ mt: 1 }}>
+                          {t('automations.nodeEditor.noCompatibleDevicesWarning')}
+                        </Alert>
+                      )}
+                    </FormControl>
+                  )}
                 {/* Inputs pour les valeurs (température, luminosité, humidité) */}
                 {(selectedNode?.data as TriggerNodeData)?.triggerType === AutomationTriggerType.TEMPERATURE ||
                 (selectedNode?.data as TriggerNodeData)?.triggerType === AutomationTriggerType.ILLUMINANCE ||
@@ -818,67 +1172,187 @@ export default function NodeEditorDialog({
                 ) : null}
               </Stack>
             )}
-            {selectedNode && selectedNode.type === 'action' && (
+            {actionSettings && (
               <Stack spacing={2}>
                 <FormControl fullWidth>
-                  <InputLabel>{t('automations.nodeEditor.actionType')}</InputLabel>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
+                      {t('automations.nodeEditor.actionType')}
+                    </Typography>
+                    <Tooltip title={t('automations.nodeEditor.helpStep4')} arrow>
+                      <HelpOutlineIcon sx={{ fontSize: 16, color: 'text.secondary', cursor: 'help' }} />
+                    </Tooltip>
+                  </Box>
                   <Select
-                    value={selectedNode ? (selectedNode.data as ActionNodeData).actionType : AutomationActionType.TURN_ON}
-                    label={t('automations.nodeEditor.actionType')}
+                    value={actionSettings.actionData.actionType}
+                    displayEmpty
                     onChange={(e) => {
-                      const actionType = e.target.value as AutomationActionType;
-                      const actionLabels: Record<AutomationActionType, string> = {
-                        [AutomationActionType.TURN_ON]: t('automations.actionTurnOn'),
-                        [AutomationActionType.TURN_OFF]: t('automations.actionTurnOff'),
-                        [AutomationActionType.TOGGLE]: t('automations.actionToggle'),
-                        [AutomationActionType.SET_BRIGHTNESS]: t('automations.actionSetBrightness'),
-                        [AutomationActionType.SET_COLOR]: t('automations.actionSetColor'),
-                        [AutomationActionType.SET_COLOR_TEMP]: t('automations.actionSetColorTemp'),
-                        [AutomationActionType.SET_THERMOSTAT]: t('automations.actionSetThermostat'),
-                        [AutomationActionType.NOTIFY]: t('automations.actionNotify'),
-                      };
-                      setNodes((nds) =>
-                        nds.map((node) =>
-                          node.id === selectedNodeId
-                            ? {
-                                ...node,
-                                data: {
-                                  ...node.data,
-                                  actionType,
-                                  label: actionLabels[actionType] || actionType,
-                                },
-                              }
-                            : node,
-                        ),
-                      );
-                    }}
-                  >
-                    {Object.values(AutomationActionType).map((type) => {
-                      const actionLabels: Record<AutomationActionType, string> = {
-                        [AutomationActionType.TURN_ON]: t('automations.actionTurnOn'),
-                        [AutomationActionType.TURN_OFF]: t('automations.actionTurnOff'),
-                        [AutomationActionType.TOGGLE]: t('automations.actionToggle'),
-                        [AutomationActionType.SET_BRIGHTNESS]: t('automations.actionSetBrightness'),
-                        [AutomationActionType.SET_COLOR]: t('automations.actionSetColor'),
-                        [AutomationActionType.SET_COLOR_TEMP]: t('automations.actionSetColorTemp'),
-                        [AutomationActionType.SET_THERMOSTAT]: t('automations.actionSetThermostat'),
-                        [AutomationActionType.NOTIFY]: t('automations.actionNotify'),
-                      };
-                      return (
-                        <MenuItem key={type} value={type}>
-                          {actionLabels[type] || type}
+                        const actionType = e.target.value as AutomationActionType;
+                        const actionLabels: Record<AutomationActionType, string> = {
+                          [AutomationActionType.TURN_ON]: t('automations.actionTurnOn'),
+                          [AutomationActionType.TURN_OFF]: t('automations.actionTurnOff'),
+                          [AutomationActionType.TOGGLE]: t('automations.actionToggle'),
+                          [AutomationActionType.SET_BRIGHTNESS]: t('automations.actionSetBrightness'),
+                          [AutomationActionType.SET_COLOR]: t('automations.actionSetColor'),
+                          [AutomationActionType.SET_COLOR_TEMP]: t('automations.actionSetColorTemp'),
+                          [AutomationActionType.SET_THERMOSTAT]: t('automations.actionSetThermostat'),
+                          [AutomationActionType.NOTIFY]: t('automations.actionNotify'),
+                        };
+                        setNodes((nds) =>
+                          nds.map((node) =>
+                            node.id === selectedNodeId
+                              ? {
+                                  ...node,
+                                  data: {
+                                    ...node.data,
+                                    actionType,
+                                    label: actionLabels[actionType] || actionType,
+                                    // Réinitialiser l'appareil si le type change
+                                    deviceId: undefined,
+                                    deviceName: undefined,
+                                    // Réinitialiser la durée si ce n'est plus TURN_ON
+                                    duration: actionType === AutomationActionType.TURN_ON ? (node.data as ActionNodeData).duration : undefined,
+                                  },
+                                }
+                              : node,
+                          ),
+                        );
+                      }}
+                    >
+                      {Object.values(AutomationActionType).map((type) => {
+                        const actionLabels: Record<AutomationActionType, string> = {
+                          [AutomationActionType.TURN_ON]: t('automations.actionTurnOn'),
+                          [AutomationActionType.TURN_OFF]: t('automations.actionTurnOff'),
+                          [AutomationActionType.TOGGLE]: t('automations.actionToggle'),
+                          [AutomationActionType.SET_BRIGHTNESS]: t('automations.actionSetBrightness'),
+                          [AutomationActionType.SET_COLOR]: t('automations.actionSetColor'),
+                          [AutomationActionType.SET_COLOR_TEMP]: t('automations.actionSetColorTemp'),
+                          [AutomationActionType.SET_THERMOSTAT]: t('automations.actionSetThermostat'),
+                          [AutomationActionType.NOTIFY]: t('automations.actionNotify'),
+                        };
+                        return (
+                          <MenuItem key={type} value={type}>
+                            {actionLabels[type] || type}
+                          </MenuItem>
+                        );
+                      })}
+                    </Select>
+                  </FormControl>
+
+                  {/* Champ durée pour l'action TURN_ON */}
+                  {actionSettings.actionData.actionType === AutomationActionType.TURN_ON && (
+                    <Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <Typography variant="body2" color="text.secondary">
+                          {t('automations.nodeEditor.duration')}
+                        </Typography>
+                        <Tooltip title={t('automations.nodeEditor.durationHelp')} arrow>
+                          <HelpOutlineIcon sx={{ fontSize: 16, color: 'text.secondary', cursor: 'help' }} />
+                        </Tooltip>
+                      </Box>
+                      <TextField
+                        type="number"
+                        fullWidth
+                        size="small"
+                        value={actionSettings.actionData.duration ?? 0}
+                        onChange={(e) => {
+                          const duration = e.target.value ? parseInt(e.target.value, 10) : 0;
+                          setNodes((nds) =>
+                            nds.map((node) =>
+                              node.id === selectedNodeId
+                                ? {
+                                    ...node,
+                                    data: {
+                                      ...node.data,
+                                      duration: duration >= 0 ? duration : 0,
+                                    },
+                                  }
+                                : node,
+                            ),
+                          );
+                        }}
+                        inputProps={{ 
+                          min: 0,
+                          step: 1,
+                        }}
+                        helperText={
+                          (actionSettings.actionData.duration ?? 0) === 0
+                            ? t('automations.nodeEditor.durationInfinite')
+                            : t('automations.nodeEditor.durationSeconds', { seconds: actionSettings.actionData.duration })
+                        }
+                      />
+                    </Box>
+                  )}
+
+                  {/* Sélection de l'appareil (uniquement si nécessaire) */}
+                  {actionSettings.needsDevice && (
+                    <FormControl fullWidth>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
+                          {t('automations.selectActionDevice')}
+                        </Typography>
+                        <Tooltip title={t('automations.nodeEditor.selectActionDeviceHelp')} arrow>
+                          <HelpOutlineIcon sx={{ fontSize: 16, color: 'text.secondary', cursor: 'help' }} />
+                        </Tooltip>
+                      </Box>
+                      <Select
+                        value={actionSettings.actionData.deviceId || ''}
+                        displayEmpty
+                        onChange={(e) => {
+                          const device = devices.find((d) => d.ieeeAddress === e.target.value);
+                          setNodes((nds) =>
+                            nds.map((node) =>
+                              node.id === selectedNodeId
+                                ? {
+                                    ...node,
+                                    data: {
+                                      ...node.data,
+                                      deviceId: e.target.value,
+                                      deviceName: device?.friendlyName,
+                                    },
+                                  }
+                                : node,
+                            ),
+                          );
+                        }}
+                      >
+                        <MenuItem value="">
+                          <em>{t('common.none')}</em>
                         </MenuItem>
-                      );
-                    })}
-                  </Select>
-                </FormControl>
+                        {actionSettings.compatibleDevices.length === 0 ? (
+                          <MenuItem disabled>
+                            {t('automations.nodeEditor.noCompatibleDevices')}
+                          </MenuItem>
+                        ) : (
+                          actionSettings.compatibleDevices.map((device) => (
+                            <MenuItem key={device.ieeeAddress} value={device.ieeeAddress}>
+                              {device.friendlyName || device.ieeeAddress}
+                              {device.room && (
+                                <Typography variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
+                                  ({device.room})
+                                </Typography>
+                              )}
+                            </MenuItem>
+                          ))
+                        )}
+                      </Select>
+                      {actionSettings.compatibleDevices.length === 0 && actionSettings.needsDevice && (
+                        <Alert severity="warning" sx={{ mt: 1 }}>
+                          {t('automations.nodeEditor.noCompatibleDevicesWarning')}
+                        </Alert>
+                      )}
+                    </FormControl>
+                  )}
+              </Stack>
+            )}
+            {selectedNode && selectedNode.type === 'condition' && (
+              <Stack spacing={2}>
                 <FormControl fullWidth>
-                  <InputLabel>{t('automations.selectActionDevice')}</InputLabel>
+                  <InputLabel>{t('automations.nodeEditor.condition')}</InputLabel>
                   <Select
-                    value={selectedNode ? ((selectedNode.data as ActionNodeData).deviceId || '') : ''}
-                    label={t('automations.selectActionDevice')}
+                    value={(selectedNode.data as ConditionNodeData).condition}
+                    label={t('automations.nodeEditor.condition')}
                     onChange={(e) => {
-                      const device = devices.find((d) => d.ieeeAddress === e.target.value);
                       setNodes((nds) =>
                         nds.map((node) =>
                           node.id === selectedNodeId
@@ -886,8 +1360,7 @@ export default function NodeEditorDialog({
                                 ...node,
                                 data: {
                                   ...node.data,
-                                  deviceId: e.target.value,
-                                  deviceName: device?.friendlyName,
+                                  condition: e.target.value as 'AND' | 'OR',
                                 },
                               }
                             : node,
@@ -895,57 +1368,23 @@ export default function NodeEditorDialog({
                       );
                     }}
                   >
-                    <MenuItem value="">{t('common.none')}</MenuItem>
-                    {devices
-                      .filter((d) => {
-                        const actionType = (selectedNode.data as ActionNodeData).actionType;
-                        // Filtrer selon le type d'action
-                        if (actionType === AutomationActionType.TURN_ON || actionType === AutomationActionType.TURN_OFF) {
-                          return d.type === 'light' || d.type === 'switch' || d.type === 'plug';
-                        }
-                        if (actionType === AutomationActionType.SET_BRIGHTNESS) {
-                          return d.type === 'light';
-                        }
-                        return true;
-                      })
-                      .map((device) => (
-                        <MenuItem key={device.ieeeAddress} value={device.ieeeAddress}>
-                          {device.friendlyName || device.ieeeAddress}
-                        </MenuItem>
-                      ))}
+                    <MenuItem value="AND">AND</MenuItem>
+                    <MenuItem value="OR">OR</MenuItem>
                   </Select>
                 </FormControl>
               </Stack>
             )}
-            {selectedNode && selectedNode.type === 'condition' && (
-              <FormControl fullWidth>
-                <InputLabel>{t('automations.nodeEditor.condition')}</InputLabel>
-                <Select
-                  value={(selectedNode.data as ConditionNodeData).condition}
-                  label={t('automations.nodeEditor.condition')}
-                  onChange={(e) => {
-                    setNodes((nds) =>
-                      nds.map((node) =>
-                        node.id === selectedNodeId
-                          ? {
-                              ...node,
-                              data: {
-                                ...node.data,
-                                condition: e.target.value as 'AND' | 'OR',
-                              },
-                            }
-                          : node,
-                      ),
-                    );
-                  }}
-                >
-                  <MenuItem value="AND">AND</MenuItem>
-                  <MenuItem value="OR">OR</MenuItem>
-                </Select>
-              </FormControl>
+              </>
+            ) : (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <HelpOutlineIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+                <Typography variant="body1" color="text.secondary">
+                  {t('automations.nodeEditor.selectNodeToConfigure')}
+                </Typography>
+              </Box>
             )}
           </Paper>
-        )}
+        </Box>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose}>{t('common.cancel')}</Button>
