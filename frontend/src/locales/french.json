@@ -527,7 +527,7 @@
   },
   "weather": {
     "title": "Météo",
-    "noData": "Aucune donnée météo disponible",
+    "noData": "Aucune donnée météo disponible.\n Veuillez ajouter une localisation dans les paramètres",
     "unknown": "Inconnu",
     "clear": "Dégagé",
     "mostlyClear": "Généralement dégagé",

@@ -526,7 +526,7 @@
   },
   "weather": {
     "title": "Weather",
-    "noData": "No weather data available",
+    "noData": "No weather data available.\n Please add a location in the settings",
     "unknown": "Unknown",
     "clear": "Clear",
     "mostlyClear": "Mostly clear",
