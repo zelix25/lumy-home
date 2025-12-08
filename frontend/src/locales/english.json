@@ -494,6 +494,8 @@
       "condition": "Condition",
       "nodeSettings": "Node settings",
       "selectNodeToConfigure": "Select a node to configure it",
+      "deleteNode": "Delete node",
+      "deleteConnection": "Delete connection",
       "noTriggerNode": "At least one trigger node is required",
       "noActionNode": "At least one action node is required",
       "noConnectedActions": "No actions connected to trigger",

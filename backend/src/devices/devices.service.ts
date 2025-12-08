@@ -1,16 +1,27 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Device } from './entities/device.entity';
+import { Repository, LessThan } from 'typeorm';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { Device, DeviceStatus } from './entities/device.entity';
 import { Zigbee2MqttService } from './zigbee2mqtt.service';
+import { WebsocketGateway } from '../websocket/websocket.gateway';
+import { LoggerService } from '../logger/logger.service';
 
 @Injectable()
-export class DevicesService {
+export class DevicesService implements OnModuleInit {
+  private readonly OFFLINE_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes en millisecondes
+
   constructor(
     @InjectRepository(Device)
     private deviceRepository: Repository<Device>,
     private zigbee2MqttService: Zigbee2MqttService,
+    private websocketGateway: WebsocketGateway,
+    private logger: LoggerService,
   ) {}
+
+  onModuleInit() {
+    this.logger.log('DevicesService initialisé - Vérification périodique des appareils hors ligne activée', 'DevicesService');
+  }
 
   async findAll(): Promise<Device[]> {
     return this.deviceRepository.find({
@@ -198,6 +209,60 @@ export class DevicesService {
     
     // Supprimer l'appareil de la base de données
     await this.deviceRepository.remove(device);
+  }
+
+  /**
+   * Vérifie périodiquement les appareils et les passe en OFFLINE s'ils n'ont pas donné signe de vie depuis 10 minutes
+   * Exécuté toutes les minutes
+   */
+  @Cron(CronExpression.EVERY_MINUTE)
+  async checkOfflineDevices(): Promise<void> {
+    try {
+      const now = new Date();
+      const thresholdDate = new Date(now.getTime() - this.OFFLINE_THRESHOLD_MS);
+
+      // Trouver tous les appareils en ligne qui n'ont pas été mis à jour depuis 10 minutes
+      const devicesToMarkOffline = await this.deviceRepository.find({
+        where: {
+          status: DeviceStatus.ONLINE,
+          updatedAt: LessThan(thresholdDate),
+        },
+      });
+
+      if (devicesToMarkOffline.length > 0) {
+        this.logger.log(
+          `Vérification appareils hors ligne: ${devicesToMarkOffline.length} appareil(s) à passer en OFFLINE`,
+          'DevicesService',
+        );
+
+        for (const device of devicesToMarkOffline) {
+          const oldStatus = device.status;
+          device.status = DeviceStatus.OFFLINE;
+          await this.deviceRepository.save(device);
+
+          this.logger.log(
+            `Appareil ${device.friendlyName || device.ieeeAddress} passé en OFFLINE (dernière mise à jour: ${device.updatedAt.toISOString()})`,
+            'DevicesService',
+          );
+
+          // Diffuser la mise à jour via WebSocket
+          this.websocketGateway.broadcast('device:updated', {
+            device,
+            message: `L'appareil ${device.friendlyName || device.ieeeAddress} est maintenant hors ligne`,
+          });
+
+          // Enregistrer l'événement dans l'historique si disponible
+          // Note: On ne peut pas injecter HistoryTimelineService ici car cela créerait une dépendance circulaire
+          // Cette fonctionnalité est déjà gérée dans zigbee2mqtt.service.ts
+        }
+      }
+    } catch (error) {
+      this.logger.error(
+        `Erreur lors de la vérification des appareils hors ligne: ${error.message}`,
+        error.stack,
+        'DevicesService',
+      );
+    }
   }
 }
 

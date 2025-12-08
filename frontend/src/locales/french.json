@@ -495,6 +495,8 @@
       "condition": "Condition",
       "nodeSettings": "Paramètres du noeud",
       "selectNodeToConfigure": "Sélectionnez un noeud pour le configurer",
+      "deleteNode": "Supprimer le noeud",
+      "deleteConnection": "Supprimer la connexion",
       "noTriggerNode": "Au moins un noeud déclencheur est requis",
       "noActionNode": "Au moins un noeud action est requis",
       "noConnectedActions": "Aucune action connectée au déclencheur",

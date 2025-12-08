@@ -187,30 +187,33 @@ const TriggerNode = ({ data }: { data: TriggerNodeData }) => {
   return (
     <Paper
       sx={{
-        p: 2,
-        minWidth: 180,
+        p: 1.5,
+        minWidth: 135,
         bgcolor: '#E3F2FD',
         border: '2px solid #2196F3',
         borderRadius: 2,
         position: 'relative',
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.75 }}>
         <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: 32,
-            height: 32,
+            width: 24,
+            height: 24,
             borderRadius: '50%',
             bgcolor: '#2196F3',
             color: 'white',
+            '& svg': {
+              fontSize: 16,
+            },
           }}
         >
           {triggerIcon}
         </Box>
-        <Typography variant="subtitle2" sx={{ fontWeight: 600, flex: 1 }}>
+        <Typography variant="body2" sx={{ fontWeight: 600, flex: 1, fontSize: '0.875rem' }}>
           {data.label}
         </Typography>
       </Box>
@@ -244,30 +247,33 @@ const ActionNode = ({ data }: { data: ActionNodeData }) => {
   return (
     <Paper
       sx={{
-        p: 2,
-        minWidth: 180,
+        p: 1.5,
+        minWidth: 135,
         bgcolor: '#F3E5F5',
         border: '2px solid #9C27B0',
         borderRadius: 2,
         position: 'relative',
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.75 }}>
         <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: 32,
-            height: 32,
+            width: 24,
+            height: 24,
             borderRadius: '50%',
             bgcolor: '#9C27B0',
             color: 'white',
+            '& svg': {
+              fontSize: 16,
+            },
           }}
         >
           {actionIcon}
         </Box>
-        <Typography variant="subtitle2" sx={{ fontWeight: 600, flex: 1 }}>
+        <Typography variant="body2" sx={{ fontWeight: 600, flex: 1, fontSize: '0.875rem' }}>
           {data.label}
         </Typography>
       </Box>
@@ -316,8 +322,8 @@ const ConditionNode = ({ data }: { data: ConditionNodeData }) => {
   return (
     <Paper
       sx={{
-        p: 2,
-        minWidth: 150,
+        p: 1.5,
+        minWidth: 113,
         bgcolor: '#FFF3E0',
         border: '2px solid #FF9800',
         borderRadius: 2,
@@ -325,28 +331,31 @@ const ConditionNode = ({ data }: { data: ConditionNodeData }) => {
         position: 'relative',
       }}
     >
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.75 }}>
         <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: 40,
-            height: 40,
+            width: 30,
+            height: 30,
             borderRadius: '50%',
             bgcolor: '#FF9800',
             color: 'white',
+            '& .MuiTypography-root': {
+              fontSize: '1rem',
+            },
           }}
         >
           {conditionIcon}
         </Box>
-        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+        <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.875rem' }}>
           {data.label}
         </Typography>
         <Chip 
           label={data.condition} 
           size="small" 
-          sx={{ mt: 0.5 }} 
+          sx={{ mt: 0.5, fontSize: '0.7rem', height: 20 }} 
           color="warning" 
         />
       </Box>
@@ -398,6 +407,12 @@ function FlowContent({
   devices,
   t,
   defaultEdgeOptions,
+  nodeContextMenu,
+  setNodeContextMenu,
+  handleDeleteNode,
+  edgeContextMenu,
+  setEdgeContextMenu,
+  handleDeleteEdge,
 }: {
   nodes: Node[];
   setNodes: React.Dispatch<React.SetStateAction<Node[]>>;
@@ -413,6 +428,12 @@ function FlowContent({
   devices: any[];
   t: (key: string) => string;
   defaultEdgeOptions: any;
+  nodeContextMenu: { x: number; y: number; nodeId: string } | null;
+  setNodeContextMenu: (menu: { x: number; y: number; nodeId: string } | null) => void;
+  handleDeleteNode: (nodeId: string) => void;
+  edgeContextMenu: { x: number; y: number; edgeId: string } | null;
+  setEdgeContextMenu: (menu: { x: number; y: number; edgeId: string } | null) => void;
+  handleDeleteEdge: (edgeId: string) => void;
 }) {
   const selectedNode = useMemo(() => {
     return nodes.find((n) => n.id === selectedNodeId) || null;
@@ -484,6 +505,30 @@ function FlowContent({
     [setSelectedNodeId],
   );
 
+  const handleNodeContextMenu = useCallback(
+    (event: React.MouseEvent, node: Node) => {
+      event.preventDefault();
+      setNodeContextMenu({
+        x: event.clientX,
+        y: event.clientY,
+        nodeId: node.id,
+      });
+    },
+    [setNodeContextMenu],
+  );
+
+  const handleEdgeContextMenu = useCallback(
+    (event: React.MouseEvent, edge: Edge) => {
+      event.preventDefault();
+      setEdgeContextMenu({
+        x: event.clientX,
+        y: event.clientY,
+        edgeId: edge.id,
+      });
+    },
+    [setEdgeContextMenu],
+  );
+
   return (
     <>
       <ReactFlow
@@ -494,6 +539,8 @@ function FlowContent({
         onConnect={handleConnect}
         onPaneContextMenu={handlePaneContextMenu}
         onNodeClick={handleNodeClick}
+        onNodeContextMenu={handleNodeContextMenu}
+        onEdgeContextMenu={handleEdgeContextMenu}
         nodeTypes={nodeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
         connectionLineType={ConnectionLineType.SmoothStep}
@@ -537,6 +584,24 @@ function FlowContent({
           {t('automations.nodeEditor.addCondition')}
         </MenuItem>
       </Menu>
+      <Menu
+        open={!!nodeContextMenu}
+        onClose={() => setNodeContextMenu(null)}
+        anchorReference="anchorPosition"
+        anchorPosition={nodeContextMenu ? { top: nodeContextMenu.y, left: nodeContextMenu.x } : undefined}
+      >
+        <MenuItem
+          onClick={() => {
+            if (nodeContextMenu) {
+              handleDeleteNode(nodeContextMenu.nodeId);
+            }
+          }}
+          sx={{ color: 'error.main' }}
+        >
+          <DeleteIcon sx={{ mr: 1, fontSize: 20 }} />
+          {t('automations.nodeEditor.deleteNode')}
+        </MenuItem>
+      </Menu>
     </>
   );
 }
@@ -552,6 +617,8 @@ export default function NodeEditorDialog({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null);
+  const [nodeContextMenu, setNodeContextMenu] = useState<{ x: number; y: number; nodeId: string } | null>(null);
+  const [edgeContextMenu, setEdgeContextMenu] = useState<{ x: number; y: number; edgeId: string } | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(true);
 
@@ -629,9 +696,20 @@ export default function NodeEditorDialog({
     (nodeId: string) => {
       setNodes((nds) => nds.filter((node) => node.id !== nodeId));
       setEdges((eds) => eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
-      setSelectedNodeId(null);
+      if (selectedNodeId === nodeId) {
+        setSelectedNodeId(null);
+      }
+      setNodeContextMenu(null);
     },
-    [setNodes, setEdges],
+    [setNodes, setEdges, selectedNodeId],
+  );
+
+  const handleDeleteEdge = useCallback(
+    (edgeId: string) => {
+      setEdges((eds) => eds.filter((edge) => edge.id !== edgeId));
+      setEdgeContextMenu(null);
+    },
+    [setEdges],
   );
 
   const handleSave = async () => {
@@ -925,6 +1003,12 @@ export default function NodeEditorDialog({
                 devices={devices}
                 t={t}
                 defaultEdgeOptions={defaultEdgeOptions}
+                nodeContextMenu={nodeContextMenu}
+                setNodeContextMenu={setNodeContextMenu}
+                handleDeleteNode={handleDeleteNode}
+                edgeContextMenu={edgeContextMenu}
+                setEdgeContextMenu={setEdgeContextMenu}
+                handleDeleteEdge={handleDeleteEdge}
               />
             </ReactFlowProvider>
           </Box>
