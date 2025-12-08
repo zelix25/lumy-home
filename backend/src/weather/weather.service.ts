@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -11,6 +11,7 @@ export class WeatherService implements OnModuleInit {
   constructor(
     @InjectRepository(Weather)
     private readonly weatherRepository: Repository<Weather>,
+    @Inject(forwardRef(() => SettingsService))
     private readonly settingsService: SettingsService,
     private readonly logger: LoggerService,
   ) {}

@@ -359,6 +359,7 @@
     "city": "City",
     "zipCode": "Zip code",
     "country": "Country",
+    "locationInfo": "Location data is used only to retrieve weather data of your city.",
     "coordinates": "GPS Coordinates",
     "coordinatesHelp": "GPS coordinates are automatically calculated when saving",
     "saved": "Settings saved",
@@ -526,7 +527,7 @@
   },
   "weather": {
     "title": "Weather",
-    "noData": "No weather data available.\n Please add a location in the settings",
+    "noData": "No weather data available.\nPlease add a location in the settings",
     "unknown": "Unknown",
     "clear": "Clear",
     "mostlyClear": "Mostly clear",

@@ -315,7 +315,11 @@ export default function WeatherCard() {
         }}
       >
         <CardContent sx={{ p: 2 }}>
-          <Typography variant="body2" color="text.secondary">
+          <Typography 
+            variant="body2" 
+            color="text.secondary"
+            sx={{ whiteSpace: 'pre-line' }}
+          >
             {i18n.t('weather.noData')}
           </Typography>
         </CardContent>

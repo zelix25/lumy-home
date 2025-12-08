@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Weather } from './entities/weather.entity';
 import { WeatherService } from './weather.service';
@@ -9,7 +9,7 @@ import { LoggerModule } from '../logger/logger.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Weather]),
-    SettingsModule,
+    forwardRef(() => SettingsModule),
     LoggerModule,
   ],
   controllers: [WeatherController],

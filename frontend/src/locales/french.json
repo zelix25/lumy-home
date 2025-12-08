@@ -360,6 +360,7 @@
     "city": "Ville",
     "zipCode": "Code postal",
     "country": "Pays",
+    "locationInfo": "Les données de localisation sont utilisées uniquement pour récupérer les données météo de votre ville.",
     "coordinates": "Coordonnées GPS",
     "coordinatesHelp": "Les coordonnées GPS sont calculées automatiquement lors de la sauvegarde",
     "saved": "Paramètres sauvegardés",
@@ -527,7 +528,7 @@
   },
   "weather": {
     "title": "Météo",
-    "noData": "Aucune donnée météo disponible.\n Veuillez ajouter une localisation dans les paramètres",
+    "noData": "Aucune donnée météo disponible.\nVeuillez ajouter une localisation dans les paramètres",
     "unknown": "Inconnu",
     "clear": "Dégagé",
     "mostlyClear": "Généralement dégagé",

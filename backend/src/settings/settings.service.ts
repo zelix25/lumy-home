@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Settings } from './entities/settings.entity';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
 import { LoggerService } from '../logger/logger.service';
+import { WeatherService } from '../weather/weather.service';
 
 @Injectable()
 export class SettingsService {
@@ -11,6 +12,8 @@ export class SettingsService {
     @InjectRepository(Settings)
     private readonly settingsRepository: Repository<Settings>,
     private readonly logger: LoggerService,
+    @Inject(forwardRef(() => WeatherService))
+    private readonly weatherService: WeatherService,
   ) {}
 
   /**
@@ -130,11 +133,38 @@ export class SettingsService {
       }
     }
 
+    // Vérifier si les coordonnées de localisation ont été modifiées ou ajoutées
+    const locationChanged =
+      (dto.city !== undefined && dto.city !== existingSettings?.city) ||
+      (dto.zipCode !== undefined && dto.zipCode !== existingSettings?.zipCode) ||
+      (dto.country !== undefined && dto.country !== existingSettings?.country) ||
+      (dto.latitude !== undefined && dto.latitude !== existingSettings?.latitude) ||
+      (dto.longitude !== undefined && dto.longitude !== existingSettings?.longitude);
+
     if (existingSettings) {
       // Mettre à jour les paramètres existants
       Object.assign(existingSettings, dto);
       const saved = await this.settingsRepository.save(existingSettings);
       this.logger.log('Paramètres mis à jour', 'SettingsService');
+
+      // Si la localisation a été modifiée et que les coordonnées sont disponibles, mettre à jour la météo
+      if (locationChanged && saved.latitude && saved.longitude) {
+        this.logger.log(
+          'Localisation modifiée, mise à jour de la météo en cours...',
+          'SettingsService',
+        );
+        try {
+          await this.weatherService.updateWeather();
+          this.logger.log('✓ Météo mise à jour avec succès après modification de la localisation', 'SettingsService');
+        } catch (error) {
+          this.logger.error(
+            `Erreur lors de la mise à jour de la météo: ${error.message}`,
+            error.stack,
+            'SettingsService',
+          );
+        }
+      }
+
       return saved;
     }
 
@@ -151,6 +181,25 @@ export class SettingsService {
     } as Partial<Settings>);
     const saved = await this.settingsRepository.save(newSettings);
     this.logger.log('Paramètres créés', 'SettingsService');
+
+    // Si les coordonnées sont disponibles, mettre à jour la météo
+    if (saved.latitude && saved.longitude) {
+      this.logger.log(
+        'Nouvelle localisation configurée, mise à jour de la météo en cours...',
+        'SettingsService',
+      );
+      try {
+        await this.weatherService.updateWeather();
+        this.logger.log('✓ Météo mise à jour avec succès après configuration de la localisation', 'SettingsService');
+      } catch (error) {
+        this.logger.error(
+          `Erreur lors de la mise à jour de la météo: ${error.message}`,
+          error.stack,
+          'SettingsService',
+        );
+      }
+    }
+
     return saved;
   }
 

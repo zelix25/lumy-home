@@ -167,6 +167,12 @@ export default function SettingsPage() {
 
               {activeTab === 1 && (
                 <Stack spacing={3}>
+                  <Alert severity="info" sx={{ mb: 1 }}>
+                    <Typography variant="body2">
+                      {t('settings.locationInfo')}
+                    </Typography>
+                  </Alert>
+
                   <TextField
                     label={t('settings.city')}
                     value={settings.city || ''}
