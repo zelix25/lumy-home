@@ -27,8 +27,8 @@ export interface LocalModeStatus {
 }
 
 class AuthService {
-  private readonly TOKEN_KEY = 'homehub_token';
-  private readonly USER_KEY = 'homehub_user';
+  private readonly TOKEN_KEY = 'lumy_token';
+  private readonly USER_KEY = 'lumy_user';
 
   /**
    * Enregistre un nouvel utilisateur

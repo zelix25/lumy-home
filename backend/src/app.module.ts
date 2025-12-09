@@ -38,7 +38,7 @@ import { configValidationSchema } from './config/config.validation';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        const dbPath = configService.get<string>('DATABASE_PATH', 'data/homehub.db');
+        const dbPath = configService.get<string>('DATABASE_PATH', 'data/lumy.db');
         const nodeEnv = configService.get<string>('NODE_ENV', 'development');
         return {
           type: 'sqlite',

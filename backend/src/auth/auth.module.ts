@@ -20,7 +20,7 @@ import { LoggerModule } from '../logger/logger.module';
         return {
           secret: configService.get<string>(
             'JWT_SECRET',
-            'homehub-secret-key-change-in-production',
+            'lumy-home-secret-key-change-in-production',
           ),
           signOptions: {
             expiresIn,

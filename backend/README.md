@@ -1,6 +1,6 @@
-# HomeHub IA - Backend
+#Lumy Home - Backend
 
-Backend NestJS pour HomeHub IA, un serveur de domotique Zigbee boosté par l'intelligence artificielle.
+Backend NestJS pourLumy Home, un serveur de domotique Zigbee boosté par l'intelligence artificielle.
 
 ## 🚀 Démarrage rapide
 

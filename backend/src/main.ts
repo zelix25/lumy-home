@@ -42,7 +42,7 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port);
 
-  logger.log(`🚀 HomeHub IA démarré sur le port ${port}`, 'Bootstrap');
+  logger.log(`🚀 Lumy Home démarré sur le port ${port}`, 'Bootstrap');
 }
 
 bootstrap();

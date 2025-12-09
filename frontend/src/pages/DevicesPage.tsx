@@ -43,6 +43,17 @@ export default function DevicesPage() {
     }
   };
 
+  const handleCoverPositionChange = async (device: Device, position: number) => {
+    try {
+      // Pour Zigbee2MQTT, la position est envoyée comme un nombre de 0 à 100
+      // où 0 = fermé, 100 = ouvert
+      const command = { position };
+      await devicesService.sendCommand(device.ieeeAddress, command);
+    } catch (error) {
+      console.error('Erreur lors du changement de position du volet:', error);
+    }
+  };
+
   const handleStartDiscovery = async () => {
     try {
       const duration = 254; // 254 secondes (maximum Zigbee2MQTT, environ 4 minutes)
@@ -149,6 +160,8 @@ export default function DevicesPage() {
     { value: 'plug', label: i18n.t('devices.plug') },
     { value: 'motion', label: i18n.t('devices.motion') },
     { value: 'temperature', label: i18n.t('devices.temperature') },
+    { value: 'cover', label: i18n.t('devices.cover') },
+    { value: 'other', label: i18n.t('devices.other') },
   ];
 
   if (loading) {
@@ -259,7 +272,11 @@ export default function DevicesPage() {
         <Grid container spacing={3}>
           {filteredDevices.map((device) => (
             <Grid item xs={12} sm={6} md={4} lg={3} key={device.ieeeAddress}>
-              <DeviceCard device={device} onToggle={handleToggle} />
+              <DeviceCard 
+                device={device} 
+                onToggle={handleToggle}
+                onCoverPositionChange={handleCoverPositionChange}
+              />
             </Grid>
           ))}
         </Grid>

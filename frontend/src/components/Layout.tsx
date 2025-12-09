@@ -128,7 +128,7 @@ export default function Layout({ children }: LayoutProps) {
         }}
       >
         <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 500 }}>
-          HomeHub IA
+          Lumy Home
         </Typography>
       </Toolbar>
       <List sx={{ pt: 2 }}>

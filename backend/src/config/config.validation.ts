@@ -9,13 +9,13 @@ export const configValidationSchema = Joi.object({
   FRONTEND_URL: Joi.string().uri().default('http://localhost:5173'),
 
   // Database
-  DATABASE_PATH: Joi.string().default('data/homehub.db'),
+  DATABASE_PATH: Joi.string().default('data/lumy.db'),
 
   // MQTT
   MQTT_BROKER_URL: Joi.string().uri().default('mqtt://localhost:1883'),
   MQTT_USERNAME: Joi.string().optional(),
   MQTT_PASSWORD: Joi.string().optional(),
-  MQTT_CLIENT_ID: Joi.string().default('homehub-backend'),
+  MQTT_CLIENT_ID: Joi.string().default('lumy'),
   MQTT_RECONNECT_PERIOD: Joi.number().default(5000),
 
   // AI (Gemma 3)
@@ -24,7 +24,7 @@ export const configValidationSchema = Joi.object({
   USE_LOCAL_LLAMA: Joi.boolean().default(true),
 
   // Auth
-  JWT_SECRET: Joi.string().default('homehub-secret-key-change-in-production'),
+  JWT_SECRET: Joi.string().default('lumy-secret-key-change-in-production'),
   JWT_EXPIRES_IN: Joi.string().default('7d'),
   ENABLE_LOCAL_MODE: Joi.boolean().default(true), // Mode local sans compte
 });

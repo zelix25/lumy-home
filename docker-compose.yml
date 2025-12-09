@@ -2,7 +2,7 @@ services:
 
   mosquitto:
     image: eclipse-mosquitto:2.0
-    container_name: homehub-mosquitto
+    container_name: lumy-mosquitto
     # Ports retirés - communication uniquement via réseau Docker privé
     # Pour le développement local, décommentez les lignes suivantes :
     # ports:
@@ -14,7 +14,7 @@ services:
       - ./data/mosquitto/log:/mosquitto/log
     restart: unless-stopped
     networks:
-      - homehub-network
+      - lumy-network
 
   zigbee2mqtt:
       image: koenkk/zigbee2mqtt
@@ -36,7 +36,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: backend
+    container_name: lumy-backend
     # Port retiré - communication uniquement via réseau Docker privé
     # Pour le développement local, décommentez la ligne suivante :
     # ports:
@@ -50,8 +50,8 @@ services:
       - mosquitto
     restart: unless-stopped
     networks:
-      - homehub-network
-      - frontend-backend
+      - lumy-network
+      - lumy-frontend-backend
   frontend:
     build:
       context: ./frontend
@@ -60,15 +60,15 @@ services:
       # args:
       #   - VITE_API_URL=${VITE_API_URL:-}
       #   - VITE_WS_URL=${VITE_WS_URL:-}
-    container_name: frontend
+    container_name: lumy-frontend
     ports:
       - "80:80"
     depends_on:
       - backend
     restart: unless-stopped
     networks:
-      - homehub-network
-      - frontend-backend
+      - lumy-network
+      - lumy-frontend-backend
 
   ollama:
     image: ollama/ollama:latest
@@ -87,9 +87,9 @@ services:
       "
 
 networks:
-  homehub-network:
+  lumy-network:
     external: true
     driver: bridge
-  frontend-backend:
+  lumy-frontend-backend:
     driver: bridge
     internal: true

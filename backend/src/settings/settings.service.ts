@@ -73,7 +73,7 @@ export class SettingsService {
       
       const response = await fetch(url, {
         headers: {
-          'User-Agent': 'ExoHome/1.0', // Nominatim exige un User-Agent
+          'User-Agent': 'LumyHome/1.0', // Nominatim exige un User-Agent
         },
       });
 

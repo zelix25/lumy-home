@@ -7,6 +7,7 @@ import {
   Switch,
   Chip,
   Grid,
+  Slider,
   //IconButton,
   Tooltip,
 } from '@mui/material';
@@ -21,6 +22,7 @@ import {
   DirectionsRun,
   RadioButtonChecked,
   HelpOutline,
+  Blinds,
 } from '@mui/icons-material';
 import { Device } from '../services/devices.service';
 import i18n from '@/i18n';
@@ -28,6 +30,7 @@ import i18n from '@/i18n';
 interface DeviceCardProps {
   device: Device;
   onToggle?: (device: Device, state: boolean) => void;
+  onCoverPositionChange?: (device: Device, position: number) => void;
 }
 
 const getDeviceIcon = (type: string) => {
@@ -44,6 +47,8 @@ const getDeviceIcon = (type: string) => {
       return <Door sx={{ fontSize: 48 }} />;*/
     case 'window':
       return <Window sx={{ fontSize: 48 }} />;
+    case 'cover':
+      return <Blinds sx={{ fontSize: 48 }} />;
     case 'temperature':
       return <Thermostat sx={{ fontSize: 48 }} />;
     case 'motion':
@@ -63,6 +68,7 @@ const getDeviceTypeLabel = (type: string): string => {
     plug: i18n.t('devices.plug'),
     door: i18n.t('devices.door'),
     window: i18n.t('devices.window'),
+    cover: i18n.t('devices.cover'),
     temperature: i18n.t('devices.temperature'),
     motion: i18n.t('devices.motion'),
     button: i18n.t('devices.button'),
@@ -71,10 +77,21 @@ const getDeviceTypeLabel = (type: string): string => {
   return labels[type] || type;
 };
 
-export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
+export default function DeviceCard({ device, onToggle, onCoverPositionChange }: DeviceCardProps) {
   const navigate = useNavigate();
   const isOnline = device.status === 'online';
   const isOn = device.state?.state === 'ON' || device.state?.state === true;
+  
+  // Pour les volets, récupérer la position (0-100, où 0 = fermé, 100 = ouvert)
+  const coverPosition = device.type === 'cover' && device.state?.position !== undefined
+    ? typeof device.state.position === 'number' 
+      ? device.state.position 
+      : parseInt(device.state.position) || 0
+    : device.state?.state === 'open' || device.state?.state === 'OPEN'
+    ? 100
+    : device.state?.state === 'closed' || device.state?.state === 'CLOSED'
+    ? 0
+    : 0;
   
   // Debug: afficher les données de l'appareil
   console.log(`📊 DeviceCard [${device.friendlyName}]:`, {
@@ -95,11 +112,18 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
     }
   };
 
+  const handleCoverPositionChange = (event: Event, newValue: number | number[]) => {
+    event.stopPropagation();
+    if (onCoverPositionChange && device.type === 'cover') {
+      const position = typeof newValue === 'number' ? newValue : newValue[0];
+      onCoverPositionChange(device, position);
+    }
+  };
+
   return (
     <Card
       sx={{
         height: '100%',
-        cursor: 'pointer',
         transition: 'all 0.15s ease-in-out',
         border: 'none',
         display: 'flex',
@@ -109,10 +133,17 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
           boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
         },
       }}
-      onClick={handleCardClick}
     >
       <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+        <Box 
+          sx={{ 
+            display: 'flex', 
+            alignItems: 'flex-start', 
+            mb: 2,
+            cursor: 'pointer',
+          }}
+          onClick={handleCardClick}
+        >
           <Box
             sx={{
               color: isOnline ? 'primary.main' : 'text.disabled',
@@ -397,9 +428,78 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
                   </Typography>
                 </Grid>
               )}
+              {device.type === 'cover' && (
+                <Grid item xs={6}>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    {i18n.t('devices.opening')}
+                  </Typography>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      fontWeight: 500,
+                      color: coverPosition < 50 ? 'error.main' : coverPosition < 100 ? 'warning.main' : 'success.main'
+                    }}
+                  >
+                    {coverPosition}%
+                  </Typography>
+                </Grid>
+              )}
+              
+              {/* Position du volet (cover) */}
+              {device.type === 'cover' && (
+                <Grid item xs={12}>
+                  <Box sx={{ px: 1, py: 1 }}>
+                    <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1, fontSize: '0.75rem' }}>
+                      {i18n.t('devices.position')}
+                    </Typography>
+                    <Box sx={{ position: 'relative', px: 1 }}>
+                      <Slider
+                        value={coverPosition}
+                        onChange={handleCoverPositionChange}
+                        disabled={!isOnline}
+                        min={0}
+                        max={100}
+                        step={1}
+                        marks={[
+                          { value: 50, label: '50%' },
+                        ]}
+                        valueLabelDisplay="auto"
+                        valueLabelFormat={(value) => `${value}%`}
+                        sx={{
+                          mb: 0.5,
+                          '& .MuiSlider-thumb': {
+                            width: 20,
+                            height: 20,
+                          },
+                          '& .MuiSlider-track': {
+                            height: 6,
+                          },
+                          '& .MuiSlider-rail': {
+                            height: 6,
+                          },
+                          '& .MuiSlider-markLabel': {
+                            fontSize: '0.75rem',
+                          },
+                          '& .MuiSlider-valueLabel': {
+                            fontSize: '0.75rem',
+                          },
+                        }}
+                      />
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                          {i18n.t('devices.closed')}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                          {i18n.t('devices.open')}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                </Grid>
+              )}
               
               {/* État ON/OFF pour les autres types */}
-              {device.state.state !== undefined && device.type !== 'light' && device.type !== 'switch' && device.type !== 'plug' && (
+              {device.state.state !== undefined && device.type !== 'light' && device.type !== 'switch' && device.type !== 'plug' && device.type !== 'cover' && (
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary" display="block">
                     {i18n.t('devices.state')}

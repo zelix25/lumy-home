@@ -14,9 +14,12 @@ export enum DeviceType {
   DOOR = 'door',
   WINDOW = 'window',
   TEMPERATURE = 'temperature',
+  HUMIDITY = 'humidity',
+  COVER = 'cover',
   MOTION = 'motion',
   BUTTON = 'button',
   UNKNOWN = 'unknown',
+  OTHER = 'other',
 }
 
 export enum DeviceStatus {

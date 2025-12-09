@@ -1,6 +1,8 @@
 import { Injectable, OnModuleInit, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as fs from 'fs';
+import * as path from 'path';
 import { LoggerService } from '../logger/logger.service';
 import { MqttService } from '../mqtt/mqtt.service';
 import { WebsocketGateway } from '../websocket/websocket.gateway';
@@ -36,13 +38,16 @@ interface ZigbeeState {
   [key: string]: any;
 }
 
+interface DeviceTypeMappingEntry {
+  model: string;
+  vendor?: string;
+  type: string;
+  comment?: string;
+}
+
 @Injectable()
 export class Zigbee2MqttService implements OnModuleInit {
-  private deviceTypeMapping: Array<{
-    model: string;
-    vendor?: string;
-    type: DeviceType;
-  }> = [];
+  private deviceTypeMapping: DeviceTypeMappingEntry[] = [];
   private permitJoinActive: boolean = false;
   private permitJoinTimeRemaining: number = 0;
   private permitJoinStartTime: Date | null = null;
@@ -68,13 +73,80 @@ export class Zigbee2MqttService implements OnModuleInit {
   }
 
   private loadDeviceTypeMapping(): void {
-    // Le fichier de mapping n'est plus utilisé - on utilise directement les données Zigbee2MQTT
-    // Conservé pour compatibilité mais vide
-    this.deviceTypeMapping = [];
-    this.logger.log(
-      'Détection de type d\'appareil basée sur les données Zigbee2MQTT (exposes, type)',
-      'Zigbee2MqttService',
-    );
+    try {
+      // Chercher le fichier dans src/devices (développement) ou dist/devices (production)
+      // __dirname pointe vers dist/devices en production ou src/devices en développement
+      let mappingPath = path.join(__dirname, 'device-type-mapping.json');
+      
+      // Si le fichier n'existe pas à cet emplacement, essayer depuis la racine du projet
+      if (!fs.existsSync(mappingPath)) {
+        // Essayer depuis process.cwd() (racine du projet)
+        const rootPath = path.join(process.cwd(), 'src', 'devices', 'device-type-mapping.json');
+        if (fs.existsSync(rootPath)) {
+          mappingPath = rootPath;
+        } else {
+          // Essayer dans dist si on est en production
+          const distPath = path.join(process.cwd(), 'dist', 'devices', 'device-type-mapping.json');
+          if (fs.existsSync(distPath)) {
+            mappingPath = distPath;
+          }
+        }
+      }
+
+      if (!fs.existsSync(mappingPath)) {
+        throw new Error(`Fichier de mapping introuvable: ${mappingPath}`);
+      }
+
+      const mappingContent = fs.readFileSync(mappingPath, 'utf-8');
+      this.deviceTypeMapping = JSON.parse(mappingContent) as DeviceTypeMappingEntry[];
+      
+      // Vérifier que le fichier contient bien des données
+      if (!Array.isArray(this.deviceTypeMapping)) {
+        throw new Error('Le fichier de mapping ne contient pas un tableau valide');
+      }
+      
+      // Compter les types "other" pour information
+      const otherCount = this.deviceTypeMapping.filter(e => e.type?.toLowerCase() === 'other').length;
+      
+      this.logger.log(
+        `✅ Fichier de mapping chargé: ${this.deviceTypeMapping.length} entrées depuis ${mappingPath} (${otherCount} de type "other")`,
+        'Zigbee2MqttService',
+      );
+    } catch (error) {
+      this.logger.error(
+        `Erreur lors du chargement du fichier de mapping: ${error.message}`,
+        error.stack,
+        'Zigbee2MqttService',
+      );
+      this.deviceTypeMapping = [];
+      this.logger.log(
+        'Détection de type d\'appareil basée uniquement sur les données Zigbee2MQTT (exposes, type)',
+        'Zigbee2MqttService',
+      );
+    }
+  }
+
+  /**
+   * Convertit un type du fichier de mapping vers DeviceType
+   */
+  private mapJsonTypeToDeviceType(jsonType: string): DeviceType {
+    const typeMap: Record<string, DeviceType> = {
+      light: DeviceType.LIGHT,
+      switch: DeviceType.SWITCH,
+      sensor: DeviceType.SENSOR,
+      plug: DeviceType.PLUG,
+      door: DeviceType.DOOR,
+      window: DeviceType.WINDOW,
+      temperature: DeviceType.TEMPERATURE,
+      humidity: DeviceType.HUMIDITY,
+      motion: DeviceType.MOTION,
+      button: DeviceType.BUTTON,
+      cover: DeviceType.COVER, // Les covers sont traités comme des switches (contacteurs de volet)
+      other: DeviceType.OTHER,
+      unknown: DeviceType.UNKNOWN,
+    };
+
+    return typeMap[jsonType?.toLowerCase()] || DeviceType.UNKNOWN;
   }
 
   getMqttStatus() {
@@ -318,6 +390,12 @@ export class Zigbee2MqttService implements OnModuleInit {
   }
 
   private async processDevice(zigbeeDevice: ZigbeeDevice): Promise<void> {
+    // Log pour déboguer les données de l'appareil
+    this.logger.debug(
+      `🔍 Traitement appareil: ${zigbeeDevice.friendly_name}, modèle: "${zigbeeDevice.definition?.model || 'N/A'}", vendor: "${zigbeeDevice.definition?.vendor || 'N/A'}", type Zigbee2MQTT: "${zigbeeDevice.type || 'N/A'}"`,
+      'Zigbee2MqttService',
+    );
+    
     const deviceType = this.normalizeDeviceType(zigbeeDevice);
     const isSupported = this.isDeviceSupported(zigbeeDevice);
     const unsupportedReason = isSupported
@@ -1026,20 +1104,84 @@ export class Zigbee2MqttService implements OnModuleInit {
 
 
   /**
-   * Détermine le type d'appareil en se basant principalement sur les données Zigbee2MQTT
-   * (exposes, type, model, vendor) avec des regex et patterns améliorés
+   * Détermine le type d'appareil en se basant sur :
+   * 1. Le fichier de mapping device-type-mapping.json (priorité)
+   * 2. Les données Zigbee2MQTT (exposes, type, model, vendor) avec des regex et patterns améliorés
    */
   private normalizeDeviceType(device: ZigbeeDevice): DeviceType {
     const friendlyName = device.friendly_name?.toLowerCase() || '';
     const type = device.type?.toLowerCase() || '';
     const exposes = device.definition?.exposes || [];
     const exposesStr = JSON.stringify(exposes).toLowerCase();
-    const model = device.definition?.model?.toLowerCase() || '';
+    const model = device.definition?.model || '';
+    const modelLower = model.toLowerCase();
     const vendor = device.definition?.vendor?.toLowerCase() || '';
     const description = device.definition?.description?.toLowerCase() || '';
     
+    // PRIORITÉ 0: Chercher dans le fichier de mapping par modèle (et vendor si disponible)
+    if (this.deviceTypeMapping.length > 0 && model) {
+      // Normaliser le modèle pour la recherche (trim, lowercase, supprimer espaces multiples)
+      const normalizedModel = modelLower.trim().replace(/\s+/g, ' ');
+      
+      // Chercher une correspondance exacte par modèle (normalisé)
+      let mappingEntry = this.deviceTypeMapping.find(
+        (entry) => {
+          const entryModel = entry.model?.toLowerCase().trim().replace(/\s+/g, ' ') || '';
+          return entryModel === normalizedModel;
+        },
+      );
+
+      // Si pas trouvé, essayer une correspondance partielle (le modèle du mapping contient le modèle de l'appareil ou vice versa)
+      if (!mappingEntry) {
+        mappingEntry = this.deviceTypeMapping.find(
+          (entry) => {
+            const entryModel = entry.model?.toLowerCase().trim().replace(/\s+/g, ' ') || '';
+            return entryModel.includes(normalizedModel) || normalizedModel.includes(entryModel);
+          },
+        );
+      }
+
+      // Si pas trouvé et qu'on a un vendor, chercher avec modèle + vendor
+      if (!mappingEntry && vendor) {
+        const normalizedVendor = vendor.trim();
+        mappingEntry = this.deviceTypeMapping.find(
+          (entry) => {
+            const entryModel = entry.model?.toLowerCase().trim().replace(/\s+/g, ' ') || '';
+            const entryVendor = entry.vendor?.toLowerCase().trim() || '';
+            return entryModel === normalizedModel && entryVendor === normalizedVendor;
+          },
+        );
+      }
+
+      // Si trouvé, utiliser le type du mapping
+      if (mappingEntry) {
+        const mappedType = this.mapJsonTypeToDeviceType(mappingEntry.type);
+        this.logger.log(
+          `✅ Type détecté par mapping JSON: ${mappedType} pour ${device.friendly_name} (modèle: ${model}${vendor ? `, vendor: ${vendor}` : ''}, type mapping: ${mappingEntry.type})`,
+          'Zigbee2MqttService',
+        );
+        return mappedType;
+      } else {
+        // Log pour déboguer si le modèle n'est pas trouvé
+        this.logger.debug(
+          `🔍 Modèle "${model}" non trouvé dans le mapping (${this.deviceTypeMapping.length} entrées disponibles)`,
+          'Zigbee2MqttService',
+        );
+      }
+    } else if (!model) {
+      this.logger.debug(
+        `⚠️ Pas de modèle disponible pour ${device.friendly_name}, impossible de chercher dans le mapping`,
+        'Zigbee2MqttService',
+      );
+    } else if (this.deviceTypeMapping.length === 0) {
+      this.logger.debug(
+        `⚠️ Fichier de mapping non chargé ou vide, utilisation de la détection par exposes/type`,
+        'Zigbee2MqttService',
+      );
+    }
+    
     // Créer une chaîne combinée pour les recherches regex
-    const combinedStr = `${friendlyName} ${type} ${model} ${vendor} ${description} ${exposesStr}`.toLowerCase();
+    const combinedStr = `${friendlyName} ${type} ${modelLower} ${vendor} ${description} ${exposesStr}`.toLowerCase();
 
     // Définir les patterns regex réutilisables
     const vibrationPattern = /\b(vibration|vibrate|tilt|shock|impact)\b/i;

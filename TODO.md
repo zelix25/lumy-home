@@ -1,7 +1,7 @@
 
 ---
 
-# ✅ **TODO LISTE — MVP HomeHub AI+ (Zigbee3 / Zigbee2MQTT / Ultra-simple)**
+# ✅ **TODO LISTE — MVP Lumy Home (Zigbee3 / Zigbee2MQTT / Ultra-simple)**
 
 Je te la réécris par modules, mais avec les contraintes suivantes :
 ✨ *max simplicité*
@@ -236,7 +236,7 @@ Les utilisateurs novices doivent pouvoir faire des choses *sans écrire de logiq
 
 * [ ] Mode “Auto-setup bonheur” :
 
-  * HomeHub détecte les capteurs
+  * Lumy Home détecte les capteurs
   * Propose des automatisations de base
   * Genre : “Je vois un capteur de mouvement dans l’entrée → veux-tu une lumière automatique ?”
 * [ ] Dashboard “Maison en un coup d’œil”
@@ -252,7 +252,7 @@ Les utilisateurs novices doivent pouvoir faire des choses *sans écrire de logiq
 | **Cloud / Entrée de gamme** | Gemma 3 Cloud            | **Google Vertex AI**      |
 | **Local / Premium**         | Gemma 3 local via Ollama | **HTTP local Ollama API** |
 
-Cela donne une expérience identique côté utilisateur (HomeHub → /ai/query), mais avec un backend différent selon la box.
+Cela donne une expérience identique côté utilisateur (Lumy Home → /ai/query), mais avec un backend différent selon la box.
 
 # A reprendre
 * [ ] Les setup

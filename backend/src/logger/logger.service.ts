@@ -27,7 +27,7 @@ export class LoggerService implements NestLoggerService {
     this.logger = winston.createLogger({
       level: process.env.LOG_LEVEL || 'info',
       format: logFormat,
-      defaultMeta: { service: 'homehub-backend' },
+      defaultMeta: { service: 'lumy' },
       transports: [
         // Console
         new winston.transports.Console({

@@ -184,7 +184,7 @@ export class AuthService {
 
     // Créer un utilisateur local automatique
     const localUser = this.userRepository.create({
-      email: 'local@homehub.local',
+      email: 'local@lumy.local',
       password: await bcrypt.hash('local', 10), // Mot de passe par défaut
       isLocalMode: true,
     });

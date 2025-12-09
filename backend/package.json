@@ -1,7 +1,7 @@
 {
-  "name": "homehub-backend",
+  "name": "lumy-home-backend",
   "version": "1.0.0",
-  "description": "Backend NestJS pour HomeHub IA - Serveur de domotique Zigbee",
+  "description": "Backend NestJS pour Lumy Home - Serveur de domotique Zigbee",
   "author": "",
   "private": true,
   "license": "MIT",

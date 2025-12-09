@@ -1,8 +1,8 @@
 {
-  "name": "homehub-frontend",
+  "name": "lumy-home-frontend",
   "version": "1.0.0",
   "type": "module",
-  "description": "Frontend React pour HomeHub IA",
+  "description": "Frontend React pour Lumy Home",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
