@@ -169,6 +169,9 @@ export class WeatherService implements OnModuleInit {
       }
 
       this.logger.log('✓ Toutes les données météo ont été enregistrées en base de données', 'WeatherService');
+
+      // Supprimer les enregistrements avec des dates antérieures à aujourd'hui
+      await this.deleteOldWeatherData(latitude, longitude);
     } catch (error) {
       this.logger.error(
         `Erreur lors de la mise à jour de la météo: ${error.message}`,
@@ -176,6 +179,54 @@ export class WeatherService implements OnModuleInit {
         'WeatherService',
       );
       throw error;
+    }
+  }
+
+  /**
+   * Supprime les enregistrements météo avec des dates antérieures à aujourd'hui
+   */
+  private async deleteOldWeatherData(latitude: number, longitude: number): Promise<void> {
+    try {
+      // Utiliser la date locale pour éviter les problèmes de fuseau horaire
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+      this.logger.log(
+        `🗑️  Suppression des données météo antérieures à ${todayStr}`,
+        'WeatherService',
+      );
+
+      // Supprimer les enregistrements avec date < aujourd'hui pour cette localisation
+      const result = await this.weatherRepository
+        .createQueryBuilder()
+        .delete()
+        .from(Weather)
+        .where('latitude = :latitude', { latitude })
+        .andWhere('longitude = :longitude', { longitude })
+        .andWhere("strftime('%Y-%m-%d', date) < :today", { today: todayStr })
+        .execute();
+
+      const deletedCount = result.affected || 0;
+      
+      if (deletedCount > 0) {
+        this.logger.log(
+          `✓ ${deletedCount} enregistrement(s) météo ancien(s) supprimé(s)`,
+          'WeatherService',
+        );
+      } else {
+        this.logger.log(
+          '✓ Aucun enregistrement ancien à supprimer',
+          'WeatherService',
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Erreur lors de la suppression des données météo anciennes: ${error.message}`,
+        error.stack,
+        'WeatherService',
+      );
+      // Ne pas faire échouer la mise à jour si la suppression échoue
     }
   }
 
