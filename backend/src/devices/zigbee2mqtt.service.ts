@@ -287,6 +287,36 @@ export class Zigbee2MqttService implements OnModuleInit {
     this.websocketGateway.broadcast('devices:updated', { devices: allDevices });
   }
 
+  /**
+   * Génère un nom MQTT à partir d'un nom friendly
+   * - Convertit en minuscules
+   * - Supprime les accents
+   * - Remplace les espaces par des tirets
+   * - Supprime les caractères spéciaux (garde uniquement lettres, chiffres, tirets)
+   */
+  private generateMqttName(friendlyName: string): string {
+    if (!friendlyName) return '';
+
+    // Normaliser les caractères Unicode (supprimer les accents)
+    let normalized = friendlyName
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Supprimer les diacritiques
+      .toLowerCase();
+
+    // Remplacer les espaces et caractères spéciaux par des tirets
+    normalized = normalized.replace(/[^a-z0-9]+/g, '-');
+
+    // Supprimer les tirets en début et fin
+    normalized = normalized.replace(/^-+|-+$/g, '');
+
+    // Si le résultat est vide, utiliser un nom par défaut
+    if (!normalized) {
+      normalized = 'device';
+    }
+
+    return normalized;
+  }
+
   private async processDevice(zigbeeDevice: ZigbeeDevice): Promise<void> {
     const deviceType = this.normalizeDeviceType(zigbeeDevice);
     const isSupported = this.isDeviceSupported(zigbeeDevice);
@@ -298,9 +328,16 @@ export class Zigbee2MqttService implements OnModuleInit {
       where: { ieeeAddress: zigbeeDevice.ieee_address },
     });
 
+    // IMPORTANT: Zigbee2MQTT envoie le friendly_name qu'il utilise (qui est normalisé pour les topics)
+    // Pour les nouveaux appareils, on utilise ce nom comme friendlyName initial
+    // Pour les appareils existants, on préserve le friendlyName défini par l'utilisateur
+    const zigbeeFriendlyName = zigbeeDevice.friendly_name;
+    const mqttName = this.generateMqttName(zigbeeFriendlyName);
+
     const deviceData: Partial<Device> = {
       ieeeAddress: zigbeeDevice.ieee_address,
-      friendlyName: zigbeeDevice.friendly_name,
+      mqttName: mqttName, // Nom normalisé utilisé par Zigbee2MQTT dans les topics
+      friendlyName: zigbeeFriendlyName, // Pour les nouveaux appareils uniquement
       type: deviceType,
       manufacturer: zigbeeDevice.definition?.vendor || undefined,
       model: zigbeeDevice.definition?.model || undefined,
@@ -313,10 +350,15 @@ export class Zigbee2MqttService implements OnModuleInit {
         disabled: zigbeeDevice.disabled,
         exposes: zigbeeDevice.definition?.exposes || [],
         originalType: zigbeeDevice.type, // Stocker le type original de Zigbee2MQTT
+        originalZigbeeName: mqttName, // Stocker le nom normalisé utilisé par Zigbee2MQTT dans les topics
       },
     };
 
     if (existingDevice) {
+      // IMPORTANT: Ne pas écraser le friendlyName défini par l'utilisateur
+      // Le friendlyName est uniquement utilisé côté backend/frontend pour l'affichage
+      // Seul le mqttName doit être mis à jour avec le nom reçu de Zigbee2MQTT
+      
       // Mettre à jour les métadonnées pour inclure le type original si manquant
       const existingMeta = existingDevice.meta || {};
       deviceData.meta = {
@@ -325,20 +367,50 @@ export class Zigbee2MqttService implements OnModuleInit {
         disabled: zigbeeDevice.disabled,
         exposes: zigbeeDevice.definition?.exposes || existingMeta.exposes || [],
         originalType: existingMeta.originalType || zigbeeDevice.type, // Préserver ou ajouter le type original
+        // Mettre à jour le nom normalisé utilisé par Zigbee2MQTT dans les topics
+        originalZigbeeName: mqttName, // Toujours mettre à jour avec le nom normalisé actuel de Zigbee2MQTT
       };
-      // Mettre à jour l'appareil existant
-      Object.assign(existingDevice, deviceData);
+      
+      // Mettre à jour uniquement les champs techniques, pas le friendlyName utilisateur
+      existingDevice.mqttName = mqttName; // Mettre à jour le mqttName avec le nom reçu de Zigbee2MQTT
+      if (deviceData.type !== undefined) {
+        existingDevice.type = deviceData.type;
+      }
+      if (deviceData.manufacturer !== undefined) {
+        existingDevice.manufacturer = deviceData.manufacturer;
+      }
+      if (deviceData.model !== undefined) {
+        existingDevice.model = deviceData.model;
+      }
+      if (deviceData.description !== undefined) {
+        existingDevice.description = deviceData.description;
+      }
+      if (deviceData.isSupported !== undefined) {
+        existingDevice.isSupported = deviceData.isSupported;
+      }
+      if (deviceData.unsupportedReason !== undefined) {
+        existingDevice.unsupportedReason = deviceData.unsupportedReason;
+      }
+      if (deviceData.status !== undefined) {
+        existingDevice.status = deviceData.status;
+      }
+      if (deviceData.meta !== undefined) {
+        existingDevice.meta = deviceData.meta;
+      }
+      // Ne PAS mettre à jour existingDevice.friendlyName - il reste le nom défini par l'utilisateur
+      
       await this.deviceRepository.save(existingDevice);
 
-      // Si c'est un nouvel appareil (nouveau friendly_name), notifier
-      if (existingDevice.friendlyName !== zigbeeDevice.friendly_name) {
+      // Vérifier si le mqttName a changé (indique un renommage dans Zigbee2MQTT)
+      const oldMqttName = existingDevice.meta?.originalZigbeeName;
+      if (oldMqttName && oldMqttName !== mqttName) {
         this.logger.log(
-          `Appareil mis à jour: ${zigbeeDevice.friendly_name}`,
+          `Appareil renommé dans Zigbee2MQTT: ${oldMqttName} -> ${mqttName}`,
           'Zigbee2MqttService',
         );
         this.websocketGateway.broadcast('device:updated', {
           device: existingDevice,
-          message: `L'appareil ${zigbeeDevice.friendly_name} a été mis à jour`,
+          message: `L'appareil a été renommé dans Zigbee2MQTT`,
         });
       }
     } else {
@@ -407,7 +479,22 @@ export class Zigbee2MqttService implements OnModuleInit {
       }
     }
     
-    // Si toujours pas trouvé, essayer de chercher par friendlyName (pour les cas où le topic utilise le nom au lieu de l'IEEE)
+    // Si toujours pas trouvé, essayer de chercher par mqttName (pour les cas où le topic utilise le nom MQTT)
+    if (!device) {
+      const allDevices = await this.deviceRepository.find();
+      const foundDevice = allDevices.find(
+        (d) => d.mqttName && d.mqttName.toLowerCase() === ieeeAddress.toLowerCase(),
+      );
+      if (foundDevice) {
+        device = foundDevice;
+        this.logger.debug(
+          `✅ Appareil trouvé par mqttName: ${device.mqttName} (IEEE: ${device.ieeeAddress})`,
+          'Zigbee2MqttService',
+        );
+      }
+    }
+    
+    // Si toujours pas trouvé, essayer de chercher par friendlyName (pour compatibilité avec les anciens noms)
     if (!device) {
       const allDevices = await this.deviceRepository.find();
       const foundDevice = allDevices.find(
@@ -776,9 +863,17 @@ export class Zigbee2MqttService implements OnModuleInit {
   }
 
   private async handleDeviceState(friendlyName: string, state: ZigbeeState) {
-    const device = await this.deviceRepository.findOne({
-      where: { friendlyName },
+    // Le friendlyName dans le topic peut être soit le mqttName soit l'ancien friendlyName
+    // Chercher d'abord par mqttName (priorité), puis par friendlyName (compatibilité)
+    let device = await this.deviceRepository.findOne({
+      where: { mqttName: friendlyName },
     });
+
+    if (!device) {
+      device = await this.deviceRepository.findOne({
+        where: { friendlyName },
+      });
+    }
 
     if (!device) {
       // Si l'appareil n'existe pas encore, essayer de le créer depuis la liste des appareils
@@ -819,9 +914,17 @@ export class Zigbee2MqttService implements OnModuleInit {
   }
 
   private async handleDeviceAvailability(friendlyName: string, availability: any) {
-    const device = await this.deviceRepository.findOne({
-      where: { friendlyName },
+    // Le friendlyName dans le topic peut être soit le mqttName soit l'ancien friendlyName
+    // Chercher d'abord par mqttName (priorité), puis par friendlyName (compatibilité)
+    let device = await this.deviceRepository.findOne({
+      where: { mqttName: friendlyName },
     });
+
+    if (!device) {
+      device = await this.deviceRepository.findOne({
+        where: { friendlyName },
+      });
+    }
 
     if (!device) {
       return;
@@ -1368,15 +1471,20 @@ export class Zigbee2MqttService implements OnModuleInit {
     );
   }
 
-  public async removeDevice(friendlyName: string, ieeeAddress?: string): Promise<void> {
+  /**
+   * Supprime un appareil de Zigbee2MQTT
+   * @param mqttName - Nom MQTT de l'appareil (utilisé pour les logs)
+   * @param ieeeAddress - Adresse IEEE de l'appareil (utilisée dans le payload, prioritaire)
+   */
+  public async removeDevice(mqttName: string, ieeeAddress?: string): Promise<void> {
     // Supprimer un appareil de Zigbee2MQTT
-    // Utiliser le topic bridge/request/device/remove avec le friendly_name ou ieee_address
+    // Utiliser le topic bridge/request/device/remove avec l'ieee_address (prioritaire) ou le mqttName
     // Documentation: https://www.zigbee2mqtt.io/guide/usage/mqtt_topics_and_messages.html#zigbee2mqtt-bridge-request-device-remove
     const topic = 'zigbee2mqtt/bridge/request/device/remove';
     // Payload peut être {"id": "deviceID"} ou deviceID (string)
-    // On utilise l'ieee_address si disponible, sinon le friendly_name
+    // On utilise l'ieee_address si disponible (recommandé), sinon le mqttName
     // Toujours mettre "force": true pour forcer la suppression
-    const deviceId = ieeeAddress || friendlyName;
+    const deviceId = ieeeAddress || mqttName;
     const payload = {
       id: deviceId,
       force: true,
@@ -1384,22 +1492,31 @@ export class Zigbee2MqttService implements OnModuleInit {
     
     this.mqttService.publish(topic, payload);
     this.logger.log(
-      `🗑️ Suppression forcée de l'appareil demandée [${friendlyName}] (${ieeeAddress || 'N/A'}) via ${topic}`,
+      `🗑️ Suppression forcée de l'appareil demandée [${mqttName}] (${ieeeAddress || 'N/A'}) via ${topic}`,
       'Zigbee2MqttService',
     );
   }
 
-  public renameDevice(oldFriendlyName: string, newFriendlyName: string): void {
+  /**
+   * Renomme un appareil dans Zigbee2MQTT
+   * Envoie le mqttName (nom normalisé) à Zigbee2MQTT qui l'utilisera comme friendly_name
+   * et pour générer les topics MQTT
+   * @param oldMqttName - Ancien nom MQTT de l'appareil (utilisé dans les topics)
+   * @param newMqttName - Nouveau nom MQTT de l'appareil (utilisé dans les topics)
+   */
+  public renameDevice(oldMqttName: string, newMqttName: string): void {
     // Topic correct pour renommer un appareil dans Zigbee2MQTT
     const topic = 'zigbee2mqtt/bridge/request/device/rename';
+    // Le payload envoie les mqttName (noms normalisés) à Zigbee2MQTT
+    // Zigbee2MQTT utilisera le champ "to" comme friendly_name et pour générer les topics
     const payload = {
-      from: oldFriendlyName,
-      to: newFriendlyName,
+      from: oldMqttName,
+      to: newMqttName, // mqttName normalisé (sans accents, espaces remplacés par tirets)
     };
     
     this.mqttService.publish(topic, payload);
     this.logger.log(
-      `🔄 Renommage de ${oldFriendlyName} vers ${newFriendlyName} via MQTT`,
+      `🔄 Renommage MQTT de "${oldMqttName}" vers "${newMqttName}" (payload: ${JSON.stringify(payload)})`,
       'Zigbee2MqttService',
     );
   }

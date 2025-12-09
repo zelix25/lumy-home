@@ -31,6 +31,9 @@ export class Device {
   ieeeAddress: string;
 
   @Column({ nullable: true })
+  mqttName: string;
+
+  @Column({ nullable: true })
   friendlyName: string;
 
   @Column({ type: 'varchar', length: 50 })

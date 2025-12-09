@@ -36,6 +36,8 @@ import { devicesService, Device } from '../services/devices.service';
 import { roomsService, Room } from '../services/rooms.service';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useDevices } from '../hooks/useDevices';
+import { useNotification } from '../hooks/useNotification';
+import { useTranslation } from 'react-i18next';
 import MultiSensorChart from '../components/MultiSensorChart';
 import { SensorType } from '../services/sensor-history.service';
 import AdvancedExposesSettings from '../components/AdvancedExposesSettings';
@@ -59,6 +61,8 @@ const getDeviceTypeLabel = (type: string): string => {
 export default function DeviceDetailPage() {
   const { ieeeAddress } = useParams<{ ieeeAddress: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const { addNotification } = useNotification();
   const [device, setDevice] = useState<Device | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -174,9 +178,24 @@ export default function DeviceDetailPage() {
       const updated = await devicesService.updateFriendlyName(ieeeAddress, trimmedName);
       setDevice(updated);
       setFriendlyName(trimmedName);
+      
+      // Notification de succès
+      addNotification({
+        type: 'success',
+        title: t('devices.nameUpdateSuccess'),
+        message: t('devices.nameUpdateSuccessMessage', { name: trimmedName }),
+      });
     } catch (err: any) {
       console.error('Erreur lors de la mise à jour du nom:', err);
-      setNameError(err.message || 'Erreur lors de la mise à jour du nom');
+      const errorMessage = err.message || t('devices.nameUpdateError');
+      setNameError(errorMessage);
+      
+      // Notification d'erreur
+      addNotification({
+        type: 'error',
+        title: t('devices.nameUpdateError'),
+        message: errorMessage,
+      });
     }
   };
 

@@ -133,78 +133,34 @@ export class WeatherService implements OnModuleInit {
         const relative_humidity_2m = hourlyForDay.humidity;
         const wind_speed_10m = hourlyForDay.windSpeed;
 
-        // Vérifier si une entrée existe déjà (utiliser la même logique que getTodayWeather)
-        const dateStrForQuery = date.toISOString().split('T')[0];
-        let existing = await this.weatherRepository
-          .createQueryBuilder('weather')
-          .where('weather.latitude = :latitude', { latitude })
-          .andWhere('weather.longitude = :longitude', { longitude })
-          .andWhere("strftime('%Y-%m-%d', weather.date) = :dateStr", { dateStr: dateStrForQuery })
-          .getOne();
-
-        // Si la première méthode ne fonctionne pas, essayer avec DATE()
-        if (!existing) {
-          existing = await this.weatherRepository
-            .createQueryBuilder('weather')
-            .where('weather.latitude = :latitude', { latitude })
-            .andWhere('weather.longitude = :longitude', { longitude })
-            .andWhere('DATE(weather.date) = :dateStr', { dateStr: dateStrForQuery })
-            .getOne();
-        }
-
-        // Si toujours rien, récupérer toutes les données et comparer manuellement
-        if (!existing) {
-          const allWeatherForLocation = await this.weatherRepository.find({
-            where: {
-              latitude,
-              longitude,
-            },
-          });
-
-          for (const weather of allWeatherForLocation) {
-            const weatherDate: any = weather.date;
-            let weatherDateStr: string;
-            
-            if (weatherDate instanceof Date) {
-              weatherDateStr = weatherDate.toISOString().split('T')[0];
-            } else if (typeof weatherDate === 'string') {
-              weatherDateStr = weatherDate.split('T')[0].split(' ')[0];
-            } else {
-              weatherDateStr = String(weatherDate).split('T')[0].split(' ')[0];
-            }
-
-            if (weatherDateStr === dateStrForQuery) {
-              existing = weather;
-              break;
-            }
-          }
-        }
-
-        const weatherData = {
-          latitude,
-          longitude,
-          date,
-          sunrise,
-          sunset,
-          temperature_2m,
-          relative_humidity_2m,
-          wind_speed_10m,
-          precipitation,
-          weather_code,
-          raw_data: JSON.stringify(data),
-        };
-
-        if (existing) {
-          // Mettre à jour l'entrée existante
-          Object.assign(existing, weatherData);
-          await this.weatherRepository.save(existing);
-          this.logger.log(`  ✓ Météo mise à jour pour ${dateStr}`, 'WeatherService');
-        } else {
-          // Créer une nouvelle entrée
-          const newWeather = this.weatherRepository.create(weatherData);
-          await this.weatherRepository.save(newWeather);
-          this.logger.log(`  ✓ Météo créée pour ${dateStr}`, 'WeatherService');
-        }
+        // Utiliser INSERT OR REPLACE en SQL brut pour SQLite
+        // Cela évite les problèmes de contrainte UNIQUE en remplaçant automatiquement
+        // l'enregistrement existant si la combinaison (latitude, longitude, date) existe déjà
+        const dateStrForDB = date.toISOString().split('T')[0];
+        const now = new Date().toISOString();
+        
+        await this.weatherRepository.query(
+          `INSERT OR REPLACE INTO weather (
+            latitude, longitude, date, sunrise, sunset, temperature_2m, 
+            relative_humidity_2m, wind_speed_10m, precipitation, weather_code, raw_data, updatedAt
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            latitude,
+            longitude,
+            dateStrForDB,
+            sunrise,
+            sunset,
+            temperature_2m,
+            relative_humidity_2m,
+            wind_speed_10m,
+            precipitation,
+            weather_code,
+            JSON.stringify(data),
+            now,
+          ]
+        );
+        
+        this.logger.log(`  ✓ Météo enregistrée pour ${dateStr}`, 'WeatherService');
       }
 
       this.logger.log('✓ Toutes les données météo ont été enregistrées en base de données', 'WeatherService');

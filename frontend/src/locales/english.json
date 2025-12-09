@@ -78,7 +78,10 @@
     "devicesWillBeDetectedAutomaticallyOnceConnected": "Zigbee devices will be detected automatically once connected",
     "noDevicesFound": "No devices found",
     "tryModifyingSearchCriteria": "Try modifying your search criteria",
-    "discoveryStopped": "Discovery stopped"
+    "discoveryStopped": "Discovery stopped",
+    "nameUpdateSuccess": "Name updated",
+    "nameUpdateSuccessMessage": "Device name has been successfully updated: {{name}}",
+    "nameUpdateError": "Update error"
   },
   "deviceDetail": {
     "title": "Device details",
