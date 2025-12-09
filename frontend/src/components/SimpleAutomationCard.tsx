@@ -21,6 +21,7 @@ import {
   MoreVert as MoreVertIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
+  AccountTree as AccountTreeIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import {
@@ -36,12 +37,14 @@ interface SimpleAutomationCardProps {
   automation: Automation;
   onUpdate: () => void;
   onEdit?: (automation: Automation) => void;
+  onEditNode?: (automation: Automation) => void;
 }
 
 export default function SimpleAutomationCard({
   automation,
   onUpdate,
   onEdit,
+  onEditNode,
 }: SimpleAutomationCardProps) {
   const { t } = useTranslation();
   const { addNotification } = useNotification();
@@ -244,6 +247,17 @@ export default function SimpleAutomationCard({
             >
               <EditIcon sx={{ mr: 1 }} fontSize="small" />
               {t('common.edit')}
+            </MenuItem>
+          )}
+          {onEditNode && (
+            <MenuItem
+              onClick={() => {
+                onEditNode(automation);
+                handleMenuClose();
+              }}
+            >
+              <AccountTreeIcon sx={{ mr: 1 }} fontSize="small" />
+              {t('automations.editNodeMode')}
             </MenuItem>
           )}
           <MenuItem onClick={handleDeleteClick}>

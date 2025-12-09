@@ -60,8 +60,18 @@ export default function ScenesPage() {
     setCreateDialogOpen(true);
   };
 
+  const handleEditNode = (automation: Automation) => {
+    setEditingAutomation(automation);
+    setNodeEditorOpen(true);
+  };
+
   const handleDialogClose = () => {
     setCreateDialogOpen(false);
+    setEditingAutomation(null);
+  };
+
+  const handleNodeEditorClose = () => {
+    setNodeEditorOpen(false);
     setEditingAutomation(null);
   };
 
@@ -136,6 +146,7 @@ export default function ScenesPage() {
                 automation={automation}
                 onUpdate={fetchAutomations}
                 onEdit={handleEdit}
+                onEditNode={handleEditNode}
               />
             </Grid>
           ))}
@@ -151,8 +162,9 @@ export default function ScenesPage() {
 
       <NodeEditorDialog
         open={nodeEditorOpen}
-        onClose={() => setNodeEditorOpen(false)}
+        onClose={handleNodeEditorClose}
         onSuccess={handleCreateSuccess}
+        automation={editingAutomation}
       />
     </Box>
   );

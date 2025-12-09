@@ -21,7 +21,8 @@
     "success": "Succès",
     "skip": "Passer",
     "create": "Ajouter",
-    "none": "Aucun"
+    "none": "Aucun",
+    "selected": "Sélectionné"
   },
   "devices": {
     "title": "Appareils",
@@ -454,6 +455,7 @@
     "createError": "Erreur lors de la création de l'automatisation",
     "updated": "Automatisation mise à jour",
     "updatedMessage": "L'automatisation a été mise à jour avec succès",
+    "editNodeMode": "Modifier en mode noeud",
     "activated": "Automatisation activée",
     "deactivated": "Automatisation désactivée",
     "deleted": "Automatisation supprimée",

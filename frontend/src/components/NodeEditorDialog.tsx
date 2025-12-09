@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -610,6 +610,7 @@ export default function NodeEditorDialog({
   open,
   onClose,
   onSuccess,
+  automation,
 }: NodeEditorDialogProps) {
   const { t } = useTranslation();
   const { devices } = useDevices();
@@ -622,11 +623,170 @@ export default function NodeEditorDialog({
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(true);
 
-  // Initialiser les noeuds sans déclencheur par défaut
-  const initialNodes: Node[] = useMemo(
-    () => [],
-    [],
-  );
+  // Fonction pour convertir une automation en nodes et edges
+  const convertAutomationToNodes = useCallback((automation: any): { nodes: Node[]; edges: Edge[] } => {
+    const nodes: Node[] = [];
+    const edges: Edge[] = [];
+    let nodeIdCounter = 0;
+    let xPosition = 100;
+    const ySpacing = 150;
+    const xSpacing = 300;
+
+    // Vérifier si on a une condition combinée (plusieurs triggers avec AND/OR)
+    const hasCombinedCondition = automation.trigger?.condition?.logic && 
+                                 automation.trigger?.condition?.triggers &&
+                                 Array.isArray(automation.trigger.condition.triggers) &&
+                                 automation.trigger.condition.triggers.length > 1;
+
+    let triggerNodes: Node[] = [];
+    let conditionNode: Node | null = null;
+
+    if (hasCombinedCondition) {
+      // Cas : Plusieurs triggers avec une condition
+      const conditionData = automation.trigger.condition;
+      const triggers = conditionData.triggers;
+      
+      // Créer tous les triggers
+      triggers.forEach((trigger: any, index: number) => {
+        const triggerNode: Node = {
+          id: `trigger-${nodeIdCounter++}`,
+          type: 'trigger',
+          position: { x: xPosition, y: 100 + index * ySpacing },
+          data: {
+            label: trigger.deviceName || t(`automations.triggerTypes.${trigger.type}`),
+            triggerType: trigger.type,
+            deviceId: trigger.deviceId || '',
+            deviceName: trigger.deviceName || '',
+            operator: trigger.condition?.operator,
+            value: trigger.condition?.value,
+          },
+          sourcePosition: Position.Right,
+          targetPosition: Position.Left,
+        };
+        triggerNodes.push(triggerNode);
+        nodes.push(triggerNode);
+      });
+
+      xPosition += xSpacing;
+
+      // Créer le noeud condition
+      conditionNode = {
+        id: `condition-${nodeIdCounter++}`,
+        type: 'condition',
+        position: { x: xPosition, y: 100 + ((triggers.length - 1) * ySpacing) / 2 },
+        data: {
+          label: t('automations.nodeEditor.condition'),
+          condition: conditionData.logic as 'AND' | 'OR',
+        },
+        sourcePosition: Position.Right,
+        targetPosition: Position.Left,
+      };
+      nodes.push(conditionNode);
+
+      // Créer les edges des triggers vers la condition
+      triggerNodes.forEach((triggerNode) => {
+        edges.push({
+          id: `edge-${edges.length}`,
+          source: triggerNode.id,
+          target: conditionNode!.id,
+          type: 'smoothstep',
+          markerEnd: { type: MarkerType.ArrowClosed },
+        });
+      });
+
+      xPosition += xSpacing;
+    } else {
+      // Cas : Un seul trigger (avec ou sans condition simple)
+      if (automation.trigger) {
+        const triggerNode: Node = {
+          id: `trigger-${nodeIdCounter++}`,
+          type: 'trigger',
+          position: { x: xPosition, y: 100 },
+          data: {
+            label: automation.trigger.deviceName || t(`automations.triggerTypes.${automation.trigger.type}`),
+            triggerType: automation.trigger.type,
+            deviceId: automation.trigger.deviceId || '',
+            deviceName: automation.trigger.deviceName || '',
+            operator: automation.trigger.condition?.operator,
+            value: automation.trigger.condition?.value,
+          },
+          sourcePosition: Position.Right,
+          targetPosition: Position.Left,
+        };
+        triggerNodes.push(triggerNode);
+        nodes.push(triggerNode);
+        xPosition += xSpacing;
+      }
+    }
+
+    // Créer les nodes actions
+    const actionNodes: Node[] = [];
+    automation.actions?.forEach((action: any, index: number) => {
+      const actionNode: Node = {
+        id: `action-${nodeIdCounter++}`,
+        type: 'action',
+        position: { x: xPosition, y: 100 + index * ySpacing },
+        data: {
+          label: action.deviceName || t(`automations.actionTypes.${action.type}`),
+          actionType: action.type,
+          deviceId: action.deviceId || '',
+          deviceName: action.deviceName || '',
+          params: action.params || {},
+          duration: action.params?.duration,
+        },
+        sourcePosition: Position.Right,
+        targetPosition: Position.Left,
+      };
+      actionNodes.push(actionNode);
+      nodes.push(actionNode);
+    });
+
+    // Créer les edges : trigger(s) -> condition (si présent) -> action(s)
+    if (conditionNode) {
+      // Si on a une condition, connecter la condition aux actions
+      actionNodes.forEach((actionNode) => {
+        edges.push({
+          id: `edge-${edges.length}`,
+          source: conditionNode!.id,
+          target: actionNode.id,
+          type: 'smoothstep',
+          markerEnd: { type: MarkerType.ArrowClosed },
+        });
+      });
+    } else if (triggerNodes.length > 0) {
+      // Sinon, connecter directement les triggers aux actions
+      triggerNodes.forEach((triggerNode) => {
+        actionNodes.forEach((actionNode) => {
+          edges.push({
+            id: `edge-${edges.length}`,
+            source: triggerNode.id,
+            target: actionNode.id,
+            type: 'smoothstep',
+            markerEnd: { type: MarkerType.ArrowClosed },
+          });
+        });
+      });
+    }
+
+    return { nodes, edges };
+  }, [t]);
+
+  // Initialiser les noeuds à partir de l'automation si fournie
+  const initialNodes: Node[] = useMemo(() => {
+    if (automation) {
+      const { nodes } = convertAutomationToNodes(automation);
+      return nodes;
+    }
+    return [];
+  }, [automation, convertAutomationToNodes]);
+
+  const initialEdges: Edge[] = useMemo(() => {
+    if (automation) {
+      const { edges } = convertAutomationToNodes(automation);
+      return edges;
+    }
+    return [];
+  }, [automation, convertAutomationToNodes]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   
@@ -634,7 +794,41 @@ export default function NodeEditorDialog({
   const selectedNode = useMemo(() => {
     return nodes.find((n) => n.id === selectedNodeId) || null;
   }, [nodes, selectedNodeId]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
+  // Initialiser le nom et la description quand l'automation change
+  useEffect(() => {
+    if (automation) {
+      setName(automation.name || '');
+      setDescription(automation.description || '');
+      const { nodes: convertedNodes, edges: convertedEdges } = convertAutomationToNodes(automation);
+      setNodes(convertedNodes);
+      setEdges(convertedEdges);
+    } else {
+      setName('');
+      setDescription('');
+      setNodes([]);
+      setEdges([]);
+    }
+    setSelectedNodeId(null);
+  }, [automation, convertAutomationToNodes]);
+
+  // Fermer automatiquement le message d'aide après 5 secondes quand la modal s'ouvre
+  useEffect(() => {
+    if (open) {
+      // Réinitialiser showHelp à true quand la modal s'ouvre
+      setShowHelp(true);
+      
+      // Fermer automatiquement après 5 secondes
+      const timer = setTimeout(() => {
+        setShowHelp(false);
+      }, 5000);
+
+      return () => {
+        clearTimeout(timer);
+      };
+    }
+  }, [open]);
 
   // Calculer les valeurs pour le trigger sélectionné
   const triggerSettings = useMemo(() => {
@@ -744,22 +938,111 @@ export default function NodeEditorDialog({
       return;
     }
 
-    // Prendre le premier noeud trigger (on peut améliorer pour supporter plusieurs triggers)
-    const triggerNode = triggerNodes[0];
-    const triggerData = triggerNode.data as TriggerNodeData;
+    // Analyser le graphe pour trouver la structure : triggers -> conditions -> actions
+    // Trouver toutes les conditions dans le graphe
+    const conditionNodes = nodes.filter((n) => n.type === 'condition');
+    
+    // Si des conditions existent, analyser la structure
+    let mainTriggerNode = triggerNodes[0];
+    let mainTriggerData = triggerNodes[0].data as TriggerNodeData;
+    let combinedCondition: any = undefined;
 
-    // Trouver les actions connectées au trigger
-    const connectedActionIds = edges
-      .filter((e) => e.source === triggerNode.id)
-      .map((e) => e.target);
+    if (conditionNodes.length > 0) {
+      // Pour chaque condition, trouver les triggers qui s'y connectent (edges où target = condition)
+      for (const conditionNode of conditionNodes) {
+        const conditionData = conditionNode.data as ConditionNodeData;
+        
+        // Trouver tous les edges qui pointent vers cette condition
+        const incomingEdges = edges.filter((e) => e.target === conditionNode.id);
+        const connectedTriggerIds = incomingEdges.map((e) => e.source);
+        const connectedTriggers = connectedTriggerIds
+          .map(id => nodes.find(n => n.id === id))
+          .filter(n => n?.type === 'trigger') as Node<TriggerNodeData>[];
 
-    // Si des conditions sont présentes, suivre les connexions
-    const finalActionIds = connectedActionIds.filter((id) => {
-      const node = nodes.find((n) => n.id === id);
-      return node?.type === 'action';
-    });
+        // Si plusieurs triggers se connectent à cette condition, créer une condition combinée
+        if (connectedTriggers.length > 1) {
+          // Créer une structure de condition qui combine les triggers
+          combinedCondition = {
+            logic: conditionData.condition, // 'AND' ou 'OR'
+            triggers: connectedTriggers.map((trigger) => {
+              const triggerData = trigger.data as TriggerNodeData;
+              return {
+                type: triggerData.triggerType,
+                deviceId: triggerData.deviceId,
+                deviceName: triggerData.deviceName,
+                condition: triggerData.operator && triggerData.value !== undefined
+                  ? {
+                      operator: triggerData.operator,
+                      value: triggerData.value,
+                    }
+                  : undefined,
+              };
+            }),
+          };
 
-    if (finalActionIds.length === 0) {
+          // Le trigger principal sera le premier
+          mainTriggerNode = connectedTriggers[0];
+          mainTriggerData = mainTriggerNode.data as TriggerNodeData;
+          break; // Prendre la première condition avec plusieurs triggers
+        } else if (connectedTriggers.length === 1) {
+          // Un seul trigger avec une condition, utiliser le trigger principal
+          mainTriggerNode = connectedTriggers[0];
+          mainTriggerData = mainTriggerNode.data as TriggerNodeData;
+          
+          // Stocker la condition dans le trigger
+          combinedCondition = {
+            logic: conditionData.condition,
+          };
+        }
+      }
+    }
+
+    // Fonction récursive pour trouver toutes les actions connectées
+    // en suivant les connexions à travers les noeuds condition
+    const findConnectedActions = (startNodeId: string, visited: Set<string> = new Set()): string[] => {
+      // Éviter les boucles infinies
+      if (visited.has(startNodeId)) {
+        return [];
+      }
+      visited.add(startNodeId);
+
+      const actionIds: string[] = [];
+      
+      // Trouver toutes les connexions sortantes depuis ce noeud
+      const outgoingEdges = edges.filter((e) => e.source === startNodeId);
+      
+      for (const edge of outgoingEdges) {
+        const targetNode = nodes.find((n) => n.id === edge.target);
+        
+        if (!targetNode) continue;
+        
+        if (targetNode.type === 'action') {
+          // C'est une action, l'ajouter à la liste
+          actionIds.push(targetNode.id);
+        } else if (targetNode.type === 'condition') {
+          // C'est une condition, continuer à suivre les connexions depuis ce noeud
+          const actionsFromCondition = findConnectedActions(targetNode.id, visited);
+          actionIds.push(...actionsFromCondition);
+        }
+        // Si c'est un trigger, on ignore (ne devrait pas arriver)
+      }
+      
+      return actionIds;
+    };
+
+    // Trouver toutes les actions connectées au trigger principal (directement ou via des conditions)
+    const finalActionIds = findConnectedActions(mainTriggerNode.id);
+    
+    // Si des conditions sont présentes, aussi chercher les actions depuis les conditions
+    for (const conditionNode of conditionNodes) {
+      const actionsFromCondition = findConnectedActions(conditionNode.id);
+      finalActionIds.push(...actionsFromCondition);
+    }
+    
+    // Dédupliquer les IDs d'actions
+    const uniqueActionIds = Array.from(new Set(finalActionIds));
+
+    if (uniqueActionIds.length === 0) {
       addNotification({
         type: 'error',
         title: t('automations.error'),
@@ -769,7 +1052,7 @@ export default function NodeEditorDialog({
     }
 
     // Créer les actions
-    const actions = finalActionIds.map((actionId) => {
+    const actions = uniqueActionIds.map((actionId) => {
       const actionNode = nodes.find((n) => n.id === actionId);
       const actionData = actionNode?.data as ActionNodeData;
       const params = { ...actionData.params };
@@ -788,29 +1071,49 @@ export default function NodeEditorDialog({
     });
 
     try {
+      // Construire la condition du trigger
+      let triggerCondition: any = undefined;
+      
+      if (combinedCondition) {
+        // Si on a une condition combinée (plusieurs triggers avec AND/OR)
+        triggerCondition = combinedCondition;
+      } else if (mainTriggerData.operator && mainTriggerData.value !== undefined) {
+        // Condition simple sur le trigger principal
+        triggerCondition = {
+          operator: mainTriggerData.operator,
+          value: mainTriggerData.value,
+        };
+      }
+
       const createData: CreateAutomationDto = {
         name: name.trim(),
         description: description.trim() || undefined,
         trigger: {
-          type: triggerData.triggerType,
-          deviceId: triggerData.deviceId,
-          deviceName: triggerData.deviceName,
-          condition: triggerData.operator && triggerData.value !== undefined
-            ? {
-                operator: triggerData.operator,
-                value: triggerData.value,
-              }
-            : undefined,
+          type: mainTriggerData.triggerType,
+          deviceId: mainTriggerData.deviceId,
+          deviceName: mainTriggerData.deviceName,
+          condition: triggerCondition,
         },
         actions,
       };
 
-      await simpleAutomationsService.create(createData);
-      addNotification({
-        type: 'success',
-        title: t('automations.created'),
-        message: t('automations.createdMessage'),
-      });
+      if (automation?.id) {
+        // Mise à jour d'une automation existante
+        await simpleAutomationsService.update(automation.id, createData);
+        addNotification({
+          type: 'success',
+          title: t('automations.updated'),
+          message: t('automations.updatedMessage'),
+        });
+      } else {
+        // Création d'une nouvelle automation
+        await simpleAutomationsService.create(createData);
+        addNotification({
+          type: 'success',
+          title: t('automations.created'),
+          message: t('automations.createdMessage'),
+        });
+      }
       onSuccess();
       onClose();
     } catch (error: any) {

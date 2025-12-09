@@ -20,7 +20,8 @@
     "error": "Error",
     "success": "Success",
     "skip": "Skip",
-    "none": "None"
+    "none": "None",
+    "selected": "Selected"
   },
   "devices": {
     "title": "Devices",
@@ -453,6 +454,7 @@
     "createError": "Error creating automation",
     "updated": "Automation updated",
     "updatedMessage": "Automation has been updated successfully",
+    "editNodeMode": "Edit in node mode",
     "activated": "Automation activated",
     "deactivated": "Automation deactivated",
     "deleted": "Automation deleted",

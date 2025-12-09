@@ -64,24 +64,102 @@ export default function CreateSimpleAutomationDialog({
   const { t } = useTranslation();
   const { devices } = useDevices();
   const { addNotification } = useNotification();
-  const [activeStep, setActiveStep] = useState(0);
+  
+  // Fonction pour déterminer la catégorie à partir du trigger et de l'action
+  const getCategoryFromAutomation = (automation: Automation): string => {
+    const triggerType = automation.trigger.type;
+    const actionType = automation.actions[0]?.type;
+
+    // Déterminer la catégorie basée sur l'action (plus fiable)
+    if (actionType === AutomationActionType.SET_BRIGHTNESS || 
+        actionType === AutomationActionType.SET_COLOR || 
+        actionType === AutomationActionType.SET_COLOR_TEMP ||
+        actionType === AutomationActionType.TURN_ON ||
+        actionType === AutomationActionType.TURN_OFF) {
+      // Vérifier si c'est une lumière ou un volet
+      if (triggerType === AutomationTriggerType.SUNRISE_SUNSET || 
+          triggerType === AutomationTriggerType.ILLUMINANCE) {
+        // Peut être lumières ou volets, on vérifie l'action
+        if (actionType === AutomationActionType.SET_BRIGHTNESS || 
+            actionType === AutomationActionType.SET_COLOR || 
+            actionType === AutomationActionType.SET_COLOR_TEMP) {
+          return 'lights';
+        }
+        return 'shutters';
+      }
+      return 'lights';
+    }
+    
+    if (actionType === AutomationActionType.SET_THERMOSTAT) {
+      return 'temperature';
+    }
+    
+    if (triggerType === AutomationTriggerType.CONTACT || 
+        triggerType === AutomationTriggerType.MOTION ||
+        triggerType === AutomationTriggerType.SMOKE ||
+        triggerType === AutomationTriggerType.GAS ||
+        triggerType === AutomationTriggerType.WATER_LEAK) {
+      return 'security';
+    }
+
+    // Par défaut, utiliser la catégorie "lights" si on ne peut pas déterminer
+    return 'lights';
+  };
+
+  // Initialiser les états avec les valeurs de l'automation si elle existe
+  const initialCategory = automation ? getCategoryFromAutomation(automation) : '';
+  const initialName = automation?.name || '';
+  const initialDescription = automation?.description || '';
+  const initialTriggerType = automation?.trigger.type || '';
+  const initialTriggerDeviceId = automation?.trigger.deviceId || '';
+  const initialActionType = automation?.actions[0]?.type || '';
+  const initialActionDeviceId = automation?.actions[0]?.deviceId || '';
+  const initialActionDeviceIds = automation ? automation.actions.map((action) => action.deviceId).filter(Boolean) : [];
+  const initialBrightness = automation?.actions[0]?.params?.brightness || 100;
+  const initialColorTemp = automation?.actions[0]?.params?.color_temp || 370;
+  const initialThermostatTemp = automation?.actions[0]?.params?.temperature || 20;
+  const initialNotificationMessage = automation?.actions[0]?.params?.message || '';
+  const initialTurnOnDuration = automation?.actions[0]?.params?.duration || 0;
+  
+  // Déterminer l'étape active initiale
+  const getInitialActiveStep = (auto?: Automation | null): number => {
+    const targetAutomation = auto || automation;
+    if (!targetAutomation) return 0;
+    // Toujours commencer à l'étape 3 (action + appareils) si tout est complété
+    // pour permettre la modification
+    if (targetAutomation.actions[0]?.type) {
+      return 3; // Toutes les étapes sont complètes - afficher l'étape 3 pour permettre la modification
+    }
+    if (targetAutomation.trigger.deviceId || 
+        targetAutomation.trigger.type === AutomationTriggerType.SUNRISE_SUNSET || 
+        targetAutomation.trigger.type === AutomationTriggerType.TIME || 
+        targetAutomation.trigger.type === AutomationTriggerType.MANUAL) {
+      return 3; // Trigger et device sont sélectionnés
+    }
+    if (targetAutomation.trigger.type) {
+      return 1; // Seulement le trigger est sélectionné
+    }
+    return 0;
+  };
+
+  const [activeStep, setActiveStep] = useState(getInitialActiveStep(automation));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // État de l'automatisation
-  const [automationCategory, setAutomationCategory] = useState<string>('');
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [triggerType, setTriggerType] = useState<AutomationTriggerType | ''>('');
-  const [triggerDeviceId, setTriggerDeviceId] = useState<string>('');
-  const [actionType, setActionType] = useState<AutomationActionType | ''>('');
-  const [actionDeviceId, setActionDeviceId] = useState<string>('');
-  const [actionDeviceIds, setActionDeviceIds] = useState<string[]>([]); // Support multiple devices
-  const [brightness, setBrightness] = useState(100);
-  const [colorTemp, setColorTemp] = useState(370);
-  const [thermostatTemp, setThermostatTemp] = useState(20);
-  const [notificationMessage, setNotificationMessage] = useState('');
-  const [turnOnDuration, setTurnOnDuration] = useState<number>(0);
+  const [automationCategory, setAutomationCategory] = useState<string>(initialCategory);
+  const [name, setName] = useState(initialName);
+  const [description, setDescription] = useState(initialDescription);
+  const [triggerType, setTriggerType] = useState<AutomationTriggerType | ''>(initialTriggerType as AutomationTriggerType | '');
+  const [triggerDeviceId, setTriggerDeviceId] = useState<string>(initialTriggerDeviceId);
+  const [actionType, setActionType] = useState<AutomationActionType | ''>(initialActionType as AutomationActionType | '');
+  const [actionDeviceId, setActionDeviceId] = useState<string>(initialActionDeviceId);
+  const [actionDeviceIds, setActionDeviceIds] = useState<string[]>(initialActionDeviceIds); // Support multiple devices
+  const [brightness, setBrightness] = useState(initialBrightness);
+  const [colorTemp, setColorTemp] = useState(initialColorTemp);
+  const [thermostatTemp, setThermostatTemp] = useState(initialThermostatTemp);
+  const [notificationMessage, setNotificationMessage] = useState(initialNotificationMessage);
+  const [turnOnDuration, setTurnOnDuration] = useState<number>(initialTurnOnDuration);
 
   const handleReset = () => {
     setActiveStep(0);
@@ -182,16 +260,16 @@ export default function CreateSimpleAutomationDialog({
     },
   ];
 
-  // Charger les données de l'automation si on est en mode édition
+  // Mettre à jour les états quand l'automation ou l'ouverture de la modal change
   useEffect(() => {
     if (automation && open) {
+      // Mettre à jour tous les états avec les valeurs de l'automation
       setName(automation.name);
       setDescription(automation.description || '');
       setTriggerType(automation.trigger.type);
       setTriggerDeviceId(automation.trigger.deviceId || '');
       setActionType(automation.actions[0]?.type || '');
       setActionDeviceId(automation.actions[0]?.deviceId || '');
-      // Charger tous les appareils d'action
       const deviceIds = automation.actions.map((action) => action.deviceId).filter(Boolean);
       setActionDeviceIds(deviceIds);
       setBrightness(automation.actions[0]?.params?.brightness || 100);
@@ -199,18 +277,13 @@ export default function CreateSimpleAutomationDialog({
       setThermostatTemp(automation.actions[0]?.params?.temperature || 20);
       setNotificationMessage(automation.actions[0]?.params?.message || '');
       setTurnOnDuration(automation.actions[0]?.params?.duration || 0);
+      
+      // Déterminer et définir la catégorie à partir de l'automation
+      const category = getCategoryFromAutomation(automation);
+      setAutomationCategory(category);
+      
       // Définir l'étape active selon les données chargées
-      if (automation.trigger.type) {
-        if (automation.trigger.deviceId || automation.trigger.type === AutomationTriggerType.SUNRISE_SUNSET) {
-          if (automation.actions[0]?.type) {
-            setActiveStep(4); // Toutes les étapes sont complètes (étape 4 = action + devices)
-          } else {
-            setActiveStep(3); // Trigger et device sont sélectionnés, aller à l'étape action
-          }
-        } else {
-          setActiveStep(1); // Seulement le trigger est sélectionné
-        }
-      }
+      setActiveStep(getInitialActiveStep(automation));
     } else if (!automation && open) {
       // Réinitialiser si on est en mode création
       handleReset();
@@ -298,13 +371,17 @@ export default function CreateSimpleAutomationDialog({
       setError(t('automations.selectAction'));
       return;
     }
-    // Étape 4 : Vérifier l'appareil d'action
-    if (activeStep === 4 && actionType !== AutomationActionType.NOTIFY && actionDeviceIds.length === 0) {
+    // Étape 3 : Vérifier l'appareil d'action (étape finale)
+    if (activeStep === 3 && actionType && actionType !== AutomationActionType.NOTIFY && actionDeviceIds.length === 0 && !actionDeviceId) {
       setError(t('automations.selectActionDevice'));
       return;
     }
     setError(null);
-    setActiveStep((prev) => prev + 1);
+    // Ne pas passer à l'étape suivante si on est déjà à l'étape 3 (dernière étape)
+    // L'utilisateur peut maintenant sauvegarder
+    if (activeStep < 3) {
+      setActiveStep((prev) => prev + 1);
+    }
   };
 
   const handleBack = () => {
@@ -549,7 +626,12 @@ export default function CreateSimpleAutomationDialog({
         <Stepper activeStep={activeStep} orientation="vertical">
           {/* Étape 0: Choisir la catégorie d'automation */}
           <Step>
-            <StepLabel>{t('automations.stepCategory')}</StepLabel>
+            <StepLabel 
+              onClick={() => setActiveStep(0)}
+              sx={{ cursor: 'pointer' }}
+            >
+              {t('automations.stepCategory')}
+            </StepLabel>
             <StepContent>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 {t('automations.stepCategoryDescription')}
@@ -609,7 +691,12 @@ export default function CreateSimpleAutomationDialog({
           {/* Étape 1: Choisir un déclencheur */}
           {automationCategory && (
             <Step>
-              <StepLabel>{t('automations.stepTrigger')}</StepLabel>
+              <StepLabel 
+                onClick={() => setActiveStep(1)}
+                sx={{ cursor: 'pointer' }}
+              >
+                {t('automations.stepTrigger')}
+              </StepLabel>
             <StepContent>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 {t('automations.stepTriggerDescription')}
@@ -670,7 +757,12 @@ export default function CreateSimpleAutomationDialog({
           {/* Étape 2: Choisir un appareil déclencheur */}
           {automationCategory && triggerType && triggerType !== AutomationTriggerType.SUNRISE_SUNSET && (
             <Step>
-              <StepLabel>{t('automations.stepDevice')}</StepLabel>
+              <StepLabel 
+                onClick={() => setActiveStep(2)}
+                sx={{ cursor: 'pointer' }}
+              >
+                {t('automations.stepDevice')}
+              </StepLabel>
               <StepContent>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                   {t('automations.stepDeviceDescription')}
@@ -726,7 +818,12 @@ export default function CreateSimpleAutomationDialog({
           {/* Étape 3: Choisir une action */}
           {automationCategory && triggerType && (
             <Step>
-              <StepLabel>{t('automations.stepAction')}</StepLabel>
+              <StepLabel 
+                onClick={() => setActiveStep(3)}
+                sx={{ cursor: 'pointer' }}
+              >
+                {t('automations.stepAction')}
+              </StepLabel>
               <StepContent>
               {triggerType === AutomationTriggerType.SUNRISE_SUNSET && (
                 <Alert severity="info" sx={{ mb: 2 }}>
@@ -834,7 +931,7 @@ export default function CreateSimpleAutomationDialog({
                               secondary={device.model || device.type}
                             />
                             {isSelected && (
-                              <Chip label={t('common.selected')} size="small" color="primary" />
+                              <Chip label={t('common.selected')} size="small" color="success" />
                             )}
                           </ListItemButton>
                         </ListItem>
