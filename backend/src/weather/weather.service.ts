@@ -33,7 +33,7 @@ export class WeatherService implements OnModuleInit {
     }
   }
 
-  @Cron(CronExpression.EVERY_HOUR)
+  @Cron(CronExpression.EVERY_10_MINUTES)
   async handleCron() {
     this.logger.log('=== MISE À JOUR HORAIRE DE LA MÉTÉO ===', 'WeatherService');
     try {
@@ -133,21 +133,23 @@ export class WeatherService implements OnModuleInit {
         const relative_humidity_2m = hourlyForDay.humidity;
         const wind_speed_10m = hourlyForDay.windSpeed;
 
-        // Utiliser INSERT OR REPLACE en SQL brut pour SQLite
-        // Cela évite les problèmes de contrainte UNIQUE en remplaçant automatiquement
-        // l'enregistrement existant si la combinaison (latitude, longitude, date) existe déjà
+        // Utiliser upsert pour éviter les problèmes de concurrence
+        // Cette méthode TypeORM est atomique et gère automatiquement l'insertion ou la mise à jour
         const dateStrForDB = date.toISOString().split('T')[0];
-        const now = new Date().toISOString();
+        const dateForDB = new Date(dateStrForDB + 'T00:00:00');
         
-        await this.weatherRepository.query(
-          `INSERT OR REPLACE INTO weather (
-            latitude, longitude, date, sunrise, sunset, temperature_2m, 
-            relative_humidity_2m, wind_speed_10m, precipitation, weather_code, raw_data, updatedAt
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
+        this.logger.log(
+          `  📅 Traitement de la date: ${dateStr} (format DB: ${dateStrForDB})`,
+          'WeatherService',
+        );
+
+        // Utiliser upsert avec les champs de l'index unique comme critère de conflit
+        // Cela évite les conditions de course (race conditions) et les erreurs UNIQUE constraint
+        await this.weatherRepository.upsert(
+          {
             latitude,
             longitude,
-            dateStrForDB,
+            date: dateForDB,
             sunrise,
             sunset,
             temperature_2m,
@@ -155,12 +157,15 @@ export class WeatherService implements OnModuleInit {
             wind_speed_10m,
             precipitation,
             weather_code,
-            JSON.stringify(data),
-            now,
-          ]
+            raw_data: JSON.stringify(data),
+            updatedAt: new Date(),
+          },
+          {
+            conflictPaths: ['latitude', 'longitude', 'date'],
+          },
         );
-        
-        this.logger.log(`  ✓ Météo enregistrée pour ${dateStr}`, 'WeatherService');
+
+        this.logger.log(`  ✓ Météo enregistrée pour ${dateStr} (${dateStrForDB})`, 'WeatherService');
       }
 
       this.logger.log('✓ Toutes les données météo ont été enregistrées en base de données', 'WeatherService');
@@ -253,27 +258,45 @@ export class WeatherService implements OnModuleInit {
         'WeatherService',
       );
 
-      // SQLite stocke les dates comme des chaînes, utiliser une comparaison de chaîne
-      // Essayer plusieurs méthodes pour être sûr de trouver la date
+      // SQLite stocke les dates comme des chaînes, utiliser une comparaison de chaînes
+      // pour être sûr de trouver la bonne date
       let result = await this.weatherRepository
         .createQueryBuilder('weather')
         .where('weather.latitude = :latitude', { latitude: settings.latitude })
         .andWhere('weather.longitude = :longitude', { longitude: settings.longitude })
-        .andWhere("strftime('%Y-%m-%d', weather.date) = :today", { today: todayStr })
+        .andWhere("DATE(weather.date) = :today", { today: todayStr })
         .getOne();
       
-      // Si la première méthode ne fonctionne pas, essayer avec DATE()
+      // Si la première méthode ne fonctionne pas, essayer avec strftime
       if (!result) {
         result = await this.weatherRepository
           .createQueryBuilder('weather')
           .where('weather.latitude = :latitude', { latitude: settings.latitude })
           .andWhere('weather.longitude = :longitude', { longitude: settings.longitude })
-          .andWhere('DATE(weather.date) = :today', { today: todayStr })
+          .andWhere("strftime('%Y-%m-%d', weather.date) = :today", { today: todayStr })
           .getOne();
       }
-
-      // Si toujours rien, récupérer toutes les données et comparer manuellement
+      
+      // Si toujours rien, essayer avec TypeORM findOne (pour les cas où la date est stockée comme Date)
       if (!result) {
+        const todayForDB = new Date(todayStr + 'T00:00:00');
+        result = await this.weatherRepository.findOne({
+          where: {
+            latitude: settings.latitude,
+            longitude: settings.longitude,
+            date: todayForDB,
+          },
+        });
+      }
+
+      // Si pas trouvé avec la recherche directe, essayer avec une comparaison de chaînes
+      if (!result) {
+        this.logger.log(
+          `⚠ Aucune donnée trouvée avec la recherche directe, tentative avec comparaison de chaînes`,
+          'WeatherService',
+        );
+        
+        // Récupérer toutes les données pour cette localisation et comparer manuellement
         const allWeatherForLocation = await this.weatherRepository.find({
           where: {
             latitude: settings.latitude,
@@ -313,74 +336,30 @@ export class WeatherService implements OnModuleInit {
       }
 
       if (result) {
-        this.logger.log(
-          `✓ Données météo trouvées pour aujourd'hui`,
-          'WeatherService',
-        );
-      } else {
-        this.logger.warn(
-          `⚠ Aucune donnée météo trouvée pour aujourd'hui (${today.toISOString().split('T')[0]})`,
-          'WeatherService',
-        );
-        
-        // Fallback : récupérer la date la plus récente disponible
-        const allWeatherForLocation = await this.weatherRepository.find({
-          where: {
-            latitude: settings.latitude,
-            longitude: settings.longitude,
-          },
-          order: {
-            date: 'DESC',
-          },
-          take: 1,
-        });
-
-        if (allWeatherForLocation.length > 0) {
-          const latestWeather = allWeatherForLocation[0];
-          const latestDate: any = latestWeather.date;
-          let latestDateStr: string;
-          
-          if (latestDate instanceof Date) {
-            latestDateStr = latestDate.toISOString().split('T')[0];
-          } else if (typeof latestDate === 'string') {
-            latestDateStr = latestDate.split('T')[0].split(' ')[0];
-          } else {
-            latestDateStr = String(latestDate).split('T')[0].split(' ')[0];
-          }
-
-          this.logger.log(
-            `ℹ Utilisation de la date la plus récente disponible: ${latestDateStr} (au lieu de ${todayStr})`,
-            'WeatherService',
-          );
-          
-          // Retourner la date la plus récente si elle est dans une plage raisonnable
-          // (jusqu'à 7 jours dans le passé ou dans le futur, pour gérer les problèmes de date système)
-          const latestDateObj = new Date(latestDateStr + 'T00:00:00');
-          const daysDiff = Math.floor((latestDateObj.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-          
-          // Accepter les dates dans une plage de -7 à +7 jours (pour gérer les problèmes de date système)
-          if (Math.abs(daysDiff) <= 7) {
-            this.logger.log(
-              `✓ Retour de la météo la plus récente (${daysDiff > 0 ? '+' : ''}${daysDiff} jour(s) d'écart par rapport à la date système)`,
-              'WeatherService',
-            );
-            return latestWeather;
-          } else {
-            this.logger.warn(
-              `⚠ La date la plus récente (${latestDateStr}) est trop éloignée (${daysDiff} jours) de la date système`,
-              'WeatherService',
-            );
-          }
+        const resultDate: any = result.date;
+        let resultDateStr: string;
+        if (resultDate instanceof Date) {
+          resultDateStr = resultDate.toISOString().split('T')[0];
+        } else if (typeof resultDate === 'string') {
+          resultDateStr = resultDate.split('T')[0].split(' ')[0];
         } else {
-          this.logger.warn(
-            '⚠ Aucune donnée météo en base de données. Le service de mise à jour météo a-t-il été exécuté ?',
-            'WeatherService',
-          );
+          resultDateStr = String(resultDate).split('T')[0].split(' ')[0];
         }
+        
+        this.logger.log(
+          `✓ Données météo trouvées pour ${resultDateStr}`,
+          'WeatherService',
+        );
+        return result;
       }
+
+      // Si aucune donnée pour aujourd'hui, retourner null (ne pas utiliser de fallback)
+      this.logger.warn(
+        `⚠ Aucune donnée météo trouvée pour aujourd'hui (${todayStr}). Vérifiez que la mise à jour météo a été exécutée.`,
+        'WeatherService',
+      );
       
-      // S'assurer de retourner null explicitement si aucun résultat
-      return result ?? null;
+      return null;
     } catch (error) {
       this.logger.error(
         `✗ Erreur lors de la récupération de la météo d'aujourd'hui: ${error.message}`,
@@ -442,12 +421,15 @@ export class WeatherService implements OnModuleInit {
     todayWeatherExists: boolean;
     totalWeatherRecords: number;
     lastWeatherDate: string | null;
+    allDates: string[];
+    todayStr: string;
   }> {
     const settings = await this.settingsService.getSettings();
     const hasCoordinates = !!(settings.latitude && settings.longitude);
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString().split('T')[0];
     
     let todayWeatherExists = false;
     if (hasCoordinates) {
@@ -455,24 +437,42 @@ export class WeatherService implements OnModuleInit {
       todayWeatherExists = !!todayWeather;
     }
 
-    const allWeather = await this.weatherRepository.find({
-      order: { date: 'DESC' },
-      take: 1,
-    });
+    // Récupérer toutes les données météo pour cette localisation
+    const allWeather = hasCoordinates && settings.latitude && settings.longitude
+      ? await this.weatherRepository.find({
+          where: {
+            latitude: settings.latitude,
+            longitude: settings.longitude,
+          },
+          order: { date: 'DESC' },
+        })
+      : await this.weatherRepository.find({
+          order: { date: 'DESC' },
+          take: 10,
+        });
 
-    // Gérer le cas où date peut être une chaîne (SQLite) ou un objet Date
+    // Extraire toutes les dates disponibles
+    const allDates: string[] = [];
     let lastWeatherDate: string | null = null;
-    if (allWeather.length > 0 && allWeather[0].date) {
-      const dateValue: any = allWeather[0].date;
+    
+    for (const weather of allWeather) {
+      const dateValue: any = weather.date;
+      let dateStr: string;
+      
       if (dateValue instanceof Date) {
-        lastWeatherDate = dateValue.toISOString().split('T')[0];
+        dateStr = dateValue.toISOString().split('T')[0];
       } else if (typeof dateValue === 'string') {
-        // Si c'est une chaîne, extraire la partie date (YYYY-MM-DD)
-        lastWeatherDate = dateValue.split('T')[0].split(' ')[0];
+        dateStr = dateValue.split('T')[0].split(' ')[0];
       } else {
-        // Fallback : convertir en string
-        const dateStr = String(dateValue);
-        lastWeatherDate = dateStr.split('T')[0].split(' ')[0];
+        dateStr = String(dateValue).split('T')[0].split(' ')[0];
+      }
+      
+      if (!allDates.includes(dateStr)) {
+        allDates.push(dateStr);
+      }
+      
+      if (!lastWeatherDate) {
+        lastWeatherDate = dateStr;
       }
     }
 
@@ -484,6 +484,8 @@ export class WeatherService implements OnModuleInit {
       todayWeatherExists,
       totalWeatherRecords: await this.weatherRepository.count(),
       lastWeatherDate,
+      allDates: allDates.sort().reverse(), // Plus récentes en premier
+      todayStr,
     };
   }
 }
