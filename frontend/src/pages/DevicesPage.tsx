@@ -160,6 +160,9 @@ export default function DevicesPage() {
     { value: 'plug', label: i18n.t('devices.plug') },
     { value: 'motion', label: i18n.t('devices.motion') },
     { value: 'temperature', label: i18n.t('devices.temperature') },
+    { value: 'pressure', label: i18n.t('devices.pressure') },
+    { value: 'illuminance', label: i18n.t('devices.illuminance') },
+    { value: 'contact', label: i18n.t('devices.contact') },
     { value: 'cover', label: i18n.t('devices.cover') },
     { value: 'other', label: i18n.t('devices.other') },
   ];
