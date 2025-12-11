@@ -122,9 +122,15 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
 
   const handleToggle = (event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
     event.stopPropagation();
+    event.preventDefault();
     if (onToggle && (device.type === 'light' || device.type === 'switch' || device.type === 'plug')) {
       onToggle(device, checked);
     }
+  };
+
+  const handleSwitchClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+    event.preventDefault();
   };
 
   const handleCoverPositionChange = (event: Event, newValue: number | number[]) => {
@@ -206,13 +212,16 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
               />
             {(device.type === 'light' || device.type === 'switch' || device.type === 'plug') && (
               <Tooltip title={isOn ? 'Éteindre' : 'Allumer'}>
-                <Switch
-                  checked={isOn}
-                  onChange={handleToggle}
-                  disabled={!isOnline}
-                  color="primary"
-                  size="medium"
-                />
+                <Box onClick={handleSwitchClick} onMouseDown={handleSwitchClick}>
+                  <Switch
+                    checked={isOn}
+                    onChange={handleToggle}
+                    disabled={!isOnline}
+                    color="primary"
+                    size="medium"
+                    onClick={handleSwitchClick}
+                  />
+                </Box>
               </Tooltip>
             )}
           </Box>

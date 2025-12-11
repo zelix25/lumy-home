@@ -120,11 +120,6 @@ export default function WeatherCard() {
     return i18n.t('weather.unknown');
   };
 
-  const formatTime = (time: string | null): string => {
-    if (!time) return '-';
-    return time.substring(0, 5); // HH:mm
-  };
-
   const getWeatherAnimation = (code: number | null) => {
     if (code === null) return null;
 
@@ -417,35 +412,6 @@ export default function WeatherCard() {
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
                 {weather.precipitation.toFixed(1)} mm
               </Typography>
-            </Box>
-          )}
-
-          {(weather.sunrise || weather.sunset) && (
-            <Box sx={{ mt: 1, pt: 1.5, borderTop: '1px solid rgba(0,0,0,0.08)' }}>
-              <Stack direction="row" spacing={2} justifyContent="space-around">
-                {weather.sunrise && (
-                  <Box sx={{ textAlign: 'center' }}>
-                    <WbSunny sx={{ fontSize: 20, color: '#FFA726', mb: 0.5 }} />
-                    <Typography variant="caption" color="text.secondary" display="block">
-                      {i18n.t('weather.sunrise')}
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      {formatTime(weather.sunrise)}
-                    </Typography>
-                  </Box>
-                )}
-                {weather.sunset && (
-                  <Box sx={{ textAlign: 'center' }}>
-                    <WbSunny sx={{ fontSize: 20, color: '#FF6F00', mb: 0.5 }} />
-                    <Typography variant="caption" color="text.secondary" display="block">
-                      {i18n.t('weather.sunset')}
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      {formatTime(weather.sunset)}
-                    </Typography>
-                  </Box>
-                )}
-              </Stack>
             </Box>
           )}
         </Stack>

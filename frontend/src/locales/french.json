@@ -51,13 +51,11 @@
     "humidity": "Humidité",
     "presence": "Présence",
     "detected": "Détectée",
+    "notDetected": "Non détecté",
     "none": "Aucune",
     "sensor": "Capteur",
     "door": "Porte",
-    "cover": "Volet",
     "position": "Position",
-    "open": "Ouvert",
-    "closed": "Fermé",
     "window": "Fenêtre",
     "button": "Bouton",
     "unknown": "Inconnu",
@@ -90,7 +88,11 @@
     "discoveryStopped": "Détection arrêtée",
     "nameUpdateSuccess": "Nom mis à jour",
     "nameUpdateSuccessMessage": "Le nom de l'appareil a été mis à jour avec succès : {{name}}",
-    "nameUpdateError": "Erreur de mise à jour"
+    "nameUpdateError": "Erreur de mise à jour",
+    "on": "Allumé",
+    "off": "Éteint",
+    "online": "En ligne",
+    "offline": "Hors ligne"
   },
   "deviceDetail": {
     "title": "Détails de l'appareil",

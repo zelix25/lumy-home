@@ -50,13 +50,11 @@
     "humidity": "Humidity",
     "presence": "Presence",
     "detected": "Detected",
+    "notDetected": "Not detected",
     "none": "None",
     "sensor": "Sensor",
     "door": "Door",
-    "cover": "Blind",
     "position": "Position",
-    "open": "Open",
-    "closed": "Closed",
     "window": "Window",
     "button": "Button",
     "unknown": "Unknown",
@@ -89,7 +87,11 @@
     "discoveryStopped": "Discovery stopped",
     "nameUpdateSuccess": "Name updated",
     "nameUpdateSuccessMessage": "Device name has been successfully updated: {{name}}",
-    "nameUpdateError": "Update error"
+    "nameUpdateError": "Update error",
+    "on": "On",
+    "off": "Off",
+    "online": "Online",
+    "offline": "Offline"
   },
   "deviceDetail": {
     "title": "Device details",

@@ -571,8 +571,8 @@ export class AutomationsService implements OnModuleInit {
             );
           }
           
-          // Allumer l'appareil
-          await this.zigbee2MqttService.sendCommand(turnOnDevice.friendlyName, { state: 'ON' });
+          // Allumer l'appareil - Utiliser devicesService pour gérer correctement le mqttName
+          await this.devicesService.sendCommand(deviceId, { state: 'ON' });
           this.logger.log(
             `[AUTOMATION ACTION] ✅ Commande "ON" envoyée avec succès à l'appareil ${turnOnDevice.friendlyName} (${deviceId})`,
             'AutomationsService',
@@ -590,7 +590,7 @@ export class AutomationsService implements OnModuleInit {
                   `[AUTOMATION ACTION] ⏰ Extinction automatique après ${duration} secondes pour l'appareil ${deviceForTurnOff.friendlyName} (${deviceId})`,
                   'AutomationsService',
                 );
-                await this.zigbee2MqttService.sendCommand(deviceForTurnOff.friendlyName, { state: 'OFF' });
+                await this.devicesService.sendCommand(deviceId, { state: 'OFF' });
                 this.logger.log(
                   `[AUTOMATION ACTION] ✅ Commande "OFF" (extinction automatique) envoyée avec succès à l'appareil ${deviceForTurnOff.friendlyName} (${deviceId})`,
                   'AutomationsService',
@@ -635,7 +635,7 @@ export class AutomationsService implements OnModuleInit {
             `[AUTOMATION ACTION] 🔌 Commande: Éteindre l'appareil ${turnOffDevice.friendlyName} (${deviceId})`,
             'AutomationsService',
           );
-          await this.zigbee2MqttService.sendCommand(turnOffDevice.friendlyName, { state: 'OFF' });
+          await this.devicesService.sendCommand(deviceId, { state: 'OFF' });
           this.logger.log(
             `[AUTOMATION ACTION] ✅ Commande "OFF" envoyée avec succès à l'appareil ${turnOffDevice.friendlyName} (${deviceId})`,
             'AutomationsService',
@@ -652,7 +652,7 @@ export class AutomationsService implements OnModuleInit {
             `[AUTOMATION ACTION] 🔄 Commande: Basculer l'appareil ${device.friendlyName} (${deviceId}) - État actuel: ${currentState || 'inconnu'} → ${newState}`,
             'AutomationsService',
           );
-          await this.zigbee2MqttService.sendCommand(device.friendlyName, { state: newState });
+          await this.devicesService.sendCommand(deviceId, { state: newState });
           this.logger.log(
             `[AUTOMATION ACTION] ✅ Commande "TOGGLE" (${newState}) envoyée avec succès à l'appareil ${device.friendlyName} (${deviceId})`,
             'AutomationsService',
@@ -668,12 +668,14 @@ export class AutomationsService implements OnModuleInit {
             `[AUTOMATION ACTION] 🌟 Commande: Régler la luminosité de l'appareil ${brightnessDevice.friendlyName} (${deviceId}) à ${params.brightness}%`,
             'AutomationsService',
           );
-          await this.zigbee2MqttService.sendCommand(brightnessDevice.friendlyName, {
+          // Convertir le pourcentage en valeur 0-255 pour Zigbee2MQTT
+          const brightnessValue = Math.round((params.brightness / 100) * 255);
+          await this.devicesService.sendCommand(deviceId, {
             state: 'ON',
-            brightness: params.brightness,
+            brightness: brightnessValue,
           });
           this.logger.log(
-            `[AUTOMATION ACTION] ✅ Commande de luminosité (${params.brightness}%) envoyée avec succès à l'appareil ${brightnessDevice.friendlyName} (${deviceId})`,
+            `[AUTOMATION ACTION] ✅ Commande de luminosité (${params.brightness}% = ${brightnessValue}/255) envoyée avec succès à l'appareil ${brightnessDevice.friendlyName} (${deviceId})`,
             'AutomationsService',
           );
           break;
@@ -687,7 +689,7 @@ export class AutomationsService implements OnModuleInit {
             `[AUTOMATION ACTION] 🎨 Commande: Changer la couleur de l'appareil ${colorDevice.friendlyName} (${deviceId}) en ${params.color}`,
             'AutomationsService',
           );
-          await this.zigbee2MqttService.sendCommand(colorDevice.friendlyName, {
+          await this.devicesService.sendCommand(deviceId, {
             state: 'ON',
             color: params.color,
           });
@@ -706,7 +708,7 @@ export class AutomationsService implements OnModuleInit {
             `[AUTOMATION ACTION] 🌡️ Commande: Régler la température de couleur de l'appareil ${colorTempDevice.friendlyName} (${deviceId}) à ${params.color_temp}`,
             'AutomationsService',
           );
-          await this.zigbee2MqttService.sendCommand(colorTempDevice.friendlyName, {
+          await this.devicesService.sendCommand(deviceId, {
             state: 'ON',
             color_temp: params.color_temp,
           });
@@ -725,7 +727,7 @@ export class AutomationsService implements OnModuleInit {
             `[AUTOMATION ACTION] 🌡️ Commande: Régler le thermostat ${thermostatDevice.friendlyName} (${deviceId}) à ${params.temperature}°C`,
             'AutomationsService',
           );
-          await this.zigbee2MqttService.sendCommand(thermostatDevice.friendlyName, {
+          await this.devicesService.sendCommand(deviceId, {
             current_heating_setpoint: params.temperature,
           });
           this.logger.log(

@@ -86,6 +86,7 @@ export default function DeviceDetailPage() {
   const [room, setRoom] = useState('');
   const [brightness, setBrightness] = useState(100);
   const [isOn, setIsOn] = useState(false);
+  const [coverPosition, setCoverPosition] = useState(0);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -113,6 +114,22 @@ export default function DeviceDetailPage() {
             ? Math.round((data.state.brightness / 255) * 100)
             : 100,
         );
+        // Pour les volets, récupérer la position (0-100, où 0 = fermé, 100 = ouvert)
+        if (data.type === 'cover') {
+          if (data.state?.position !== undefined) {
+            setCoverPosition(
+              typeof data.state.position === 'number' 
+                ? data.state.position 
+                : parseInt(data.state.position) || 0
+            );
+          } else if (data.state?.state === 'open' || data.state?.state === 'OPEN') {
+            setCoverPosition(100);
+          } else if (data.state?.state === 'closed' || data.state?.state === 'CLOSED') {
+            setCoverPosition(0);
+          } else {
+            setCoverPosition(0);
+          }
+        }
       } catch (err) {
         setError('Impossible de charger les détails de l\'appareil');
         console.error(err);
@@ -155,6 +172,20 @@ export default function DeviceDetailPage() {
         setIsOn(eventData.state?.state === 'ON' || eventData.state?.state === true);
         if (eventData.state?.brightness !== undefined) {
           setBrightness(Math.round((eventData.state.brightness / 255) * 100));
+        }
+        // Mettre à jour la position du volet si c'est un appareil cover
+        if (device?.type === 'cover') {
+          if (eventData.state?.position !== undefined) {
+            setCoverPosition(
+              typeof eventData.state.position === 'number' 
+                ? eventData.state.position 
+                : parseInt(eventData.state.position) || 0
+            );
+          } else if (eventData.state?.state === 'open' || eventData.state?.state === 'OPEN') {
+            setCoverPosition(100);
+          } else if (eventData.state?.state === 'closed' || eventData.state?.state === 'CLOSED') {
+            setCoverPosition(0);
+          }
         }
         setDevice((prev) => (prev ? { ...prev, state: eventData.state } : null));
       }
@@ -263,6 +294,21 @@ export default function DeviceDetailPage() {
       });
     } catch (err) {
       console.error('Erreur lors de la commande:', err);
+    }
+  };
+
+  const handleCoverPositionChange = async (_: Event, value: number | number[]) => {
+    if (!ieeeAddress) return;
+    const newPosition = Array.isArray(value) ? value[0] : value;
+    setCoverPosition(newPosition);
+    try {
+      // Pour Zigbee2MQTT, la position est envoyée comme un nombre de 0 à 100
+      // où 0 = fermé, 100 = ouvert
+      await devicesService.sendCommand(ieeeAddress, {
+        position: newPosition,
+      });
+    } catch (err) {
+      console.error('Erreur lors du changement de position du volet:', err);
     }
   };
 
@@ -480,6 +526,75 @@ export default function DeviceDetailPage() {
                     />
                   </Box>
                 )}
+
+                {device.type === 'cover' && (
+                  <Box sx={{ mt: 3 }}>
+                    <Divider sx={{ mb: 3 }} />
+                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
+                      Contrôles
+                    </Typography>
+                    <Box sx={{ px: 1, py: 1 }}>
+                      <Typography variant="body2" color="text.secondary" display="block" sx={{ mb: 1, fontSize: '0.875rem' }}>
+                        {t('devices.position')}
+                      </Typography>
+                      <Box sx={{ position: 'relative', px: 1 }}>
+                        <Slider
+                          value={coverPosition}
+                          onChange={handleCoverPositionChange}
+                          disabled={device.status !== 'online'}
+                          min={0}
+                          max={100}
+                          step={1}
+                          marks={[
+                            { value: 50, label: '50%' },
+                          ]}
+                          valueLabelDisplay="auto"
+                          valueLabelFormat={(value) => `${value}%`}
+                          sx={{
+                            mb: 0.5,
+                            '& .MuiSlider-thumb': {
+                              width: 20,
+                              height: 20,
+                            },
+                            '& .MuiSlider-track': {
+                              height: 6,
+                            },
+                            '& .MuiSlider-rail': {
+                              height: 6,
+                            },
+                            '& .MuiSlider-markLabel': {
+                              fontSize: '0.75rem',
+                            },
+                            '& .MuiSlider-valueLabel': {
+                              fontSize: '0.75rem',
+                            },
+                          }}
+                        />
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                            {t('devices.closed')}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                            {t('devices.open')}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          fontSize: '0.875rem',
+                          fontWeight: 500,
+                          color: coverPosition < 50 ? 'error.main' : coverPosition < 100 ? 'warning.main' : 'success.main',
+                          display: 'block',
+                          mt: 1,
+                          textAlign: 'right',
+                        }}
+                      >
+                        {coverPosition}%
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
               </CardContent>
             )}
 
@@ -577,6 +692,22 @@ export default function DeviceDetailPage() {
                       setIsOn(updated.state?.state === 'ON' || updated.state?.state === true);
                       if (updated.state?.brightness !== undefined) {
                         setBrightness(Math.round((updated.state.brightness / 255) * 100));
+                      }
+                      // Mettre à jour la position du volet si c'est un appareil cover
+                      if (updated.type === 'cover') {
+                        if (updated.state?.position !== undefined) {
+                          setCoverPosition(
+                            typeof updated.state.position === 'number' 
+                              ? updated.state.position 
+                              : parseInt(updated.state.position) || 0
+                          );
+                        } else if (updated.state?.state === 'open' || updated.state?.state === 'OPEN') {
+                          setCoverPosition(100);
+                        } else if (updated.state?.state === 'closed' || updated.state?.state === 'CLOSED') {
+                          setCoverPosition(0);
+                        } else {
+                          setCoverPosition(0);
+                        }
                       }
                     } catch (err) {
                       console.error('Erreur lors du rafraîchissement:', err);

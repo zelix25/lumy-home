@@ -188,9 +188,9 @@ export class WeatherService implements OnModuleInit {
   private async deleteOldWeatherData(latitude: number, longitude: number): Promise<void> {
     try {
       // Utiliser la date locale pour éviter les problèmes de fuseau horaire
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayStr = this.getLocalDateString(today);
 
       this.logger.log(
         `🗑️  Suppression des données météo antérieures à ${todayStr}`,
@@ -286,6 +286,17 @@ export class WeatherService implements OnModuleInit {
   }
 
   /**
+   * Obtient la date locale d'aujourd'hui au format YYYY-MM-DD
+   * Utilise la date locale au lieu de UTC pour éviter les décalages de fuseau horaire
+   */
+  private getLocalDateString(date: Date = new Date()): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  /**
    * Récupère les données météo d'aujourd'hui
    */
   async getTodayWeather(): Promise<Weather | null> {
@@ -302,7 +313,7 @@ export class WeatherService implements OnModuleInit {
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const todayStr = today.toISOString().split('T')[0]; // Format YYYY-MM-DD
+      const todayStr = this.getLocalDateString(today); // Format YYYY-MM-DD (date locale)
 
       this.logger.log(
         `🔍 Recherche météo pour aujourd'hui (${todayStr}) aux coordonnées: ${settings.latitude}, ${settings.longitude}`,
@@ -480,7 +491,7 @@ export class WeatherService implements OnModuleInit {
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const todayStr = today.toISOString().split('T')[0];
+    const todayStr = this.getLocalDateString(today);
     
     let todayWeatherExists = false;
     if (hasCoordinates) {

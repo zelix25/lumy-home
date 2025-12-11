@@ -884,8 +884,8 @@
   {
     "model": "REXZB-111",
     "type": "other",
-    "vendor": "Develcomore",
-    "comment": "Develcomore Range extender with backup battery"
+    "vendor": "Develco",
+    "comment": "Develco Range extender with backup battery"
   },
   {
     "model": "ZBPD23400",
@@ -980,14 +980,14 @@
   {
     "model": "756200027",
     "type": "light",
-    "vendor": "L&S Lightingmore",
-    "comment": "L&S Lightingmore Mec Driver module 1-channel Zigbee (12V)"
+    "vendor": "L&S Lighting",
+    "comment": "L&S Lighting Mec Driver module 1-channel Zigbee (12V)"
   },
   {
     "model": "756200030",
     "type": "light",
-    "vendor": "L&S Lightingmore",
-    "comment": "L&S Lightingmore Mec Driver module 4-channel Zigbee (12V)"
+    "vendor": "L&S Lighting",
+    "comment": "L&S Lighting Mec Driver module 4-channel Zigbee (12V)"
   },
   {
     "model": "ZHT-PT01-M-MS",
@@ -1436,20 +1436,20 @@
   {
     "model": "REXZB-111",
     "type": "other",
-    "vendor": "Frientmore",
-    "comment": "Frientmore Range extender with backup battery"
+    "vendor": "Frient",
+    "comment": "Frient Range extender with backup battery"
   },
   {
     "model": "756200028",
     "type": "light",
-    "vendor": "L&S Lightingmore",
-    "comment": "L&S Lightingmore Mec Driver module 1-channel Zigbee (24V)"
+    "vendor": "L&S Lighting",
+    "comment": "L&S Lighting Mec Driver module 1-channel Zigbee (24V)"
   },
   {
     "model": "756200031",
     "type": "light",
-    "vendor": "L&S Lightingmore",
-    "comment": "L&S Lightingmore Mec Driver module 4-channel Zigbee (24V)"
+    "vendor": "L&S Lighting",
+    "comment": "L&S Lighting Mec Driver module 4-channel Zigbee (24V)"
   },
   {
     "model": "LYAI-14",
@@ -1604,8 +1604,8 @@
   {
     "model": "ERCU_WS_Zm",
     "type": "other",
-    "vendor": "AwoXmore",
-    "comment": "AwoXmore Connect-Z magnetic wall mountable light RCU"
+    "vendor": "AwoX",
+    "comment": "AwoX Connect-Z magnetic wall mountable light RCU"
   },
   {
     "model": "BSEN-M",
@@ -1982,8 +1982,8 @@
   {
     "model": "900116",
     "type": "other",
-    "vendor": "EGLOmore",
-    "comment": "EGLOmore Connect-Z magnetic wall mountable light RCU"
+    "vendor": "EGLO",
+    "comment": "EGLO Connect-Z magnetic wall mountable light RCU"
   },
   {
     "model": "RCL 232 C",
@@ -2072,8 +2072,8 @@
   {
     "model": "EBF_RGB_Zm",
     "type": "light",
-    "vendor": "AwoXmore",
-    "comment": "AwoXmore LED with adjustable color temp on main ring; extra RGB strip for full colors."
+    "vendor": "AwoX",
+    "comment": "AwoX LED with adjustable color temp on main ring; extra RGB strip for full colors."
   },
   {
     "model": "WISZB-131",
@@ -2492,8 +2492,8 @@
   {
     "model": "900566",
     "type": "light",
-    "vendor": "EGLOmore",
-    "comment": "EGLOmore LED with adjustable color temp on main ring; extra RGB strip for full colors."
+    "vendor": "EGLO",
+    "comment": "EGLO LED with adjustable color temp on main ring; extra RGB strip for full colors."
   },
   {
     "model": "THERM_SLACKY_DIY_R09",
@@ -3188,8 +3188,8 @@
   {
     "model": "EPIR_Zm",
     "type": "sensor",
-    "vendor": "AwoXmore",
-    "comment": "AwoXmore Connect-Z motion (PIR) sensor"
+    "vendor": "AwoX",
+    "comment": "AwoX Connect-Z motion (PIR) sensor"
   },
   {
     "model": "SDM01W-U01",
@@ -3242,8 +3242,8 @@
   {
     "model": "412175",
     "type": "other",
-    "vendor": "Legrandmore",
-    "comment": "Legrandmore DIN 3 Phases power consumption module"
+    "vendor": "Legrand",
+    "comment": "Legrand DIN 3 Phases power consumption module"
   },
   {
     "model": "067797",
@@ -3374,14 +3374,14 @@
   {
     "model": "SR-ZG9001K8-DIM",
     "type": "other",
-    "vendor": "Sunrichermore",
-    "comment": "Sunrichermore Zigbee 8 button wall switch"
+    "vendor": "Sunricher",
+    "comment": "Sunricher Zigbee 8 button wall switch"
   },
   {
     "model": "ZG2819S-RGBW",
     "type": "other",
-    "vendor": "Sunrichermore",
-    "comment": "Sunrichermore Zigbee handheld remote RGBW 4 channels"
+    "vendor": "Sunricher",
+    "comment": "Sunricher Zigbee handheld remote RGBW 4 channels"
   },
   {
     "model": "SR-ZG9095B",
@@ -3566,8 +3566,8 @@
   {
     "model": "99106",
     "type": "sensor",
-    "vendor": "EGLOmore",
-    "comment": "EGLOmore Connect-Z motion (PIR) sensor"
+    "vendor": "EGLO",
+    "comment": "EGLO Connect-Z motion (PIR) sensor"
   },
   {
     "model": "F40T125A",
@@ -3578,14 +3578,14 @@
   {
     "model": "SR-ZG9001NK8-DIM",
     "type": "other",
-    "vendor": "Sunrichermore",
-    "comment": "Sunrichermore Zigbee 8 button wall switch"
+    "vendor": "Sunricher",
+    "comment": "Sunricher Zigbee 8 button wall switch"
   },
   {
     "model": "511.344",
     "type": "other",
-    "vendor": "Iluminizemore",
-    "comment": "Iluminizemore Zigbee handheld remote RGBW 4 channels"
+    "vendor": "Iluminize",
+    "comment": "Iluminize Zigbee handheld remote RGBW 4 channels"
   },
   {
     "model": "929003846601",
@@ -4970,62 +4970,62 @@
   {
     "model": "E160x/E170x/E190x",
     "type": "switch",
-    "vendor": "IKEAmore",
-    "comment": "IKEAmore TRADFRI control outlet"
+    "vendor": "IKEA",
+    "comment": "IKEA TRADFRI control outlet"
   },
   {
     "model": "E22x4",
     "type": "switch",
-    "vendor": "IKEAmore",
-    "comment": "IKEAmore TRETAKT smart plug"
+    "vendor": "IKEA",
+    "comment": "IKEA TRETAKT smart plug"
   },
   {
     "model": "E1603",
     "type": "switch",
-    "vendor": "IKEAmore",
-    "comment": "IKEAmore E1603 (Type - F)"
+    "vendor": "IKEA",
+    "comment": "IKEA E1603 (Type - F)"
   },
   {
     "model": "E1702/E1703",
     "type": "switch",
-    "vendor": "IKEAmore",
-    "comment": "IKEAmore E1702/E1703 (Type - E)"
+    "vendor": "IKEA",
+    "comment": "IKEA E1702/E1703 (Type - E)"
   },
   {
     "model": "E1704",
     "type": "switch",
-    "vendor": "IKEAmore",
-    "comment": "IKEAmore E1704 (Type - G)"
+    "vendor": "IKEA",
+    "comment": "IKEA E1704 (Type - G)"
   },
   {
     "model": "E1705",
     "type": "switch",
-    "vendor": "IKEAmore",
-    "comment": "IKEAmore E1705 (Type - L)"
+    "vendor": "IKEA",
+    "comment": "IKEA E1705 (Type - L)"
   },
   {
     "model": "E1706/E1707/E1708/E1709/E1710",
     "type": "switch",
-    "vendor": "IKEAmore",
-    "comment": "IKEAmore E1706/E1707/E1708/E1709/E1710 (Type - B)"
+    "vendor": "IKEA",
+    "comment": "IKEA E1706/E1707/E1708/E1709/E1710 (Type - B)"
   },
   {
     "model": "E1902",
     "type": "switch",
-    "vendor": "IKEAmore",
-    "comment": "IKEAmore E1902 (Type - J)"
+    "vendor": "IKEA",
+    "comment": "IKEA E1902 (Type - J)"
   },
   {
     "model": "E2204",
     "type": "switch",
-    "vendor": "IKEAmore",
-    "comment": "IKEAmore E2204 (EU)"
+    "vendor": "IKEA",
+    "comment": "IKEA E2204 (EU)"
   },
   {
     "model": "E2214",
     "type": "switch",
-    "vendor": "IKEAmore",
-    "comment": "IKEAmore E2214 (CH)"
+    "vendor": "IKEA",
+    "comment": "IKEA E2214 (CH)"
   },
   {
     "model": "COZB0001",
@@ -5438,14 +5438,14 @@
   {
     "model": "ATMS10013Z3",
     "type": "other",
-    "vendor": "Ourtopmore",
-    "comment": "Ourtopmore Zigbee 3 Phase Meter"
+    "vendor": "Ourtop",
+    "comment": "Ourtop Zigbee 3 Phase Meter"
   },
   {
     "model": "ATMS100133Z",
     "type": "other",
-    "vendor": "Ourtopmore",
-    "comment": "Ourtopmore Zigbee 3 Phase Meter"
+    "vendor": "Ourtop",
+    "comment": "Ourtop Zigbee 3 Phase Meter"
   },
   {
     "model": "ZG-302ZM",
@@ -5672,8 +5672,8 @@
   {
     "model": "NHMOTION/UNIDIM/1",
     "type": "light",
-    "vendor": "Schneider Electricmore",
-    "comment": "Schneider Electricmore Motion sensor with dimmer"
+    "vendor": "Schneider Electric",
+    "comment": "Schneider Electric Motion sensor with dimmer"
   },
   {
     "model": "S520619",
@@ -5684,8 +5684,8 @@
   {
     "model": "Z111PL0H-1JX",
     "type": "switch",
-    "vendor": "SONOFFmore",
-    "comment": "SONOFFmore Smart Plug"
+    "vendor": "SONOFF",
+    "comment": "SONOFF Smart Plug"
   },
   {
     "model": "SR-ZG2835RAC-NK4",
@@ -5780,26 +5780,26 @@
   {
     "model": "EKO06984",
     "type": "light",
-    "vendor": "ELKOmore",
-    "comment": "ELKOmore SmartPir with push dimmer"
+    "vendor": "ELKO",
+    "comment": "ELKO SmartPir with push dimmer"
   },
   {
     "model": "EKO06985",
     "type": "light",
-    "vendor": "ELKOmore",
-    "comment": "ELKOmore SmartPir with push dimmer"
+    "vendor": "ELKO",
+    "comment": "ELKO SmartPir with push dimmer"
   },
   {
     "model": "EKO06986",
     "type": "light",
-    "vendor": "ELKOmore",
-    "comment": "ELKOmore SmartPir with push dimmer"
+    "vendor": "ELKO",
+    "comment": "ELKO SmartPir with push dimmer"
   },
   {
     "model": "SA-028-1",
     "type": "switch",
-    "vendor": "Woolleymore",
-    "comment": "Woolleymore Smart Plug"
+    "vendor": "Woolley",
+    "comment": "Woolley Smart Plug"
   },
   {
     "model": "CK-MG22-JLDJ-01(7015)",
@@ -6151,13 +6151,13 @@
   },
   {
     "model": "TS0041A",
-    "type": "other",
+    "type": "switch",
     "vendor": "Tuya",
     "comment": "Tuya Wireless switch with 1 button"
   },
   {
     "model": "Push_ME",
-    "type": "other",
+    "type": "switch",
     "vendor": "Marmitek",
     "comment": "Marmitek Wireless switch with 1 button"
   },
@@ -6242,50 +6242,50 @@
   {
     "model": "NH3527A",
     "type": "light",
-    "vendor": "Schneider Electricmore",
-    "comment": "Schneider Electricmore Motion sensor with dimmer"
+    "vendor": "Schneider Electric",
+    "comment": "Schneider Electric Motion sensor with dimmer"
   },
   {
     "model": "EKO07250",
     "type": "light",
-    "vendor": "Elkomore",
-    "comment": "Elkomore Motion sensor with dimmer"
+    "vendor": "Elko",
+    "comment": "Elko Motion sensor with dimmer"
   },
   {
     "model": "EKO07251",
     "type": "light",
-    "vendor": "Elkomore",
-    "comment": "Elkomore Motion sensor with dimmer"
+    "vendor": "Elko",
+    "comment": "Elko Motion sensor with dimmer"
   },
   {
     "model": "EKO07252",
     "type": "light",
-    "vendor": "Elkomore",
-    "comment": "Elkomore Motion sensor with dimmer"
+    "vendor": "Elko",
+    "comment": "Elko Motion sensor with dimmer"
   },
   {
     "model": "EKO07253",
     "type": "light",
-    "vendor": "Elkomore",
-    "comment": "Elkomore Motion sensor with dimmer"
+    "vendor": "Elko",
+    "comment": "Elko Motion sensor with dimmer"
   },
   {
     "model": "EKO30199",
     "type": "light",
-    "vendor": "Elkomore",
-    "comment": "Elkomore Motion sensor with dimmer"
+    "vendor": "Elko",
+    "comment": "Elko Motion sensor with dimmer"
   },
   {
     "model": "WDE002962",
     "type": "light",
-    "vendor": "Exxactmore",
-    "comment": "Exxactmore Motion sensor with dimmer"
+    "vendor": "Exxact",
+    "comment": "Exxact Motion sensor with dimmer"
   },
   {
     "model": "WDE003962",
     "type": "light",
-    "vendor": "Exxactmore",
-    "comment": "Exxactmore Motion sensor with dimmer"
+    "vendor": "Exxact",
+    "comment": "Exxact Motion sensor with dimmer"
   },
   {
     "model": "A1Z",
@@ -6428,8 +6428,8 @@
   {
     "model": "MOSZB-153",
     "type": "sensor",
-    "vendor": "Develcomore",
-    "comment": "Develcomore Motion sensor 2 pet"
+    "vendor": "Develco",
+    "comment": "Develco Motion sensor 2 pet"
   },
   {
     "model": "ZB-PM01",
@@ -6445,25 +6445,25 @@
   },
   {
     "model": "ZB-WB01",
-    "type": "other",
+    "type": "switch",
     "vendor": "easyiot",
     "comment": "easyiot 1-button remote control"
   },
   {
     "model": "ZB-WB02",
-    "type": "other",
+    "type": "switch",
     "vendor": "easyiot",
     "comment": "easyiot 2-button remote control"
   },
   {
     "model": "ZB-WB03",
-    "type": "other",
+    "type": "switch",
     "vendor": "easyiot",
     "comment": "easyiot 3-button remote control"
   },
   {
     "model": "ZB-WB08",
-    "type": "other",
+    "type": "switch",
     "vendor": "easyiot",
     "comment": "easyiot 8-button remote control"
   },
@@ -6536,8 +6536,8 @@
   {
     "model": "PAT04-A",
     "type": "other",
-    "vendor": "Philiomore",
-    "comment": "Philiomore Water leak detector"
+    "vendor": "Philio",
+    "comment": "Philio Water leak detector"
   },
   {
     "model": "8720169264151",
@@ -6686,8 +6686,8 @@
   {
     "model": "RMDZB-1PNL63",
     "type": "switch",
-    "vendor": "TNCEmore",
-    "comment": "TNCEmore Zigbee DIN single phase energy meter"
+    "vendor": "TNCE",
+    "comment": "TNCE Zigbee DIN single phase energy meter"
   },
   {
     "model": "TS0726_switch_4g_2s",
@@ -6740,20 +6740,20 @@
   {
     "model": "MOSZB-153",
     "type": "sensor",
-    "vendor": "Frientmore",
-    "comment": "Frientmore Motion Sensor 2 Pet"
+    "vendor": "Frient",
+    "comment": "Frient Motion Sensor 2 Pet"
   },
   {
     "model": "PAT04-A",
     "type": "other",
-    "vendor": "Evologymore",
-    "comment": "Evologymore Water leak detector"
+    "vendor": "Evology",
+    "comment": "Evology Water leak detector"
   },
   {
     "model": "RMDZB-1PNL63",
     "type": "switch",
-    "vendor": "TNCEmore",
-    "comment": "TNCEmore Zigbee DIN single phase energy meter"
+    "vendor": "TNCE",
+    "comment": "TNCE Zigbee DIN single phase energy meter"
   },
   {
     "model": "ZB-ERSM-01",
@@ -6823,7 +6823,7 @@
   },
   {
     "model": "SE20-O",
-    "type": "other",
+    "type": "switch",
     "vendor": "ORVIBO",
     "comment": "ORVIBO Smart emergency button"
   },
@@ -6992,8 +6992,8 @@
   {
     "model": "E2206",
     "type": "switch",
-    "vendor": "IKEAmore",
-    "comment": "IKEAmore INSPELNING smart plug"
+    "vendor": "IKEA",
+    "comment": "IKEA INSPELNING smart plug"
   },
   {
     "model": "371050043",
@@ -7010,14 +7010,14 @@
   {
     "model": "E2220",
     "type": "switch",
-    "vendor": "IKEAmore",
-    "comment": "IKEAmore INSPELNING smart plug (US)"
+    "vendor": "IKEA",
+    "comment": "IKEA INSPELNING smart plug (US)"
   },
   {
     "model": "E2224",
     "type": "switch",
-    "vendor": "IKEAmore",
-    "comment": "IKEAmore INSPELNING smart plug (CH)"
+    "vendor": "IKEA",
+    "comment": "IKEA INSPELNING smart plug (CH)"
   },
   {
     "model": "LST103",
@@ -7094,8 +7094,8 @@
   {
     "model": "TS0002_basic",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore 2 gang switch module"
+    "vendor": "Tuya",
+    "comment": "Tuya 2 gang switch module"
   },
   {
     "model": "TS0002_limited",
@@ -7118,8 +7118,8 @@
   {
     "model": "SWTZ22",
     "type": "switch",
-    "vendor": "OXTmore",
-    "comment": "OXTmore 2 gang switch module"
+    "vendor": "OXT",
+    "comment": "OXT 2 gang switch module"
   },
   {
     "model": "929003736201",
@@ -7328,8 +7328,8 @@
   {
     "model": "STB3L-125-ZJ",
     "type": "switch",
-    "vendor": "SUTONmore",
-    "comment": "SUTONmore Zigbee DIN RCBO energy meter"
+    "vendor": "SUTON",
+    "comment": "SUTON Zigbee DIN RCBO energy meter"
   },
   {
     "model": "THE01860A",
@@ -7364,8 +7364,8 @@
   {
     "model": "STB3L-125/ZJ",
     "type": "switch",
-    "vendor": "SUTONmore",
-    "comment": "SUTONmore Zigbee DIN RCBO energy meter"
+    "vendor": "SUTON",
+    "comment": "SUTON Zigbee DIN RCBO energy meter"
   },
   {
     "model": "YXZBSL",
@@ -7952,8 +7952,8 @@
   {
     "model": "TS0601_dimmer_1_gang_1",
     "type": "light",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore 1 gang smart dimmer"
+    "vendor": "Tuya",
+    "comment": "Tuya 1 gang smart dimmer"
   },
   {
     "model": "TS0601_dimmer_1_gang_2",
@@ -8138,56 +8138,56 @@
   {
     "model": "X706U",
     "type": "light",
-    "vendor": "Lerlinkmore",
-    "comment": "Lerlinkmore 1 gang smart dimmer"
+    "vendor": "Lerlink",
+    "comment": "Lerlink 1 gang smart dimmer"
   },
   {
     "model": "ZS-EUD_1gang",
     "type": "light",
-    "vendor": "Moesmore",
-    "comment": "Moesmore 1 gang smart dimmer"
+    "vendor": "Moes",
+    "comment": "Moes 1 gang smart dimmer"
   },
   {
     "model": "ZSTY-SM-1DMZG-EU",
     "type": "light",
-    "vendor": "Larkkeymore",
-    "comment": "Larkkeymore 1 gang smart dimmer"
+    "vendor": "Larkkey",
+    "comment": "Larkkey 1 gang smart dimmer"
   },
   {
     "model": "EDM-1ZAA-EU",
     "type": "light",
-    "vendor": "Eardamore",
-    "comment": "Eardamore 1 gang smart dimmer"
+    "vendor": "Earda",
+    "comment": "Earda 1 gang smart dimmer"
   },
   {
     "model": "EDM-1ZAB-EU",
     "type": "light",
-    "vendor": "Eardamore",
-    "comment": "Eardamore 1 gang smart dimmer"
+    "vendor": "Earda",
+    "comment": "Earda 1 gang smart dimmer"
   },
   {
     "model": "EDM-1ZBA-EU",
     "type": "light",
-    "vendor": "Eardamore",
-    "comment": "Eardamore 1 gang smart dimmer"
+    "vendor": "Earda",
+    "comment": "Earda 1 gang smart dimmer"
   },
   {
     "model": "SSWD01",
     "type": "light",
-    "vendor": "Mercator Ikuümore",
-    "comment": "Mercator Ikuümore 1 gang smart dimmer"
+    "vendor": "Mercator Ikuü",
+    "comment": "Mercator Ikuü 1 gang smart dimmer"
   },
   {
     "model": "ZS-USD",
     "type": "light",
-    "vendor": "Moesmore",
-    "comment": "Moesmore 1 gang smart dimmer"
+    "vendor": "Moes",
+    "comment": "Moes 1 gang smart dimmer"
   },
   {
     "model": "EDM-1ZBB-EU",
     "type": "light",
-    "vendor": "Moesmore",
-    "comment": "Moesmore 1 gang smart dimmer"
+    "vendor": "Moes",
+    "comment": "Moes 1 gang smart dimmer"
   },
   {
     "model": "TI0001-hygrometer",
@@ -8252,8 +8252,8 @@
   {
     "model": "1CH-HP-RELAY-7853",
     "type": "switch",
-    "vendor": "Envilarmore",
-    "comment": "Envilarmore 1 channel high power box relay"
+    "vendor": "Envilar",
+    "comment": "Envilar 1 channel high power box relay"
   },
   {
     "model": "RB 262",
@@ -8300,8 +8300,8 @@
   {
     "model": "SR-ZG9101SAC-HP-SWITCH-B",
     "type": "switch",
-    "vendor": "Sunrichermore",
-    "comment": "Sunrichermore 1 channel high power box relay"
+    "vendor": "Sunricher",
+    "comment": "Sunricher 1 channel high power box relay"
   },
   {
     "model": "046677585235",
@@ -8720,8 +8720,8 @@
   {
     "model": "TS0601_fan_5_levels_and_light_switch",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Fan with 5 levels & light switch"
+    "vendor": "Tuya",
+    "comment": "Tuya Fan with 5 levels & light switch"
   },
   {
     "model": "SDM01",
@@ -8756,8 +8756,8 @@
   {
     "model": "TS0601_floor_thermostat",
     "type": "sensor",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Zigbee thermostat for electric floors"
+    "vendor": "Tuya",
+    "comment": "Tuya Zigbee thermostat for electric floors"
   },
   {
     "model": "COZIGVS",
@@ -8774,14 +8774,14 @@
   {
     "model": "Fan+Light-01",
     "type": "switch",
-    "vendor": "Liwokitmore",
-    "comment": "Liwokitmore Fan with 5 levels & light switch"
+    "vendor": "Liwokit",
+    "comment": "Liwokit Fan with 5 levels & light switch"
   },
   {
     "model": "EST-120Z",
     "type": "sensor",
-    "vendor": "ELECTSMARTmore",
-    "comment": "ELECTSMARTmore Zigbee thermostat for electric floors"
+    "vendor": "ELECTSMART",
+    "comment": "ELECTSMART Zigbee thermostat for electric floors"
   },
   {
     "model": "RB 272 T",
@@ -9344,8 +9344,8 @@
   {
     "model": "CCTFR6730",
     "type": "switch",
-    "vendor": "Schneider Electricmore",
-    "comment": "Schneider Electricmore Wiser power micromodule"
+    "vendor": "Schneider Electric",
+    "comment": "Schneider Electric Wiser power micromodule"
   },
   {
     "model": "41ECSFWMZ-VW",
@@ -9386,8 +9386,8 @@
   {
     "model": "EKO20004",
     "type": "switch",
-    "vendor": "Elkomore",
-    "comment": "Elkomore Wiser power micromodule"
+    "vendor": "Elko",
+    "comment": "Elko Wiser power micromodule"
   },
   {
     "model": "ZNQBKG38LM",
@@ -9446,14 +9446,14 @@
   {
     "model": "PCI E",
     "type": "switch",
-    "vendor": "WETENmore",
-    "comment": "WETENmore Remote Control PCI E Card for PC"
+    "vendor": "WETEN",
+    "comment": "WETEN Remote Control PCI E Card for PC"
   },
   {
     "model": "Tuya PRO",
     "type": "switch",
-    "vendor": "Wetenmore",
-    "comment": "Wetenmore Remote Control PCI E Card for PC"
+    "vendor": "Weten",
+    "comment": "Weten Remote Control PCI E Card for PC"
   },
   {
     "model": "TH1320ZB-04",
@@ -9656,8 +9656,8 @@
   {
     "model": "ROB_200-024-0",
     "type": "other",
-    "vendor": "ROBBmore",
-    "comment": "ROBBmore Zigbee 3.0 4 channel remote control"
+    "vendor": "ROBB",
+    "comment": "ROBB Zigbee 3.0 4 channel remote control"
   },
   {
     "model": "ZNGZDJ16LM",
@@ -9698,8 +9698,8 @@
   {
     "model": "SR-ZG9101SAC-HP-SWITCH-2CH",
     "type": "switch",
-    "vendor": "Sunrichermore",
-    "comment": "Sunrichermore Zigbee 2 channels switch"
+    "vendor": "Sunricher",
+    "comment": "Sunricher Zigbee 2 channels switch"
   },
   {
     "model": "70552",
@@ -9836,14 +9836,14 @@
   {
     "model": "ZGRC-KEY-013",
     "type": "other",
-    "vendor": "RGB Geniemore",
-    "comment": "RGB Geniemore Zigbee 3.0 4 channel remote control"
+    "vendor": "RGB Genie",
+    "comment": "RGB Genie Zigbee 3.0 4 channel remote control"
   },
   {
     "model": "UP-SA-9127D",
     "type": "switch",
-    "vendor": "LED-Tradingmore",
-    "comment": "LED-Tradingmore 2 channels AC switch"
+    "vendor": "LED-Trading",
+    "comment": "LED-Trading 2 channels AC switch"
   },
   {
     "model": "BHI-US",
@@ -10136,8 +10136,8 @@
   {
     "model": "TDL01LM",
     "type": "light",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Spotlight T3"
+    "vendor": "Aqara",
+    "comment": "Aqara Spotlight T3"
   },
   {
     "model": "WXKG22LM",
@@ -10184,8 +10184,8 @@
   {
     "model": "TS0601_dimmer_5",
     "type": "light",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore 1 gang smart dimmer module"
+    "vendor": "Tuya",
+    "comment": "Tuya 1 gang smart dimmer module"
   },
   {
     "model": "07732L",
@@ -10226,26 +10226,26 @@
   {
     "model": "MZSD11LM",
     "type": "light",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Spotlight T3"
+    "vendor": "Aqara",
+    "comment": "Aqara Spotlight T3"
   },
   {
     "model": "MZSD12LM",
     "type": "light",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Spotlight T3"
+    "vendor": "Aqara",
+    "comment": "Aqara Spotlight T3"
   },
   {
     "model": "MZTD11LM",
     "type": "light",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Spotlight T3"
+    "vendor": "Aqara",
+    "comment": "Aqara Spotlight T3"
   },
   {
     "model": "MS-105-M",
     "type": "light",
-    "vendor": "Moesmore",
-    "comment": "Moesmore 1 gang smart dimmer module"
+    "vendor": "Moes",
+    "comment": "Moes 1 gang smart dimmer module"
   },
   {
     "model": "501.22",
@@ -10556,8 +10556,8 @@
   {
     "model": "TS0601_switch_4_gang_1",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore 4 gang switch"
+    "vendor": "Tuya",
+    "comment": "Tuya 4 gang switch"
   },
   {
     "model": "TY-04Z",
@@ -10604,8 +10604,8 @@
   {
     "model": "TS0003",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore 3 gang switch"
+    "vendor": "Tuya",
+    "comment": "Tuya 3 gang switch"
   },
   {
     "model": "GTZ06",
@@ -10634,8 +10634,8 @@
   {
     "model": "TS0601_fan_and_light_switch",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Fan & light switch"
+    "vendor": "Tuya",
+    "comment": "Tuya Fan & light switch"
   },
   {
     "model": "LF-GAZ150A6250-24",
@@ -10664,38 +10664,38 @@
   {
     "model": "MKS-CM-W5",
     "type": "switch",
-    "vendor": "Norklmesmore",
-    "comment": "Norklmesmore 4 gang switch"
+    "vendor": "Norklmes",
+    "comment": "Norklmes 4 gang switch"
   },
   {
     "model": "ZSQB-SMB-ZB",
     "type": "switch",
-    "vendor": "Somgomsmore",
-    "comment": "Somgomsmore 4 gang switch"
+    "vendor": "Somgoms",
+    "comment": "Somgoms 4 gang switch"
   },
   {
     "model": "WS-EUB1-ZG",
     "type": "switch",
-    "vendor": "Moesmore",
-    "comment": "Moesmore 4 gang switch"
+    "vendor": "Moes",
+    "comment": "Moes 4 gang switch"
   },
   {
     "model": "ZGB-WS-EU",
     "type": "switch",
-    "vendor": "AVATTOmore",
-    "comment": "AVATTOmore 4 gang switch"
+    "vendor": "AVATTO",
+    "comment": "AVATTO 4 gang switch"
   },
   {
     "model": "TS0003",
     "type": "switch",
-    "vendor": "BSEEDmore",
-    "comment": "BSEEDmore Zigbee switch"
+    "vendor": "BSEED",
+    "comment": "BSEED Zigbee switch"
   },
   {
     "model": "Fan+Light-01",
     "type": "switch",
-    "vendor": "Liwokitmore",
-    "comment": "Liwokitmore Fan & light switch"
+    "vendor": "Liwokit",
+    "comment": "Liwokit Fan & light switch"
   },
   {
     "model": "LYWSD03MMC",
@@ -10916,8 +10916,8 @@
   {
     "model": "LLKZMK12LM",
     "type": "switch",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Dual relay module T2"
+    "vendor": "Aqara",
+    "comment": "Aqara Dual relay module T2"
   },
   {
     "model": "MEG5116-0300/MEG5171-0000",
@@ -11084,8 +11084,8 @@
   {
     "model": "DCM-K01",
     "type": "switch",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Dual relay module T2"
+    "vendor": "Aqara",
+    "comment": "Aqara Dual relay module T2"
   },
   {
     "model": "929003536001",
@@ -11156,8 +11156,8 @@
   {
     "model": "LGYCDD01LM",
     "type": "light",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Light strip T1"
+    "vendor": "Aqara",
+    "comment": "Aqara Light strip T1"
   },
   {
     "model": "QBKG32LM",
@@ -11186,8 +11186,8 @@
   {
     "model": "RLS-K01D",
     "type": "light",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Light strip T1"
+    "vendor": "Aqara",
+    "comment": "Aqara Light strip T1"
   },
   {
     "model": "84845506",
@@ -12464,8 +12464,8 @@
   {
     "model": "TS011F_1",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Switch"
+    "vendor": "Tuya",
+    "comment": "Tuya Switch"
   },
   {
     "model": "ZB1248-10A",
@@ -12524,8 +12524,8 @@
   {
     "model": "ZJSB9-80Z",
     "type": "switch",
-    "vendor": "Mumubizmore",
-    "comment": "Mumubizmore Switch"
+    "vendor": "Mumubiz",
+    "comment": "Mumubiz Switch"
   },
   {
     "model": "ZLGP14/ZLGP15/ZLGP16",
@@ -12638,8 +12638,8 @@
   {
     "model": "TS0505B_1",
     "type": "light",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Zigbee RGB+CCT light"
+    "vendor": "Tuya",
+    "comment": "Tuya Zigbee RGB+CCT light"
   },
   {
     "model": "399629_2110",
@@ -12674,50 +12674,50 @@
   {
     "model": "SMD4106W-RGB-ZB",
     "type": "light",
-    "vendor": "Mercator Ikuümore",
-    "comment": "Mercator Ikuümore Zigbee RGB+CCT light"
+    "vendor": "Mercator Ikuü",
+    "comment": "Mercator Ikuü Zigbee RGB+CCT light"
   },
   {
     "model": "A5C-21F7-01",
     "type": "light",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Zigbee RGB+CCT light"
+    "vendor": "Tuya",
+    "comment": "Tuya Zigbee RGB+CCT light"
   },
   {
     "model": "S9E27LED9W-RGB-Z",
     "type": "light",
-    "vendor": "Mercator Ikuümore",
-    "comment": "Mercator Ikuümore Zigbee RGB+CCT light"
+    "vendor": "Mercator Ikuü",
+    "comment": "Mercator Ikuü Zigbee RGB+CCT light"
   },
   {
     "model": "L122CB63H11A9.0W",
     "type": "light",
-    "vendor": "Aldimore",
-    "comment": "Aldimore LIGHTWAY smart home LED-lamp - bulb"
+    "vendor": "Aldi",
+    "comment": "Aldi LIGHTWAY smart home LED-lamp - bulb"
   },
   {
     "model": "14153706L",
     "type": "light",
-    "vendor": "Lidlmore",
-    "comment": "Lidlmore Livarno smart LED ceiling light"
+    "vendor": "Lidl",
+    "comment": "Lidl Livarno smart LED ceiling light"
   },
   {
     "model": "LXZB-ZB-09A",
     "type": "light",
-    "vendor": "Zemismartmore",
-    "comment": "Zemismartmore Zemismart LED Surface Mounted Downlight 9W RGBW"
+    "vendor": "Zemismart",
+    "comment": "Zemismart Zemismart LED Surface Mounted Downlight 9W RGBW"
   },
   {
     "model": "FE-GU10-5W",
     "type": "light",
-    "vendor": "Feconnmore",
-    "comment": "Feconnmore Zigbee GU10 5W smart bulb"
+    "vendor": "Feconn",
+    "comment": "Feconn Zigbee GU10 5W smart bulb"
   },
   {
     "model": "ZBLC1E14",
     "type": "light",
-    "vendor": "Nedismore",
-    "comment": "Nedismore Zigbee RGB+CCT light"
+    "vendor": "Nedis",
+    "comment": "Nedis Zigbee RGB+CCT light"
   },
   {
     "model": "GL-C-103P",
@@ -12908,8 +12908,8 @@
   {
     "model": "TS011F_switch_5_gang",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore 2 gang 2 usb 1 wall ac outlet"
+    "vendor": "Tuya",
+    "comment": "Tuya 2 gang 2 usb 1 wall ac outlet"
   },
   {
     "model": "TS011F_3_gang",
@@ -12920,8 +12920,8 @@
   {
     "model": "TS0601_smoke_3",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Photoelectric smoke detector"
+    "vendor": "Tuya",
+    "comment": "Tuya Photoelectric smoke detector"
   },
   {
     "model": "TS0601_smoke_4",
@@ -12944,26 +12944,26 @@
   {
     "model": "TS0601_3_phase_clamp_meter_relay",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore 3-phase clamp power meter with relay"
+    "vendor": "Tuya",
+    "comment": "Tuya 3-phase clamp power meter with relay"
   },
   {
     "model": "M11Z",
     "type": "switch",
-    "vendor": "Milframore",
-    "comment": "Milframore 2 gang 2 usb 1 wall ac outlet"
+    "vendor": "Milfra",
+    "comment": "Milfra 2 gang 2 usb 1 wall ac outlet"
   },
   {
     "model": "SMOAL024",
     "type": "switch",
-    "vendor": "KnockautXmore",
-    "comment": "KnockautXmore Photoelectric smoke detector"
+    "vendor": "KnockautX",
+    "comment": "KnockautX Photoelectric smoke detector"
   },
   {
     "model": "TAC7361C BI",
     "type": "switch",
-    "vendor": "Wenzhou Taiye Electricmore",
-    "comment": "Wenzhou Taiye Electricmore 3-phase clamp power meter with relay"
+    "vendor": "Wenzhou Taiye Electric",
+    "comment": "Wenzhou Taiye Electric 3-phase clamp power meter with relay"
   },
   {
     "model": "BMCT-SLZ",
@@ -13118,8 +13118,8 @@
   {
     "model": "WSP403",
     "type": "switch",
-    "vendor": "OWONmore",
-    "comment": "OWONmore Smart plug"
+    "vendor": "OWON",
+    "comment": "OWON Smart plug"
   },
   {
     "model": "9290030521",
@@ -13184,8 +13184,8 @@
   {
     "model": "SA-028/SA-029",
     "type": "switch",
-    "vendor": "SONOFFmore",
-    "comment": "SONOFFmore Smart Plug"
+    "vendor": "SONOFF",
+    "comment": "SONOFF Smart Plug"
   },
   {
     "model": "14149505L/14149506L_2",
@@ -13208,14 +13208,14 @@
   {
     "model": "WSP403",
     "type": "switch",
-    "vendor": "Oz Smart Thingsmore",
-    "comment": "Oz Smart Thingsmore Smart plug"
+    "vendor": "Oz Smart Things",
+    "comment": "Oz Smart Things Smart plug"
   },
   {
     "model": "SA-029-1",
     "type": "switch",
-    "vendor": "Woolleymore",
-    "comment": "Woolleymore Smart Plug"
+    "vendor": "Woolley",
+    "comment": "Woolley Smart Plug"
   },
   {
     "model": "AUT000069",
@@ -13382,14 +13382,14 @@
   {
     "model": "TS0003_switch_module_1",
     "type": "light",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore 3 gang switch module"
+    "vendor": "Tuya",
+    "comment": "Tuya 3 gang switch module"
   },
   {
     "model": "TS0601_din_3",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Zigbee DIN energy meter"
+    "vendor": "Tuya",
+    "comment": "Tuya Zigbee DIN energy meter"
   },
   {
     "model": "TS0049",
@@ -13400,8 +13400,8 @@
   {
     "model": "TS0601_fan_switch",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Fan switch"
+    "vendor": "Tuya",
+    "comment": "Tuya Fan switch"
   },
   {
     "model": "TS0224",
@@ -13412,56 +13412,56 @@
   {
     "model": "VES-ZB-DIM-004",
     "type": "light",
-    "vendor": "Vesternetmore",
-    "comment": "Vesternetmore Zigbee dimmer"
+    "vendor": "Vesternet",
+    "comment": "Vesternet Zigbee dimmer"
   },
   {
     "model": "VES-ZB-HLD-017",
     "type": "switch",
-    "vendor": "Vesternetmore",
-    "comment": "Vesternetmore Zigbee high load switch"
+    "vendor": "Vesternet",
+    "comment": "Vesternet Zigbee high load switch"
   },
   {
     "model": "VES-ZB-MOT-019",
     "type": "cover",
-    "vendor": "Vesternetmore",
-    "comment": "Vesternetmore Zigbee motor controller"
+    "vendor": "Vesternet",
+    "comment": "Vesternet Zigbee motor controller"
   },
   {
     "model": "VES-ZB-REM-013",
     "type": "other",
-    "vendor": "Vesternetmore",
-    "comment": "Vesternetmore Zigbee remote control - 12 button"
+    "vendor": "Vesternet",
+    "comment": "Vesternet Zigbee remote control - 12 button"
   },
   {
     "model": "VES-ZB-SWI-005",
     "type": "switch",
-    "vendor": "Vesternetmore",
-    "comment": "Vesternetmore Zigbee switch"
+    "vendor": "Vesternet",
+    "comment": "Vesternet Zigbee switch"
   },
   {
     "model": "VES-ZB-SWI-015",
     "type": "switch",
-    "vendor": "Vesternetmore",
-    "comment": "Vesternetmore Zigbee 2 channel switch"
+    "vendor": "Vesternet",
+    "comment": "Vesternet Zigbee 2 channel switch"
   },
   {
     "model": "VES-ZB-WAL-006",
     "type": "other",
-    "vendor": "Vesternetmore",
-    "comment": "Vesternetmore Zigbee wall controller - 2 button"
+    "vendor": "Vesternet",
+    "comment": "Vesternet Zigbee wall controller - 2 button"
   },
   {
     "model": "VES-ZB-WAL-011",
     "type": "other",
-    "vendor": "Vesternetmore",
-    "comment": "Vesternetmore Zigbee wall controller - 4 button"
+    "vendor": "Vesternet",
+    "comment": "Vesternet Zigbee wall controller - 4 button"
   },
   {
     "model": "VES-ZB-WAL-012",
     "type": "other",
-    "vendor": "Vesternetmore",
-    "comment": "Vesternetmore Zigbee wall controller - 8 button"
+    "vendor": "Vesternet",
+    "comment": "Vesternet Zigbee wall controller - 8 button"
   },
   {
     "model": "YRD410-BLE",
@@ -13490,74 +13490,74 @@
   {
     "model": "SWTZ23",
     "type": "light",
-    "vendor": "OXTmore",
-    "comment": "OXTmore 3 gang switch module"
+    "vendor": "OXT",
+    "comment": "OXT 3 gang switch module"
   },
   {
     "model": "DAC2161C",
     "type": "switch",
-    "vendor": "XOCAmore",
-    "comment": "XOCAmore Zigbee DIN energy meter"
+    "vendor": "XOCA",
+    "comment": "XOCA Zigbee DIN energy meter"
   },
   {
     "model": "T2-Z67/T2-W67",
     "type": "switch",
-    "vendor": "Lerlinkmore",
-    "comment": "Lerlinkmore Fan switch"
+    "vendor": "Lerlink",
+    "comment": "Lerlink Fan switch"
   },
   {
     "model": "SR-ZG9040A",
     "type": "light",
-    "vendor": "Sunrichermore",
-    "comment": "Sunrichermore Zigbee dimmer"
+    "vendor": "Sunricher",
+    "comment": "Sunricher Zigbee dimmer"
   },
   {
     "model": "SR-ZG9101SAC-HP-SWITCH-B",
     "type": "switch",
-    "vendor": "Sunrichermore",
-    "comment": "Sunrichermore Zigbee high load switch"
+    "vendor": "Sunricher",
+    "comment": "Sunricher Zigbee high load switch"
   },
   {
     "model": "SR-ZG9080A",
     "type": "cover",
-    "vendor": "Sunrichermore",
-    "comment": "Sunrichermore Zigbee motor controller"
+    "vendor": "Sunricher",
+    "comment": "Sunricher Zigbee motor controller"
   },
   {
     "model": "SR-ZG9001K12-DIM-Z4",
     "type": "other",
-    "vendor": "Sunrichermore",
-    "comment": "Sunrichermore Zigbee remote control - 12 button"
+    "vendor": "Sunricher",
+    "comment": "Sunricher Zigbee remote control - 12 button"
   },
   {
     "model": "SR-ZG9100A-S",
     "type": "switch",
-    "vendor": "Sunrichermore",
-    "comment": "Sunrichermore Zigbee switch"
+    "vendor": "Sunricher",
+    "comment": "Sunricher Zigbee switch"
   },
   {
     "model": "SR-ZG9101SAC-HP-SWITCH-2CH",
     "type": "switch",
-    "vendor": "Sunrichermore",
-    "comment": "Sunrichermore Zigbee 2 channel switch"
+    "vendor": "Sunricher",
+    "comment": "Sunricher Zigbee 2 channel switch"
   },
   {
     "model": "SR-ZG9001K2-DIM2",
     "type": "other",
-    "vendor": "Sunrichermore",
-    "comment": "Sunrichermore Zigbee wall controller - 2 button"
+    "vendor": "Sunricher",
+    "comment": "Sunricher Zigbee wall controller - 2 button"
   },
   {
     "model": "SR-ZG9001K4-DIM2",
     "type": "other",
-    "vendor": "Sunrichermore",
-    "comment": "Sunrichermore Zigbee wall controller - 4 button"
+    "vendor": "Sunricher",
+    "comment": "Sunricher Zigbee wall controller - 4 button"
   },
   {
     "model": "SR-ZG9001K8-DIM",
     "type": "other",
-    "vendor": "Sunrichermore",
-    "comment": "Sunrichermore Zigbee wall controller - 8 button"
+    "vendor": "Sunricher",
+    "comment": "Sunricher Zigbee wall controller - 8 button"
   },
   {
     "model": "WISZB-138",
@@ -13958,8 +13958,8 @@
   {
     "model": "50208702",
     "type": "light",
-    "vendor": "Sunrichermore",
-    "comment": "Sunrichermore LED dimmable driver"
+    "vendor": "Sunricher",
+    "comment": "Sunricher LED dimmable driver"
   },
   {
     "model": "SB100",
@@ -13976,8 +13976,8 @@
   {
     "model": "TS0601_cover_1",
     "type": "cover",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Curtain motor/roller blind motor/window pusher/tubular motor"
+    "vendor": "Tuya",
+    "comment": "Tuya Curtain motor/roller blind motor/window pusher/tubular motor"
   },
   {
     "model": "TS0601_cover_2",
@@ -14000,104 +14000,104 @@
   {
     "model": "50208702",
     "type": "light",
-    "vendor": "Yphixmore",
-    "comment": "Yphixmore LED dimmable driver"
+    "vendor": "Yphix",
+    "comment": "Yphix LED dimmable driver"
   },
   {
     "model": "YS-MT750",
     "type": "cover",
-    "vendor": "Yushunmore",
-    "comment": "Yushunmore Curtain motor/roller blind motor/window pusher/tubular motor"
+    "vendor": "Yushun",
+    "comment": "Yushun Curtain motor/roller blind motor/window pusher/tubular motor"
   },
   {
     "model": "ZM79E-DT",
     "type": "cover",
-    "vendor": "Zemismartmore",
-    "comment": "Zemismartmore Curtain motor/roller blind motor/window pusher/tubular motor"
+    "vendor": "Zemismart",
+    "comment": "Zemismart Curtain motor/roller blind motor/window pusher/tubular motor"
   },
   {
     "model": "BCM100D",
     "type": "cover",
-    "vendor": "Binthenmore",
-    "comment": "Binthenmore Curtain motor/roller blind motor/window pusher/tubular motor"
+    "vendor": "Binthen",
+    "comment": "Binthen Curtain motor/roller blind motor/window pusher/tubular motor"
   },
   {
     "model": "CV01A",
     "type": "cover",
-    "vendor": "Binthenmore",
-    "comment": "Binthenmore Curtain motor/roller blind motor/window pusher/tubular motor"
+    "vendor": "Binthen",
+    "comment": "Binthen Curtain motor/roller blind motor/window pusher/tubular motor"
   },
   {
     "model": "M515EGB",
     "type": "cover",
-    "vendor": "Zemismartmore",
-    "comment": "Zemismartmore Curtain motor/roller blind motor/window pusher/tubular motor"
+    "vendor": "Zemismart",
+    "comment": "Zemismart Curtain motor/roller blind motor/window pusher/tubular motor"
   },
   {
     "model": "ZM85EL-1Z",
     "type": "cover",
-    "vendor": "Oz Smart Thingsmore",
-    "comment": "Oz Smart Thingsmore Curtain motor/roller blind motor/window pusher/tubular motor"
+    "vendor": "Oz Smart Things",
+    "comment": "Oz Smart Things Curtain motor/roller blind motor/window pusher/tubular motor"
   },
   {
     "model": "M515EGZT",
     "type": "cover",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Curtain motor/roller blind motor/window pusher/tubular motor"
+    "vendor": "Tuya",
+    "comment": "Tuya Curtain motor/roller blind motor/window pusher/tubular motor"
   },
   {
     "model": "DT82LEMA-1.2N",
     "type": "cover",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Curtain motor/roller blind motor/window pusher/tubular motor"
+    "vendor": "Tuya",
+    "comment": "Tuya Curtain motor/roller blind motor/window pusher/tubular motor"
   },
   {
     "model": "ZD82TN",
     "type": "cover",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Curtain motor"
+    "vendor": "Tuya",
+    "comment": "Tuya Curtain motor"
   },
   {
     "model": "ZSTY-SM-1SRZG-EU",
     "type": "cover",
-    "vendor": "Larkkeymore",
-    "comment": "Larkkeymore Curtain motor/roller blind motor/window pusher/tubular motor"
+    "vendor": "Larkkey",
+    "comment": "Larkkey Curtain motor/roller blind motor/window pusher/tubular motor"
   },
   {
     "model": "AM43",
     "type": "cover",
-    "vendor": "Zemismartmore",
-    "comment": "Zemismartmore Roller blind motor"
+    "vendor": "Zemismart",
+    "comment": "Zemismart Roller blind motor"
   },
   {
     "model": "M2805EGBZTN",
     "type": "cover",
-    "vendor": "Zemismartmore",
-    "comment": "Zemismartmore Tubular motor"
+    "vendor": "Zemismart",
+    "comment": "Zemismart Tubular motor"
   },
   {
     "model": "BCM500DS-TYZ",
     "type": "cover",
-    "vendor": "Zemismartmore",
-    "comment": "Zemismartmore Curtain motor"
+    "vendor": "Zemismart",
+    "comment": "Zemismart Curtain motor"
   },
   {
     "model": "AM25",
     "type": "cover",
-    "vendor": "A-OKmore",
-    "comment": "A-OKmore Tubular motor"
+    "vendor": "A-OK",
+    "comment": "A-OK Tubular motor"
   },
   {
     "model": "AM/R-Sm",
     "type": "cover",
-    "vendor": "Alutechmore",
-    "comment": "Alutechmore Tubular motor"
+    "vendor": "Alutech",
+    "comment": "Alutech Tubular motor"
   },
   {
     "model": "AT8510-TY",
     "type": "cover",
-    "vendor": "Quoyamore",
-    "comment": "Quoyamore Curtain motor/roller blind motor/window pusher/tubular motor"
+    "vendor": "Quoya",
+    "comment": "Quoya Curtain motor/roller blind motor/window pusher/tubular motor"
   },
   {
     "model": "SA100",
@@ -14132,14 +14132,14 @@
   {
     "model": "SJCGQ12LM",
     "type": "other",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Water leak sensor T1"
+    "vendor": "Aqara",
+    "comment": "Aqara Water leak sensor T1"
   },
   {
     "model": "MFKZQ01LM",
     "type": "sensor",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Cube"
+    "vendor": "Aqara",
+    "comment": "Aqara Cube"
   },
   {
     "model": "W599001",
@@ -14156,14 +14156,14 @@
   {
     "model": "WL-S02D",
     "type": "other",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Water leak sensor T1"
+    "vendor": "Aqara",
+    "comment": "Aqara Water leak sensor T1"
   },
   {
     "model": "YNDX-00521",
     "type": "other",
-    "vendor": "Yandexmore",
-    "comment": "Yandexmore Water leak sensor T1"
+    "vendor": "Yandex",
+    "comment": "Yandex Water leak sensor T1"
   },
   {
     "model": "MFKZQ01LM",
@@ -14180,14 +14180,14 @@
   {
     "model": "CTP-R01",
     "type": "other",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Cube T1 Pro"
+    "vendor": "Aqara",
+    "comment": "Aqara Cube T1 Pro"
   },
   {
     "model": "MFCZQ12LM",
     "type": "other",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Cube T1 Pro"
+    "vendor": "Aqara",
+    "comment": "Aqara Cube T1 Pro"
   },
   {
     "model": "DM2550ZB",
@@ -14504,8 +14504,8 @@
   {
     "model": "TS0601_dimmer_knob",
     "type": "light",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Zigbee smart knob dimmer"
+    "vendor": "Tuya",
+    "comment": "Tuya Zigbee smart knob dimmer"
   },
   {
     "model": "TS0601_thermostat_3",
@@ -14522,8 +14522,8 @@
   {
     "model": "TS0046",
     "type": "other",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Wireless switch with 6 buttons"
+    "vendor": "Tuya",
+    "comment": "Tuya Wireless switch with 6 buttons"
   },
   {
     "model": "TS110E_1gang_2",
@@ -14546,20 +14546,20 @@
   {
     "model": "WS-SY-EURD",
     "type": "light",
-    "vendor": "Moesmore",
-    "comment": "Moesmore Zigbee smart knob dimmer"
+    "vendor": "Moes",
+    "comment": "Moes Zigbee smart knob dimmer"
   },
   {
     "model": "WS-SY-EURD-WH-MS",
     "type": "light",
-    "vendor": "Moesmore",
-    "comment": "Moesmore Zigbee smart knob dimmer"
+    "vendor": "Moes",
+    "comment": "Moes Zigbee smart knob dimmer"
   },
   {
     "model": "SS9600ZB",
     "type": "other",
-    "vendor": "LoraTapmore",
-    "comment": "LoraTapmore Wireless switch with 6 buttons"
+    "vendor": "LoraTap",
+    "comment": "LoraTap Wireless switch with 6 buttons"
   },
   {
     "model": "BSEED_TS0601_cover",
@@ -14582,56 +14582,56 @@
   {
     "model": "NH3516A",
     "type": "light",
-    "vendor": "Schneider Electricmore",
-    "comment": "Schneider Electricmore Rotary dimmer"
+    "vendor": "Schneider Electric",
+    "comment": "Schneider Electric Rotary dimmer"
   },
   {
     "model": "EKO07278",
     "type": "light",
-    "vendor": "Elkomore",
-    "comment": "Elkomore Rotary dimmer"
+    "vendor": "Elko",
+    "comment": "Elko Rotary dimmer"
   },
   {
     "model": "EKO07279",
     "type": "light",
-    "vendor": "Elkomore",
-    "comment": "Elkomore Rotary dimmer"
+    "vendor": "Elko",
+    "comment": "Elko Rotary dimmer"
   },
   {
     "model": "EKO07280",
     "type": "light",
-    "vendor": "Elkomore",
-    "comment": "Elkomore Rotary dimmer"
+    "vendor": "Elko",
+    "comment": "Elko Rotary dimmer"
   },
   {
     "model": "EKO07281",
     "type": "light",
-    "vendor": "Elkomore",
-    "comment": "Elkomore Rotary dimmer"
+    "vendor": "Elko",
+    "comment": "Elko Rotary dimmer"
   },
   {
     "model": "EKO30198",
     "type": "light",
-    "vendor": "Elkomore",
-    "comment": "Elkomore Rotary dimmer"
+    "vendor": "Elko",
+    "comment": "Elko Rotary dimmer"
   },
   {
     "model": "WDE002961",
     "type": "light",
-    "vendor": "Schneidermore",
-    "comment": "Schneidermore Rotary dimmer"
+    "vendor": "Schneider",
+    "comment": "Schneider Rotary dimmer"
   },
   {
     "model": "WDE003961",
     "type": "light",
-    "vendor": "Schneidermore",
-    "comment": "Schneidermore Rotary dimmer"
+    "vendor": "Schneider",
+    "comment": "Schneider Rotary dimmer"
   },
   {
     "model": "WDE004961",
     "type": "light",
-    "vendor": "Schneidermore",
-    "comment": "Schneidermore Rotary dimmer"
+    "vendor": "Schneider",
+    "comment": "Schneider Rotary dimmer"
   },
   {
     "model": "4058075729346",
@@ -14786,8 +14786,8 @@
   {
     "model": "ZNCWWSQ01LM",
     "type": "lock",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Smart pet feeder C1"
+    "vendor": "Aqara",
+    "comment": "Aqara Smart pet feeder C1"
   },
   {
     "model": "SM309-S",
@@ -14810,14 +14810,14 @@
   {
     "model": "TS000F_power",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Switch with power monitoring"
+    "vendor": "Tuya",
+    "comment": "Tuya Switch with power monitoring"
   },
   {
     "model": "TS0601_thermostat_2",
     "type": "lock",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Thermostat radiator valve"
+    "vendor": "Tuya",
+    "comment": "Tuya Thermostat radiator valve"
   },
   {
     "model": "TS0601_din_2",
@@ -14828,8 +14828,8 @@
   {
     "model": "TS0601_3_phase_clamp_meter",
     "type": "sensor",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore 3-phase clamp power meter"
+    "vendor": "Tuya",
+    "comment": "Tuya 3-phase clamp power meter"
   },
   {
     "model": "TWV",
@@ -14840,32 +14840,32 @@
   {
     "model": "PETC1-M01",
     "type": "lock",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Smart pet feeder C1"
+    "vendor": "Aqara",
+    "comment": "Aqara Smart pet feeder C1"
   },
   {
     "model": "WHD02",
     "type": "switch",
-    "vendor": "Aubessmore",
-    "comment": "Aubessmore Switch with power monitoring"
+    "vendor": "Aubess",
+    "comment": "Aubess Switch with power monitoring"
   },
   {
     "model": "Cloud Even",
     "type": "lock",
-    "vendor": "S366more",
-    "comment": "S366more Thermostat radiator valve"
+    "vendor": "S366",
+    "comment": "S366 Thermostat radiator valve"
   },
   {
     "model": "PC321-Z-TY",
     "type": "sensor",
-    "vendor": "MatSee Plusmore",
-    "comment": "MatSee Plusmore 3-phase clamp power meter"
+    "vendor": "MatSee Plus",
+    "comment": "MatSee Plus 3-phase clamp power meter"
   },
   {
     "model": "PC321-Z-TY",
     "type": "sensor",
-    "vendor": "OWONmore",
-    "comment": "OWONmore 3-phase clamp power meter"
+    "vendor": "OWON",
+    "comment": "OWON 3-phase clamp power meter"
   },
   {
     "model": "E2D-G73",
@@ -14930,8 +14930,8 @@
   {
     "model": "412173",
     "type": "switch",
-    "vendor": "Legrandmore",
-    "comment": "Legrandmore DIN dry contactor module"
+    "vendor": "Legrand",
+    "comment": "Legrand DIN dry contactor module"
   },
   {
     "model": "FC80AC",
@@ -15080,20 +15080,20 @@
   {
     "model": "TS0202_2",
     "type": "light",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Motion sensor with scene switch"
+    "vendor": "Tuya",
+    "comment": "Tuya Motion sensor with scene switch"
   },
   {
     "model": "TS0601_dimmer_2",
     "type": "light",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore 2 gang smart dimmer"
+    "vendor": "Tuya",
+    "comment": "Tuya 2 gang smart dimmer"
   },
   {
     "model": "TS0601_dimmer_3",
     "type": "light",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore 3 gang smart dimmer"
+    "vendor": "Tuya",
+    "comment": "Tuya 3 gang smart dimmer"
   },
   {
     "model": "TS0601_switch_5_gang",
@@ -15110,8 +15110,8 @@
   {
     "model": "TS0601_din_1",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Zigbee DIN energy meter"
+    "vendor": "Tuya",
+    "comment": "Tuya Zigbee DIN energy meter"
   },
   {
     "model": "C0040000",
@@ -15134,32 +15134,32 @@
   {
     "model": "LKMSZ001",
     "type": "light",
-    "vendor": "Linkozemore",
-    "comment": "Linkozemore Motion sensor with scene switch"
+    "vendor": "Linkoze",
+    "comment": "Linkoze Motion sensor with scene switch"
   },
   {
     "model": "ZS-EUD_2gang",
     "type": "light",
-    "vendor": "Moesmore",
-    "comment": "Moesmore 2 gang smart dimmer"
+    "vendor": "Moes",
+    "comment": "Moes 2 gang smart dimmer"
   },
   {
     "model": "MS-105B",
     "type": "light",
-    "vendor": "Moesmore",
-    "comment": "Moesmore 2 gang smart dimmer"
+    "vendor": "Moes",
+    "comment": "Moes 2 gang smart dimmer"
   },
   {
     "model": "ZS-EUD_3gang",
     "type": "light",
-    "vendor": "Moesmore",
-    "comment": "Moesmore 3 gang smart dimmer"
+    "vendor": "Moes",
+    "comment": "Moes 3 gang smart dimmer"
   },
   {
     "model": "RC-MCB",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Zigbee DIN energy meter"
+    "vendor": "Tuya",
+    "comment": "Tuya Zigbee DIN energy meter"
   },
   {
     "model": "BN-600078",
@@ -15914,8 +15914,8 @@
   {
     "model": "X5H-GB-B",
     "type": "light",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Wall-mount thermostat"
+    "vendor": "Tuya",
+    "comment": "Tuya Wall-mount thermostat"
   },
   {
     "model": "KCTW1Z",
@@ -15932,14 +15932,14 @@
   {
     "model": "TGR85-ZB",
     "type": "light",
-    "vendor": "Beokmore",
-    "comment": "Beokmore Wall-mount thermostat"
+    "vendor": "Beok",
+    "comment": "Beok Wall-mount thermostat"
   },
   {
     "model": "ZWT-100-16A",
     "type": "light",
-    "vendor": "AVATTOmore",
-    "comment": "AVATTOmore Wall-mount thermostat"
+    "vendor": "AVATTO",
+    "comment": "AVATTO Wall-mount thermostat"
   },
   {
     "model": "03981",
@@ -16064,14 +16064,14 @@
   {
     "model": "ZNGZDJ11LM",
     "type": "cover",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Roller shade controller"
+    "vendor": "Aqara",
+    "comment": "Aqara Roller shade controller"
   },
   {
     "model": "WXKG15LM",
     "type": "other",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Wireless remote switch H1 (double rocker)"
+    "vendor": "Aqara",
+    "comment": "Aqara Wireless remote switch H1 (double rocker)"
   },
   {
     "model": "S40ZBTPB",
@@ -16118,32 +16118,32 @@
   {
     "model": "SRSC-M01",
     "type": "cover",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Roller shade controller"
+    "vendor": "Aqara",
+    "comment": "Aqara Roller shade controller"
   },
   {
     "model": "WRS-R02",
     "type": "other",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Wireless remote switch H1 (double rocker)"
+    "vendor": "Aqara",
+    "comment": "Aqara Wireless remote switch H1 (double rocker)"
   },
   {
     "model": "ZNCLBL01LM",
     "type": "switch",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Curtain driver E1"
+    "vendor": "Aqara",
+    "comment": "Aqara Curtain driver E1"
   },
   {
     "model": "CM-M01",
     "type": "switch",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Curtain driver E1"
+    "vendor": "Aqara",
+    "comment": "Aqara Curtain driver E1"
   },
   {
     "model": "CM-M01R",
     "type": "switch",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Curtain driver E1"
+    "vendor": "Aqara",
+    "comment": "Aqara Curtain driver E1"
   },
   {
     "model": "SRB01",
@@ -16226,8 +16226,8 @@
   {
     "model": "412170",
     "type": "switch",
-    "vendor": "Legrandmore",
-    "comment": "Legrandmore DIN smart relay for light control"
+    "vendor": "Legrand",
+    "comment": "Legrand DIN smart relay for light control"
   },
   {
     "model": "HLC929-Z-RGBW-4C-IA-OTA-3.0",
@@ -16388,8 +16388,8 @@
   {
     "model": "ROB_200-050-0",
     "type": "switch",
-    "vendor": "ROBBmore",
-    "comment": "ROBBmore 4 port switch with 2 usb ports (no metering)"
+    "vendor": "ROBB",
+    "comment": "ROBB 4 port switch with 2 usb ports (no metering)"
   },
   {
     "model": "SR-ZG9023A-EU",
@@ -16406,8 +16406,8 @@
   {
     "model": "SR-ZG9023A(EU)",
     "type": "switch",
-    "vendor": "Sunrichermore",
-    "comment": "Sunrichermore 4 port switch with 2 usb ports (no metering)"
+    "vendor": "Sunricher",
+    "comment": "Sunricher 4 port switch with 2 usb ports (no metering)"
   },
   {
     "model": "4503748C6",
@@ -16592,14 +16592,14 @@
   {
     "model": "RTCGQ14LM",
     "type": "sensor",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Motion sensor P1"
+    "vendor": "Aqara",
+    "comment": "Aqara Motion sensor P1"
   },
   {
     "model": "JY-GZ-01AQ",
     "type": "switch",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Smart smoke detector"
+    "vendor": "Aqara",
+    "comment": "Aqara Smart smoke detector"
   },
   {
     "model": "A9MEM1570",
@@ -16646,14 +16646,14 @@
   {
     "model": "MS-S02",
     "type": "sensor",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Motion sensor P1"
+    "vendor": "Aqara",
+    "comment": "Aqara Motion sensor P1"
   },
   {
     "model": "JY-GZ-03AQ",
     "type": "switch",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Smart smoke detector"
+    "vendor": "Aqara",
+    "comment": "Aqara Smart smoke detector"
   },
   {
     "model": "915005996901",
@@ -16700,14 +16700,14 @@
   {
     "model": "GDC311ZBQ1",
     "type": "sensor",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore LoraTap garage door opener with wireless sensor"
+    "vendor": "Tuya",
+    "comment": "Tuya LoraTap garage door opener with wireless sensor"
   },
   {
     "model": "GDC311ZBQ1",
     "type": "sensor",
-    "vendor": "LoraTapmore",
-    "comment": "LoraTapmore LoraTap garage door opener with wireless sensor"
+    "vendor": "LoraTap",
+    "comment": "LoraTap LoraTap garage door opener with wireless sensor"
   },
   {
     "model": "915005997601",
@@ -17534,8 +17534,8 @@
   {
     "model": "ZNLDP13LM",
     "type": "light",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Light bulb T1"
+    "vendor": "Aqara",
+    "comment": "Aqara Light bulb T1"
   },
   {
     "model": "RTCZCGQ11LM",
@@ -17546,8 +17546,8 @@
   {
     "model": "JT-BZ-01AQ/A",
     "type": "switch",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Smart natural gas detector"
+    "vendor": "Aqara",
+    "comment": "Aqara Smart natural gas detector"
   },
   {
     "model": "WXKG14LM",
@@ -17564,8 +17564,8 @@
   {
     "model": "NH3526",
     "type": "light",
-    "vendor": "Schneider Electricmore",
-    "comment": "Schneider Electricmore Motion sensor with switch"
+    "vendor": "Schneider Electric",
+    "comment": "Schneider Electric Motion sensor with switch"
   },
   {
     "model": "PMM-300Z2",
@@ -17654,44 +17654,44 @@
   {
     "model": "LEDLBT1-L01",
     "type": "light",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Light bulb T1"
+    "vendor": "Aqara",
+    "comment": "Aqara Light bulb T1"
   },
   {
     "model": "JT-BZ-03AQ/A",
     "type": "switch",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Smart natural gas detector"
+    "vendor": "Aqara",
+    "comment": "Aqara Smart natural gas detector"
   },
   {
     "model": "EKO06988",
     "type": "light",
-    "vendor": "Elkomore",
-    "comment": "Elkomore Motion sensor with switch"
+    "vendor": "Elko",
+    "comment": "Elko Motion sensor with switch"
   },
   {
     "model": "EKO06989",
     "type": "light",
-    "vendor": "Elkomore",
-    "comment": "Elkomore Motion sensor with switch"
+    "vendor": "Elko",
+    "comment": "Elko Motion sensor with switch"
   },
   {
     "model": "EKO06990",
     "type": "light",
-    "vendor": "Elkomore",
-    "comment": "Elkomore Motion sensor with switch"
+    "vendor": "Elko",
+    "comment": "Elko Motion sensor with switch"
   },
   {
     "model": "EKO06991",
     "type": "light",
-    "vendor": "Elkomore",
-    "comment": "Elkomore Motion sensor with switch"
+    "vendor": "Elko",
+    "comment": "Elko Motion sensor with switch"
   },
   {
     "model": "545D6306",
     "type": "light",
-    "vendor": "LKmore",
-    "comment": "LKmore Motion sensor with switch"
+    "vendor": "LK",
+    "comment": "LK Motion sensor with switch"
   },
   {
     "model": "43132",
@@ -17930,8 +17930,8 @@
   {
     "model": "EKO09738",
     "type": "switch",
-    "vendor": "Schneider Electricmore",
-    "comment": "Schneider Electricmore Zigbee smart socket with power meter"
+    "vendor": "Schneider Electric",
+    "comment": "Schneider Electric Zigbee smart socket with power meter"
   },
   {
     "model": "EKO09716",
@@ -17972,8 +17972,8 @@
   {
     "model": "TS1101_dimmer_module_2ch",
     "type": "light",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Zigbee dimmer module 2 channel"
+    "vendor": "Tuya",
+    "comment": "Tuya Zigbee dimmer module 2 channel"
   },
   {
     "model": "ERS-10TZBVK-AA",
@@ -17996,14 +17996,14 @@
   {
     "model": "EKO09738",
     "type": "switch",
-    "vendor": "Elkomore",
-    "comment": "Elkomore SmartStikk"
+    "vendor": "Elko",
+    "comment": "Elko SmartStikk"
   },
   {
     "model": "SWTZ25",
     "type": "light",
-    "vendor": "OXTmore",
-    "comment": "OXTmore Zigbee dimmer module 2 channel"
+    "vendor": "OXT",
+    "comment": "OXT Zigbee dimmer module 2 channel"
   },
   {
     "model": "HAL500",
@@ -18422,86 +18422,86 @@
   {
     "model": "TV02-Zigbee",
     "type": "sensor",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Thermostat radiator valve"
+    "vendor": "Tuya",
+    "comment": "Tuya Thermostat radiator valve"
   },
   {
     "model": "TS0011_switch_module",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore 1 gang switch module - (without neutral)"
+    "vendor": "Tuya",
+    "comment": "Tuya 1 gang switch module - (without neutral)"
   },
   {
     "model": "TS0012_switch_module",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore 2 gang switch module - (without neutral)"
+    "vendor": "Tuya",
+    "comment": "Tuya 2 gang switch module - (without neutral)"
   },
   {
     "model": "TS0013_switch_module",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore 3 gang switch module - (without neutral)"
+    "vendor": "Tuya",
+    "comment": "Tuya 3 gang switch module - (without neutral)"
   },
   {
     "model": "TV01-ZB",
     "type": "sensor",
-    "vendor": "Moesmore",
-    "comment": "Moesmore Thermostat radiator valve"
+    "vendor": "Moes",
+    "comment": "Moes Thermostat radiator valve"
   },
   {
     "model": "TRV06-1",
     "type": "sensor",
-    "vendor": "AVATTOmore",
-    "comment": "AVATTOmore Thermostat radiator valve"
+    "vendor": "AVATTO",
+    "comment": "AVATTO Thermostat radiator valve"
   },
   {
     "model": "TSL-TRV-TV01ZG",
     "type": "sensor",
-    "vendor": "Tesla Smartmore",
-    "comment": "Tesla Smartmore Thermostat radiator valve"
+    "vendor": "Tesla Smart",
+    "comment": "Tesla Smart Thermostat radiator valve"
   },
   {
     "model": "TSL-TRV-TV05ZG",
     "type": "sensor",
-    "vendor": "Tesla Smartmore",
-    "comment": "Tesla Smartmore Thermostat radiator valve"
+    "vendor": "Tesla Smart",
+    "comment": "Tesla Smart Thermostat radiator valve"
   },
   {
     "model": "GTZ08",
     "type": "sensor",
-    "vendor": "Unknown/id3.plmore",
-    "comment": "Unknown/id3.plmore Thermostat radiator valve"
+    "vendor": "Unknown/id3.pl",
+    "comment": "Unknown/id3.pl Thermostat radiator valve"
   },
   {
     "model": "1gang N-ZLWSM01",
     "type": "switch",
-    "vendor": "AVATTOmore",
-    "comment": "AVATTOmore 1 gang switch module - (without neutral)"
+    "vendor": "AVATTO",
+    "comment": "AVATTO 1 gang switch module - (without neutral)"
   },
   {
     "model": "TMZ02L-16A-W",
     "type": "switch",
-    "vendor": "SMATRULmore",
-    "comment": "SMATRULmore 1 gang switch module - (without neutral)"
+    "vendor": "SMATRUL",
+    "comment": "SMATRUL 1 gang switch module - (without neutral)"
   },
   {
     "model": "TMZ02L-16A-B",
     "type": "switch",
-    "vendor": "Aubessmore",
-    "comment": "Aubessmore 1 gang switch module - (without neutral)"
+    "vendor": "Aubess",
+    "comment": "Aubess 1 gang switch module - (without neutral)"
   },
   {
     "model": "2gang N-ZLWSM01",
     "type": "switch",
-    "vendor": "AVATTOmore",
-    "comment": "AVATTOmore 2 gang switch module - (without neutral)"
+    "vendor": "AVATTO",
+    "comment": "AVATTO 2 gang switch module - (without neutral)"
   },
   {
     "model": "3gang N-ZLWSM01",
     "type": "switch",
-    "vendor": "AVATTOmore",
-    "comment": "AVATTOmore 3 gang switch module - (without neutral)"
+    "vendor": "AVATTO",
+    "comment": "AVATTO 3 gang switch module - (without neutral)"
   },
   {
     "model": "8719514302235",
@@ -18584,8 +18584,8 @@
   {
     "model": "KEYZB-110",
     "type": "other",
-    "vendor": "Develcomore",
-    "comment": "Develcomore Keypad"
+    "vendor": "Develco",
+    "comment": "Develco Keypad"
   },
   {
     "model": "EFEKTA_ePWS",
@@ -18968,8 +18968,8 @@
   {
     "model": "GS361A-H04",
     "type": "switch",
-    "vendor": "Siterwellmore",
-    "comment": "Siterwellmore Radiator valve with thermostat"
+    "vendor": "Siterwell",
+    "comment": "Siterwell Radiator valve with thermostat"
   },
   {
     "model": "S57003",
@@ -19004,20 +19004,20 @@
   {
     "model": "TS0001_switch_module",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore 1 gang switch module"
+    "vendor": "Tuya",
+    "comment": "Tuya 1 gang switch module"
   },
   {
     "model": "TS0004_switch_module",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore 4 gang switch module"
+    "vendor": "Tuya",
+    "comment": "Tuya 4 gang switch module"
   },
   {
     "model": "TS0601_thermostat",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Radiator valve with thermostat"
+    "vendor": "Tuya",
+    "comment": "Tuya Radiator valve with thermostat"
   },
   {
     "model": "TS0601_thermostat_1",
@@ -19028,20 +19028,20 @@
   {
     "model": "TS0111_valve",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Smart water/gas valve"
+    "vendor": "Tuya",
+    "comment": "Tuya Smart water/gas valve"
   },
   {
     "model": "TS011F_plug_1",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Smart plug (with power monitoring)"
+    "vendor": "Tuya",
+    "comment": "Tuya Smart plug (with power monitoring)"
   },
   {
     "model": "TS011F_plug_3",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Smart plug (with power monitoring by polling)"
+    "vendor": "Tuya",
+    "comment": "Tuya Smart plug (with power monitoring by polling)"
   },
   {
     "model": "TS0601_motion_sensor",
@@ -19064,8 +19064,8 @@
   {
     "model": "TS0601_rcbo",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore DIN mount RCBO with smart energy metering"
+    "vendor": "Tuya",
+    "comment": "Tuya DIN mount RCBO with smart energy metering"
   },
   {
     "model": "D1",
@@ -19082,200 +19082,200 @@
   {
     "model": "KEPZB-110",
     "type": "other",
-    "vendor": "Frientmore",
-    "comment": "Frientmore Keypad"
+    "vendor": "Frient",
+    "comment": "Frient Keypad"
   },
   {
     "model": "120112",
     "type": "switch",
-    "vendor": "Essentialsmore",
-    "comment": "Essentialsmore Smart home heizkörperthermostat premium"
+    "vendor": "Essentials",
+    "comment": "Essentials Smart home heizkörperthermostat premium"
   },
   {
     "model": "GTZ02",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Głowica termostatyczna"
+    "vendor": "Tuya",
+    "comment": "Tuya Głowica termostatyczna"
   },
   {
     "model": "NX-4911",
     "type": "switch",
-    "vendor": "Revoltmore",
-    "comment": "Revoltmore Thermostatic Radiator Valve Controller"
+    "vendor": "Revolt",
+    "comment": "Revolt Thermostatic Radiator Valve Controller"
   },
   {
     "model": "30946",
     "type": "switch",
-    "vendor": "Unitecmore",
-    "comment": "Unitecmore Thermostatic Radiator Valve Controller"
+    "vendor": "Unitec",
+    "comment": "Unitec Thermostatic Radiator Valve Controller"
   },
   {
     "model": "TSL-TRV-GS361A",
     "type": "switch",
-    "vendor": "Tesla Smartmore",
-    "comment": "Tesla Smartmore Thermostatic Radiator Valve Controller"
+    "vendor": "Tesla Smart",
+    "comment": "Tesla Smart Thermostatic Radiator Valve Controller"
   },
   {
     "model": "ZBHTR10WT",
     "type": "switch",
-    "vendor": "Nedismore",
-    "comment": "Nedismore Thermostatic Radiator Valve Controller"
+    "vendor": "Nedis",
+    "comment": "Nedis Thermostatic Radiator Valve Controller"
   },
   {
     "model": "TBUWTRV",
     "type": "switch",
-    "vendor": "TCP Smartmore",
-    "comment": "TCP Smartmore Smart Thermostatic Radiator Valve"
+    "vendor": "TCP Smart",
+    "comment": "TCP Smart Smart Thermostatic Radiator Valve"
   },
   {
     "model": "APRM-04-001",
     "type": "switch",
-    "vendor": "Appartmemore",
-    "comment": "Appartmemore Głowica termostatyczna"
+    "vendor": "Appartme",
+    "comment": "Appartme Głowica termostatyczna"
   },
   {
     "model": "SWTZ21",
     "type": "switch",
-    "vendor": "OXTmore",
-    "comment": "OXTmore 1 gang switch module"
+    "vendor": "OXT",
+    "comment": "OXT 1 gang switch module"
   },
   {
     "model": "ZM-104-M",
     "type": "switch",
-    "vendor": "Moesmore",
-    "comment": "Moesmore 1 gang switch module"
+    "vendor": "Moes",
+    "comment": "Moes 1 gang switch module"
   },
   {
     "model": "SWTZ27",
     "type": "switch",
-    "vendor": "OXTmore",
-    "comment": "OXTmore 4 gang switch module"
+    "vendor": "OXT",
+    "comment": "OXT 4 gang switch module"
   },
   {
     "model": "HY368",
     "type": "switch",
-    "vendor": "Moesmore",
-    "comment": "Moesmore Radiator valve with thermostat"
+    "vendor": "Moes",
+    "comment": "Moes Radiator valve with thermostat"
   },
   {
     "model": "HY369RT",
     "type": "switch",
-    "vendor": "Moesmore",
-    "comment": "Moesmore Radiator valve with thermostat"
+    "vendor": "Moes",
+    "comment": "Moes Radiator valve with thermostat"
   },
   {
     "model": "378RT",
     "type": "switch",
-    "vendor": "SHOJZJmore",
-    "comment": "SHOJZJmore Radiator valve with thermostat"
+    "vendor": "SHOJZJ",
+    "comment": "SHOJZJ Radiator valve with thermostat"
   },
   {
     "model": "TVR01",
     "type": "switch",
-    "vendor": "Silvercrestmore",
-    "comment": "Silvercrestmore Radiator valve with thermostat"
+    "vendor": "Silvercrest",
+    "comment": "Silvercrest Radiator valve with thermostat"
   },
   {
     "model": "07732B",
     "type": "switch",
-    "vendor": "Immaxmore",
-    "comment": "Immaxmore Radiator valve with thermostat"
+    "vendor": "Immax",
+    "comment": "Immax Radiator valve with thermostat"
   },
   {
     "model": "Heat M30",
     "type": "switch",
-    "vendor": "Evolveomore",
-    "comment": "Evolveomore Radiator valve with thermostat"
+    "vendor": "Evolveo",
+    "comment": "Evolveo Radiator valve with thermostat"
   },
   {
     "model": "SM-AW713Z",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Smart water/gas valve"
+    "vendor": "Tuya",
+    "comment": "Tuya Smart water/gas valve"
   },
   {
     "model": "TS011F_plug",
     "type": "switch",
-    "vendor": "LELLKImore",
-    "comment": "LELLKImore Smart plug (with power monitoring)"
+    "vendor": "LELLKI",
+    "comment": "LELLKI Smart plug (with power monitoring)"
   },
   {
     "model": "BW-SHP15",
     "type": "switch",
-    "vendor": "BlitzWolfmore",
-    "comment": "BlitzWolfmore Smart plug (with power monitoring)"
+    "vendor": "BlitzWolf",
+    "comment": "BlitzWolf Smart plug (with power monitoring)"
   },
   {
     "model": "BW-SHP13",
     "type": "switch",
-    "vendor": "BlitzWolfmore",
-    "comment": "BlitzWolfmore Smart plug (with power monitoring)"
+    "vendor": "BlitzWolf",
+    "comment": "BlitzWolf Smart plug (with power monitoring)"
   },
   {
     "model": "PJ-ZSW01",
     "type": "switch",
-    "vendor": "MatSee Plusmore",
-    "comment": "MatSee Plusmore Smart plug (with power monitoring)"
+    "vendor": "MatSee Plus",
+    "comment": "MatSee Plus Smart plug (with power monitoring)"
   },
   {
     "model": "MOD037",
     "type": "switch",
-    "vendor": "MODEMIXmore",
-    "comment": "MODEMIXmore Smart plug (with power monitoring)"
+    "vendor": "MODEMIX",
+    "comment": "MODEMIX Smart plug (with power monitoring)"
   },
   {
     "model": "MOD048",
     "type": "switch",
-    "vendor": "MODEMIXmore",
-    "comment": "MODEMIXmore Smart plug (with power monitoring)"
+    "vendor": "MODEMIX",
+    "comment": "MODEMIX Smart plug (with power monitoring)"
   },
   {
     "model": "CS-AJ-DE2U-ZG-11",
     "type": "switch",
-    "vendor": "Coswallmore",
-    "comment": "Coswallmore Smart plug (with power monitoring)"
+    "vendor": "Coswall",
+    "comment": "Coswall Smart plug (with power monitoring)"
   },
   {
     "model": "TS011F_plug_1",
     "type": "switch",
-    "vendor": "Aubessmore",
-    "comment": "Aubessmore Smart plug (with power monitoring)"
+    "vendor": "Aubess",
+    "comment": "Aubess Smart plug (with power monitoring)"
   },
   {
     "model": "TS011F",
     "type": "switch",
-    "vendor": "VIKEFONmore",
-    "comment": "VIKEFONmore Smart plug (with power monitoring by polling)"
+    "vendor": "VIKEFON",
+    "comment": "VIKEFON Smart plug (with power monitoring by polling)"
   },
   {
     "model": "BW-SHP15",
     "type": "switch",
-    "vendor": "BlitzWolfmore",
-    "comment": "BlitzWolfmore Smart plug (with power monitoring by polling)"
+    "vendor": "BlitzWolf",
+    "comment": "BlitzWolf Smart plug (with power monitoring by polling)"
   },
   {
     "model": "MIUCOT10Z",
     "type": "switch",
-    "vendor": "AVATTOmore",
-    "comment": "AVATTOmore Smart plug (with power monitoring by polling)"
+    "vendor": "AVATTO",
+    "comment": "AVATTO Smart plug (with power monitoring by polling)"
   },
   {
     "model": "PLUG-001SPB2",
     "type": "switch",
-    "vendor": "NEOmore",
-    "comment": "NEOmore Smart plug (with power monitoring by polling)"
+    "vendor": "NEO",
+    "comment": "NEO Smart plug (with power monitoring by polling)"
   },
   {
     "model": "ZJSBL7-100Z",
     "type": "switch",
-    "vendor": "HOCHmore",
-    "comment": "HOCHmore DIN mount RCBO with smart energy metering"
+    "vendor": "HOCH",
+    "comment": "HOCH DIN mount RCBO with smart energy metering"
   },
   {
     "model": "ZJSBL7-100Z",
     "type": "switch",
-    "vendor": "WDYKmore",
-    "comment": "WDYKmore DIN mount RCBO with smart energy metering"
+    "vendor": "WDYK",
+    "comment": "WDYK DIN mount RCBO with smart energy metering"
   },
   {
     "model": "SIN-4-1-20_LEX",
@@ -19286,8 +19286,8 @@
   {
     "model": "33955",
     "type": "light",
-    "vendor": "AwoXmore",
-    "comment": "AwoXmore LED light with color temperature"
+    "vendor": "AwoX",
+    "comment": "AwoX LED light with color temperature"
   },
   {
     "model": "3200-fr",
@@ -19448,8 +19448,8 @@
   {
     "model": "TS0207_water_leak_detector",
     "type": "other",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Water leak detector"
+    "vendor": "Tuya",
+    "comment": "Tuya Water leak detector"
   },
   {
     "model": "MS-108ZR",
@@ -19478,26 +19478,26 @@
   {
     "model": "900316",
     "type": "light",
-    "vendor": "EGLOmore",
-    "comment": "EGLOmore LED light with color temperature"
+    "vendor": "EGLO",
+    "comment": "EGLO LED light with color temperature"
   },
   {
     "model": "900317",
     "type": "light",
-    "vendor": "EGLOmore",
-    "comment": "EGLOmore LED light with color temperature"
+    "vendor": "EGLO",
+    "comment": "EGLO LED light with color temperature"
   },
   {
     "model": "900053",
     "type": "light",
-    "vendor": "EGLOmore",
-    "comment": "EGLOmore LED light with color temperature"
+    "vendor": "EGLO",
+    "comment": "EGLO LED light with color temperature"
   },
   {
     "model": "TS0207",
     "type": "other",
-    "vendor": "CR Smart Homemore",
-    "comment": "CR Smart Homemore Water leak detector"
+    "vendor": "CR Smart Home",
+    "comment": "CR Smart Home Water leak detector"
   },
   {
     "model": "AV2010/14",
@@ -19628,14 +19628,14 @@
   {
     "model": "PTM 215Z",
     "type": "other",
-    "vendor": "EnOceanmore",
-    "comment": "EnOceanmore Pushbutton transmitter module"
+    "vendor": "EnOcean",
+    "comment": "EnOcean Pushbutton transmitter module"
   },
   {
     "model": "PTM 215ZE",
     "type": "other",
-    "vendor": "EnOceanmore",
-    "comment": "EnOceanmore Pushbutton transmitter module"
+    "vendor": "EnOcean",
+    "comment": "EnOcean Pushbutton transmitter module"
   },
   {
     "model": "PTM 216Z",
@@ -19658,62 +19658,62 @@
   {
     "model": "91004",
     "type": "other",
-    "vendor": "Nikomore",
-    "comment": "Nikomore Dimmer switch for Hue system"
+    "vendor": "Niko",
+    "comment": "Niko Dimmer switch for Hue system"
   },
   {
     "model": "CWS-4-1-01_HUE",
     "type": "other",
-    "vendor": "NodOnmore",
-    "comment": "NodOnmore Smart switch for Philips Hue"
+    "vendor": "NodOn",
+    "comment": "NodOn Smart switch for Philips Hue"
   },
   {
     "model": "03906",
     "type": "other",
-    "vendor": "Vimarmore",
-    "comment": "Vimarmore Zigbee Friends of Hue RF switch"
+    "vendor": "Vimar",
+    "comment": "Vimar Zigbee Friends of Hue RF switch"
   },
   {
     "model": "SR-ZGP2801K4-FOH-E",
     "type": "other",
-    "vendor": "Sunrichermore",
-    "comment": "Sunrichermore Pushbutton transmitter module"
+    "vendor": "Sunricher",
+    "comment": "Sunricher Pushbutton transmitter module"
   },
   {
     "model": "SR-ZG2833PAC",
     "type": "other",
-    "vendor": "Sunrichermore",
-    "comment": "Sunrichermore Pushbutton transmitter module"
+    "vendor": "Sunricher",
+    "comment": "Sunricher Pushbutton transmitter module"
   },
   {
     "model": "9125",
     "type": "other",
-    "vendor": "LED-Tradingmore",
-    "comment": "LED-Tradingmore Pushbutton transmitter module"
+    "vendor": "LED-Trading",
+    "comment": "LED-Trading Pushbutton transmitter module"
   },
   {
     "model": "4120.2.S.FMI.61",
     "type": "other",
-    "vendor": "Fellermore",
-    "comment": "Fellermore Smart light control for Philips Hue"
+    "vendor": "Feller",
+    "comment": "Feller Smart light control for Philips Hue"
   },
   {
     "model": "4512727",
     "type": "other",
-    "vendor": "Namronmore",
-    "comment": "Namronmore Zigbee FOH Green Bryter K4"
+    "vendor": "Namron",
+    "comment": "Namron Zigbee FOH Green Bryter K4"
   },
   {
     "model": "EWSxZ",
     "type": "other",
-    "vendor": "Easyfit by EnOceanmore",
-    "comment": "Easyfit by EnOceanmore Wall switch for Zigbee"
+    "vendor": "Easyfit by EnOcean",
+    "comment": "Easyfit by EnOcean Wall switch for Zigbee"
   },
   {
     "model": "20020002",
     "type": "other",
-    "vendor": "Trio2sysmore",
-    "comment": "Trio2sysmore Zigbee Green Power complete switch"
+    "vendor": "Trio2sys",
+    "comment": "Trio2sys Zigbee Green Power complete switch"
   },
   {
     "model": "9CZA-P470T-A1A",
@@ -19910,8 +19910,8 @@
   {
     "model": "ZNJLBL01LM",
     "type": "switch",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Roller shade driver E1"
+    "vendor": "Aqara",
+    "comment": "Aqara Roller shade driver E1"
   },
   {
     "model": "GZCGQ11LM",
@@ -19940,8 +19940,8 @@
   {
     "model": "SR-ZG9001K12-DIM-Z4",
     "type": "other",
-    "vendor": "Sunrichermore",
-    "comment": "Sunrichermore 4 zone remote and dimmer"
+    "vendor": "Sunricher",
+    "comment": "Sunricher 4 zone remote and dimmer"
   },
   {
     "model": "ZLED-RGB9",
@@ -19970,14 +19970,14 @@
   {
     "model": "TS0601_water_sensor",
     "type": "other",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Water leak sensor"
+    "vendor": "Tuya",
+    "comment": "Tuya Water leak sensor"
   },
   {
     "model": "TS011F_din_smart_relay",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Din smart relay (with power monitoring)"
+    "vendor": "Tuya",
+    "comment": "Tuya Din smart relay (with power monitoring)"
   },
   {
     "model": "XHK1-UE",
@@ -19988,26 +19988,26 @@
   {
     "model": "RSD-M01",
     "type": "switch",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Roller shade driver E1"
+    "vendor": "Aqara",
+    "comment": "Aqara Roller shade driver E1"
   },
   {
     "model": "ZGRC-KEY-013",
     "type": "other",
-    "vendor": "RGB Geniemore",
-    "comment": "RGB Geniemore 4 zone remote and dimmer"
+    "vendor": "RGB Genie",
+    "comment": "RGB Genie 4 zone remote and dimmer"
   },
   {
     "model": "NAS-WS02B0",
     "type": "other",
-    "vendor": "NEOmore",
-    "comment": "NEOmore Water leak sensor"
+    "vendor": "NEO",
+    "comment": "NEO Water leak sensor"
   },
   {
     "model": "ATMS1602Z",
     "type": "switch",
-    "vendor": "MatSee Plusmore",
-    "comment": "MatSee Plusmore Din smart relay (with power monitoring)"
+    "vendor": "MatSee Plus",
+    "comment": "MatSee Plus Din smart relay (with power monitoring)"
   },
   {
     "model": "ROB_200-017-0",
@@ -20036,20 +20036,20 @@
   {
     "model": "MCCGQ12LM",
     "type": "sensor",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Door and window sensor T1"
+    "vendor": "Aqara",
+    "comment": "Aqara Door and window sensor T1"
   },
   {
     "model": "DW-S03D",
     "type": "sensor",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Door and window sensor T1"
+    "vendor": "Aqara",
+    "comment": "Aqara Door and window sensor T1"
   },
   {
     "model": "YNDX-00520",
     "type": "sensor",
-    "vendor": "Yandexmore",
-    "comment": "Yandexmore Door and window sensor T1"
+    "vendor": "Yandex",
+    "comment": "Yandex Door and window sensor T1"
   },
   {
     "model": "PF-PM02D-TYZ",
@@ -20120,8 +20120,8 @@
   {
     "model": "ID-UK21FW09",
     "type": "light",
-    "vendor": "Iolloimore",
-    "comment": "Iolloimore Zigbee LED smart dimmer switch"
+    "vendor": "Iolloi",
+    "comment": "Iolloi Zigbee LED smart dimmer switch"
   },
   {
     "model": "AC26940/AC31266",
@@ -20276,8 +20276,8 @@
   {
     "model": "VOCKQJK11LM",
     "type": "sensor",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore TVOC air quality monitor"
+    "vendor": "Aqara",
+    "comment": "Aqara TVOC air quality monitor"
   },
   {
     "model": "QBKG41LM",
@@ -20300,8 +20300,8 @@
   {
     "model": "WXKG13LM",
     "type": "other",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Wireless mini switch T1"
+    "vendor": "Aqara",
+    "comment": "Aqara Wireless mini switch T1"
   },
   {
     "model": "ZVG1",
@@ -20312,8 +20312,8 @@
   {
     "model": "CCT5011-0001/CCT5011-0002/MEG5011-0001",
     "type": "switch",
-    "vendor": "Schneider Electricmore",
-    "comment": "Schneider Electricmore Micro module switch"
+    "vendor": "Schneider Electric",
+    "comment": "Schneider Electric Micro module switch"
   },
   {
     "model": "E13-N11",
@@ -20354,32 +20354,32 @@
   {
     "model": "ID-EU20FW09",
     "type": "light",
-    "vendor": "Iolloimore",
-    "comment": "Iolloimore Zigbee LED smart dimmer switch"
+    "vendor": "Iolloi",
+    "comment": "Iolloi Zigbee LED smart dimmer switch"
   },
   {
     "model": "AAQS-S01",
     "type": "sensor",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore TVOC air quality monitor"
+    "vendor": "Aqara",
+    "comment": "Aqara TVOC air quality monitor"
   },
   {
     "model": "WB-R02D",
     "type": "other",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Wireless mini switch T1"
+    "vendor": "Aqara",
+    "comment": "Aqara Wireless mini switch T1"
   },
   {
     "model": "YNDX-00524",
     "type": "other",
-    "vendor": "Yandexmore",
-    "comment": "Yandexmore Wireless mini switch T1"
+    "vendor": "Yandex",
+    "comment": "Yandex Wireless mini switch T1"
   },
   {
     "model": "EKO07144",
     "type": "switch",
-    "vendor": "Elkomore",
-    "comment": "Elkomore Micro module switch"
+    "vendor": "Elko",
+    "comment": "Elko Micro module switch"
   },
   {
     "model": "HG06463A",
@@ -20498,8 +20498,8 @@
   {
     "model": "550D6001",
     "type": "other",
-    "vendor": "Schneider Electricmore",
-    "comment": "Schneider Electricmore LK FUGA wiser wireless battery 4 button switch"
+    "vendor": "Schneider Electric",
+    "comment": "Schneider Electric LK FUGA wiser wireless battery 4 button switch"
   },
   {
     "model": "E21-N1EA",
@@ -20528,8 +20528,8 @@
   {
     "model": "TS0502B",
     "type": "light",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Light controller"
+    "vendor": "Tuya",
+    "comment": "Tuya Light controller"
   },
   {
     "model": "TS011F_plug_2",
@@ -20540,14 +20540,14 @@
   {
     "model": "EKO07117",
     "type": "other",
-    "vendor": "Elkomore",
-    "comment": "Elkomore LK FUGA wiser wireless battery 4 button switch"
+    "vendor": "Elko",
+    "comment": "Elko LK FUGA wiser wireless battery 4 button switch"
   },
   {
     "model": "SMD9300",
     "type": "light",
-    "vendor": "Mercator Ikuümore",
-    "comment": "Mercator Ikuümore Donovan Panel Light"
+    "vendor": "Mercator Ikuü",
+    "comment": "Mercator Ikuü Donovan Panel Light"
   },
   {
     "model": "WL-SD001-9W",
@@ -20894,8 +20894,8 @@
   {
     "model": "EasyCode903G2.1",
     "type": "lock",
-    "vendor": "EasyAccessmore",
-    "comment": "EasyAccessmore EasyFinger V2"
+    "vendor": "EasyAccess",
+    "comment": "EasyAccess EasyFinger V2"
   },
   {
     "model": "FK_V02",
@@ -20984,8 +20984,8 @@
   {
     "model": "CCT5010-0001",
     "type": "light",
-    "vendor": "Schneider Electricmore",
-    "comment": "Schneider Electricmore Micro module dimmer"
+    "vendor": "Schneider Electric",
+    "comment": "Schneider Electric Micro module dimmer"
   },
   {
     "model": "SR-ZG9080A",
@@ -21002,8 +21002,8 @@
   {
     "model": "TS011F_wall_outlet",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore In-wall outlet"
+    "vendor": "Tuya",
+    "comment": "Tuya In-wall outlet"
   },
   {
     "model": "TS0601_din",
@@ -21020,44 +21020,44 @@
   {
     "model": "EasyCode903G2.1",
     "type": "lock",
-    "vendor": "Datek Wirelessmore",
-    "comment": "Datek Wirelessmore EasyFinger V2"
+    "vendor": "Datek Wireless",
+    "comment": "Datek Wireless EasyFinger V2"
   },
   {
     "model": "EKO07090",
     "type": "light",
-    "vendor": "Elkomore",
-    "comment": "Elkomore Micro module dimmer"
+    "vendor": "Elko",
+    "comment": "Elko Micro module dimmer"
   },
   {
     "model": "550B1012",
     "type": "light",
-    "vendor": "Schneider Electricmore",
-    "comment": "Schneider Electricmore Micro module dimmer"
+    "vendor": "Schneider Electric",
+    "comment": "Schneider Electric Micro module dimmer"
   },
   {
     "model": "SWP86-01OG",
     "type": "switch",
-    "vendor": "Teekarmore",
-    "comment": "Teekarmore In-wall outlet"
+    "vendor": "Teekar",
+    "comment": "Teekar In-wall outlet"
   },
   {
     "model": "Zigbee Socket",
     "type": "switch",
-    "vendor": "BSEEDmore",
-    "comment": "BSEEDmore In-wall outlet"
+    "vendor": "BSEED",
+    "comment": "BSEED In-wall outlet"
   },
   {
     "model": "ROB_200-009-0",
     "type": "other",
-    "vendor": "ROBBmore",
-    "comment": "ROBBmore Zigbee 2 button wall switch"
+    "vendor": "ROBB",
+    "comment": "ROBB Zigbee 2 button wall switch"
   },
   {
     "model": "SR-ZG9001K2-DIM",
     "type": "other",
-    "vendor": "Sunrichermore",
-    "comment": "Sunrichermore Zigbee 2 button wall switch"
+    "vendor": "Sunricher",
+    "comment": "Sunricher Zigbee 2 button wall switch"
   },
   {
     "model": "0402946",
@@ -21104,8 +21104,8 @@
   {
     "model": "HESZB-120",
     "type": "sensor",
-    "vendor": "Develcomore",
-    "comment": "Develcomore Fire detector with siren"
+    "vendor": "Develco",
+    "comment": "Develco Fire detector with siren"
   },
   {
     "model": "SAGE206611",
@@ -21122,8 +21122,8 @@
   {
     "model": "GL-C-009P",
     "type": "light",
-    "vendor": "Gledoptomore",
-    "comment": "Gledoptomore Zigbee LED Controller W (pro)"
+    "vendor": "Gledopto",
+    "comment": "Gledopto Zigbee LED Controller W (pro)"
   },
   {
     "model": "HS1DS",
@@ -21302,8 +21302,8 @@
   {
     "model": "WHD02",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Wall switch module"
+    "vendor": "Tuya",
+    "comment": "Tuya Wall switch module"
   },
   {
     "model": "R7060",
@@ -21314,20 +21314,20 @@
   {
     "model": "94431",
     "type": "sensor",
-    "vendor": "Frientmore",
-    "comment": "Frientmore Smart Intelligent Heat Alarm"
+    "vendor": "Frient",
+    "comment": "Frient Smart Intelligent Heat Alarm"
   },
   {
     "model": "GL-C-009P_mini",
     "type": "light",
-    "vendor": "Gledoptomore",
-    "comment": "Gledoptomore Zigbee LED Controller W (pro) (mini)"
+    "vendor": "Gledopto",
+    "comment": "Gledopto Zigbee LED Controller W (pro) (mini)"
   },
   {
     "model": "iHSW02",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Wall switch module"
+    "vendor": "Tuya",
+    "comment": "Tuya Wall switch module"
   },
   {
     "model": "BAC-002-ALZB",
@@ -21362,14 +21362,14 @@
   {
     "model": "33951/33948",
     "type": "light",
-    "vendor": "AwoXmore",
-    "comment": "AwoXmore LED white"
+    "vendor": "AwoX",
+    "comment": "AwoX LED white"
   },
   {
     "model": "33957",
     "type": "light",
-    "vendor": "AwoXmore",
-    "comment": "AwoXmore LED light with color temperature"
+    "vendor": "AwoX",
+    "comment": "AwoX LED light with color temperature"
   },
   {
     "model": "BW-SS7_1gang",
@@ -21518,8 +21518,8 @@
   {
     "model": "ROB_200-018-0",
     "type": "other",
-    "vendor": "ROBBmore",
-    "comment": "ROBBmore Zigbee knob smart dimmer"
+    "vendor": "ROBB",
+    "comment": "ROBB Zigbee knob smart dimmer"
   },
   {
     "model": "RTCGQ13LM",
@@ -21590,20 +21590,20 @@
   {
     "model": "12229",
     "type": "light",
-    "vendor": "EGLOmore",
-    "comment": "EGLOmore LED white"
+    "vendor": "EGLO",
+    "comment": "EGLO LED white"
   },
   {
     "model": "12239",
     "type": "light",
-    "vendor": "EGLOmore",
-    "comment": "EGLOmore LED light with color temperature"
+    "vendor": "EGLO",
+    "comment": "EGLO LED light with color temperature"
   },
   {
     "model": "SR-ZG2835",
     "type": "other",
-    "vendor": "Sunrichermore",
-    "comment": "Sunrichermore Zigbee knob smart dimmer"
+    "vendor": "Sunricher",
+    "comment": "Sunricher Zigbee knob smart dimmer"
   },
   {
     "model": "C422AC11D41H140.0W",
@@ -21728,8 +21728,8 @@
   {
     "model": "GL-C-007P",
     "type": "light",
-    "vendor": "Gledoptomore",
-    "comment": "Gledoptomore Zigbee LED Controller RGBW (pro)"
+    "vendor": "Gledopto",
+    "comment": "Gledopto Zigbee LED Controller RGBW (pro)"
   },
   {
     "model": "GL-C-009S",
@@ -21776,8 +21776,8 @@
   {
     "model": "ICZB-KPD12",
     "type": "other",
-    "vendor": "iCasamore",
-    "comment": "iCasamore Zigbee 3.0 Keypad Pulse 2"
+    "vendor": "iCasa",
+    "comment": "iCasa Zigbee 3.0 Keypad Pulse 2"
   },
   {
     "model": "L1530",
@@ -21806,8 +21806,8 @@
   {
     "model": "511.000",
     "type": "light",
-    "vendor": "Iluminizemore",
-    "comment": "Iluminizemore Zigbee 3.0 universal LED-controller, 5 channel, RGBCCT LED"
+    "vendor": "Iluminize",
+    "comment": "Iluminize Zigbee 3.0 universal LED-controller, 5 channel, RGBCCT LED"
   },
   {
     "model": "RS 226",
@@ -21944,8 +21944,8 @@
   {
     "model": "RTCGQ12LM",
     "type": "sensor",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Motion sensor T1"
+    "vendor": "Aqara",
+    "comment": "Aqara Motion sensor T1"
   },
   {
     "model": "12501",
@@ -21992,8 +21992,8 @@
   {
     "model": "TS0503B",
     "type": "light",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Zigbee RGB light"
+    "vendor": "Tuya",
+    "comment": "Tuya Zigbee RGB light"
   },
   {
     "model": "TS0501B",
@@ -22004,14 +22004,14 @@
   {
     "model": "TS0101",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Zigbee Socket"
+    "vendor": "Tuya",
+    "comment": "Tuya Zigbee Socket"
   },
   {
     "model": "TS0108",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Socket with 2 USB"
+    "vendor": "Tuya",
+    "comment": "Tuya Socket with 2 USB"
   },
   {
     "model": "TS0503A",
@@ -22070,50 +22070,50 @@
   {
     "model": "GL-C-007P_mini",
     "type": "light",
-    "vendor": "Gledoptomore",
-    "comment": "Gledoptomore Zigbee LED Controller RGBW (pro) (mini)"
+    "vendor": "Gledopto",
+    "comment": "Gledopto Zigbee LED Controller RGBW (pro) (mini)"
   },
   {
     "model": "SR-ZG9001K2-DIM",
     "type": "other",
-    "vendor": "Sunrichermore",
-    "comment": "Sunrichermore Zigbee 3.0 Keypad Pulse 2"
+    "vendor": "Sunricher",
+    "comment": "Sunricher Zigbee 3.0 Keypad Pulse 2"
   },
   {
     "model": "HK-ZD-RGBCCT-A",
     "type": "light",
-    "vendor": "Sunrichermore",
-    "comment": "Sunrichermore Zigbee 3.0 universal LED-controller, 5 channel, RGBCCT LED"
+    "vendor": "Sunricher",
+    "comment": "Sunricher Zigbee 3.0 universal LED-controller, 5 channel, RGBCCT LED"
   },
   {
     "model": "YNDX-00522",
     "type": "sensor",
-    "vendor": "Yandexmore",
-    "comment": "Yandexmore Motion sensor T1"
+    "vendor": "Yandex",
+    "comment": "Yandex Motion sensor T1"
   },
   {
     "model": "C03Z",
     "type": "light",
-    "vendor": "BTF-Lightingmore",
-    "comment": "BTF-Lightingmore Zigbee RGB light"
+    "vendor": "BTF-Lighting",
+    "comment": "BTF-Lighting Zigbee RGB light"
   },
   {
     "model": "PS080",
     "type": "switch",
-    "vendor": "Larkkeymore",
-    "comment": "Larkkeymore Zigbee Socket"
+    "vendor": "Larkkey",
+    "comment": "Larkkey Zigbee Socket"
   },
   {
     "model": "SPBS01G",
     "type": "switch",
-    "vendor": "Mercator Ikuümore",
-    "comment": "Mercator Ikuümore Zigbee Socket"
+    "vendor": "Mercator Ikuü",
+    "comment": "Mercator Ikuü Zigbee Socket"
   },
   {
     "model": "PS580",
     "type": "switch",
-    "vendor": "Larkkeymore",
-    "comment": "Larkkeymore Socket with 2 USB"
+    "vendor": "Larkkey",
+    "comment": "Larkkey Socket with 2 USB"
   },
   {
     "model": "3216431P6",
@@ -22256,8 +22256,8 @@
   {
     "model": "GL-C-006P",
     "type": "light",
-    "vendor": "Gledoptomore",
-    "comment": "Gledoptomore Zigbee LED Controller WW/CW (pro)"
+    "vendor": "Gledopto",
+    "comment": "Gledopto Zigbee LED Controller WW/CW (pro)"
   },
   {
     "model": "GL-MC-001P",
@@ -22316,8 +22316,8 @@
   {
     "model": "412171",
     "type": "switch",
-    "vendor": "Legrandmore",
-    "comment": "Legrandmore DIN contactor module"
+    "vendor": "Legrand",
+    "comment": "Legrand DIN contactor module"
   },
   {
     "model": "ZB-RGBCW",
@@ -22352,8 +22352,8 @@
   {
     "model": "HGZB-01",
     "type": "switch",
-    "vendor": "Nue / 3Amore",
-    "comment": "Nue / 3Amore Smart Zigbee 3.0 light controller"
+    "vendor": "Nue / 3A",
+    "comment": "Nue / 3A Smart Zigbee 3.0 light controller"
   },
   {
     "model": "915005996401",
@@ -22460,8 +22460,8 @@
   {
     "model": "SEA801-Zigbee/SEA802-Zigbee",
     "type": "switch",
-    "vendor": "Saswellmore",
-    "comment": "Saswellmore Thermostatic radiator valve"
+    "vendor": "Saswell",
+    "comment": "Saswell Thermostatic radiator valve"
   },
   {
     "model": "14147206L",
@@ -22490,8 +22490,8 @@
   {
     "model": "TS0014",
     "type": "light",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Smart light switch - 4 gang without neutral wire"
+    "vendor": "Tuya",
+    "comment": "Tuya Smart light switch - 4 gang without neutral wire"
   },
   {
     "model": "SM-AZ713",
@@ -22520,20 +22520,20 @@
   {
     "model": "GL-C-006P_mini",
     "type": "light",
-    "vendor": "Gledoptomore",
-    "comment": "Gledoptomore Zigbee LED Controller WW/CW (pro) (mini)"
+    "vendor": "Gledopto",
+    "comment": "Gledopto Zigbee LED Controller WW/CW (pro) (mini)"
   },
   {
     "model": "GL-C-003P_1",
     "type": "light",
-    "vendor": "Gledoptomore",
-    "comment": "Gledoptomore Zigbee 2in1 LED Controller CCT/DIM (pro)"
+    "vendor": "Gledopto",
+    "comment": "Gledopto Zigbee 2in1 LED Controller CCT/DIM (pro)"
   },
   {
     "model": "GL-C-203P",
     "type": "light",
-    "vendor": "Gledoptomore",
-    "comment": "Gledoptomore Zigbee 2in1 LED Controller CCT/DIM (pro+)"
+    "vendor": "Gledopto",
+    "comment": "Gledopto Zigbee 2in1 LED Controller CCT/DIM (pro+)"
   },
   {
     "model": "FC80CC",
@@ -22544,74 +22544,74 @@
   {
     "model": "ZW-EU-01",
     "type": "switch",
-    "vendor": "Zemismartmore",
-    "comment": "Zemismartmore Smart light relay - 1 gang"
+    "vendor": "Zemismart",
+    "comment": "Zemismart Smart light relay - 1 gang"
   },
   {
     "model": "ZK-CH-2U",
     "type": "switch",
-    "vendor": "Moesmore",
-    "comment": "Moesmore Plug with 2 USB ports"
+    "vendor": "Moes",
+    "comment": "Moes Plug with 2 USB ports"
   },
   {
     "model": "WZB-TRVL",
     "type": "switch",
-    "vendor": "HiHomemore",
-    "comment": "HiHomemore Thermostatic radiator valve"
+    "vendor": "HiHome",
+    "comment": "HiHome Thermostatic radiator valve"
   },
   {
     "model": "00176592",
     "type": "switch",
-    "vendor": "Hamamore",
-    "comment": "Hamamore Thermostatic radiator valve"
+    "vendor": "Hama",
+    "comment": "Hama Thermostatic radiator valve"
   },
   {
     "model": "WT-1",
     "type": "switch",
-    "vendor": "Maginonmore",
-    "comment": "Maginonmore Thermostatic radiator valve"
+    "vendor": "Maginon",
+    "comment": "Maginon Thermostatic radiator valve"
   },
   {
     "model": "ZB-RT1",
     "type": "switch",
-    "vendor": "RTXmore",
-    "comment": "RTXmore Thermostatic radiator valve"
+    "vendor": "RTX",
+    "comment": "RTX Thermostatic radiator valve"
   },
   {
     "model": "TRV001",
     "type": "switch",
-    "vendor": "SETTI+more",
-    "comment": "SETTI+more Thermostatic radiator valve"
+    "vendor": "SETTI+",
+    "comment": "SETTI+ Thermostatic radiator valve"
   },
   {
     "model": "RTE 77.001B",
     "type": "switch",
-    "vendor": "Royal Thermomore",
-    "comment": "Royal Thermomore Thermostatic radiator valve"
+    "vendor": "Royal Thermo",
+    "comment": "Royal Thermo Thermostatic radiator valve"
   },
   {
     "model": "GDKES-04TZXD",
     "type": "light",
-    "vendor": "TUYATECmore",
-    "comment": "TUYATECmore Smart light switch - 4 gang without neutral wire"
+    "vendor": "TUYATEC",
+    "comment": "TUYATEC Smart light switch - 4 gang without neutral wire"
   },
   {
     "model": "VZ-222S",
     "type": "light",
-    "vendor": "Vizomore",
-    "comment": "Vizomore Smart light switch - 4 gang without neutral wire"
+    "vendor": "Vizo",
+    "comment": "Vizo Smart light switch - 4 gang without neutral wire"
   },
   {
     "model": "MG-ZG04W/B/G",
     "type": "light",
-    "vendor": "MakeGoodmore",
-    "comment": "MakeGoodmore Smart light switch - 4 gang without neutral wire"
+    "vendor": "MakeGood",
+    "comment": "MakeGood Smart light switch - 4 gang without neutral wire"
   },
   {
     "model": "SSW04",
     "type": "light",
-    "vendor": "Mercator Ikuümore",
-    "comment": "Mercator Ikuümore Smart light switch - 4 gang without neutral wire"
+    "vendor": "Mercator Ikuü",
+    "comment": "Mercator Ikuü Smart light switch - 4 gang without neutral wire"
   },
   {
     "model": "F20T60A",
@@ -22700,8 +22700,8 @@
   {
     "model": "014G2461",
     "type": "cover",
-    "vendor": "Danfossmore",
-    "comment": "Danfossmore Ally thermostat"
+    "vendor": "Danfoss",
+    "comment": "Danfoss Ally thermostat"
   },
   {
     "model": "SPLZB-131",
@@ -22748,8 +22748,8 @@
   {
     "model": "GL-C-008P",
     "type": "light",
-    "vendor": "Gledoptomore",
-    "comment": "Gledoptomore Zigbee LED Controller RGB+CCT (pro)"
+    "vendor": "Gledopto",
+    "comment": "Gledopto Zigbee LED Controller RGB+CCT (pro)"
   },
   {
     "model": "GL-S-007P",
@@ -23018,8 +23018,8 @@
   {
     "model": "TS011F_socket_module",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Socket module"
+    "vendor": "Tuya",
+    "comment": "Tuya Socket module"
   },
   {
     "model": "TS0215A_sos",
@@ -23030,8 +23030,8 @@
   {
     "model": "TS0215A_remote",
     "type": "other",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Security remote control"
+    "vendor": "Tuya",
+    "comment": "Tuya Security remote control"
   },
   {
     "model": "HG06104A",
@@ -23042,80 +23042,80 @@
   {
     "model": "014G2463",
     "type": "cover",
-    "vendor": "Danfossmore",
-    "comment": "Danfossmore Ally thermostat"
+    "vendor": "Danfoss",
+    "comment": "Danfoss Ally thermostat"
   },
   {
     "model": "GL-C-008P_mini",
     "type": "light",
-    "vendor": "Gledoptomore",
-    "comment": "Gledoptomore Zigbee LED Controller RGB+CCT (pro) (mini)"
+    "vendor": "Gledopto",
+    "comment": "Gledopto Zigbee LED Controller RGB+CCT (pro) (mini)"
   },
   {
     "model": "GL-C-001P",
     "type": "light",
-    "vendor": "Gledoptomore",
-    "comment": "Gledoptomore Zigbee 5in1 LED Controller (pro)"
+    "vendor": "Gledopto",
+    "comment": "Gledopto Zigbee 5in1 LED Controller (pro)"
   },
   {
     "model": "GL-C-002P",
     "type": "light",
-    "vendor": "Gledoptomore",
-    "comment": "Gledoptomore Zigbee 5in1 LED Controller (pro) (mini)"
+    "vendor": "Gledopto",
+    "comment": "Gledopto Zigbee 5in1 LED Controller (pro) (mini)"
   },
   {
     "model": "GL-C-011P",
     "type": "light",
-    "vendor": "Gledoptomore",
-    "comment": "Gledoptomore Zigbee 5in1 LED Controller (pro) (din)"
+    "vendor": "Gledopto",
+    "comment": "Gledopto Zigbee 5in1 LED Controller (pro) (din)"
   },
   {
     "model": "GL-C-201P",
     "type": "light",
-    "vendor": "Gledoptomore",
-    "comment": "Gledoptomore Zigbee 5in1 LED Controller (pro+)"
+    "vendor": "Gledopto",
+    "comment": "Gledopto Zigbee 5in1 LED Controller (pro+)"
   },
   {
     "model": "GL-C-202P",
     "type": "light",
-    "vendor": "Gledoptomore",
-    "comment": "Gledoptomore Zigbee 3in1 LED Controller (pro+)"
+    "vendor": "Gledopto",
+    "comment": "Gledopto Zigbee 3in1 LED Controller (pro+)"
   },
   {
     "model": "GL-C-204P",
     "type": "light",
-    "vendor": "Gledoptomore",
-    "comment": "Gledoptomore Zigbee 5in1 LED Controller (pro+) (pwm)"
+    "vendor": "Gledopto",
+    "comment": "Gledopto Zigbee 5in1 LED Controller (pro+) (pwm)"
   },
   {
     "model": "GL-C-301P",
     "type": "light",
-    "vendor": "Gledoptomore",
-    "comment": "Gledoptomore Zigbee 5in1 LED Controller (pro+) (ultra-mini)"
+    "vendor": "Gledopto",
+    "comment": "Gledopto Zigbee 5in1 LED Controller (pro+) (ultra-mini)"
   },
   {
     "model": "RR400ZB",
     "type": "switch",
-    "vendor": "LoraTapmore",
-    "comment": "LoraTapmore Socket module"
+    "vendor": "LoraTap",
+    "comment": "LoraTap Socket module"
   },
   {
     "model": "SP400ZB",
     "type": "switch",
-    "vendor": "LoraTapmore",
-    "comment": "LoraTapmore Socket module"
+    "vendor": "LoraTap",
+    "comment": "LoraTap Socket module"
   },
   {
     "model": "R7054",
     "type": "other",
-    "vendor": "Wooxmore",
-    "comment": "Wooxmore Security remote control"
+    "vendor": "Woox",
+    "comment": "Woox Security remote control"
   },
   {
     "model": "ZBRC10WT",
     "type": "other",
-    "vendor": "Nedismore",
-    "comment": "Nedismore Security remote control"
+    "vendor": "Nedis",
+    "comment": "Nedis Security remote control"
   },
   {
     "model": "GL-G-001P",
@@ -23408,8 +23408,8 @@
   {
     "model": "TS130F",
     "type": "light",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Curtain/blind switch"
+    "vendor": "Tuya",
+    "comment": "Tuya Curtain/blind switch"
   },
   {
     "model": "TS0505A_led",
@@ -23438,8 +23438,8 @@
   {
     "model": "SC400",
     "type": "light",
-    "vendor": "LoraTapmore",
-    "comment": "LoraTapmore Curtain/blind switch"
+    "vendor": "LoraTap",
+    "comment": "LoraTap Curtain/blind switch"
   },
   {
     "model": "HK-LN-DIM-A",
@@ -23450,14 +23450,14 @@
   {
     "model": "SNTZ007",
     "type": "sensor",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Rechargeable Zigbee contact sensor"
+    "vendor": "Tuya",
+    "comment": "Tuya Rechargeable Zigbee contact sensor"
   },
   {
     "model": "BW-IS2",
     "type": "sensor",
-    "vendor": "BlitzWolfmore",
-    "comment": "BlitzWolfmore Rechargeable Zigbee contact sensor"
+    "vendor": "BlitzWolf",
+    "comment": "BlitzWolf Rechargeable Zigbee contact sensor"
   },
   {
     "model": "CTR.UBX",
@@ -23708,8 +23708,8 @@
   {
     "model": "TS0601_switch",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore 1, 2, 3 or 4 gang switch"
+    "vendor": "Tuya",
+    "comment": "Tuya 1, 2, 3 or 4 gang switch"
   },
   {
     "model": "TS0601_switch_2_gang",
@@ -23720,8 +23720,8 @@
   {
     "model": "TS0601_switch_3_gang",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore 3 gang switch"
+    "vendor": "Tuya",
+    "comment": "Tuya 3 gang switch"
   },
   {
     "model": "TS0505A",
@@ -23732,8 +23732,8 @@
   {
     "model": "TS0044",
     "type": "other",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Wireless switch with 4 buttons"
+    "vendor": "Tuya",
+    "comment": "Tuya Wireless switch with 4 buttons"
   },
   {
     "model": "ZG-101ZS",
@@ -23756,68 +23756,68 @@
   {
     "model": "E220-KR4N0Z0-HA",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Multiprise with 4 AC outlets and 2 USB super charging ports (16A)"
+    "vendor": "Tuya",
+    "comment": "Tuya Multiprise with 4 AC outlets and 2 USB super charging ports (16A)"
   },
   {
     "model": "MKS-CM-W5",
     "type": "switch",
-    "vendor": "Norklmesmore",
-    "comment": "Norklmesmore 1, 2, 3 or 4 gang switch"
+    "vendor": "Norklmes",
+    "comment": "Norklmes 1, 2, 3 or 4 gang switch"
   },
   {
     "model": "ZSQB-SMB-ZB",
     "type": "switch",
-    "vendor": "Somgomsmore",
-    "comment": "Somgomsmore 1, 2, 3 or 4 gang switch"
+    "vendor": "Somgoms",
+    "comment": "Somgoms 1, 2, 3 or 4 gang switch"
   },
   {
     "model": "WS-EUB1-ZG",
     "type": "switch",
-    "vendor": "Moesmore",
-    "comment": "Moesmore 1, 2, 3 or 4 gang switch"
+    "vendor": "Moes",
+    "comment": "Moes 1, 2, 3 or 4 gang switch"
   },
   {
     "model": "ZGB-WS-EU",
     "type": "switch",
-    "vendor": "AVATTOmore",
-    "comment": "AVATTOmore 1, 2, 3 or 4 gang switch"
+    "vendor": "AVATTO",
+    "comment": "AVATTO 1, 2, 3 or 4 gang switch"
   },
   {
     "model": "WS-US-ZB",
     "type": "switch",
-    "vendor": "Nova Digitalmore",
-    "comment": "Nova Digitalmore Interruptor touch Zigbee 3 Teclas"
+    "vendor": "Nova Digital",
+    "comment": "Nova Digital Interruptor touch Zigbee 3 Teclas"
   },
   {
     "model": "TS0044",
     "type": "other",
-    "vendor": "Lonsonhomore",
-    "comment": "Lonsonhomore Wireless switch with 4 buttons"
+    "vendor": "Lonsonho",
+    "comment": "Lonsonho Wireless switch with 4 buttons"
   },
   {
     "model": "ESW-OZAA-EU",
     "type": "other",
-    "vendor": "Haozeemore",
-    "comment": "Haozeemore Wireless switch with 4 buttons"
+    "vendor": "Haozee",
+    "comment": "Haozee Wireless switch with 4 buttons"
   },
   {
     "model": "ZT-SY-EU-G-4S-WH-MS",
     "type": "other",
-    "vendor": "Moesmore",
-    "comment": "Moesmore Wireless switch with 4 buttons"
+    "vendor": "Moes",
+    "comment": "Moes Wireless switch with 4 buttons"
   },
   {
     "model": "ZBWS40WT",
     "type": "other",
-    "vendor": "Nedismore",
-    "comment": "Nedismore Wireless switch with 4 buttons"
+    "vendor": "Nedis",
+    "comment": "Nedis Wireless switch with 4 buttons"
   },
   {
     "model": "WP33-EU",
     "type": "switch",
-    "vendor": "LELLKImore",
-    "comment": "LELLKImore Multiprise with 4 AC outlets and 2 USB super charging ports (16A)"
+    "vendor": "LELLKI",
+    "comment": "LELLKI Multiprise with 4 AC outlets and 2 USB super charging ports (16A)"
   },
   {
     "model": "DM A60F",
@@ -24002,8 +24002,8 @@
   {
     "model": "TS0121_plug",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore 10A UK or 16A EU smart plug"
+    "vendor": "Tuya",
+    "comment": "Tuya 10A UK or 16A EU smart plug"
   },
   {
     "model": "YRD220/YRD221",
@@ -24014,32 +24014,32 @@
   {
     "model": "BW-SHP13",
     "type": "switch",
-    "vendor": "BlitzWolfmore",
-    "comment": "BlitzWolfmore 10A UK or 16A EU smart plug"
+    "vendor": "BlitzWolf",
+    "comment": "BlitzWolf 10A UK or 16A EU smart plug"
   },
   {
     "model": "4500990",
     "type": "switch",
-    "vendor": "Connectemore",
-    "comment": "Connectemore 10A UK or 16A EU smart plug"
+    "vendor": "Connecte",
+    "comment": "Connecte 10A UK or 16A EU smart plug"
   },
   {
     "model": "4500991",
     "type": "switch",
-    "vendor": "Connectemore",
-    "comment": "Connectemore 10A UK or 16A EU smart plug"
+    "vendor": "Connecte",
+    "comment": "Connecte 10A UK or 16A EU smart plug"
   },
   {
     "model": "4500992",
     "type": "switch",
-    "vendor": "Connectemore",
-    "comment": "Connectemore 10A UK or 16A EU smart plug"
+    "vendor": "Connecte",
+    "comment": "Connecte 10A UK or 16A EU smart plug"
   },
   {
     "model": "4500993",
     "type": "switch",
-    "vendor": "Connectemore",
-    "comment": "Connectemore 10A UK or 16A EU smart plug"
+    "vendor": "Connecte",
+    "comment": "Connecte 10A UK or 16A EU smart plug"
   },
   {
     "model": "QS-Zigbee-D02-TRIAC-2C-LN",
@@ -24205,33 +24205,33 @@
   },
   {
     "model": "TS0041",
-    "type": "other",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Wireless switch with 1 button"
+    "type": "switch",
+    "vendor": "Tuya",
+    "comment": "Tuya Wireless switch with 1 button"
   },
   {
     "model": "TS0043",
     "type": "other",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Wireless switch with 3 buttons"
+    "vendor": "Tuya",
+    "comment": "Tuya Wireless switch with 3 buttons"
   },
   {
     "model": "TS0011",
     "type": "light",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Smart light switch - 1 gang"
+    "vendor": "Tuya",
+    "comment": "Tuya Smart light switch - 1 gang"
   },
   {
     "model": "TS0012",
     "type": "light",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Smart light switch - 2 gang"
+    "vendor": "Tuya",
+    "comment": "Tuya Smart light switch - 2 gang"
   },
   {
     "model": "TS0013",
     "type": "light",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Smart light switch - 3 gang without neutral wire"
+    "vendor": "Tuya",
+    "comment": "Tuya Smart light switch - 3 gang without neutral wire"
   },
   {
     "model": "SNTZ009",
@@ -24260,92 +24260,86 @@
   {
     "model": "S9TSZGB",
     "type": "other",
-    "vendor": "Smart9more",
-    "comment": "Smart9more Wireless switch with 1 button"
-  },
-  {
-    "model": "TS0041",
-    "type": "other",
-    "vendor": "Lonsonhomore",
-    "comment": "Lonsonhomore Wireless switch with 1 button"
+    "vendor": "Smart9",
+    "comment": "Smart9 Wireless switch with 1 button"
   },
   {
     "model": "ZM-sui1",
     "type": "other",
-    "vendor": "Benexmartmore",
-    "comment": "Benexmartmore Wireless switch with 1 button"
+    "vendor": "Benexmart",
+    "comment": "Benexmart Wireless switch with 1 button"
   },
   {
     "model": "S9TSZGB",
     "type": "other",
-    "vendor": "Smart9more",
-    "comment": "Smart9more Wireless switch with 3 buttons"
+    "vendor": "Smart9",
+    "comment": "Smart9 Wireless switch with 3 buttons"
   },
   {
     "model": "TS0043",
     "type": "other",
-    "vendor": "Lonsonhomore",
-    "comment": "Lonsonhomore Wireless switch with 3 buttons"
+    "vendor": "Lonsonho",
+    "comment": "Lonsonho Wireless switch with 3 buttons"
   },
   {
     "model": "SS600ZB",
     "type": "other",
-    "vendor": "LoraTapmore",
-    "comment": "LoraTapmore Wireless switch with 3 buttons"
+    "vendor": "LoraTap",
+    "comment": "LoraTap Wireless switch with 3 buttons"
   },
   {
     "model": "VR-X712U-0013",
     "type": "light",
-    "vendor": "Vreymore",
-    "comment": "Vreymore Smart light switch - 1 gang"
+    "vendor": "Vrey",
+    "comment": "Vrey Smart light switch - 1 gang"
   },
   {
     "model": "GDKES-01TZXD",
     "type": "light",
-    "vendor": "TUYATECmore",
-    "comment": "TUYATECmore Smart light switch - 1 gang"
+    "vendor": "TUYATEC",
+    "comment": "TUYATEC Smart light switch - 1 gang"
   },
   {
     "model": "QS-Zigbee-S05-L",
     "type": "light",
-    "vendor": "Lonsonhomore",
-    "comment": "Lonsonhomore 1 gang smart switch module without neutral wire"
+    "vendor": "Lonsonho",
+    "comment": "Lonsonho 1 gang smart switch module without neutral wire"
   },
   {
     "model": "SSW01",
     "type": "light",
-    "vendor": "Mercator Ikuümore",
-    "comment": "Mercator Ikuümore Smart light switch - 1 gang"
+    "vendor": "Mercator Ikuü",
+    "comment": "Mercator Ikuü Smart light switch - 1 gang"
   },
   {
     "model": "VR-X712U-0013",
     "type": "light",
-    "vendor": "Vreymore",
-    "comment": "Vreymore Smart light switch - 2 gang"
+    "vendor": "Vrey",
+    "comment": "Vrey Smart light switch - 2 gang"
   },
   {
     "model": "GDKES-02TZXD",
     "type": "light",
-    "vendor": "TUYATECmore",
-    "comment": "TUYATECmore Smart light switch - 2 gang"
+    "vendor": "TUYATEC",
+    "comment": "TUYATEC Smart light switch - 2 gang"
   },
   {
     "model": "ESW-2ZAA-EU",
     "type": "light",
-    "vendor": "Eardamore",
-    "comment": "Eardamore Smart light switch - 2 gang"
+    "vendor": "Earda",
+    "comment": "Earda Smart light switch - 2 gang"
   },
   {
     "model": "ZS-US2-BK-MS",
     "type": "light",
-    "vendor": "Moesmore",
-    "comment": "Moesmore Smart light switch - 2 gang"
+    "vendor": "Moes",
+    "comment": "Moes Smart light switch - 2 gang"
   },
   {
     "model": "GDKES-03TZXD",
     "type": "light",
-    "vendor": "TUYATECmore",
-    "comment": "TUYATECmore Smart light switch - 3 gang without neutral wire"
+    "vendor": "TUYATEC",
+    "comment": "TUYATEC Smart light switch - 3 gang without neutral wire"
   },
   {
     "model": "81809/81813",
@@ -24404,8 +24398,8 @@
   {
     "model": "LXN59-2S7LX1.0",
     "type": "switch",
-    "vendor": "Nue / 3Amore",
-    "comment": "Nue / 3Amore Smart light relay - 2 gang"
+    "vendor": "Nue / 3A",
+    "comment": "Nue / 3A Smart light relay - 2 gang"
   },
   {
     "model": "9290023349",
@@ -24446,20 +24440,20 @@
   {
     "model": "TS0115",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Multiprise with 4 AC outlets and 2 USB super charging ports (10A or 16A)"
+    "vendor": "Tuya",
+    "comment": "Tuya Multiprise with 4 AC outlets and 2 USB super charging ports (10A or 16A)"
   },
   {
     "model": "ZW-EU-02",
     "type": "switch",
-    "vendor": "Zemismartmore",
-    "comment": "Zemismartmore Smart light relay - 2 gang"
+    "vendor": "Zemismart",
+    "comment": "Zemismart Smart light relay - 2 gang"
   },
   {
     "model": "SM-SO306E/K/M",
     "type": "switch",
-    "vendor": "UseeLinkmore",
-    "comment": "UseeLinkmore Multiprise with 4 AC outlets and 2 USB super charging ports (10A or 16A)"
+    "vendor": "UseeLink",
+    "comment": "UseeLink Multiprise with 4 AC outlets and 2 USB super charging ports (10A or 16A)"
   },
   {
     "model": "AU-A1ZB2WDM",
@@ -24476,56 +24470,56 @@
   {
     "model": "SNZB-02",
     "type": "sensor",
-    "vendor": "SONOFFmore",
-    "comment": "SONOFFmore Temperature and humidity sensor"
+    "vendor": "SONOFF",
+    "comment": "SONOFF Temperature and humidity sensor"
   },
   {
     "model": "RHK08",
     "type": "sensor",
-    "vendor": "eWeLinkmore",
-    "comment": "eWeLinkmore Temperature and humidity sensor"
+    "vendor": "eWeLink",
+    "comment": "eWeLink Temperature and humidity sensor"
   },
   {
     "model": "SNZB-01",
     "type": "other",
-    "vendor": "SONOFFmore",
-    "comment": "SONOFFmore Wireless button"
+    "vendor": "SONOFF",
+    "comment": "SONOFF Wireless button"
   },
   {
     "model": "RHK07",
     "type": "other",
-    "vendor": "eWeLinkmore",
-    "comment": "eWeLinkmore Wireless button"
+    "vendor": "eWeLink",
+    "comment": "eWeLink Wireless button"
   },
   {
     "model": "SNZB-04",
     "type": "sensor",
-    "vendor": "SONOFFmore",
-    "comment": "SONOFFmore Contact sensor"
+    "vendor": "SONOFF",
+    "comment": "SONOFF Contact sensor"
   },
   {
     "model": "RHK06",
     "type": "sensor",
-    "vendor": "eWeLinkmore",
-    "comment": "eWeLinkmore Contact sensor"
+    "vendor": "eWeLink",
+    "comment": "eWeLink Contact sensor"
   },
   {
     "model": "SNZB-03",
     "type": "sensor",
-    "vendor": "SONOFFmore",
-    "comment": "SONOFFmore Motion sensor"
+    "vendor": "SONOFF",
+    "comment": "SONOFF Motion sensor"
   },
   {
     "model": "RHK09",
     "type": "sensor",
-    "vendor": "eWeLinkmore",
-    "comment": "eWeLinkmore Motion sensor"
+    "vendor": "eWeLink",
+    "comment": "eWeLink Motion sensor"
   },
   {
     "model": "SQ510A",
     "type": "sensor",
-    "vendor": "eWeLinkmore",
-    "comment": "eWeLinkmore Motion sensor"
+    "vendor": "eWeLink",
+    "comment": "eWeLink Motion sensor"
   },
   {
     "model": "YRL-220L",
@@ -24596,8 +24590,8 @@
   {
     "model": "067694",
     "type": "other",
-    "vendor": "Legrandmore",
-    "comment": "Legrandmore Remote toggle switch"
+    "vendor": "Legrand",
+    "comment": "Legrand Remote toggle switch"
   },
   {
     "model": "412015",
@@ -24872,8 +24866,8 @@
   {
     "model": "WSDCGQ12LM",
     "type": "sensor",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Temperature and humidity sensor T1"
+    "vendor": "Aqara",
+    "comment": "Aqara Temperature and humidity sensor T1"
   },
   {
     "model": "DJT12LM",
@@ -24902,14 +24896,14 @@
   {
     "model": "TH-S02D",
     "type": "sensor",
-    "vendor": "Aqaramore",
-    "comment": "Aqaramore Temperature and humidity sensor T1"
+    "vendor": "Aqara",
+    "comment": "Aqara Temperature and humidity sensor T1"
   },
   {
     "model": "YNDX-00523",
     "type": "sensor",
-    "vendor": "Yandexmore",
-    "comment": "Yandexmore Temperature and humidity sensor T1"
+    "vendor": "Yandex",
+    "comment": "Yandex Temperature and humidity sensor T1"
   },
   {
     "model": "SWO-MOS1PA",
@@ -25322,8 +25316,8 @@
   {
     "model": "ROB_200-008-0",
     "type": "other",
-    "vendor": "ROBBmore",
-    "comment": "ROBBmore Zigbee 4 button wall switch"
+    "vendor": "ROBB",
+    "comment": "ROBB Zigbee 4 button wall switch"
   },
   {
     "model": "WXKG07LM",
@@ -25388,14 +25382,14 @@
   {
     "model": "SR-ZG9001K4-DIM2",
     "type": "other",
-    "vendor": "Sunrichermore",
-    "comment": "Sunrichermore Zigbee 4 button wall switch"
+    "vendor": "Sunricher",
+    "comment": "Sunricher Zigbee 4 button wall switch"
   },
   {
     "model": "SMSZB-120",
     "type": "sensor",
-    "vendor": "Develcomore",
-    "comment": "Develcomore Smoke detector with siren"
+    "vendor": "Develco",
+    "comment": "Develco Smoke detector with siren"
   },
   {
     "model": "SEB01ZB",
@@ -25478,8 +25472,8 @@
   {
     "model": "HS1CG-E",
     "type": "other",
-    "vendor": "Heimanmore",
-    "comment": "Heimanmore Combustible gas sensor"
+    "vendor": "Heiman",
+    "comment": "Heiman Combustible gas sensor"
   },
   {
     "model": "511.557",
@@ -25502,8 +25496,8 @@
   {
     "model": "InstaRemote",
     "type": "other",
-    "vendor": "Instamore",
-    "comment": "Instamore Zigbee Light Link wall/handheld transmitter"
+    "vendor": "Insta",
+    "comment": "Insta Zigbee Light Link wall/handheld transmitter"
   },
   {
     "model": "3460-L",
@@ -25634,56 +25628,56 @@
   {
     "model": "94430",
     "type": "sensor",
-    "vendor": "Frientmore",
-    "comment": "Frientmore Smart Intelligent Smoke Alarm"
+    "vendor": "Frient",
+    "comment": "Frient Smart Intelligent Smoke Alarm"
   },
   {
     "model": "2103",
     "type": "sensor",
-    "vendor": "Caviusmore",
-    "comment": "Caviusmore RF SMOKE ALARM, 5 YEAR 65MM"
+    "vendor": "Cavius",
+    "comment": "Cavius RF SMOKE ALARM, 5 YEAR 65MM"
   },
   {
     "model": "HSIO18008",
     "type": "other",
-    "vendor": "Pirimore",
-    "comment": "Pirimore Combustible gas sensor"
+    "vendor": "Piri",
+    "comment": "Piri Combustible gas sensor"
   },
   {
     "model": "2430-100",
     "type": "other",
-    "vendor": "Giramore",
-    "comment": "Giramore Zigbee Light Link wall/handheld transmitter"
+    "vendor": "Gira",
+    "comment": "Gira Zigbee Light Link wall/handheld transmitter"
   },
   {
     "model": "2435-10",
     "type": "other",
-    "vendor": "Giramore",
-    "comment": "Giramore Zigbee Light Link wall/handheld transmitter"
+    "vendor": "Gira",
+    "comment": "Gira Zigbee Light Link wall/handheld transmitter"
   },
   {
     "model": "ZLLCD5004M",
     "type": "other",
-    "vendor": "Jungmore",
-    "comment": "Jungmore Zigbee Light Link wall/handheld transmitter"
+    "vendor": "Jung",
+    "comment": "Jung Zigbee Light Link wall/handheld transmitter"
   },
   {
     "model": "ZLLLS5004M",
     "type": "other",
-    "vendor": "Jungmore",
-    "comment": "Jungmore Zigbee Light Link wall/handheld transmitter"
+    "vendor": "Jung",
+    "comment": "Jung Zigbee Light Link wall/handheld transmitter"
   },
   {
     "model": "ZLLA5004M",
     "type": "other",
-    "vendor": "Jungmore",
-    "comment": "Jungmore Zigbee Light Link wall/handheld transmitter"
+    "vendor": "Jung",
+    "comment": "Jung Zigbee Light Link wall/handheld transmitter"
   },
   {
     "model": "ZLLHS4",
     "type": "other",
-    "vendor": "Jungmore",
-    "comment": "Jungmore Zigbee Light Link wall/handheld transmitter"
+    "vendor": "Jung",
+    "comment": "Jung Zigbee Light Link wall/handheld transmitter"
   },
   {
     "model": "75541",
@@ -25772,26 +25766,26 @@
   {
     "model": "TS0002",
     "type": "light",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore 2-Gang switch with backlight, countdown and inching"
+    "vendor": "Tuya",
+    "comment": "Tuya 2-Gang switch with backlight, countdown and inching"
   },
   {
     "model": "ZM-CSW002-D_switch",
     "type": "light",
-    "vendor": "Zemismartmore",
-    "comment": "Zemismartmore 2-Gang switch with backlight, countdown and inching"
+    "vendor": "Zemismart",
+    "comment": "Zemismart 2-Gang switch with backlight, countdown and inching"
   },
   {
     "model": "X702",
     "type": "light",
-    "vendor": "Lonsonhomore",
-    "comment": "Lonsonhomore 2-Gang switch with backlight, countdown and inching"
+    "vendor": "Lonsonho",
+    "comment": "Lonsonho 2-Gang switch with backlight, countdown and inching"
   },
   {
     "model": "ZTS02",
     "type": "light",
-    "vendor": "AVATTOmore",
-    "comment": "AVATTOmore 2-Gang switch with backlight, countdown and inching"
+    "vendor": "AVATTO",
+    "comment": "AVATTO 2-Gang switch with backlight, countdown and inching"
   },
   {
     "model": "4512703",
@@ -25964,8 +25958,8 @@
   {
     "model": "TS0042",
     "type": "other",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Wireless switch with 2 buttons"
+    "vendor": "Tuya",
+    "comment": "Tuya Wireless switch with 2 buttons"
   },
   {
     "model": "C4",
@@ -25976,20 +25970,20 @@
   {
     "model": "S9TSZGB",
     "type": "other",
-    "vendor": "Smart9more",
-    "comment": "Smart9more Wireless switch with 2 buttons"
+    "vendor": "Smart9",
+    "comment": "Smart9 Wireless switch with 2 buttons"
   },
   {
     "model": "TS0042",
     "type": "other",
-    "vendor": "Lonsonhomore",
-    "comment": "Lonsonhomore Wireless switch with 2 buttons"
+    "vendor": "Lonsonho",
+    "comment": "Lonsonho Wireless switch with 2 buttons"
   },
   {
     "model": "CSPGM2075PW",
     "type": "other",
-    "vendor": "ClickSmart+more",
-    "comment": "ClickSmart+more Wireless switch with 2 buttons"
+    "vendor": "ClickSmart+",
+    "comment": "ClickSmart+ Wireless switch with 2 buttons"
   },
   {
     "model": "8718696167991",
@@ -26048,8 +26042,8 @@
   {
     "model": "HS1HT",
     "type": "sensor",
-    "vendor": "Heimanmore",
-    "comment": "Heimanmore Smart temperature & humidity Sensor"
+    "vendor": "Heiman",
+    "comment": "Heiman Smart temperature & humidity Sensor"
   },
   {
     "model": "HS2ESK-E",
@@ -26150,8 +26144,8 @@
   {
     "model": "ROB_200-014-0",
     "type": "light",
-    "vendor": "ROBBmore",
-    "comment": "ROBBmore Zigbee AC phase-cut rotary dimmer"
+    "vendor": "ROBB",
+    "comment": "ROBB Zigbee AC phase-cut rotary dimmer"
   },
   {
     "model": "B01M7Y8BP9",
@@ -26180,8 +26174,8 @@
   {
     "model": "ZG2835RAC",
     "type": "light",
-    "vendor": "Sunrichermore",
-    "comment": "Sunrichermore Zigbee knob smart dimmer"
+    "vendor": "Sunricher",
+    "comment": "Sunricher Zigbee knob smart dimmer"
   },
   {
     "model": "U86KCJ-ZP",
@@ -26192,32 +26186,32 @@
   {
     "model": "TH-T_V14",
     "type": "sensor",
-    "vendor": "Fergusonmore",
-    "comment": "Fergusonmore Smart temperature & humidity Sensor"
+    "vendor": "Ferguson",
+    "comment": "Ferguson Smart temperature & humidity Sensor"
   },
   {
     "model": "50208695",
     "type": "light",
-    "vendor": "YPHIXmore",
-    "comment": "YPHIXmore Zigbee AC phase-cut rotary dimmer"
+    "vendor": "YPHIX",
+    "comment": "YPHIX Zigbee AC phase-cut rotary dimmer"
   },
   {
     "model": "SM311",
     "type": "light",
-    "vendor": "Samotechmore",
-    "comment": "Samotechmore Zigbee AC phase-cut rotary dimmer"
+    "vendor": "Samotech",
+    "comment": "Samotech Zigbee AC phase-cut rotary dimmer"
   },
   {
     "model": "50208695",
     "type": "light",
-    "vendor": "YPHIXmore",
-    "comment": "YPHIXmore Zigbee knob smart dimmer"
+    "vendor": "YPHIX",
+    "comment": "YPHIX Zigbee knob smart dimmer"
   },
   {
     "model": "SM311",
     "type": "light",
-    "vendor": "Samotechmore",
-    "comment": "Samotechmore Zigbee knob smart dimmer"
+    "vendor": "Samotech",
+    "comment": "Samotech Zigbee knob smart dimmer"
   },
   {
     "model": "STS-WTR-250",
@@ -26360,14 +26354,14 @@
   {
     "model": "064888",
     "type": "switch",
-    "vendor": "Legrandmore",
-    "comment": "Legrandmore Wired micromodule switch"
+    "vendor": "Legrand",
+    "comment": "Legrand Wired micromodule switch"
   },
   {
     "model": "064873",
     "type": "other",
-    "vendor": "Legrandmore",
-    "comment": "Legrandmore Home & away switch / master switch"
+    "vendor": "Legrand",
+    "comment": "Legrand Home & away switch / master switch"
   },
   {
     "model": "LVS-SC7",
@@ -26546,8 +26540,8 @@
   {
     "model": "199142",
     "type": "switch",
-    "vendor": "Legrandmore",
-    "comment": "Legrandmore Micromodule switch"
+    "vendor": "Legrand",
+    "comment": "Legrand Micromodule switch"
   },
   {
     "model": "3584C",
@@ -26774,14 +26768,14 @@
   {
     "model": "TS0204",
     "type": "other",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Gas sensor"
+    "vendor": "Tuya",
+    "comment": "Tuya Gas sensor"
   },
   {
     "model": "TS0205",
     "type": "other",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Smoke sensor"
+    "vendor": "Tuya",
+    "comment": "Tuya Smoke sensor"
   },
   {
     "model": "TS0111",
@@ -26798,98 +26792,98 @@
   {
     "model": "TS0203",
     "type": "sensor",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Door/window sensor"
+    "vendor": "Tuya",
+    "comment": "Tuya Door/window sensor"
   },
   {
     "model": "TS0202",
     "type": "sensor",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Motion sensor"
+    "vendor": "Tuya",
+    "comment": "Tuya Motion sensor"
   },
   {
     "model": "TS0001",
     "type": "switch",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore 1 gang switch"
+    "vendor": "Tuya",
+    "comment": "Tuya 1 gang switch"
   },
   {
     "model": "TSL-SEN-GAS",
     "type": "other",
-    "vendor": "Tesla Smartmore",
-    "comment": "Tesla Smartmore Gas sensor"
+    "vendor": "Tesla Smart",
+    "comment": "Tesla Smart Gas sensor"
   },
   {
     "model": "TSL-SEN-SMOKE",
     "type": "other",
-    "vendor": "Tesla Smartmore",
-    "comment": "Tesla Smartmore Smoke sensor"
+    "vendor": "Tesla Smart",
+    "comment": "Tesla Smart Smoke sensor"
   },
   {
     "model": "YG400A",
     "type": "other",
-    "vendor": "Dongguan Daying Electornics Technologymore",
-    "comment": "Dongguan Daying Electornics Technologymore Smoke sensor"
+    "vendor": "Dongguan Daying Electornics Technology",
+    "comment": "Dongguan Daying Electornics Technology Smoke sensor"
   },
   {
     "model": "TS0203",
     "type": "sensor",
-    "vendor": "CR Smart Homemore",
-    "comment": "CR Smart Homemore Door/window sensor"
+    "vendor": "CR Smart Home",
+    "comment": "CR Smart Home Door/window sensor"
   },
   {
     "model": "iH-F001",
     "type": "sensor",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Door/window sensor"
+    "vendor": "Tuya",
+    "comment": "Tuya Door/window sensor"
   },
   {
     "model": "TSL-SEN-DOOR",
     "type": "sensor",
-    "vendor": "Tesla Smartmore",
-    "comment": "Tesla Smartmore Door/window sensor"
+    "vendor": "Tesla Smart",
+    "comment": "Tesla Smart Door/window sensor"
   },
   {
     "model": "SS100",
     "type": "sensor",
-    "vendor": "Cleveriomore",
-    "comment": "Cleveriomore Door/window sensor"
+    "vendor": "Cleverio",
+    "comment": "Cleverio Door/window sensor"
   },
   {
     "model": "SMA02P",
     "type": "sensor",
-    "vendor": "Mercator Ikuümore",
-    "comment": "Mercator Ikuümore Motion sensor"
+    "vendor": "Mercator Ikuü",
+    "comment": "Mercator Ikuü Motion sensor"
   },
   {
     "model": "TY-ZPR06",
     "type": "sensor",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Motion sensor"
+    "vendor": "Tuya",
+    "comment": "Tuya Motion sensor"
   },
   {
     "model": "TS0202",
     "type": "sensor",
-    "vendor": "Tesla Smartmore",
-    "comment": "Tesla Smartmore Motion sensor"
+    "vendor": "Tesla Smart",
+    "comment": "Tesla Smart Motion sensor"
   },
   {
     "model": "TS0001",
     "type": "switch",
-    "vendor": "CR Smart Homemore",
-    "comment": "CR Smart Homemore Valve control"
+    "vendor": "CR Smart Home",
+    "comment": "CR Smart Home Valve control"
   },
   {
     "model": "X701",
     "type": "switch",
-    "vendor": "Lonsonhomore",
-    "comment": "Lonsonhomore 1 gang switch"
+    "vendor": "Lonsonho",
+    "comment": "Lonsonho 1 gang switch"
   },
   {
     "model": "BDS03G1",
     "type": "switch",
-    "vendor": "Bandimore",
-    "comment": "Bandimore 1 gang switch"
+    "vendor": "Bandi",
+    "comment": "Bandi 1 gang switch"
   },
   {
     "model": "4512700",
@@ -27134,8 +27128,8 @@
   {
     "model": "HGZB-04D / HGZB-4D-UK",
     "type": "light",
-    "vendor": "Nue / 3Amore",
-    "comment": "Nue / 3Amore Smart dimmer wall switch"
+    "vendor": "Nue / 3A",
+    "comment": "Nue / 3A Smart dimmer wall switch"
   },
   {
     "model": "HGZB-20A",
@@ -27158,8 +27152,8 @@
   {
     "model": "AC10691",
     "type": "switch",
-    "vendor": "OSRAMmore",
-    "comment": "OSRAMmore Smart+ plug"
+    "vendor": "OSRAM",
+    "comment": "OSRAM Smart+ plug"
   },
   {
     "model": "3300-P",
@@ -27290,8 +27284,8 @@
   {
     "model": "TS0201",
     "type": "sensor",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore Temperature & humidity sensor with display"
+    "vendor": "Tuya",
+    "comment": "Tuya Temperature & humidity sensor with display"
   },
   {
     "model": "MCT-340 SMA",
@@ -27320,20 +27314,20 @@
   {
     "model": "SR-ZG9001K8-DIM",
     "type": "light",
-    "vendor": "Sunrichermore",
-    "comment": "Sunrichermore Smart dimmer wall switch"
+    "vendor": "Sunricher",
+    "comment": "Sunricher Smart dimmer wall switch"
   },
   {
     "model": "AC10691",
     "type": "switch",
-    "vendor": "LEDVANCEmore",
-    "comment": "LEDVANCEmore Smart+ plug"
+    "vendor": "LEDVANCE",
+    "comment": "LEDVANCE Smart+ plug"
   },
   {
     "model": "BW-IS4",
     "type": "sensor",
-    "vendor": "BlitzWolfmore",
-    "comment": "BlitzWolfmore Temperature & humidity sensor with display"
+    "vendor": "BlitzWolf",
+    "comment": "BlitzWolf Temperature & humidity sensor with display"
   },
   {
     "model": "DIYRuZ_R4_5",
@@ -27668,8 +27662,8 @@
   {
     "model": "AV2010/22",
     "type": "sensor",
-    "vendor": "SMaBiT (Bitron Video)more",
-    "comment": "SMaBiT (Bitron Video)more Professional motion detector"
+    "vendor": "SMaBiT (Bitron Video)",
+    "comment": "SMaBiT (Bitron Video) Professional motion detector"
   },
   {
     "model": "AV2010/32",
@@ -27728,8 +27722,8 @@
   {
     "model": "PSM-29ZBSR",
     "type": "switch",
-    "vendor": "Climaxmore",
-    "comment": "Climaxmore Power plug"
+    "vendor": "Climax",
+    "comment": "Climax Power plug"
   },
   {
     "model": "53170161",
@@ -27950,8 +27944,8 @@
   {
     "model": "HS2SK",
     "type": "switch",
-    "vendor": "Heimanmore",
-    "comment": "Heimanmore Smart metering plug"
+    "vendor": "Heiman",
+    "comment": "Heiman Smart metering plug"
   },
   {
     "model": "HS3CG",
@@ -28616,8 +28610,8 @@
   {
     "model": "AB3257001NJ",
     "type": "switch",
-    "vendor": "OSRAMmore",
-    "comment": "OSRAMmore Smart+ plug"
+    "vendor": "OSRAM",
+    "comment": "OSRAM Smart+ plug"
   },
   {
     "model": "4052899926110",
@@ -29354,8 +29348,8 @@
   {
     "model": "RH3040",
     "type": "sensor",
-    "vendor": "Tuyamore",
-    "comment": "Tuyamore PIR sensor"
+    "vendor": "Tuya",
+    "comment": "Tuya PIR sensor"
   },
   {
     "model": "MCT-350 SMA",
@@ -29390,32 +29384,32 @@
   {
     "model": "IR-9ZBS-SL",
     "type": "sensor",
-    "vendor": "ClimaxTechnologymore",
-    "comment": "ClimaxTechnologymore Professional motion detector"
+    "vendor": "ClimaxTechnology",
+    "comment": "ClimaxTechnology Professional motion detector"
   },
   {
     "model": "PSM-S1",
     "type": "switch",
-    "vendor": "Blaupunktmore",
-    "comment": "Blaupunktmore Power plug"
+    "vendor": "Blaupunkt",
+    "comment": "Blaupunkt Power plug"
   },
   {
     "model": "CCTFR6500",
     "type": "switch",
-    "vendor": "Schneider Electricmore",
-    "comment": "Schneider Electricmore Smart metering plug"
+    "vendor": "Schneider Electric",
+    "comment": "Schneider Electric Smart metering plug"
   },
   {
     "model": "AB3257001NJ",
     "type": "switch",
-    "vendor": "LEDVANCEmore",
-    "comment": "LEDVANCEmore Smart+ plug"
+    "vendor": "LEDVANCE",
+    "comment": "LEDVANCE Smart+ plug"
   },
   {
     "model": "AC03360",
     "type": "switch",
-    "vendor": "LEDVANCEmore",
-    "comment": "LEDVANCEmore Smart+ plug"
+    "vendor": "LEDVANCE",
+    "comment": "LEDVANCE Smart+ plug"
   },
   {
     "model": "YTC4040GL",
@@ -29522,13 +29516,13 @@
   {
     "model": "SM301Z",
     "type": "sensor",
-    "vendor": "Samotechmore",
-    "comment": "Samotechmore PIR sensor"
+    "vendor": "Samotech",
+    "comment": "Samotech PIR sensor"
   },
   {
     "model": "ZBSM10WT",
     "type": "sensor",
-    "vendor": "Nedismore",
-    "comment": "Nedismore PIR sensor"
+    "vendor": "Nedis",
+    "comment": "Nedis PIR sensor"
   }
 ]

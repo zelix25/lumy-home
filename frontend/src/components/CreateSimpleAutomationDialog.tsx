@@ -195,6 +195,7 @@ export default function CreateSimpleAutomationDialog({
       suggestedActions: [
         AutomationActionType.TURN_ON,
         AutomationActionType.TURN_OFF,
+        AutomationActionType.TOGGLE,
         AutomationActionType.SET_BRIGHTNESS,
         AutomationActionType.SET_COLOR_TEMP,
       ],
@@ -229,6 +230,7 @@ export default function CreateSimpleAutomationDialog({
         AutomationActionType.SET_THERMOSTAT,
         AutomationActionType.TURN_ON,
         AutomationActionType.TURN_OFF,
+        AutomationActionType.TOGGLE,
       ],
     },
     {
@@ -248,6 +250,7 @@ export default function CreateSimpleAutomationDialog({
         AutomationActionType.NOTIFY,
         AutomationActionType.TURN_ON,
         AutomationActionType.TURN_OFF,
+        AutomationActionType.TOGGLE,
       ],
     },
     {
@@ -329,12 +332,11 @@ export default function CreateSimpleAutomationDialog({
     switch (actionType) {
       case AutomationActionType.TURN_ON:
       case AutomationActionType.TURN_OFF:
+      case AutomationActionType.TOGGLE:
       case AutomationActionType.SET_BRIGHTNESS:
       case AutomationActionType.SET_COLOR:
       case AutomationActionType.SET_COLOR_TEMP:
         return devices.filter((d) => d.type === 'light' || d.type === 'switch' || d.type === 'plug');
-      case AutomationActionType.TOGGLE:
-        return devices.filter((d) => d.type === 'switch' || d.type === 'plug');
       case AutomationActionType.SET_THERMOSTAT:
         return devices.filter((d) => d.type === 'thermostat');
       case AutomationActionType.NOTIFY:

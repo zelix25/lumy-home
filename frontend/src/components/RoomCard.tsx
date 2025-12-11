@@ -4,12 +4,9 @@ import {
   CardContent,
   Box,
   Typography,
-  Chip,
-  Stack,
   Switch,
   Slider,
-  Divider,
-  IconButton,
+  Grid,
 } from '@mui/material';
 import {
   Thermostat,
@@ -20,8 +17,9 @@ import {
   ElectricalServices,
   Sensors,
   Window,
-  ExpandMore,
-  ExpandLess,
+  Blinds,
+  DirectionsRun,
+  WaterDrop,
 } from '@mui/icons-material';
 import { Device } from '../services/devices.service';
 import { devicesService } from '../services/devices.service';
@@ -35,19 +33,10 @@ interface RoomCardProps {
   onDeviceUpdate?: () => void;
 }
 
-interface RoomStats {
-  temperature: number | null;
-  illuminance: number | null;
-  presence: boolean;
-  humidity: number | null;
-  deviceCount: number;
-  onlineDeviceCount: number;
-}
-
 export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCardProps) {
-  const [expanded, setExpanded] = useState(false);
   const [deviceStates, setDeviceStates] = useState<Record<string, boolean>>({});
   const [brightnessValues, setBrightnessValues] = useState<Record<string, number>>({});
+  const [coverPositions, setCoverPositions] = useState<Record<string, number>>({});
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSensor, setSelectedSensor] = useState<{
     type: SensorType;
@@ -68,70 +57,11 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
     });
   }, [devices]);
 
-  // Calculer les statistiques de la pièce
-  const stats: RoomStats = useMemo(() => {
-    const onlineDevices = validDevices.filter((d) => d.status === 'online');
-
-    // Température moyenne
-    const tempDevices = onlineDevices.filter((d) => d.state?.temperature !== undefined);
-    const avgTemperature =
-      tempDevices.length > 0
-        ? tempDevices.reduce(
-            (sum, d) =>
-              sum + (typeof d.state?.temperature === 'number' ? d.state.temperature : 0),
-            0
-          ) / tempDevices.length
-        : null;
-
-    // Luminosité moyenne
-    const illuminanceDevices = onlineDevices.filter((d) => d.state?.illuminance !== undefined);
-    const avgIlluminance =
-      illuminanceDevices.length > 0
-        ? illuminanceDevices.reduce(
-            (sum, d) =>
-              sum + (typeof d.state?.illuminance === 'number' ? d.state.illuminance : 0),
-            0
-          ) / illuminanceDevices.length
-        : null;
-
-    // Humidité moyenne
-    const humidityDevices = onlineDevices.filter((d) => d.state?.humidity !== undefined);
-    const avgHumidity =
-      humidityDevices.length > 0
-        ? humidityDevices.reduce(
-            (sum, d) =>
-              sum + (typeof d.state?.humidity === 'number' ? d.state.humidity : 0),
-            0
-          ) / humidityDevices.length
-        : null;
-
-    // Présence
-    const hasPresence = onlineDevices.some(
-      (d) => d.state?.presence === true || d.state?.occupancy === true
-    );
-
-    return {
-      temperature: avgTemperature,
-      illuminance: avgIlluminance,
-      presence: hasPresence,
-      humidity: avgHumidity,
-      deviceCount: validDevices.length,
-      onlineDeviceCount: onlineDevices.length,
-    };
-  }, [validDevices]);
-
-  // Grouper les appareils par type
-  const controllableDevices = validDevices.filter(
-    (d) => d.status === 'online' && (d.type === 'light' || d.type === 'switch' || d.type === 'plug')
-  );
-  const sensorDevices = validDevices.filter(
-    (d) => d.status === 'online' && (d.type === 'sensor' || d.type === 'motion')
-  );
-
   // Synchroniser les états des appareils avec les données
   useEffect(() => {
     const states: Record<string, boolean> = {};
     const brightness: Record<string, number> = {};
+    const coverPos: Record<string, number> = {};
     validDevices.forEach((device) => {
       if (device.state?.state === 'ON' || device.state?.state === true) {
         states[device.ieeeAddress] = true;
@@ -141,9 +71,24 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
           (typeof device.state.brightness === 'number' ? device.state.brightness : 0) / 2.55
         );
       }
+      // Pour les volets, récupérer la position (0-100, où 0 = fermé, 100 = ouvert)
+      if (device.type === 'cover') {
+        if (device.state?.position !== undefined) {
+          coverPos[device.ieeeAddress] = typeof device.state.position === 'number' 
+            ? device.state.position 
+            : parseInt(device.state.position) || 0;
+        } else if (device.state?.state === 'open' || device.state?.state === 'OPEN') {
+          coverPos[device.ieeeAddress] = 100;
+        } else if (device.state?.state === 'closed' || device.state?.state === 'CLOSED') {
+          coverPos[device.ieeeAddress] = 0;
+        } else {
+          coverPos[device.ieeeAddress] = 0;
+        }
+      }
     });
     setDeviceStates(states);
     setBrightnessValues(brightness);
+    setCoverPositions(coverPos);
   }, [validDevices]);
 
   const handleToggle = async (device: Device, checked: boolean) => {
@@ -175,151 +120,298 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
     }
   };
 
-  const getDeviceIcon = (type: string) => {
-    switch (type) {
-      case 'light':
-        return <Lightbulb sx={{ fontSize: 20 }} />;
-      case 'switch':
-        return <Power sx={{ fontSize: 20 }} />;
-      case 'plug':
-        return <ElectricalServices sx={{ fontSize: 20 }} />;
-      case 'sensor':
-        return <Sensors sx={{ fontSize: 20 }} />;
-      case 'window':
-        return <Window sx={{ fontSize: 20 }} />;
-      default:
-        return null;
+  const handleCoverPositionChange = async (device: Device, position: number) => {
+    try {
+      const command = { position };
+      await devicesService.sendCommand(device.ieeeAddress, command);
+      setCoverPositions((prev) => ({ ...prev, [device.ieeeAddress]: position }));
+      onDeviceUpdate?.();
+    } catch (error) {
+      console.error('Erreur lors du changement de position du volet:', error);
     }
+  };
+
+  const getDeviceIcon = (device: Device, isOn?: boolean) => {
+    const iconColor = device.status === 'online' 
+      ? (isOn ? '#FFA726' : '#9E9E9E')
+      : '#BDBDBD';
+    const iconSize = 32;
+
+    switch (device.type) {
+      case 'light':
+        return <Lightbulb sx={{ fontSize: iconSize, color: iconColor }} />;
+      case 'switch':
+        return <Power sx={{ fontSize: iconSize, color: iconColor }} />;
+      case 'plug':
+        return <ElectricalServices sx={{ fontSize: iconSize, color: iconColor }} />;
+      case 'cover':
+        return <Blinds sx={{ fontSize: iconSize, color: iconColor }} />;
+      case 'sensor':
+      case 'temperature':
+        return <Thermostat sx={{ fontSize: iconSize, color: '#2196F3' }} />;
+      case 'motion':
+        return <DirectionsRun sx={{ fontSize: iconSize, color: iconColor }} />;
+      case 'illuminance':
+        return <LightMode sx={{ fontSize: iconSize, color: '#FFC107' }} />;
+      case 'window':
+        return <Window sx={{ fontSize: iconSize, color: iconColor }} />;
+      default:
+        return <Sensors sx={{ fontSize: iconSize, color: iconColor }} />;
+    }
+  };
+
+  const getDeviceValue = (device: Device): string => {
+    if (device.type === 'light') {
+      const isOn = deviceStates[device.ieeeAddress] || false;
+      const brightness = brightnessValues[device.ieeeAddress] || 0;
+      return isOn ? `${brightness} %` : i18n.t('devices.off');
+    }
+    if (device.type === 'switch' || device.type === 'plug') {
+      const isOn = deviceStates[device.ieeeAddress] || false;
+      return isOn ? i18n.t('devices.on') : i18n.t('devices.off');
+    }
+    if (device.type === 'cover') {
+      const position = coverPositions[device.ieeeAddress] ?? 0;
+      return `${position} %`;
+    }
+    if (device.state?.temperature !== undefined) {
+      const temp = typeof device.state.temperature === 'number' 
+        ? device.state.temperature.toFixed(1) 
+        : device.state.temperature;
+      return `${temp} °C`;
+    }
+    if (device.state?.humidity !== undefined) {
+      const hum = typeof device.state.humidity === 'number' 
+        ? Math.round(device.state.humidity) 
+        : device.state.humidity;
+      return `${hum} %`;
+    }
+    if (device.state?.illuminance !== undefined) {
+      const lux = typeof device.state.illuminance === 'number' 
+        ? device.state.illuminance.toLocaleString() 
+        : device.state.illuminance;
+      return `${lux} lx`;
+    }
+    if (device.state?.presence !== undefined || device.state?.occupancy !== undefined) {
+      const hasPresence = device.state.presence || device.state.occupancy;
+      return hasPresence ? i18n.t('devices.detected') : i18n.t('devices.notDetected');
+    }
+    if (device.state?.motion !== undefined) {
+      return device.state.motion ? i18n.t('devices.detected') : i18n.t('devices.notDetected');
+    }
+    if (device.state?.contact !== undefined) {
+      return device.state.contact ? i18n.t('devices.closed') : i18n.t('devices.open');
+    }
+    return device.status === 'online' ? i18n.t('devices.online') : i18n.t('devices.offline');
+  };
+
+  // Générer des données de graphique simulées pour les capteurs de température
+  const generateChartData = (device: Device) => {
+    const baseValue = device.state?.temperature 
+      ? (typeof device.state.temperature === 'number' ? device.state.temperature : parseFloat(device.state.temperature) || 0)
+      : 20;
+    const data = [];
+    for (let i = 0; i < 10; i++) {
+      data.push({
+        value: baseValue + (Math.random() - 0.5) * 2,
+      });
+    }
+    return data;
   };
 
   if (validDevices.length === 0) {
     return null;
   }
 
+  // Filtrer les appareils en ligne pour l'affichage
+  const onlineDevices = validDevices.filter((d) => d.status === 'online');
+
+  // Trouver les capteurs de température et d'humidité dans la pièce
+  const temperatureSensors = onlineDevices.filter((d) => d.state?.temperature !== undefined);
+  const humiditySensors = onlineDevices.filter((d) => d.state?.humidity !== undefined);
+
+  // Créer un ensemble des IDs des capteurs à exclure (ceux affichés dans le titre)
+  const sensorsToExclude = useMemo(() => {
+    const excludeSet = new Set<string>();
+    // Exclure tous les capteurs de température
+    temperatureSensors.forEach((d) => excludeSet.add(d.ieeeAddress));
+    // Exclure tous les capteurs d'humidité
+    humiditySensors.forEach((d) => excludeSet.add(d.ieeeAddress));
+    return excludeSet;
+  }, [temperatureSensors, humiditySensors]);
+
+  // Filtrer les appareils à afficher (exclure les capteurs de température/humidité)
+  const devicesToDisplay = useMemo(() => {
+    return onlineDevices.filter((d) => !sensorsToExclude.has(d.ieeeAddress));
+  }, [onlineDevices, sensorsToExclude]);
+
+  // Calculer les valeurs moyennes
+  const roomTemperature = useMemo(() => {
+    if (temperatureSensors.length === 0) return null;
+    const sum = temperatureSensors.reduce((acc, device) => {
+      const temp = typeof device.state?.temperature === 'number' 
+        ? device.state.temperature 
+        : parseFloat(device.state?.temperature) || 0;
+      return acc + temp;
+    }, 0);
+    return sum / temperatureSensors.length;
+  }, [temperatureSensors]);
+
+  const roomHumidity = useMemo(() => {
+    if (humiditySensors.length === 0) return null;
+    const sum = humiditySensors.reduce((acc, device) => {
+      const hum = typeof device.state?.humidity === 'number' 
+        ? device.state.humidity 
+        : parseFloat(device.state?.humidity) || 0;
+      return acc + hum;
+    }, 0);
+    return sum / humiditySensors.length;
+  }, [humiditySensors]);
+
+  // Fonction pour obtenir l'icône de la pièce
+  const getRoomIcon = (room: string) => {
+    const roomLower = room.toLowerCase();
+    if (roomLower.includes('salon') || roomLower.includes('living')) {
+      return '🛋️';
+    } else if (roomLower.includes('cuisine') || roomLower.includes('kitchen')) {
+      return '🧊';
+    } else if (roomLower.includes('chambre') || roomLower.includes('bedroom')) {
+      return '🛏️';
+    } else if (roomLower.includes('salle de bain') || roomLower.includes('bathroom')) {
+      return '🚿';
+    } else if (roomLower.includes('bureau') || roomLower.includes('office')) {
+      return '💼';
+    } else if (roomLower.includes('énergie') || roomLower.includes('energy')) {
+      return '⚡';
+    }
+    return '🏠';
+  };
+
   return (
-    <Card
-      sx={{
-        backgroundColor: '#FFFFFF',
-        border: 'none',
-        borderRadius: 1,
-        boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
-        transition: 'all 0.15s ease-in-out',
-        '&:hover': {
-          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-        },
-      }}
-    >
-      <CardContent>
-        {/* En-tête de la pièce */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 500 }}>
+    <>
+      <Grid item xs={12} sm={6} md={4}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          {/* Titre de la pièce avec icône et valeurs environnementales */}
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5, mt: 1, flexWrap: 'wrap', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Typography variant="h6" sx={{ fontWeight: 500, fontSize: '1.1rem', mr: 1 }}>
+                {getRoomIcon(roomName)}
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 500, fontSize: '1.1rem' }}>
             {roomName}
           </Typography>
-          <IconButton
-            size="small"
-            onClick={() => setExpanded(!expanded)}
-            sx={{ color: 'text.secondary' }}
-          >
-            {expanded ? <ExpandLess /> : <ExpandMore />}
-          </IconButton>
         </Box>
 
-        {/* Statistiques de la pièce */}
-        <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
-          {stats.temperature !== null && (
-            <Chip
-              icon={<Thermostat sx={{ fontSize: 16 }} />}
-              label={`${stats.temperature.toFixed(1)}°C`}
-              size="small"
-              sx={{ fontSize: '12px', cursor: 'pointer' }}
-              onClick={() => {
-                setSelectedSensor({
-                  type: SensorType.TEMPERATURE,
-                  label: i18n.t('devices.temperature'),
-                  unit: '°C',
-                  color: '#C4A5A5',
-                });
-                setModalOpen(true);
-              }}
-            />
-          )}
-          {stats.humidity !== null && (
-            <Chip
-              label={`${Math.round(stats.humidity)}%`}
-              size="small"
-              sx={{ fontSize: '12px', cursor: 'pointer' }}
-              onClick={() => {
-                setSelectedSensor({
-                  type: SensorType.HUMIDITY,
-                  label: i18n.t('devices.humidity'),
-                  unit: '%',
-                  color: '#86A6A0',
-                });
-                setModalOpen(true);
-              }}
-            />
-          )}
-          {stats.illuminance !== null && (
-            <Chip
-              icon={<LightMode sx={{ fontSize: 16 }} />}
-              label={`${Math.round(stats.illuminance)} lux`}
-              size="small"
-              sx={{ fontSize: '12px', cursor: 'pointer' }}
-              onClick={() => {
-                setSelectedSensor({
-                  type: SensorType.ILLUMINANCE,
-                  label: i18n.t('devices.illuminance'),
-                  unit: 'lux',
-                  color: '#9BBEB7',
-                });
-                setModalOpen(true);
-              }}
-            />
-          )}
-          {stats.presence && (
-            <Chip
-              icon={<Person sx={{ fontSize: 16 }} />}
-              label={i18n.t('devices.presence')}
-              size="small"
-              color="success"
-              sx={{ fontSize: '12px' }}
-            />
-          )}
-        </Stack>
-
-        {expanded && (
-          <>
-            <Divider sx={{ my: 2 }} />
-
-            {/* Appareils contrôlables */}
-            {controllableDevices.length > 0 && (
-              <Box sx={{ mb: 2 }}>
-              <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 500, color: 'text.secondary' }}>
-                {i18n.t('deviceDetail.controls')}
+            {/* Affichage de la température si disponible */}
+            {roomTemperature !== null && (
+              <Box sx={{ display: 'flex', alignItems: 'center', ml: 'auto' }}>
+                <Thermostat sx={{ fontSize: 18, color: '#C4A5A5', mr: 0.5 }} />
+                <Typography variant="body2" sx={{ fontSize: '0.875rem', color: 'text.primary' }}>
+                  {roomTemperature.toFixed(1)} °C
+                </Typography>
+              </Box>
+            )}
+            
+            {/* Affichage de l'humidité si disponible */}
+            {roomHumidity !== null && (
+              <Box sx={{ display: 'flex', alignItems: 'center', ml: roomTemperature !== null ? 1 : 'auto' }}>
+                <WaterDrop sx={{ fontSize: 18, color: '#86A6A0', mr: 0.5 }} />
+                <Typography variant="body2" sx={{ fontSize: '0.875rem', color: 'text.primary' }}>
+                  {Math.round(roomHumidity)} %
               </Typography>
-                <Stack spacing={2}>
-                  {controllableDevices.map((device) => {
+              </Box>
+            )}
+          </Box>
+
+          {/* Cartes individuelles pour chaque appareil - 2 par ligne */}
+          <Grid container spacing={1}>
+            {devicesToDisplay.map((device) => {
                     const isOn = deviceStates[device.ieeeAddress] || false;
                     const brightness = brightnessValues[device.ieeeAddress] || 0;
-                    const isLight = device.type === 'light';
+              const coverPosition = coverPositions[device.ieeeAddress] ?? 0;
+              const hasTemperature = device.state?.temperature !== undefined;
+              const chartData = hasTemperature ? generateChartData(device) : [];
 
                     return (
-                      <Box key={device.ieeeAddress}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: isLight ? 1 : 0 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            {getDeviceIcon(device.type)}
-                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                <Grid item xs={6} key={device.ieeeAddress}>
+                  <Card
+                    sx={{
+                      backgroundColor: '#FFFFFF',
+                      border: '1px solid #E0E0E0',
+                      borderRadius: '8px',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                      width: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                      },
+                    }}
+                  >
+                    <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 1.25 }}>
+                      {/* Icône et titre */}
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
+                        <Box sx={{ flex: 1 }}>
+                          <Typography 
+                            variant="body2" 
+                            sx={{ 
+                              fontWeight: 500, 
+                              fontSize: '0.75rem',
+                              mb: 0.25,
+                              lineHeight: 1.2,
+                            }}
+                          >
                               {device.friendlyName}
                             </Typography>
                           </Box>
+                        <Box sx={{ ml: 0.5 }}>
+                          {getDeviceIcon(device, isOn)}
+                        </Box>
+                      </Box>
+
+                      {/* Valeur/Statut */}
+                      <Typography 
+                        variant="h6" 
+                        sx={{ 
+                          fontWeight: 400,
+                          fontSize: '1rem',
+                          mb: hasTemperature ? 0.5 : 0,
+                          color: 'text.primary',
+                        }}
+                      >
+                        {getDeviceValue(device)}
+                      </Typography>
+
+                      {/* Graphique pour température */}
+                      {hasTemperature && chartData.length > 0 && (
+                        <Box sx={{ height: 30, width: '100%', mt: 0.5, overflow: 'hidden' }}>
+                          <svg width="100%" height="100%" viewBox="0 0 100 40" preserveAspectRatio="none">
+                            <polyline
+                              points={chartData.map((d, i) => `${(i / (chartData.length - 1)) * 100},${40 - ((d.value - Math.min(...chartData.map(x => x.value))) / (Math.max(...chartData.map(x => x.value)) - Math.min(...chartData.map(x => x.value)) || 1)) * 30}`).join(' ')}
+                              fill="none"
+                              stroke="#FF9800"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </Box>
+                      )}
+
+                      {/* Contrôles pour les lumières */}
+                      {device.type === 'light' && (
+                        <Box sx={{ mt: 1 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: isOn ? 0.5 : 0 }}>
                           <Switch
                             checked={isOn}
                             onChange={(e) => handleToggle(device, e.target.checked)}
                             size="small"
                           />
                         </Box>
-                        {isLight && isOn && (
-                          <Box sx={{ pl: 4, pr: 1 }}>
+                          {isOn && (
                             <Slider
                               value={brightness}
                               onChange={(_, value) => handleBrightnessChange(device, value as number)}
@@ -327,73 +419,68 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
                               max={100}
                               step={1}
                               size="small"
-                              sx={{ mt: 1 }}
+                              sx={{
+                                '& .MuiSlider-thumb': {
+                                  width: 12,
+                                  height: 12,
+                                },
+                                '& .MuiSlider-track': {
+                                  height: 2,
+                                },
+                                '& .MuiSlider-rail': {
+                                  height: 2,
+                                },
+                              }}
                             />
-                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '10px' }}>
-                              {brightness}%
-                            </Typography>
-                          </Box>
                         )}
-                      </Box>
-                    );
-                  })}
-                </Stack>
               </Box>
             )}
 
-            {/* Capteurs */}
-            {sensorDevices.length > 0 && (
-              <Box>
-                <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 500, color: 'text.secondary' }}>
-                  {i18n.t('devices.sensors')}
-                </Typography>
-                <Stack spacing={1}>
-                  {sensorDevices.map((device) => (
-                    <Box
-                      key={device.ieeeAddress}
-                      sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                    >
-                      {getDeviceIcon(device.type)}
-                      <Typography variant="body2">{device.friendlyName}</Typography>
-                      <Box sx={{ ml: 'auto', display: 'flex', gap: 0.5 }}>
-                        {device.state?.contact !== undefined && (
-                          <Chip
-                            label={device.state.contact ? i18n.t('devices.closed') : i18n.t('devices.open')}
+                      {/* Contrôles pour les switches/plugs */}
+                      {(device.type === 'switch' || device.type === 'plug') && (
+                        <Box sx={{ mt: 1, display: 'flex', justifyContent: 'flex-end' }}>
+                          <Switch
+                            checked={isOn}
+                            onChange={(e) => handleToggle(device, e.target.checked)}
                             size="small"
-                            color={device.state.contact ? 'success' : 'warning'}
-                            sx={{ fontSize: '10px' }}
                           />
-                        )}
-                        {device.state?.vibration !== undefined && (
-                          <Chip
-                            label={device.state.vibration ? i18n.t('devices.detected') : i18n.t('devices.none')}
-                            size="small"
-                            color={device.state.vibration ? 'warning' : 'default'}
-                            sx={{ fontSize: '10px' }}
-                          />
-                        )}
-                      </Box>
-                    </Box>
-                  ))}
-                </Stack>
-              </Box>
-            )}
+                        </Box>
+                      )}
 
-            {/* Aucun appareil en ligne */}
-            {controllableDevices.length === 0 && sensorDevices.length === 0 && stats.onlineDeviceCount === 0 && stats.deviceCount === 0 && (
-              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                {i18n.t('devices.noDevices')}
-              </Typography>
-            )}
-            {/* Appareils présents mais tous hors ligne */}
-            {controllableDevices.length === 0 && sensorDevices.length === 0 && stats.onlineDeviceCount === 0 && stats.deviceCount > 0 && (
-              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                {i18n.t('devices.allDevicesOffline')}
-              </Typography>
-            )}
-          </>
+                      {/* Contrôles pour les volets */}
+                      {device.type === 'cover' && (
+                        <Box sx={{ mt: 1 }}>
+                          <Slider
+                            value={coverPosition}
+                            onChange={(_, value) => handleCoverPositionChange(device, value as number)}
+                            disabled={device.status !== 'online'}
+                            min={0}
+                            max={100}
+                            step={1}
+                            size="small"
+                            sx={{
+                              '& .MuiSlider-thumb': {
+                                width: 12,
+                                height: 12,
+                              },
+                              '& .MuiSlider-track': {
+                                height: 2,
+                              },
+                              '& .MuiSlider-rail': {
+                                height: 2,
+                              },
+                            }}
+                          />
+              </Box>
         )}
       </CardContent>
+                  </Card>
+                </Grid>
+              );
+            })}
+          </Grid>
+        </Box>
+      </Grid>
 
       {/* Modal pour le graphique des capteurs */}
       {selectedSensor && (
@@ -411,7 +498,6 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
           sensorColor={selectedSensor.color}
         />
       )}
-    </Card>
+    </>
   );
 }
-

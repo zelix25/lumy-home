@@ -254,17 +254,16 @@ export default function HomePage() {
                 <WeatherCard />
               </Grid>
 
-              {/* Cartes par pièce */}
+              {/* Cartes par pièce - Chaque pièce affiche ses appareils en grille */}
               {Object.entries(devicesByRoom).map(([roomName, roomDevices]) => (
-                <Grid item xs={12} md={6} lg={4} key={roomName}>
                   <RoomCard
+                  key={roomName}
                     roomName={roomName}
                     devices={roomDevices}
                     onDeviceUpdate={() => {
                       // Les mises à jour sont gérées automatiquement par useDevices via WebSocket
                     }}
                   />
-                </Grid>
               ))}
 
               {/* Aucune pièce avec appareils */}
