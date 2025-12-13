@@ -7,12 +7,14 @@ import { AutomationExecutionLog } from './entities/automation-execution-log.enti
 import { DevicesModule } from '../devices/devices.module';
 import { WebsocketModule } from '../websocket/websocket.module';
 import { LoggerModule } from '../logger/logger.module';
+import { PluginsModule } from '../plugins/plugins.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Automation, AutomationExecutionLog]),
     forwardRef(() => DevicesModule),
     forwardRef(() => WebsocketModule),
+    forwardRef(() => PluginsModule),
     LoggerModule,
   ],
   controllers: [AutomationsController],

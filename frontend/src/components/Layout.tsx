@@ -29,10 +29,12 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ComputerIcon from '@mui/icons-material/Computer';
 import LogoutIcon from '@mui/icons-material/Logout';
+import ExtensionIcon from '@mui/icons-material/Extension';
 import LanguageSelector from './LanguageSelector';
 import SystemModal from './SystemModal';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
+import { usePluginMenuItems } from '../hooks/usePluginMenuItems';
 
 const drawerWidth = 240; // Largeur sidebar selon guide scandinave
 
@@ -46,15 +48,35 @@ interface NavItem {
   icon: ReactNode;
 }
 
-const getNavItems = (t: (key: string) => string): NavItem[] => [
-  { label: t('common.home'), path: '/', icon: <HomeIcon /> },
-  { label: t('common.devices'), path: '/appareils', icon: <DevicesIcon /> },
-  { label: t('common.scenes'), path: '/scenes', icon: <SceneIcon /> },
-  { label: t('common.assistant'), path: '/assistant', icon: <SmartToyIcon /> },
-  { label: t('common.history'), path: '/historique', icon: <HistoryIcon /> },
-  { label: t('common.plan'), path: '/plan', icon: <MapIcon /> },
-  { label: t('common.debug'), path: '/debug', icon: <BugReportIcon /> },
-];
+interface PluginMenuItem {
+  label: string;
+  path: string;
+  icon?: string;
+  order: number;
+}
+
+const getNavItems = (t: (key: string) => string, pluginMenuItems: PluginMenuItem[]): NavItem[] => {
+  const baseItems: NavItem[] = [
+    { label: t('common.home'), path: '/', icon: <HomeIcon /> },
+    { label: t('common.devices'), path: '/appareils', icon: <DevicesIcon /> },
+    { label: t('common.scenes'), path: '/scenes', icon: <SceneIcon /> },
+    { label: t('common.assistant'), path: '/assistant', icon: <SmartToyIcon /> },
+    { label: t('common.history'), path: '/historique', icon: <HistoryIcon /> },
+    { label: t('common.plan'), path: '/plan', icon: <MapIcon /> },
+    { label: t('common.plugins'), path: '/plugins', icon: <ExtensionIcon /> },
+    { label: t('common.debug'), path: '/debug', icon: <BugReportIcon /> },
+  ];
+
+  // Ajouter les éléments de menu des plugins
+  const pluginItems: NavItem[] = pluginMenuItems.map((item) => ({
+    label: item.label,
+    path: item.path,
+    icon: item.icon ? <img src={item.icon} alt={item.label} style={{ width: 24, height: 24 }} /> : <ExtensionIcon />,
+  }));
+
+  // Combiner et trier par ordre (les plugins sont ajoutés après les éléments de base)
+  return [...baseItems, ...pluginItems];
+};
 
 export default function Layout({ children }: LayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -66,6 +88,7 @@ export default function Layout({ children }: LayoutProps) {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { t } = useTranslation();
   const { logout, isAuthenticated, user } = useAuth();
+  const pluginMenuItems = usePluginMenuItems();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -132,7 +155,7 @@ export default function Layout({ children }: LayoutProps) {
         </Typography>
       </Toolbar>
       <List sx={{ pt: 2 }}>
-        {getNavItems(t).map((item) => (
+        {getNavItems(t, pluginMenuItems).map((item) => (
           <ListItem key={item.path} disablePadding>
             <ListItemButton
               selected={location.pathname === item.path}

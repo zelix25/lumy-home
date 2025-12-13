@@ -1,0 +1,6 @@
+# Ignorer tous les plugins installés (sauf les exemples)
+*
+!example-plugin/
+!.gitignore
+!README.md
+

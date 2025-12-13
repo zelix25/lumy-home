@@ -16,6 +16,7 @@ import { Zigbee2MqttService } from '../devices/zigbee2mqtt.service';
 import { DevicesService } from '../devices/devices.service';
 import { LoggerService } from '../logger/logger.service';
 import { WebsocketGateway } from '../websocket/websocket.gateway';
+import { PluginAutomationExtensionService } from '../plugins/automation/plugin-automation-extension.service';
 
 @Injectable()
 export class AutomationsService implements OnModuleInit {
@@ -33,6 +34,7 @@ export class AutomationsService implements OnModuleInit {
     private readonly devicesService: DevicesService,
     private readonly logger: LoggerService,
     private readonly websocketGateway: WebsocketGateway,
+    private readonly automationExtensionService?: PluginAutomationExtensionService,
   ) {}
 
   async onModuleInit() {
@@ -438,6 +440,30 @@ export class AutomationsService implements OnModuleInit {
         break;
 
       default:
+        // Vérifier si c'est un trigger personnalisé de plugin
+        if (this.automationExtensionService) {
+          try {
+            const extension = await this.automationExtensionService.findByName(trigger.type);
+            if (extension && extension.enabled && extension.type === 'trigger') {
+              this.logger.debug(
+                `[AUTOMATION CHECK] 🔌 Utilisation du trigger personnalisé: ${trigger.type}`,
+                'AutomationsService',
+              );
+              mainTriggerMet = await this.automationExtensionService.checkCustomTrigger(
+                trigger.type,
+                trigger.condition || {},
+                { deviceId, eventType, eventData },
+              );
+              break;
+            }
+          } catch (error) {
+            this.logger.warn(
+              `[AUTOMATION CHECK] ⚠️ Erreur lors de la vérification du trigger personnalisé ${trigger.type}: ${error.message}`,
+              'AutomationsService',
+            );
+          }
+        }
+        
         this.logger.debug(
           `[AUTOMATION CHECK] ❌ Type de déclencheur non supporté: ${trigger.type}`,
           'AutomationsService',
@@ -1168,6 +1194,32 @@ export class AutomationsService implements OnModuleInit {
           break;
 
         default:
+          // Vérifier si c'est une action personnalisée de plugin
+          if (this.automationExtensionService) {
+            try {
+              const extension = await this.automationExtensionService.findByName(type);
+              if (extension && extension.enabled && extension.type === 'action') {
+                this.logger.log(
+                  `[AUTOMATION ACTION] 🔌 Utilisation de l'action personnalisée: ${type}`,
+                  'AutomationsService',
+                );
+                await this.automationExtensionService.executeCustomAction(
+                  type,
+                  params || {},
+                  { deviceId, automation },
+                );
+                return;
+              }
+            } catch (error) {
+              this.logger.error(
+                `[AUTOMATION ACTION] ❌ Erreur lors de l'exécution de l'action personnalisée ${type}: ${error.message}`,
+                error.stack,
+                'AutomationsService',
+              );
+              throw error;
+            }
+          }
+          
           throw new BadRequestException(`Type d'action non supporté: ${type}`);
       }
     } catch (error) {

@@ -181,7 +181,7 @@
   },
   {
     "model": "SPM01-1Z2",
-    "type": "other",
+    "type": "energy",
     "vendor": "Zemismart",
     "comment": "Zemismart Smart energy monitor for 1P+N system"
   },
@@ -193,13 +193,13 @@
   },
   {
     "model": "SDM02-2Z1",
-    "type": "other",
+    "type": "energy",
     "vendor": "Zemismart",
     "comment": "Zemismart Smart energy monitor for 2P+N system"
   },
   {
     "model": "SPM02-3Z3",
-    "type": "other",
+    "type": "energy",
     "vendor": "Zemismart",
     "comment": "Zemismart Smart energy monitor for 3P+N system"
   },
@@ -4105,25 +4105,25 @@
   },
   {
     "model": "SDM02-U01",
-    "type": "other",
+    "type": "energy",
     "vendor": "BITUO TECHNIK",
     "comment": "BITUO TECHNIK Smart energy monitor for 2P+N system"
   },
   {
     "model": "SPM01-U02",
-    "type": "other",
+    "type": "energy",
     "vendor": "BITUO TECHNIK",
     "comment": "BITUO TECHNIK Smart energy monitor for 1P+N system"
   },
   {
     "model": "SDM02-U02",
-    "type": "other",
+    "type": "energy",
     "vendor": "BITUO TECHNIK",
     "comment": "BITUO TECHNIK Smart energy monitor for 2P+N system"
   },
   {
     "model": "SPM02-U02",
-    "type": "other",
+    "type": "energy",
     "vendor": "BITUO TECHNIK",
     "comment": "BITUO TECHNIK Smart energy monitor for 3P+N system"
   },
@@ -5053,7 +5053,7 @@
   },
   {
     "model": "ZWPM16-2",
-    "type": "other",
+    "type": "energy",
     "vendor": "AVATTO",
     "comment": "AVATTO Zigbee smart energy meter 80A/2CH"
   },
@@ -5107,7 +5107,7 @@
   },
   {
     "model": "ZWPM16",
-    "type": "other",
+    "type": "energy",
     "vendor": "AVATTO",
     "comment": "AVATTO Zigbee smart energy meter"
   },
@@ -5419,7 +5419,7 @@
   },
   {
     "model": "2CT",
-    "type": "other",
+    "type": "energy",
     "vendor": "Tuya",
     "comment": "Tuya Bidirectional energy meter with 80A current clamp"
   },
@@ -6931,31 +6931,31 @@
   },
   {
     "model": "SPM01V2.5",
-    "type": "other",
+    "type": "energy",
     "vendor": "Tuya",
     "comment": "Tuya Smart energy monitor for 1P+N system"
   },
   {
     "model": "SPM02V2.5",
-    "type": "other",
+    "type": "energy",
     "vendor": "Tuya",
     "comment": "Tuya Smart energy monitor for 3P+N system"
   },
   {
     "model": "SPM02V3",
-    "type": "other",
+    "type": "energy",
     "vendor": "Tuya",
     "comment": "Tuya Smart energy monitor for 3P+N system"
   },
   {
     "model": "SDM01V1.5",
-    "type": "other",
+    "type": "energy",
     "vendor": "Tuya",
     "comment": "Tuya Smart energy monitor for 3P+N system"
   },
   {
     "model": "SDM02V1",
-    "type": "other",
+    "type": "energy",
     "vendor": "Tuya",
     "comment": "Tuya Smart energy monitor for 2P+N system"
   },
@@ -7999,7 +7999,7 @@
   },
   {
     "model": "PJ-1203-W",
-    "type": "other",
+    "type": "energy",
     "vendor": "Tuya",
     "comment": "Tuya Electricity energy monitor"
   },
@@ -8725,7 +8725,7 @@
   },
   {
     "model": "SDM01",
-    "type": "other",
+    "type": "energy",
     "vendor": "Tuya",
     "comment": "Tuya Smart energy monitor for 3P+N system"
   },
@@ -9061,7 +9061,7 @@
   },
   {
     "model": "EA4161C-BI",
-    "type": "other",
+    "type": "energy",
     "vendor": "Tuya",
     "comment": "Tuya Single-phase multifunction energy meter (DIN Module)"
   },
@@ -9223,7 +9223,7 @@
   },
   {
     "model": "PC311-Z-TY",
-    "type": "other",
+    "type": "energy",
     "vendor": "Tuya",
     "comment": "Tuya Bidirectional energy meter with 80A current clamp"
   },
@@ -9793,19 +9793,19 @@
   },
   {
     "model": "SPM01",
-    "type": "other",
+    "type": "energy",
     "vendor": "Tuya",
     "comment": "Tuya Smart energy monitor for 1P+N system"
   },
   {
     "model": "SPM01V2",
-    "type": "other",
+    "type": "energy",
     "vendor": "Tuya",
     "comment": "Tuya Smart energy monitor for 1P+N system"
   },
   {
     "model": "SPM02V2",
-    "type": "other",
+    "type": "energy",
     "vendor": "Tuya",
     "comment": "Tuya Smart energy monitor for 3P+N system"
   },
@@ -11179,7 +11179,7 @@
   },
   {
     "model": "PJ-1203A",
-    "type": "other",
+    "type": "energy",
     "vendor": "Tuya",
     "comment": "Tuya Bidirectional energy meter with 80A current clamp"
   },
@@ -11689,7 +11689,7 @@
   },
   {
     "model": "SPM02",
-    "type": "other",
+    "type": "energy",
     "vendor": "Tuya",
     "comment": "Tuya Smart energy monitor for 3P+N system"
   },
@@ -12013,7 +12013,7 @@
   },
   {
     "model": "TS0601_bidirectional_energy meter",
-    "type": "other",
+    "type": "energy",
     "vendor": "Tuya",
     "comment": "Tuya Bidirectional energy meter with 150A Current Clamp"
   },
@@ -19039,7 +19039,7 @@
   },
   {
     "model": "TS011F_plug_3",
-    "type": "switch",
+    "type": "plug",
     "vendor": "Tuya",
     "comment": "Tuya Smart plug (with power monitoring by polling)"
   },
@@ -21409,7 +21409,7 @@
   },
   {
     "model": "ZHEMI101",
-    "type": "other",
+    "type": "energy",
     "vendor": "Develco",
     "comment": "Develco Energy meter"
   },
