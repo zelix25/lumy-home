@@ -33,7 +33,7 @@ export class WeatherService implements OnModuleInit {
     }
   }
 
-  @Cron(CronExpression.EVERY_10_MINUTES)
+  @Cron(CronExpression.EVERY_HOUR)
   async handleCron() {
     this.logger.log('=== MISE À JOUR HORAIRE DE LA MÉTÉO ===', 'WeatherService');
     try {

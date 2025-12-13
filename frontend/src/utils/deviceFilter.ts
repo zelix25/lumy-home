@@ -133,6 +133,8 @@ function getCompatibleDeviceTypesForAction(actionType: AutomationActionType): st
     [AutomationActionType.SET_COLOR]: ['light'],
     [AutomationActionType.SET_COLOR_TEMP]: ['light'],
     [AutomationActionType.SET_THERMOSTAT]: ['sensor', 'temperature'], // Pour les thermostats
+    [AutomationActionType.OPEN_COVER]: ['cover'],
+    [AutomationActionType.CLOSE_COVER]: ['cover'],
     [AutomationActionType.NOTIFY]: [], // Pas d'appareil nécessaire
   };
 

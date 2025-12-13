@@ -1,6 +1,23 @@
-import { IsString, IsEnum, IsOptional, IsObject, IsArray, ValidateNested, IsNotEmpty } from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsObject, IsArray, ValidateNested, IsNotEmpty, IsIn, IsNumber } from 'class-validator';
 import { Type } from 'class-transformer';
 import { AutomationTriggerType, AutomationActionType } from '../../ai/entities/automation.entity';
+
+export class AdditionalConditionDto {
+  @IsEnum(AutomationTriggerType)
+  type: AutomationTriggerType;
+
+  @IsOptional()
+  @IsString()
+  deviceId?: string;
+
+  @IsOptional()
+  @IsString()
+  deviceName?: string;
+
+  @IsOptional()
+  @IsObject()
+  condition?: Record<string, any>;
+}
 
 export class TriggerDto {
   @IsEnum(AutomationTriggerType)
@@ -17,6 +34,24 @@ export class TriggerDto {
   @IsOptional()
   @IsObject()
   condition?: Record<string, any>;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AdditionalConditionDto)
+  additionalConditions?: AdditionalConditionDto[];
+
+  @IsOptional()
+  @IsIn(['AND', 'OR'])
+  logicOperator?: 'AND' | 'OR';
+
+  @IsOptional()
+  @IsIn(['sunrise', 'sunset'])
+  sunriseSunsetType?: 'sunrise' | 'sunset';
+
+  @IsOptional()
+  @IsNumber()
+  offsetMinutes?: number;
 }
 
 export class ActionDto {

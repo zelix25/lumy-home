@@ -153,7 +153,7 @@ export class AutomationsService implements OnModuleInit {
 
     let triggeredCount = 0;
     for (const automation of automations) {
-      const shouldTrigger = this.shouldTriggerAutomation(automation, deviceId, eventType, eventData);
+      const shouldTrigger = await this.shouldTriggerAutomation(automation, deviceId, eventType, eventData);
       if (shouldTrigger) {
         triggeredCount++;
         this.logger.log(
@@ -185,12 +185,12 @@ export class AutomationsService implements OnModuleInit {
   /**
    * Vérifie si une automatisation doit être déclenchée
    */
-  private shouldTriggerAutomation(
+  private async shouldTriggerAutomation(
     automation: Automation,
     deviceId: string,
     eventType: string,
     eventData: any,
-  ): boolean {
+  ): Promise<boolean> {
     const trigger = automation.trigger;
 
     this.logger.debug(
@@ -198,38 +198,35 @@ export class AutomationsService implements OnModuleInit {
       'AutomationsService',
     );
 
-    // Vérifier que l'appareil correspond
-    if (trigger.deviceId && trigger.deviceId !== deviceId) {
+    // Vérifier si l'événement correspond au trigger principal
+    const triggerDeviceMatches = !trigger.deviceId || trigger.deviceId === deviceId;
+    
+    // Vérifier le type d'événement principal
+    let mainTriggerMet = false;
+    
+    // Si l'appareil correspond au trigger principal, vérifier le trigger
+    if (triggerDeviceMatches) {
       this.logger.debug(
-        `[AUTOMATION CHECK] ❌ L'appareil ne correspond pas - Requis: ${trigger.deviceId}, Reçu: ${deviceId}`,
+        `[AUTOMATION CHECK] ✅ L'appareil correspond au trigger principal (${trigger.deviceId ? trigger.deviceId : 'tous les appareils'})`,
         'AutomationsService',
       );
-      return false;
-    }
-
-    this.logger.debug(
-      `[AUTOMATION CHECK] ✅ L'appareil correspond (${trigger.deviceId ? trigger.deviceId : 'tous les appareils'})`,
-      'AutomationsService',
-    );
-
-    // Vérifier le type d'événement
-    let shouldTrigger = false;
-    switch (trigger.type) {
+      
+      switch (trigger.type) {
       case AutomationTriggerType.MOTION:
-        shouldTrigger = eventType === 'motion' || (eventData.occupancy === true || eventData.occupancy === 'true');
+        mainTriggerMet = eventType === 'motion' || (eventData.occupancy === true || eventData.occupancy === 'true');
         this.logger.debug(
-          `[AUTOMATION CHECK] Type MOUVEMENT - eventType: ${eventType}, occupancy: ${eventData.occupancy}, Résultat: ${shouldTrigger}`,
+          `[AUTOMATION CHECK] Type MOUVEMENT - eventType: ${eventType}, occupancy: ${eventData.occupancy}, Résultat: ${mainTriggerMet}`,
           'AutomationsService',
         );
-        return shouldTrigger;
+        break;
 
       case AutomationTriggerType.CONTACT:
-        shouldTrigger = eventType === 'contact' || eventData.contact !== undefined;
+        mainTriggerMet = eventType === 'contact' || eventData.contact !== undefined;
         this.logger.debug(
-          `[AUTOMATION CHECK] Type CONTACT - eventType: ${eventType}, contact: ${eventData.contact}, Résultat: ${shouldTrigger}`,
+          `[AUTOMATION CHECK] Type CONTACT - eventType: ${eventType}, contact: ${eventData.contact}, Résultat: ${mainTriggerMet}`,
           'AutomationsService',
         );
-        return shouldTrigger;
+        break;
 
       case AutomationTriggerType.TEMPERATURE:
         if (eventType !== 'temperature' && !eventData.temperature) {
@@ -237,7 +234,8 @@ export class AutomationsService implements OnModuleInit {
             `[AUTOMATION CHECK] Type TEMPÉRATURE - Pas de température dans l'événement, Résultat: false`,
             'AutomationsService',
           );
-          return false;
+          mainTriggerMet = false;
+          break;
         }
         // Vérifier les conditions de température si définies
         if (trigger.condition?.operator && trigger.condition?.value) {
@@ -266,13 +264,15 @@ export class AutomationsService implements OnModuleInit {
             `[AUTOMATION CHECK] Type TEMPÉRATURE - Condition: ${temp} ${operator} ${value}, Résultat: ${conditionMet}`,
             'AutomationsService',
           );
-          return conditionMet;
+          mainTriggerMet = conditionMet;
+        } else {
+          mainTriggerMet = true;
+          this.logger.debug(
+            `[AUTOMATION CHECK] Type TEMPÉRATURE - Pas de condition spécifique, Résultat: true`,
+            'AutomationsService',
+          );
         }
-        this.logger.debug(
-          `[AUTOMATION CHECK] Type TEMPÉRATURE - Pas de condition spécifique, Résultat: true`,
-          'AutomationsService',
-        );
-        return true;
+        break;
 
       case AutomationTriggerType.BUTTON:
         // Les boutons peuvent utiliser action, click, button_l, button_r, etc.
@@ -286,20 +286,20 @@ export class AutomationsService implements OnModuleInit {
           eventData.button_2 !== undefined ||
           eventData.button_3 !== undefined ||
           eventData.button_4 !== undefined;
-        shouldTrigger = hasButtonEvent;
+        mainTriggerMet = hasButtonEvent;
         this.logger.debug(
-          `[AUTOMATION CHECK] Type BOUTON - eventType: ${eventType}, action: ${eventData.action}, click: ${eventData.click}, button_l: ${eventData.button_l}, button_r: ${eventData.button_r}, button_1: ${eventData.button_1}, button_2: ${eventData.button_2}, Résultat: ${shouldTrigger}`,
+          `[AUTOMATION CHECK] Type BOUTON - eventType: ${eventType}, action: ${eventData.action}, click: ${eventData.click}, button_l: ${eventData.button_l}, button_r: ${eventData.button_r}, button_1: ${eventData.button_1}, button_2: ${eventData.button_2}, Résultat: ${mainTriggerMet}`,
           'AutomationsService',
         );
-        return shouldTrigger;
+        break;
 
       case AutomationTriggerType.VIBRATION:
-        shouldTrigger = eventType === 'vibration' || eventData.vibration !== undefined;
+        mainTriggerMet = eventType === 'vibration' || eventData.vibration !== undefined;
         this.logger.debug(
-          `[AUTOMATION CHECK] Type VIBRATION - eventType: ${eventType}, vibration: ${eventData.vibration}, Résultat: ${shouldTrigger}`,
+          `[AUTOMATION CHECK] Type VIBRATION - eventType: ${eventType}, vibration: ${eventData.vibration}, Résultat: ${mainTriggerMet}`,
           'AutomationsService',
         );
-        return shouldTrigger;
+        break;
 
       case AutomationTriggerType.ILLUMINANCE:
         if (eventType !== 'illuminance' && !eventData.illuminance) {
@@ -307,7 +307,8 @@ export class AutomationsService implements OnModuleInit {
             `[AUTOMATION CHECK] Type LUMINOSITÉ - Pas de luminosité dans l'événement, Résultat: false`,
             'AutomationsService',
           );
-          return false;
+          mainTriggerMet = false;
+          break;
         }
         // Vérifier les conditions de luminosité si définies
         if (trigger.condition?.operator && trigger.condition?.value) {
@@ -336,13 +337,15 @@ export class AutomationsService implements OnModuleInit {
             `[AUTOMATION CHECK] Type LUMINOSITÉ - Condition: ${illuminance} ${operator} ${value}, Résultat: ${conditionMet}`,
             'AutomationsService',
           );
-          return conditionMet;
+          mainTriggerMet = conditionMet;
+        } else {
+          mainTriggerMet = true;
+          this.logger.debug(
+            `[AUTOMATION CHECK] Type LUMINOSITÉ - Pas de condition spécifique, Résultat: true`,
+            'AutomationsService',
+          );
         }
-        this.logger.debug(
-          `[AUTOMATION CHECK] Type LUMINOSITÉ - Pas de condition spécifique, Résultat: true`,
-          'AutomationsService',
-        );
-        return true;
+        break;
 
       case AutomationTriggerType.HUMIDITY:
         if (eventType !== 'humidity' && !eventData.humidity) {
@@ -350,7 +353,8 @@ export class AutomationsService implements OnModuleInit {
             `[AUTOMATION CHECK] Type HUMIDITÉ - Pas d'humidité dans l'événement, Résultat: false`,
             'AutomationsService',
           );
-          return false;
+          mainTriggerMet = false;
+          break;
         }
         // Vérifier les conditions d'humidité si définies
         if (trigger.condition?.operator && trigger.condition?.value) {
@@ -379,54 +383,430 @@ export class AutomationsService implements OnModuleInit {
             `[AUTOMATION CHECK] Type HUMIDITÉ - Condition: ${humidity} ${operator} ${value}, Résultat: ${conditionMet}`,
             'AutomationsService',
           );
-          return conditionMet;
+          mainTriggerMet = conditionMet;
+        } else {
+          mainTriggerMet = true;
+          this.logger.debug(
+            `[AUTOMATION CHECK] Type HUMIDITÉ - Pas de condition spécifique, Résultat: true`,
+            'AutomationsService',
+          );
         }
-        this.logger.debug(
-          `[AUTOMATION CHECK] Type HUMIDITÉ - Pas de condition spécifique, Résultat: true`,
-          'AutomationsService',
-        );
-        return true;
+        break;
 
       case AutomationTriggerType.WATER_LEAK:
-        shouldTrigger = eventType === 'water_leak' || eventData.water_leak !== undefined || eventData.water === true;
+        mainTriggerMet = eventType === 'water_leak' || eventData.water_leak !== undefined || eventData.water === true;
         this.logger.debug(
-          `[AUTOMATION CHECK] Type FUITE D'EAU - eventType: ${eventType}, water_leak: ${eventData.water_leak}, water: ${eventData.water}, Résultat: ${shouldTrigger}`,
+          `[AUTOMATION CHECK] Type FUITE D'EAU - eventType: ${eventType}, water_leak: ${eventData.water_leak}, water: ${eventData.water}, Résultat: ${mainTriggerMet}`,
           'AutomationsService',
         );
-        return shouldTrigger;
+        break;
 
       case AutomationTriggerType.SMOKE:
-        shouldTrigger = eventType === 'smoke' || eventData.smoke !== undefined || eventData.smoke_detected === true;
+        mainTriggerMet = eventType === 'smoke' || eventData.smoke !== undefined || eventData.smoke_detected === true;
         this.logger.debug(
-          `[AUTOMATION CHECK] Type FUMÉE - eventType: ${eventType}, smoke: ${eventData.smoke}, smoke_detected: ${eventData.smoke_detected}, Résultat: ${shouldTrigger}`,
+          `[AUTOMATION CHECK] Type FUMÉE - eventType: ${eventType}, smoke: ${eventData.smoke}, smoke_detected: ${eventData.smoke_detected}, Résultat: ${mainTriggerMet}`,
           'AutomationsService',
         );
-        return shouldTrigger;
+        break;
 
       case AutomationTriggerType.GAS:
-        shouldTrigger = eventType === 'gas' || eventData.gas !== undefined || eventData.gas_detected === true;
+        mainTriggerMet = eventType === 'gas' || eventData.gas !== undefined || eventData.gas_detected === true;
         this.logger.debug(
-          `[AUTOMATION CHECK] Type GAZ - eventType: ${eventType}, gas: ${eventData.gas}, gas_detected: ${eventData.gas_detected}, Résultat: ${shouldTrigger}`,
+          `[AUTOMATION CHECK] Type GAZ - eventType: ${eventType}, gas: ${eventData.gas}, gas_detected: ${eventData.gas_detected}, Résultat: ${mainTriggerMet}`,
           'AutomationsService',
         );
-        return shouldTrigger;
+        break;
 
       case AutomationTriggerType.SUNRISE_SUNSET:
-        // Le lever/coucher du soleil sera géré par un système de cron job
-        // Pour l'instant, on vérifie si l'événement est de type 'sunrise' ou 'sunset'
-        shouldTrigger = eventType === 'sunrise' || eventType === 'sunset' || eventData.sunrise || eventData.sunset;
+        // Vérifier le type spécifique (lever ou coucher) si défini
+        const sunriseSunsetType = trigger.sunriseSunsetType;
+        if (sunriseSunsetType) {
+          // Vérifier que l'événement correspond au type spécifié
+          if (sunriseSunsetType === 'sunrise') {
+            mainTriggerMet = eventType === 'sunrise' || eventData.sunrise === true;
+          } else if (sunriseSunsetType === 'sunset') {
+            mainTriggerMet = eventType === 'sunset' || eventData.sunset === true;
+          }
+        } else {
+          // Si aucun type spécifique, accepter les deux (comportement par défaut)
+          mainTriggerMet = eventType === 'sunrise' || eventType === 'sunset' || eventData.sunrise || eventData.sunset;
+        }
         this.logger.debug(
-          `[AUTOMATION CHECK] Type LEVER/COUCHER DU SOLEIL - eventType: ${eventType}, sunrise: ${eventData.sunrise}, sunset: ${eventData.sunset}, Résultat: ${shouldTrigger}`,
+          `[AUTOMATION CHECK] Type LEVER/COUCHER DU SOLEIL - eventType: ${eventType}, sunriseSunsetType: ${sunriseSunsetType || 'tous'}, sunrise: ${eventData.sunrise}, sunset: ${eventData.sunset}, Résultat: ${mainTriggerMet}`,
           'AutomationsService',
         );
-        return shouldTrigger;
+        break;
 
       default:
         this.logger.debug(
           `[AUTOMATION CHECK] ❌ Type de déclencheur non supporté: ${trigger.type}`,
           'AutomationsService',
         );
+        mainTriggerMet = false;
+        break;
+      }
+    } else {
+      this.logger.debug(
+        `[AUTOMATION CHECK] ⚠️ L'appareil ne correspond pas au trigger principal - Requis: ${trigger.deviceId}, Reçu: ${deviceId}. Vérification des conditions supplémentaires si opérateur OR...`,
+        'AutomationsService',
+      );
+      mainTriggerMet = false;
+    }
+
+    // Vérifier les conditions supplémentaires si elles existent
+    if (trigger.additionalConditions && trigger.additionalConditions.length > 0) {
+      const logicOperator = trigger.logicOperator || 'AND';
+      this.logger.log(
+        `[AUTOMATION CHECK] 🔗 Vérification de ${trigger.additionalConditions.length} condition(s) supplémentaire(s) avec opérateur: ${logicOperator}`,
+        'AutomationsService',
+      );
+
+      // Pour un OR : si le trigger principal est satisfait, on s'exécute immédiatement
+      if (logicOperator === 'OR' && mainTriggerMet) {
+        this.logger.log(
+          `[AUTOMATION CHECK] ✅ Opérateur OR : le trigger principal est satisfait, l'automation sera exécutée`,
+          'AutomationsService',
+        );
+        return true;
+      }
+
+      // Pour un AND : le trigger principal doit être satisfait ET toutes les conditions supplémentaires
+      if (logicOperator === 'AND' && !mainTriggerMet) {
+        this.logger.log(
+          `[AUTOMATION CHECK] ❌ Opérateur AND : le trigger principal n'est pas satisfait`,
+          'AutomationsService',
+        );
         return false;
+      }
+
+      // Vérifier les conditions supplémentaires
+      // Pour un OR, on vérifie d'abord si l'événement actuel correspond à une condition supplémentaire
+      const additionalConditionsResults: boolean[] = [];
+
+      for (const additionalCondition of trigger.additionalConditions) {
+        let conditionResult = false;
+        
+        // Pour un OR, vérifier si l'événement actuel correspond à cette condition
+        if (logicOperator === 'OR') {
+          conditionResult = this.checkEventMatchesCondition(
+            additionalCondition,
+            eventType,
+            eventData,
+            deviceId,
+          );
+        }
+        
+        // Si l'événement ne correspond pas (ou si c'est un AND), vérifier l'état actuel
+        if (!conditionResult) {
+          conditionResult = await this.checkCondition(additionalCondition);
+        }
+        
+        additionalConditionsResults.push(conditionResult);
+        this.logger.log(
+          `[AUTOMATION CHECK] 📋 Condition ${additionalCondition.type} (${additionalCondition.deviceId || 'tous'}): ${conditionResult} ${logicOperator === 'OR' && conditionResult ? '(événement actuel)' : ''}`,
+          'AutomationsService',
+        );
+      }
+
+      // Appliquer l'opérateur logique
+      let allConditionsMet = false;
+      if (logicOperator === 'AND') {
+        // Pour AND : trigger principal ET toutes les conditions supplémentaires
+        allConditionsMet = mainTriggerMet && additionalConditionsResults.every(result => result === true);
+      } else if (logicOperator === 'OR') {
+        // Pour OR : trigger principal OU au moins une condition supplémentaire
+        allConditionsMet = mainTriggerMet || additionalConditionsResults.some(result => result === true);
+      }
+
+      this.logger.log(
+        `[AUTOMATION CHECK] ${logicOperator === 'AND' ? '🔗' : '🔀'} Résultat final (${logicOperator}): ${allConditionsMet} - Trigger principal: ${mainTriggerMet}, Conditions supplémentaires: ${additionalConditionsResults.filter(r => r).length}/${additionalConditionsResults.length} satisfaites`,
+        'AutomationsService',
+      );
+
+      if (!allConditionsMet) {
+        this.logger.log(
+          `[AUTOMATION CHECK] ❌ Les conditions ne sont pas toutes satisfaites, l'automation ne sera pas exécutée`,
+          'AutomationsService',
+        );
+      }
+
+      return allConditionsMet;
+    }
+
+    // Pas de conditions supplémentaires, le trigger principal suffit
+    if (!mainTriggerMet) {
+      this.logger.debug(
+        `[AUTOMATION CHECK] ❌ Le trigger principal n'est pas satisfait`,
+        'AutomationsService',
+      );
+      return false;
+    }
+
+    return mainTriggerMet;
+  }
+
+  /**
+   * Vérifie si l'événement actuel correspond à une condition supplémentaire
+   */
+  private checkEventMatchesCondition(
+    condition: {
+      type: AutomationTriggerType;
+      deviceId?: string;
+      deviceName?: string;
+      condition?: Record<string, any>;
+    },
+    eventType: string,
+    eventData: any,
+    eventDeviceId: string,
+  ): boolean {
+    // Vérifier que l'appareil correspond
+    if (condition.deviceId && condition.deviceId !== eventDeviceId) {
+      return false;
+    }
+
+    // Vérifier selon le type de condition
+    switch (condition.type) {
+      case AutomationTriggerType.MOTION:
+        return eventType === 'motion' || (eventData.occupancy === true || eventData.occupancy === 'true');
+
+      case AutomationTriggerType.CONTACT:
+        return eventType === 'contact' || eventData.contact !== undefined;
+
+      case AutomationTriggerType.TEMPERATURE:
+        if (eventType !== 'temperature' && !eventData.temperature) {
+          return false;
+        }
+        if (condition.condition?.operator && condition.condition?.value) {
+          const temp = eventData.temperature;
+          const value = condition.condition.value;
+          const operator = condition.condition.operator;
+          switch (operator) {
+            case '>':
+              return temp > value;
+            case '<':
+              return temp < value;
+            case '>=':
+              return temp >= value;
+            case '<=':
+              return temp <= value;
+            case '==':
+              return temp === value;
+            default:
+              return false;
+          }
+        }
+        return true;
+
+      case AutomationTriggerType.ILLUMINANCE:
+        if (eventType !== 'illuminance' && !eventData.illuminance) {
+          return false;
+        }
+        if (condition.condition?.operator && condition.condition?.value) {
+          const illuminance = eventData.illuminance;
+          const value = condition.condition.value;
+          const operator = condition.condition.operator;
+          switch (operator) {
+            case '>':
+              return illuminance > value;
+            case '<':
+              return illuminance < value;
+            case '>=':
+              return illuminance >= value;
+            case '<=':
+              return illuminance <= value;
+            case '==':
+              return illuminance === value;
+            default:
+              return false;
+          }
+        }
+        return true;
+
+      case AutomationTriggerType.HUMIDITY:
+        if (eventType !== 'humidity' && !eventData.humidity) {
+          return false;
+        }
+        if (condition.condition?.operator && condition.condition?.value) {
+          const humidity = eventData.humidity;
+          const value = condition.condition.value;
+          const operator = condition.condition.operator;
+          switch (operator) {
+            case '>':
+              return humidity > value;
+            case '<':
+              return humidity < value;
+            case '>=':
+              return humidity >= value;
+            case '<=':
+              return humidity <= value;
+            case '==':
+              return humidity === value;
+            default:
+              return false;
+          }
+        }
+        return true;
+
+      case AutomationTriggerType.BUTTON:
+        return (
+          eventType === 'button' ||
+          eventData.action !== undefined ||
+          eventData.click !== undefined ||
+          eventData.button_l !== undefined ||
+          eventData.button_r !== undefined ||
+          eventData.button_1 !== undefined ||
+          eventData.button_2 !== undefined ||
+          eventData.button_3 !== undefined ||
+          eventData.button_4 !== undefined
+        );
+
+      case AutomationTriggerType.VIBRATION:
+        return eventType === 'vibration' || eventData.vibration !== undefined;
+
+      case AutomationTriggerType.WATER_LEAK:
+        return eventType === 'water_leak' || eventData.water_leak !== undefined || eventData.water === true;
+
+      case AutomationTriggerType.SMOKE:
+        return eventType === 'smoke' || eventData.smoke !== undefined || eventData.smoke_detected === true;
+
+      case AutomationTriggerType.GAS:
+        return eventType === 'gas' || eventData.gas !== undefined || eventData.gas_detected === true;
+
+      case AutomationTriggerType.SUNRISE_SUNSET:
+        const conditionSunriseSunsetType = (condition as any).sunriseSunsetType;
+        if (conditionSunriseSunsetType) {
+          if (conditionSunriseSunsetType === 'sunrise') {
+            return eventType === 'sunrise' || eventData.sunrise === true;
+          } else if (conditionSunriseSunsetType === 'sunset') {
+            return eventType === 'sunset' || eventData.sunset === true;
+          }
+        }
+        return eventType === 'sunrise' || eventType === 'sunset' || eventData.sunrise || eventData.sunset;
+
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * Vérifie une condition individuelle en récupérant l'état actuel de l'appareil
+   */
+  private async checkCondition(condition: {
+    type: AutomationTriggerType;
+    deviceId?: string;
+    deviceName?: string;
+    condition?: Record<string, any>;
+  }): Promise<boolean> {
+    try {
+      // Récupérer l'appareil pour obtenir son état actuel
+      let device = null;
+      if (condition.deviceId) {
+        device = await this.devicesService.findOne(condition.deviceId);
+      }
+
+      // Vérifier selon le type de condition
+      switch (condition.type) {
+        case AutomationTriggerType.MOTION:
+          if (!device) return false;
+          return device.state?.occupancy === true || device.state?.presence === true;
+
+        case AutomationTriggerType.ILLUMINANCE:
+          if (!device || device.state?.illuminance === undefined) return false;
+          if (condition.condition?.operator && condition.condition?.value) {
+            const illuminance = typeof device.state.illuminance === 'number' 
+              ? device.state.illuminance 
+              : parseFloat(device.state.illuminance) || 0;
+            const value = condition.condition.value;
+            const operator = condition.condition.operator;
+            switch (operator) {
+              case '>':
+                return illuminance > value;
+              case '<':
+                return illuminance < value;
+              case '>=':
+                return illuminance >= value;
+              case '<=':
+                return illuminance <= value;
+              case '==':
+                return illuminance === value;
+              default:
+                return false;
+            }
+          }
+          return device.state.illuminance !== undefined;
+
+        case AutomationTriggerType.TEMPERATURE:
+          if (!device || device.state?.temperature === undefined) return false;
+          if (condition.condition?.operator && condition.condition?.value) {
+            const temp = typeof device.state.temperature === 'number' 
+              ? device.state.temperature 
+              : parseFloat(device.state.temperature) || 0;
+            const value = condition.condition.value;
+            const operator = condition.condition.operator;
+            switch (operator) {
+              case '>':
+                return temp > value;
+              case '<':
+                return temp < value;
+              case '>=':
+                return temp >= value;
+              case '<=':
+                return temp <= value;
+              case '==':
+                return temp === value;
+              default:
+                return false;
+            }
+          }
+          return device.state.temperature !== undefined;
+
+        case AutomationTriggerType.HUMIDITY:
+          if (!device || device.state?.humidity === undefined) return false;
+          if (condition.condition?.operator && condition.condition?.value) {
+            const humidity = typeof device.state.humidity === 'number' 
+              ? device.state.humidity 
+              : parseFloat(device.state.humidity) || 0;
+            const value = condition.condition.value;
+            const operator = condition.condition.operator;
+            switch (operator) {
+              case '>':
+                return humidity > value;
+              case '<':
+                return humidity < value;
+              case '>=':
+                return humidity >= value;
+              case '<=':
+                return humidity <= value;
+              case '==':
+                return humidity === value;
+              default:
+                return false;
+            }
+          }
+          return device.state.humidity !== undefined;
+
+        case AutomationTriggerType.CONTACT:
+          if (!device) return false;
+          return device.state?.contact !== undefined;
+
+        case AutomationTriggerType.VIBRATION:
+          if (!device) return false;
+          return device.state?.vibration === true;
+
+        default:
+          this.logger.debug(
+            `[AUTOMATION CHECK] ❌ Type de condition supplémentaire non supporté: ${condition.type}`,
+            'AutomationsService',
+          );
+          return false;
+      }
+    } catch (error) {
+      this.logger.error(
+        `[AUTOMATION CHECK] ❌ Erreur lors de la vérification de la condition: ${error.message}`,
+        error.stack,
+        'AutomationsService',
+      );
+      return false;
     }
   }
 
@@ -732,6 +1112,38 @@ export class AutomationsService implements OnModuleInit {
           });
           this.logger.log(
             `[AUTOMATION ACTION] ✅ Commande de thermostat (${params.temperature}°C) envoyée avec succès à l'appareil ${thermostatDevice.friendlyName} (${deviceId})`,
+            'AutomationsService',
+          );
+          break;
+
+        case AutomationActionType.OPEN_COVER:
+          const openCoverDevice = await this.devicesService.findOne(deviceId);
+          this.logger.log(
+            `[AUTOMATION ACTION] 🪟 Commande: Ouvrir le volet ${openCoverDevice.friendlyName} (${deviceId})`,
+            'AutomationsService',
+          );
+          // Pour Zigbee2MQTT, position 100 = ouvert
+          await this.devicesService.sendCommand(deviceId, {
+            position: 100,
+          });
+          this.logger.log(
+            `[AUTOMATION ACTION] ✅ Commande d'ouverture (position: 100) envoyée avec succès au volet ${openCoverDevice.friendlyName} (${deviceId})`,
+            'AutomationsService',
+          );
+          break;
+
+        case AutomationActionType.CLOSE_COVER:
+          const closeCoverDevice = await this.devicesService.findOne(deviceId);
+          this.logger.log(
+            `[AUTOMATION ACTION] 🪟 Commande: Fermer le volet ${closeCoverDevice.friendlyName} (${deviceId})`,
+            'AutomationsService',
+          );
+          // Pour Zigbee2MQTT, position 0 = fermé
+          await this.devicesService.sendCommand(deviceId, {
+            position: 0,
+          });
+          this.logger.log(
+            `[AUTOMATION ACTION] ✅ Commande de fermeture (position: 0) envoyée avec succès au volet ${closeCoverDevice.friendlyName} (${deviceId})`,
             'AutomationsService',
           );
           break;

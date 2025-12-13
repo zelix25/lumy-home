@@ -24,6 +24,7 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
+  Slider,
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
@@ -142,6 +143,10 @@ const getActionIcon = (actionType: AutomationActionType) => {
       return <ColorTempIcon />;
     case AutomationActionType.SET_THERMOSTAT:
       return <ThermostatIcon />;
+    case AutomationActionType.OPEN_COVER:
+      return <TurnOnIcon />; // Utilise l'icône TurnOn pour ouvrir
+    case AutomationActionType.CLOSE_COVER:
+      return <TurnOffIcon />; // Utilise l'icône TurnOff pour fermer
     case AutomationActionType.NOTIFY:
       return <NotifyIcon />;
     default:
@@ -164,6 +169,8 @@ interface TriggerNodeData {
   deviceName?: string;
   operator?: '>' | '<' | '>=' | '<=' | '=';
   value?: number;
+  sunriseSunsetType?: 'sunrise' | 'sunset';
+  offsetMinutes?: number;
 }
 
 interface ActionNodeData {
@@ -632,7 +639,12 @@ export default function NodeEditorDialog({
     const ySpacing = 150;
     const xSpacing = 300;
 
-    // Vérifier si on a une condition combinée (plusieurs triggers avec AND/OR)
+    // Vérifier si on a des conditions supplémentaires (nouvelle structure)
+    const hasAdditionalConditions = automation.trigger?.additionalConditions && 
+                                    Array.isArray(automation.trigger.additionalConditions) &&
+                                    automation.trigger.additionalConditions.length > 0;
+
+    // Vérifier si on a une condition combinée (ancienne structure - pour compatibilité)
     const hasCombinedCondition = automation.trigger?.condition?.logic && 
                                  automation.trigger?.condition?.triggers &&
                                  Array.isArray(automation.trigger.condition.triggers) &&
@@ -641,8 +653,86 @@ export default function NodeEditorDialog({
     let triggerNodes: Node[] = [];
     let conditionNode: Node | null = null;
 
-    if (hasCombinedCondition) {
-      // Cas : Plusieurs triggers avec une condition
+    if (hasAdditionalConditions) {
+      // Cas : Nouvelle structure avec additionalConditions
+      const mainTrigger = automation.trigger;
+      const additionalConditions = automation.trigger.additionalConditions;
+      const logicOperator = automation.trigger.logicOperator || 'AND';
+      
+      // Créer le trigger principal
+      const mainTriggerNode: Node = {
+        id: `trigger-${nodeIdCounter++}`,
+        type: 'trigger',
+        position: { x: xPosition, y: 100 },
+        data: {
+          label: mainTrigger.deviceName || t(`automations.triggerTypes.${mainTrigger.type}`),
+          triggerType: mainTrigger.type,
+          deviceId: mainTrigger.deviceId || '',
+          deviceName: mainTrigger.deviceName || '',
+          operator: mainTrigger.condition?.operator,
+          value: mainTrigger.condition?.value,
+          sunriseSunsetType: mainTrigger.sunriseSunsetType,
+          offsetMinutes: mainTrigger.offsetMinutes,
+        },
+        sourcePosition: Position.Right,
+        targetPosition: Position.Left,
+      };
+      triggerNodes.push(mainTriggerNode);
+      nodes.push(mainTriggerNode);
+
+      // Créer les triggers pour les conditions supplémentaires
+      additionalConditions.forEach((condition: any, index: number) => {
+        const conditionTriggerNode: Node = {
+          id: `trigger-${nodeIdCounter++}`,
+          type: 'trigger',
+          position: { x: xPosition, y: 100 + (index + 1) * ySpacing },
+          data: {
+            label: condition.deviceName || t(`automations.triggerTypes.${condition.type}`),
+            triggerType: condition.type,
+            deviceId: condition.deviceId || '',
+            deviceName: condition.deviceName || '',
+            operator: condition.condition?.operator,
+            value: condition.condition?.value,
+            sunriseSunsetType: condition.sunriseSunsetType,
+            offsetMinutes: condition.offsetMinutes,
+          },
+          sourcePosition: Position.Right,
+          targetPosition: Position.Left,
+        };
+        triggerNodes.push(conditionTriggerNode);
+        nodes.push(conditionTriggerNode);
+      });
+
+      xPosition += xSpacing;
+
+      // Créer le noeud condition
+      conditionNode = {
+        id: `condition-${nodeIdCounter++}`,
+        type: 'condition',
+        position: { x: xPosition, y: 100 + (additionalConditions.length * ySpacing) / 2 },
+        data: {
+          label: t('automations.nodeEditor.condition'),
+          condition: logicOperator as 'AND' | 'OR',
+        },
+        sourcePosition: Position.Right,
+        targetPosition: Position.Left,
+      };
+      nodes.push(conditionNode);
+
+      // Créer les edges de tous les triggers vers la condition
+      triggerNodes.forEach((triggerNode) => {
+        edges.push({
+          id: `edge-${edges.length}`,
+          source: triggerNode.id,
+          target: conditionNode!.id,
+          type: 'smoothstep',
+          markerEnd: { type: MarkerType.ArrowClosed },
+        });
+      });
+
+      xPosition += xSpacing;
+    } else if (hasCombinedCondition) {
+      // Cas : Ancienne structure (pour compatibilité)
       const conditionData = automation.trigger.condition;
       const triggers = conditionData.triggers;
       
@@ -659,6 +749,8 @@ export default function NodeEditorDialog({
             deviceName: trigger.deviceName || '',
             operator: trigger.condition?.operator,
             value: trigger.condition?.value,
+            sunriseSunsetType: trigger.sunriseSunsetType,
+            offsetMinutes: trigger.offsetMinutes,
           },
           sourcePosition: Position.Right,
           targetPosition: Position.Left,
@@ -709,6 +801,8 @@ export default function NodeEditorDialog({
             deviceName: automation.trigger.deviceName || '',
             operator: automation.trigger.condition?.operator,
             value: automation.trigger.condition?.value,
+            sunriseSunsetType: automation.trigger.sunriseSunsetType,
+            offsetMinutes: automation.trigger.offsetMinutes,
           },
           sourcePosition: Position.Right,
           targetPosition: Position.Left,
@@ -945,7 +1039,8 @@ export default function NodeEditorDialog({
     // Si des conditions existent, analyser la structure
     let mainTriggerNode = triggerNodes[0];
     let mainTriggerData = triggerNodes[0].data as TriggerNodeData;
-    let combinedCondition: any = undefined;
+    let additionalConditions: any[] | undefined = undefined;
+    let logicOperator: 'AND' | 'OR' | undefined = undefined;
 
     if (conditionNodes.length > 0) {
       // Pour chaque condition, trouver les triggers qui s'y connectent (edges où target = condition)
@@ -959,40 +1054,36 @@ export default function NodeEditorDialog({
           .map(id => nodes.find(n => n.id === id))
           .filter(n => n?.type === 'trigger') as Node<TriggerNodeData>[];
 
-        // Si plusieurs triggers se connectent à cette condition, créer une condition combinée
+        // Si plusieurs triggers se connectent à cette condition, le premier est le trigger principal,
+        // les autres sont des conditions supplémentaires
         if (connectedTriggers.length > 1) {
-          // Créer une structure de condition qui combine les triggers
-          combinedCondition = {
-            logic: conditionData.condition, // 'AND' ou 'OR'
-            triggers: connectedTriggers.map((trigger) => {
-              const triggerData = trigger.data as TriggerNodeData;
-              return {
-                type: triggerData.triggerType,
-                deviceId: triggerData.deviceId,
-                deviceName: triggerData.deviceName,
-                condition: triggerData.operator && triggerData.value !== undefined
-                  ? {
-                      operator: triggerData.operator,
-                      value: triggerData.value,
-                    }
-                  : undefined,
-              };
-            }),
-          };
-
           // Le trigger principal sera le premier
           mainTriggerNode = connectedTriggers[0];
           mainTriggerData = mainTriggerNode.data as TriggerNodeData;
+          
+          // Les autres triggers deviennent des conditions supplémentaires
+          const otherTriggers = connectedTriggers.slice(1);
+          additionalConditions = otherTriggers.map((trigger) => {
+            const triggerData = trigger.data as TriggerNodeData;
+            return {
+              type: triggerData.triggerType,
+              deviceId: triggerData.deviceId,
+              deviceName: triggerData.deviceName,
+              condition: triggerData.operator && triggerData.value !== undefined
+                ? {
+                    operator: triggerData.operator,
+                    value: triggerData.value,
+                  }
+                : undefined,
+            };
+          });
+          
+          logicOperator = conditionData.condition === 'AND' ? 'AND' : 'OR';
           break; // Prendre la première condition avec plusieurs triggers
         } else if (connectedTriggers.length === 1) {
           // Un seul trigger avec une condition, utiliser le trigger principal
           mainTriggerNode = connectedTriggers[0];
           mainTriggerData = mainTriggerNode.data as TriggerNodeData;
-          
-          // Stocker la condition dans le trigger
-          combinedCondition = {
-            logic: conditionData.condition,
-          };
         }
       }
     }
@@ -1071,14 +1162,9 @@ export default function NodeEditorDialog({
     });
 
     try {
-      // Construire la condition du trigger
+      // Construire la condition du trigger principal
       let triggerCondition: any = undefined;
-      
-      if (combinedCondition) {
-        // Si on a une condition combinée (plusieurs triggers avec AND/OR)
-        triggerCondition = combinedCondition;
-      } else if (mainTriggerData.operator && mainTriggerData.value !== undefined) {
-        // Condition simple sur le trigger principal
+      if (mainTriggerData.operator && mainTriggerData.value !== undefined) {
         triggerCondition = {
           operator: mainTriggerData.operator,
           value: mainTriggerData.value,
@@ -1093,6 +1179,12 @@ export default function NodeEditorDialog({
           deviceId: mainTriggerData.deviceId,
           deviceName: mainTriggerData.deviceName,
           condition: triggerCondition,
+          ...(additionalConditions && additionalConditions.length > 0 && { additionalConditions }),
+          ...(logicOperator && { logicOperator }),
+          ...(mainTriggerData.triggerType === AutomationTriggerType.SUNRISE_SUNSET && {
+            sunriseSunsetType: mainTriggerData.sunriseSunsetType || 'sunrise',
+            offsetMinutes: mainTriggerData.offsetMinutes || 0,
+          }),
         },
         actions,
       };
@@ -1386,6 +1478,9 @@ export default function NodeEditorDialog({
                                     // Réinitialiser l'appareil si le type change
                                     deviceId: undefined,
                                     deviceName: undefined,
+                                    // Réinitialiser les paramètres sunrise/sunset si le type change
+                                    sunriseSunsetType: triggerType === AutomationTriggerType.SUNRISE_SUNSET ? 'sunrise' : undefined,
+                                    offsetMinutes: triggerType === AutomationTriggerType.SUNRISE_SUNSET ? 0 : undefined,
                                   },
                                 }
                               : node,
@@ -1493,6 +1588,74 @@ export default function NodeEditorDialog({
                       )}
                     </FormControl>
                   )}
+                {/* Options pour le déclencheur Lever/Coucher du soleil */}
+                {(selectedNode?.data as TriggerNodeData)?.triggerType === AutomationTriggerType.SUNRISE_SUNSET && (
+                  <Box sx={{ mt: 2 }}>
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                      <InputLabel>{t('automations.sunriseSunsetType')}</InputLabel>
+                      <Select
+                        value={(selectedNode?.data as TriggerNodeData)?.sunriseSunsetType || 'sunrise'}
+                        label={t('automations.sunriseSunsetType')}
+                        onChange={(e) => {
+                          setNodes((nds) =>
+                            nds.map((node) =>
+                              node.id === selectedNodeId
+                                ? {
+                                    ...node,
+                                    data: {
+                                      ...node.data,
+                                      sunriseSunsetType: e.target.value as 'sunrise' | 'sunset',
+                                    },
+                                  }
+                                : node,
+                            ),
+                          );
+                        }}
+                      >
+                        <MenuItem value="sunrise">{t('automations.sunrise')}</MenuItem>
+                        <MenuItem value="sunset">{t('automations.sunset')}</MenuItem>
+                      </Select>
+                    </FormControl>
+                    <Box>
+                      <Typography gutterBottom>
+                        {t('automations.offsetMinutes')}: {((selectedNode?.data as TriggerNodeData)?.offsetMinutes || 0) > 0 ? '+' : ''}{(selectedNode?.data as TriggerNodeData)?.offsetMinutes || 0} {t('automations.minutes')}
+                      </Typography>
+                      <Slider
+                        value={(selectedNode?.data as TriggerNodeData)?.offsetMinutes || 0}
+                        onChange={(_, value) => {
+                          setNodes((nds) =>
+                            nds.map((node) =>
+                              node.id === selectedNodeId
+                                ? {
+                                    ...node,
+                                    data: {
+                                      ...node.data,
+                                      offsetMinutes: value as number,
+                                    },
+                                  }
+                                : node,
+                            ),
+                          );
+                        }}
+                        min={-120}
+                        max={120}
+                        step={5}
+                        marks={[
+                          { value: -120, label: '-120' },
+                          { value: -60, label: '-60' },
+                          { value: 0, label: '0' },
+                          { value: 60, label: '+60' },
+                          { value: 120, label: '+120' },
+                        ]}
+                        valueLabelDisplay="auto"
+                        valueLabelFormat={(value) => `${value > 0 ? '+' : ''}${value}`}
+                      />
+                      <Typography variant="caption" color="text.secondary">
+                        {t('automations.offsetMinutesDescription')}
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
                 {/* Inputs pour les valeurs (température, luminosité, humidité) */}
                 {(selectedNode?.data as TriggerNodeData)?.triggerType === AutomationTriggerType.TEMPERATURE ||
                 (selectedNode?.data as TriggerNodeData)?.triggerType === AutomationTriggerType.ILLUMINANCE ||
@@ -1583,6 +1746,8 @@ export default function NodeEditorDialog({
                           [AutomationActionType.SET_COLOR]: t('automations.actionSetColor'),
                           [AutomationActionType.SET_COLOR_TEMP]: t('automations.actionSetColorTemp'),
                           [AutomationActionType.SET_THERMOSTAT]: t('automations.actionSetThermostat'),
+                          [AutomationActionType.OPEN_COVER]: t('automations.actionOpenCover'),
+                          [AutomationActionType.CLOSE_COVER]: t('automations.actionCloseCover'),
                           [AutomationActionType.NOTIFY]: t('automations.actionNotify'),
                         };
                         setNodes((nds) =>
@@ -1615,6 +1780,8 @@ export default function NodeEditorDialog({
                           [AutomationActionType.SET_COLOR]: t('automations.actionSetColor'),
                           [AutomationActionType.SET_COLOR_TEMP]: t('automations.actionSetColorTemp'),
                           [AutomationActionType.SET_THERMOSTAT]: t('automations.actionSetThermostat'),
+                          [AutomationActionType.OPEN_COVER]: t('automations.actionOpenCover'),
+                          [AutomationActionType.CLOSE_COVER]: t('automations.actionCloseCover'),
                           [AutomationActionType.NOTIFY]: t('automations.actionNotify'),
                         };
                         return (

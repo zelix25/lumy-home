@@ -26,6 +26,10 @@ import {
   AccordionDetails,
   Card,
   CardContent,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import LightbulbIcon from '@mui/icons-material/Lightbulb';
@@ -71,6 +75,10 @@ export default function CreateSimpleAutomationDialog({
     const actionType = automation.actions[0]?.type;
 
     // Déterminer la catégorie basée sur l'action (plus fiable)
+    if (actionType === AutomationActionType.OPEN_COVER ||
+        actionType === AutomationActionType.CLOSE_COVER) {
+      return 'shutters';
+    }
     if (actionType === AutomationActionType.SET_BRIGHTNESS || 
         actionType === AutomationActionType.SET_COLOR || 
         actionType === AutomationActionType.SET_COLOR_TEMP ||
@@ -120,6 +128,8 @@ export default function CreateSimpleAutomationDialog({
   const initialThermostatTemp = automation?.actions[0]?.params?.temperature || 20;
   const initialNotificationMessage = automation?.actions[0]?.params?.message || '';
   const initialTurnOnDuration = automation?.actions[0]?.params?.duration || 0;
+  const initialSunriseSunsetType = automation?.trigger.sunriseSunsetType || 'sunrise';
+  const initialOffsetMinutes = automation?.trigger.offsetMinutes || 0;
   
   // Déterminer l'étape active initiale
   const getInitialActiveStep = (auto?: Automation | null): number => {
@@ -160,6 +170,8 @@ export default function CreateSimpleAutomationDialog({
   const [thermostatTemp, setThermostatTemp] = useState(initialThermostatTemp);
   const [notificationMessage, setNotificationMessage] = useState(initialNotificationMessage);
   const [turnOnDuration, setTurnOnDuration] = useState<number>(initialTurnOnDuration);
+  const [sunriseSunsetType, setSunriseSunsetType] = useState<'sunrise' | 'sunset'>(initialSunriseSunsetType as 'sunrise' | 'sunset');
+  const [offsetMinutes, setOffsetMinutes] = useState<number>(initialOffsetMinutes);
 
   const handleReset = () => {
     setActiveStep(0);
@@ -176,6 +188,8 @@ export default function CreateSimpleAutomationDialog({
     setThermostatTemp(20);
     setNotificationMessage('');
     setTurnOnDuration(0);
+    setSunriseSunsetType('sunrise');
+    setOffsetMinutes(0);
     setError(null);
   };
 
@@ -211,6 +225,8 @@ export default function CreateSimpleAutomationDialog({
         AutomationTriggerType.ILLUMINANCE,
       ],
       suggestedActions: [
+        AutomationActionType.OPEN_COVER,
+        AutomationActionType.CLOSE_COVER,
         AutomationActionType.TURN_ON,
         AutomationActionType.TURN_OFF,
         AutomationActionType.TOGGLE,
@@ -339,6 +355,9 @@ export default function CreateSimpleAutomationDialog({
         return devices.filter((d) => d.type === 'light' || d.type === 'switch' || d.type === 'plug');
       case AutomationActionType.SET_THERMOSTAT:
         return devices.filter((d) => d.type === 'thermostat');
+      case AutomationActionType.OPEN_COVER:
+      case AutomationActionType.CLOSE_COVER:
+        return devices.filter((d) => d.type === 'cover');
       case AutomationActionType.NOTIFY:
         return []; // Pas besoin d'appareil pour les notifications
       default:
@@ -358,7 +377,13 @@ export default function CreateSimpleAutomationDialog({
       return;
     }
     // Si le déclencheur est SUNRISE_SUNSET, on saute l'étape de sélection d'appareil déclencheur
+    // mais on vérifie d'abord que les options sont configurées
     if (activeStep === 1 && triggerType === AutomationTriggerType.SUNRISE_SUNSET) {
+      // Vérifier que le type est sélectionné (il devrait l'être par défaut)
+      if (!sunriseSunsetType) {
+        setError(t('automations.selectSunriseSunsetType'));
+        return;
+      }
       setError(null);
       setActiveStep(3); // Passer directement à l'étape 3 (action)
       return;
@@ -426,6 +451,10 @@ export default function CreateSimpleAutomationDialog({
             type: triggerType as AutomationTriggerType,
             deviceId: triggerDeviceId,
             deviceName: triggerDevice?.friendlyName,
+            ...(triggerType === AutomationTriggerType.SUNRISE_SUNSET && {
+              sunriseSunsetType,
+              offsetMinutes,
+            }),
           },
           actions: actionDevices.length > 0
             ? actionDevices.map((device) => ({
@@ -482,6 +511,10 @@ export default function CreateSimpleAutomationDialog({
             type: triggerType as AutomationTriggerType,
             deviceId: triggerDeviceId,
             deviceName: triggerDevice?.friendlyName,
+            ...(triggerType === AutomationTriggerType.SUNRISE_SUNSET && {
+              sunriseSunsetType,
+              offsetMinutes,
+            }),
           },
           actions: actionDevices.length > 0
             ? actionDevices.map((device) => ({
@@ -589,6 +622,10 @@ export default function CreateSimpleAutomationDialog({
         return t('automations.actionSetColorTemp');
       case AutomationActionType.SET_THERMOSTAT:
         return t('automations.actionSetThermostat');
+      case AutomationActionType.OPEN_COVER:
+        return t('automations.actionOpenCover');
+      case AutomationActionType.CLOSE_COVER:
+        return t('automations.actionCloseCover');
       case AutomationActionType.NOTIFY:
         return t('automations.actionNotify');
       default:
@@ -738,6 +775,58 @@ export default function CreateSimpleAutomationDialog({
                   </Stack>
                 );
               })()}
+              
+              {/* Options pour le déclencheur Lever/Coucher du soleil */}
+              {triggerType === AutomationTriggerType.SUNRISE_SUNSET && (
+                <>
+                  <Alert severity="info" sx={{ mt: 2, mb: 2 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
+                      {t('automations.sunriseSunsetInfoTitle')}
+                    </Typography>
+                    <Typography variant="body2">
+                      {t('automations.sunriseSunsetInfo')}
+                    </Typography>
+                  </Alert>
+                  <Stack spacing={2} sx={{ mb: 2 }}>
+                    <FormControl fullWidth>
+                      <InputLabel>{t('automations.sunriseSunsetType')}</InputLabel>
+                      <Select
+                        value={sunriseSunsetType}
+                        label={t('automations.sunriseSunsetType')}
+                        onChange={(e) => setSunriseSunsetType(e.target.value as 'sunrise' | 'sunset')}
+                      >
+                        <MenuItem value="sunrise">{t('automations.sunrise')}</MenuItem>
+                        <MenuItem value="sunset">{t('automations.sunset')}</MenuItem>
+                      </Select>
+                    </FormControl>
+                    <Box>
+                      <Typography gutterBottom>
+                        {t('automations.offsetMinutes')}: {offsetMinutes > 0 ? '+' : ''}{offsetMinutes} {t('automations.minutes')}
+                      </Typography>
+                      <Slider
+                        value={offsetMinutes}
+                        onChange={(_, value) => setOffsetMinutes(value as number)}
+                        min={-120}
+                        max={120}
+                        step={5}
+                        marks={[
+                          { value: -120, label: '-120' },
+                          { value: -60, label: '-60' },
+                          { value: 0, label: '0' },
+                          { value: 60, label: '+60' },
+                          { value: 120, label: '+120' },
+                        ]}
+                        valueLabelDisplay="auto"
+                        valueLabelFormat={(value) => `${value > 0 ? '+' : ''}${value}`}
+                      />
+                      <Typography variant="caption" color="text.secondary">
+                        {t('automations.offsetMinutesDescription')}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </>
+              )}
+              
               <Box sx={{ mt: 2 }}>
                 {activeStep > 0 && (
                   <Button onClick={handleBack} size="small" sx={{ mr: 1 }}>
@@ -827,16 +916,6 @@ export default function CreateSimpleAutomationDialog({
                 {t('automations.stepAction')}
               </StepLabel>
               <StepContent>
-              {triggerType === AutomationTriggerType.SUNRISE_SUNSET && (
-                <Alert severity="info" sx={{ mb: 2 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
-                    {t('automations.sunriseSunsetInfoTitle')}
-                  </Typography>
-                  <Typography variant="body2">
-                    {t('automations.sunriseSunsetInfo')}
-                  </Typography>
-                </Alert>
-              )}
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 {t('automations.stepActionDescription')}
               </Typography>

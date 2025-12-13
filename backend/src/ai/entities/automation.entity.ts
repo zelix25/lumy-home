@@ -30,6 +30,8 @@ export enum AutomationActionType {
   SET_COLOR = 'set_color',
   SET_COLOR_TEMP = 'set_color_temp',
   SET_THERMOSTAT = 'set_thermostat',
+  OPEN_COVER = 'open_cover',
+  CLOSE_COVER = 'close_cover',
   NOTIFY = 'notify',
 }
 
@@ -59,6 +61,15 @@ export class Automation {
     deviceId?: string; // IEEE address du device déclencheur
     deviceName?: string; // Nom friendly du device
     condition?: Record<string, any>; // Conditions supplémentaires (ex: température > 20)
+    additionalConditions?: Array<{
+      type: AutomationTriggerType;
+      deviceId?: string;
+      deviceName?: string;
+      condition?: Record<string, any>;
+    }>; // Conditions supplémentaires avec opérateur logique
+    logicOperator?: 'AND' | 'OR'; // Opérateur logique pour combiner les conditions (par défaut AND)
+    sunriseSunsetType?: 'sunrise' | 'sunset'; // Pour SUNRISE_SUNSET : lever ou coucher
+    offsetMinutes?: number; // Décalage en minutes par rapport au lever/coucher (peut être négatif)
   };
 
   @Column({ type: 'json' })

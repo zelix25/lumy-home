@@ -24,6 +24,8 @@ export enum AutomationActionType {
   SET_COLOR = 'set_color',
   SET_COLOR_TEMP = 'set_color_temp',
   SET_THERMOSTAT = 'set_thermostat',
+  OPEN_COVER = 'open_cover',
+  CLOSE_COVER = 'close_cover',
   NOTIFY = 'notify',
 }
 
@@ -38,6 +40,15 @@ export interface AutomationTrigger {
   deviceId?: string;
   deviceName?: string;
   condition?: Record<string, any>;
+  additionalConditions?: Array<{
+    type: AutomationTriggerType;
+    deviceId?: string;
+    deviceName?: string;
+    condition?: Record<string, any>;
+  }>;
+  logicOperator?: 'AND' | 'OR';
+  sunriseSunsetType?: 'sunrise' | 'sunset';
+  offsetMinutes?: number;
 }
 
 export interface AutomationAction {
