@@ -148,7 +148,7 @@ export class PluginPaymentService implements OnModuleInit {
       throw new BadRequestException(`Provider de paiement ${paymentProvider} non disponible`);
     }
 
-    let paymentResult;
+    let paymentResult: { clientSecret: string; paymentId?: string; subscriptionId?: string };
     if (licenseType === LicenseType.SUBSCRIPTION) {
       // Créer un abonnement récurrent
       paymentResult = await provider.createSubscription(
@@ -161,7 +161,9 @@ export class PluginPaymentService implements OnModuleInit {
           userId,
         },
       );
-      savedLicense.subscriptionId = paymentResult.subscriptionId;
+      if (paymentResult.subscriptionId) {
+        savedLicense.subscriptionId = paymentResult.subscriptionId;
+      }
     } else {
       // Paiement unique
       paymentResult = await provider.createPaymentIntent(
@@ -173,14 +175,16 @@ export class PluginPaymentService implements OnModuleInit {
           userId,
         },
       );
-      savedLicense.paymentId = paymentResult.paymentId;
+      if (paymentResult.paymentId) {
+        savedLicense.paymentId = paymentResult.paymentId;
+      }
     }
 
     await this.licenseRepository.save(savedLicense);
 
     return {
       clientSecret: paymentResult.clientSecret,
-      paymentId: paymentResult.paymentId || paymentResult.subscriptionId,
+      paymentId: paymentResult.paymentId || paymentResult.subscriptionId || '',
       licenseId: savedLicense.id,
     };
   }

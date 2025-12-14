@@ -17,15 +17,23 @@ export function usePluginRoutes(): PluginRoute[] {
     const loadPluginRoutes = async () => {
       try {
         const pages = await pluginsService.getAvailablePages();
-        const pluginRoutes: PluginRoute[] = pages.map((page) => ({
-          path: page.route || `/plugins/${page.name}`,
-          element: React.createElement(PluginPageLoader, {
-            route: page.route || `/plugins/${page.name}`,
-          }),
-        }));
-        setRoutes(pluginRoutes);
+        // Vérifier que pages n'est pas null ou undefined
+        if (pages && Array.isArray(pages)) {
+          const pluginRoutes: PluginRoute[] = pages.map((page) => ({
+            path: page.route || `/plugins/${page.name}`,
+            element: React.createElement(PluginPageLoader, {
+              route: page.route || `/plugins/${page.name}`,
+            }),
+          }));
+          setRoutes(pluginRoutes);
+        } else {
+          // Si pages est null ou undefined, initialiser avec un tableau vide
+          setRoutes([]);
+        }
       } catch (error) {
         console.error('Erreur lors du chargement des routes de plugins:', error);
+        // En cas d'erreur, initialiser avec un tableau vide pour éviter les erreurs
+        setRoutes([]);
       }
     };
 

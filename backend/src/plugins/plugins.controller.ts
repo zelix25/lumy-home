@@ -31,6 +31,8 @@ import { PluginStorageService } from './storage/plugin-storage.service';
 import { PluginErrorService } from './errors/plugin-error.service';
 import { PluginTestService } from './tests/plugin-test.service';
 import { PluginAnalyticsService, AnalyticsStats, TimeSeriesData } from './analytics/plugin-analytics.service';
+import { PluginPaymentService } from './payment/plugin-payment.service';
+import { LicenseType, PaymentProvider } from './payment/plugin-license.entity';
 import { ExtensionType } from './automation/plugin-automation-extension.entity';
 import { UIExtensionType, UIComponentType } from './ui/plugin-ui-extension.entity';
 import { NotificationLevel, NotificationStatus } from './notifications/plugin-notification.entity';

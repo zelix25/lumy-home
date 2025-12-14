@@ -33,6 +33,9 @@ async function bootstrap() {
     }),
   );
 
+  // Préfixe global pour toutes les routes API
+  app.setGlobalPrefix('api');
+
   // CORS pour le frontend
   app.enableCors({
     origin: process.env.FRONTEND_URL || 'http://localhost:5173',
