@@ -32,5 +32,8 @@ export const configValidationSchema = Joi.object({
   STORE_BASE_URL: Joi.string()
     .uri()
     .default('https://store.lumy-home.com'),
+
+  // Plugins
+  PLUGINS_DIRECTORY: Joi.string().default('plugins'),
 });
 

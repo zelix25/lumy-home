@@ -3,11 +3,18 @@ import {
   NotFoundException,
   BadRequestException,
   Logger,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Plugin, PluginStatus } from './entities/plugin.entity';
 import { LoggerService } from '../logger/logger.service';
+import { PluginInstallService } from './plugin-install.service';
+import { PluginRuntimeService } from './plugin-runtime.service';
+import { PluginUninstallService } from './plugin-uninstall.service';
+import { PluginConfigService } from './plugin-config.service';
+import { PluginPermissionsService } from './plugin-permissions.service';
 
 @Injectable()
 export class PluginsService {
@@ -17,6 +24,16 @@ export class PluginsService {
     @InjectRepository(Plugin)
     private pluginRepository: Repository<Plugin>,
     private loggerService: LoggerService,
+    @Inject(forwardRef(() => PluginInstallService))
+    private pluginInstallService: PluginInstallService,
+    @Inject(forwardRef(() => PluginRuntimeService))
+    private pluginRuntimeService: PluginRuntimeService,
+    @Inject(forwardRef(() => PluginUninstallService))
+    private pluginUninstallService: PluginUninstallService,
+    @Inject(forwardRef(() => PluginConfigService))
+    private pluginConfigService: PluginConfigService,
+    @Inject(forwardRef(() => PluginPermissionsService))
+    private pluginPermissionsService: PluginPermissionsService,
   ) {
     this.logger = new Logger(PluginsService.name);
   }
@@ -114,14 +131,34 @@ export class PluginsService {
       );
     }
 
-    plugin.status = PluginStatus.ENABLED;
-    plugin.error = '';
+    try {
+      // Charger le plugin en mémoire
+      await this.pluginRuntimeService.loadPlugin(plugin);
 
-    const updatedPlugin = await this.pluginRepository.save(plugin);
+      // Mettre à jour le statut
+      plugin.status = PluginStatus.ENABLED;
+      plugin.error = '';
 
-    this.logger.log(`Plugin activé: ${updatedPlugin.name}`, 'PluginsService');
+      const updatedPlugin = await this.pluginRepository.save(plugin);
 
-    return updatedPlugin;
+      this.logger.log(`Plugin activé: ${updatedPlugin.name}`, 'PluginsService');
+
+      return updatedPlugin;
+    } catch (error: any) {
+      // En cas d'erreur, marquer le plugin comme étant en erreur
+      plugin.status = PluginStatus.ERROR;
+      plugin.error = error.message;
+      await this.pluginRepository.save(plugin);
+
+      this.logger.error(
+        `Erreur lors de l'activation du plugin ${plugin.name}: ${error.message}`,
+        'PluginsService',
+      );
+
+      throw new BadRequestException(
+        `Erreur lors de l'activation du plugin: ${error.message}`,
+      );
+    }
   }
 
   /**
@@ -134,13 +171,32 @@ export class PluginsService {
       throw new BadRequestException('Le plugin est déjà désactivé');
     }
 
-    plugin.status = PluginStatus.DISABLED;
+    try {
+      // Décharger le plugin de la mémoire
+      await this.pluginRuntimeService.unloadPlugin(id);
 
-    const updatedPlugin = await this.pluginRepository.save(plugin);
+      // Mettre à jour le statut
+      plugin.status = PluginStatus.DISABLED;
 
-    this.logger.log(`Plugin désactivé: ${updatedPlugin.name}`, 'PluginsService');
+      const updatedPlugin = await this.pluginRepository.save(plugin);
 
-    return updatedPlugin;
+      this.logger.log(`Plugin désactivé: ${updatedPlugin.name}`, 'PluginsService');
+
+      return updatedPlugin;
+    } catch (error: any) {
+      this.logger.error(
+        `Erreur lors de la désactivation du plugin ${plugin.name}: ${error.message}`,
+        'PluginsService',
+      );
+
+      // Mettre à jour le statut quand même
+      plugin.status = PluginStatus.DISABLED;
+      const updatedPlugin = await this.pluginRepository.save(plugin);
+
+      throw new BadRequestException(
+        `Erreur lors de la désactivation du plugin: ${error.message}`,
+      );
+    }
   }
 
   /**
@@ -148,39 +204,17 @@ export class PluginsService {
    */
   async uninstall(id: string): Promise<void> {
     const plugin = await this.findOne(id);
-
-    // Vérifier que le plugin n'est pas activé
-    if (plugin.status === PluginStatus.ENABLED) {
-      throw new BadRequestException(
-        'Le plugin doit être désactivé avant d\'être désinstallé',
-      );
-    }
-
-    // Supprimer le plugin de la base de données
-    await this.pluginRepository.remove(plugin);
-
-    this.logger.log(`Plugin désinstallé: ${plugin.name}`, 'PluginsService');
+    await this.pluginUninstallService.uninstall(plugin);
   }
 
   /**
-   * Met à jour la configuration d'un plugin
+   * Met à jour la configuration d'un plugin avec validation
    */
   async updateConfig(
     id: string,
     config: Record<string, any>,
   ): Promise<Plugin> {
-    const plugin = await this.findOne(id);
-
-    plugin.config = { ...plugin.config, ...config };
-
-    const updatedPlugin = await this.pluginRepository.save(plugin);
-
-    this.logger.log(
-      `Configuration mise à jour pour: ${updatedPlugin.name}`,
-      'PluginsService',
-    );
-
-    return updatedPlugin;
+    return this.pluginConfigService.updateConfig(id, config);
   }
 
   /**
@@ -200,6 +234,47 @@ export class PluginsService {
     );
 
     return updatedPlugin;
+  }
+
+  /**
+   * Installe un plugin depuis le Lumy Store
+   */
+  async installFromStore(userId: string, pluginId: string): Promise<Plugin> {
+    const plugin = await this.pluginInstallService.installFromStore(
+      userId,
+      pluginId,
+    );
+
+    // Valider les permissions après l'installation
+    if (plugin.permissions && plugin.permissions.length > 0) {
+      this.pluginPermissionsService.validatePermissions(plugin.permissions);
+    }
+
+    return plugin;
+  }
+
+  /**
+   * Analyse les permissions d'un plugin
+   */
+  async analyzePermissions(id: string): Promise<{
+    declared: string[];
+    detected: string[];
+    missing: string[];
+    unnecessary: string[];
+  }> {
+    const plugin = await this.findOne(id);
+    return this.pluginPermissionsService.compareDeclaredAndDetectedPermissions(
+      plugin,
+    );
+  }
+
+  /**
+   * Vérifie si un plugin a une permission spécifique
+   */
+  hasPermission(pluginId: string, permission: string): boolean {
+    // Cette méthode sera utilisée lors de l'exécution pour vérifier les permissions
+    // Pour l'instant, on retourne false si le plugin n'est pas trouvé
+    return false; // Sera implémenté avec le runtime
   }
 }
 

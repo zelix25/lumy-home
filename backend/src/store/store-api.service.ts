@@ -64,6 +64,7 @@ export class StoreApiService {
     userId: string,
     endpoint: string,
     params?: Record<string, any>,
+    options?: { responseType?: 'json' | 'arraybuffer' | 'blob' },
   ): Promise<T> {
     const apiToken = await this.getValidApiToken(userId);
 
@@ -73,6 +74,7 @@ export class StoreApiService {
         headers: {
           Authorization: `Bearer ${apiToken}`,
         },
+        responseType: options?.responseType || 'json',
       });
 
       return response.data;

@@ -17,21 +17,21 @@ Liste des 30 points de développement pour le système de plugins complet de Lum
 
 1. [x] ✅ **Créer l'entité Plugin** - Modèle de données pour les plugins (id, name, version, status, config, permissions, metadata, etc.)
 2. [x] ✅ **Créer le service PluginsService** - Service principal pour la gestion du cycle de vie des plugins (install, enable, disable, uninstall)
-3. [ ] ✅ **Créer le contrôleur PluginsController** - Endpoints REST pour les opérations CRUD sur les plugins
-4. [ ] ✅ **Créer le module PluginsModule** - Module NestJS orchestrant tous les services de plugins avec TypeORM
+3. [x] ✅ **Créer le contrôleur PluginsController** - Endpoints REST pour les opérations CRUD sur les plugins
+4. [x] ✅ **Créer le module PluginsModule** - Module NestJS orchestrant tous les services de plugins avec TypeORM
 
 ## 2. Cycle de vie des plugins
 
-5. [ ] ✅ **Implémenter l'installation de plugins** - Téléchargement depuis le Lumy Store (via API avec apiToken), extraction ZIP, validation du manifest.json, installation des dépendances
-6. [ ] ✅ **Implémenter l'activation/désactivation** - Chargement/déchargement des plugins en mémoire, gestion de l'état
-7. [ ] ✅ **Implémenter la désinstallation** - Suppression propre des plugins, nettoyage des données et fichiers
-8. [ ] ✅ **Implémenter la validation du manifest** - Vérification de la structure JSON, champs requis, format des versions
+5. [x] ✅ **Implémenter l'installation de plugins** - Téléchargement depuis le Lumy Store (via API avec apiToken), extraction ZIP, validation du manifest.json, installation des dépendances
+6. [x] ✅ **Implémenter l'activation/désactivation** - Chargement/déchargement des plugins en mémoire, gestion de l'état
+7. [x] ✅ **Implémenter la désinstallation** - Suppression propre des plugins, nettoyage des données et fichiers
+8. [x] ✅ **Implémenter la validation du manifest** - Vérification de la structure JSON, champs requis, format des versions
 
 ## 3. Configuration et permissions
 
-9. [ ] ✅ **Créer le système de configuration** - Gestion des configurations par plugin avec validation JSON Schema (Ajv)
-10. [ ] ✅ **Créer le système de permissions** - Analyse statique du code, validation des permissions demandées
-11. [ ] ✅ **Implémenter la validation des permissions** - Vérification que les permissions demandées sont dans la liste autorisée
+9. [x] ✅ **Créer le système de configuration** - Gestion des configurations par plugin avec validation JSON Schema (Ajv)
+10. [x] ✅ **Créer le système de permissions** - Analyse statique du code, validation des permissions demandées
+11. [x] ✅ **Implémenter la validation des permissions** - Vérification que les permissions demandées sont dans la liste autorisée
 
 ## 4. Extensions UI
 
