@@ -20,6 +20,12 @@ export class User {
   @Column({ default: true })
   isLocalMode: boolean; // Mode local sans compte
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  storeApiToken: string; // Token API pour communiquer avec le Lumy Store
+
+  @Column({ type: 'datetime', nullable: true })
+  storeApiTokenGeneratedAt: Date; // Date de génération du token
+
   @CreateDateColumn()
   createdAt: Date;
 

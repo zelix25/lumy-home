@@ -1,0 +1,27 @@
+{
+  "name": "simple-hook-plugin",
+  "displayName": "Simple Hook Plugin",
+  "version": "1.0.0",
+  "description": "Un exemple simple de plugin avec un hook",
+  "author": "Lumy Team",
+  "icon": "https://example.com/icon.png",
+  "repository": "https://github.com/lumy/simple-hook-plugin",
+  "lumyVersion": "^1.0.0",
+  "category": "utility",
+  "tags": ["example", "hook"],
+  "dependencies": {},
+  "permissions": [
+    "read:devices",
+    "read:device_state",
+    "notifications:send"
+  ],
+  "hooks": {
+    "device:update": "hooks/device-update.js"
+  },
+  "metadata": {
+    "hookPriorities": {
+      "device:update": 100
+    }
+  }
+}
+

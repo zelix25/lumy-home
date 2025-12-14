@@ -10,6 +10,9 @@ async function bootstrap() {
     bufferLogs: true,
   });
 
+  // Préfixe global pour toutes les routes API
+  app.setGlobalPrefix('api');
+
   // Utiliser le logger personnalisé
   const logger = app.get(LoggerService);
   app.useLogger(logger);

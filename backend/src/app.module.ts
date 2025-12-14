@@ -17,6 +17,7 @@ import { SettingsModule } from './settings/settings.module';
 import { AutomationsModule } from './automations/automations.module';
 import { RoomsModule } from './rooms/rooms.module';
 import { WeatherModule } from './weather/weather.module';
+import { StoreModule } from './store/store.module';
 import { configValidationSchema } from './config/config.validation';
 
 @Module({
@@ -68,6 +69,7 @@ import { configValidationSchema } from './config/config.validation';
     AutomationsModule,
     RoomsModule,
     WeatherModule,
+    StoreModule,
   ],
   controllers: [AppController],
   providers: [AppService],

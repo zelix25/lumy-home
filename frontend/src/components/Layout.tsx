@@ -29,6 +29,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ComputerIcon from '@mui/icons-material/Computer';
 import LogoutIcon from '@mui/icons-material/Logout';
+import StoreIcon from '@mui/icons-material/Store';
 import LanguageSelector from './LanguageSelector';
 import SystemModal from './SystemModal';
 import { useTranslation } from 'react-i18next';
@@ -99,6 +100,11 @@ export default function Layout({ children }: LayoutProps) {
 
   const handleSettings = () => {
     navigate('/settings');
+    handleMenuClose();
+  };
+
+  const handleStore = () => {
+    navigate('/store');
     handleMenuClose();
   };
 
@@ -236,6 +242,12 @@ export default function Layout({ children }: LayoutProps) {
                     <SettingsIcon fontSize="small" />
                   </ListItemIcon>
                   <ListItemText>{t('menu.settings')}</ListItemText>
+                </MenuItem>
+                <MenuItem onClick={handleStore}>
+                  <ListItemIcon>
+                    <StoreIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>{t('menu.store')}</ListItemText>
                 </MenuItem>
                 <MenuItem onClick={handleSystem}>
                   <ListItemIcon>

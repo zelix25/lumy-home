@@ -15,6 +15,7 @@ import LoginPage from './pages/LoginPage';
 import SetupPage from './pages/SetupPage';
 import AccountPage from './pages/AccountPage';
 import SettingsPage from './pages/SettingsPage';
+import StoreConnectPage from './pages/StoreConnectPage';
 import NotificationSnackbar from './components/NotificationSnackbar';
 
 function App() {
@@ -43,6 +44,7 @@ function App() {
                     <Route path="/debug" element={<DebugPage />} />
                     <Route path="/account" element={<AccountPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/store" element={<StoreConnectPage />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </Box>

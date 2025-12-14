@@ -27,5 +27,10 @@ export const configValidationSchema = Joi.object({
   JWT_SECRET: Joi.string().default('lumy-secret-key-change-in-production'),
   JWT_EXPIRES_IN: Joi.string().default('7d'),
   ENABLE_LOCAL_MODE: Joi.boolean().default(true), // Mode local sans compte
+
+  // Store
+  STORE_BASE_URL: Joi.string()
+    .uri()
+    .default('https://store.lumy-home.com'),
 });
 

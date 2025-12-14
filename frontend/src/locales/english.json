@@ -350,6 +350,7 @@
   "menu": {
     "myAccount": "My account",
     "settings": "Settings",
+    "store": "Lumy Store",
     "system": "System",
     "logout": "Logout"
   },
@@ -572,6 +573,30 @@
     "sunrise": "Sunrise",
     "sunset": "Sunset",
     "kmh": "km/h"
+  },
+  "store": {
+    "title": "Connect to Lumy Store",
+    "description": "Connect your Lumy Store account to access plugins and premium features.",
+    "connect": {
+      "button": "Connect to store",
+      "email": "Store email",
+      "password": "Store password",
+      "info": "Use your Lumy Store credentials to connect. If you don't have an account yet, create one on the store website.",
+      "noAccount": "Don't have an account yet?",
+      "createAccount": "Create account",
+      "success": "Successfully connected to store!",
+      "error": "Error connecting to store"
+    },
+    "disconnect": {
+      "button": "Disconnect from store",
+      "success": "Successfully disconnected from store",
+      "error": "Error disconnecting from store"
+    },
+    "connected": {
+      "message": "Connected to store with account: {{email}}",
+      "unknown": "unknown account",
+      "description": "You are connected to the Lumy Store. You can now install and use plugins from the store."
+    }
   }
 }
 
