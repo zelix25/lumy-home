@@ -63,8 +63,8 @@ Liste des 30 points de développement pour le système de plugins complet de Lum
 
 ## 9. Tests et validation
 
-25. [ ] ✅ **Créer le framework de tests** - Tests unitaires, d'intégration, fonctionnels, de sécurité et de performance (PluginTest, PluginTestRun)
-26. [ ] ✅ **Implémenter la validation avant publication** - Vérification que tous les tests passent avant publication (canPublish)
+25. [x] ✅ **Créer le framework de tests** - Tests unitaires, d'intégration, fonctionnels, de sécurité et de performance (PluginTest, PluginTestRun)
+26. [x] ✅ **Implémenter la validation avant publication** - Vérification que tous les tests passent avant publication (canPublish)
 
 ## 10. Analytics et monitoring
 

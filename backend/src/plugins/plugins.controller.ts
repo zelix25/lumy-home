@@ -20,7 +20,10 @@ import { PluginStorageService } from './plugin-storage.service';
 import { PluginErrorService } from './plugin-error.service';
 import { PluginCircuitBreakerService } from './plugin-circuit-breaker.service';
 import { PluginIsolationService } from './plugin-isolation.service';
+import { PluginTestService } from './plugin-test.service';
 import { ErrorSeverity, ErrorStatus } from './entities/plugin-error.entity';
+import { TestType } from './entities/plugin-test.entity';
+import { CreateTestDto } from './dto/create-test.dto';
 import { InstallPluginDto } from './dto/install-plugin.dto';
 import { InstallFromStoreDto } from './dto/install-from-store.dto';
 import { UpdateConfigDto } from './dto/update-config.dto';
@@ -42,6 +45,7 @@ export class PluginsController {
     private readonly errorService: PluginErrorService,
     private readonly circuitBreakerService: PluginCircuitBreakerService,
     private readonly isolationService: PluginIsolationService,
+    private readonly testService: PluginTestService,
   ) {}
 
   /**
@@ -452,6 +456,80 @@ export class PluginsController {
     return this.errorService.getUnresolvedErrors(
       limit ? parseInt(limit.toString(), 10) : 100,
     );
+  }
+
+  /**
+   * Crée un test pour un plugin
+   */
+  @Post(':id/tests')
+  @HttpCode(HttpStatus.CREATED)
+  async createTest(
+    @Param('id') pluginId: string,
+    @Body() createTestDto: CreateTestDto,
+  ) {
+    return this.testService.createTest(pluginId, createTestDto);
+  }
+
+  /**
+   * Récupère tous les tests d'un plugin
+   */
+  @Get(':id/tests')
+  async getPluginTests(
+    @Param('id') pluginId: string,
+    @Query('type') type?: TestType,
+  ) {
+    return this.testService.getPluginTests(pluginId, type);
+  }
+
+  /**
+   * Récupère un test par ID
+   */
+  @Get('tests/:testId')
+  async getTest(@Param('testId') testId: string) {
+    return this.testService.getTest(testId);
+  }
+
+  /**
+   * Exécute un test
+   */
+  @Post('tests/:testId/run')
+  @HttpCode(HttpStatus.OK)
+  async runTest(@Param('testId') testId: string) {
+    return this.testService.runTest(testId);
+  }
+
+  /**
+   * Exécute tous les tests d'un plugin
+   */
+  @Post(':id/tests/run-all')
+  @HttpCode(HttpStatus.OK)
+  async runAllTests(@Param('id') pluginId: string) {
+    return this.testService.runAllTests(pluginId);
+  }
+
+  /**
+   * Vérifie si un plugin peut être publié (tous les tests requis passent)
+   */
+  @Get(':id/tests/can-publish')
+  async canPublish(@Param('id') pluginId: string) {
+    return this.testService.canPublish(pluginId);
+  }
+
+  /**
+   * Récupère les statistiques de tests d'un plugin
+   */
+  @Get(':id/tests/stats')
+  async getTestStats(@Param('id') pluginId: string) {
+    return this.testService.getTestStats(pluginId);
+  }
+
+  /**
+   * Supprime un test
+   */
+  @Delete('tests/:testId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteTest(@Param('testId') testId: string) {
+    await this.testService.deleteTest(testId);
   }
 }
 

@@ -17,12 +17,15 @@ import { PluginStorageService } from './plugin-storage.service';
 import { PluginErrorService } from './plugin-error.service';
 import { PluginCircuitBreakerService } from './plugin-circuit-breaker.service';
 import { PluginIsolationService } from './plugin-isolation.service';
+import { PluginTestService } from './plugin-test.service';
 import { Plugin } from './entities/plugin.entity';
 import { PluginUIExtension } from './entities/plugin-ui-extension.entity';
 import { PluginAutomationExtension } from './entities/plugin-automation-extension.entity';
 import { PluginNotification } from './entities/plugin-notification.entity';
 import { PluginStorage } from './entities/plugin-storage.entity';
 import { PluginError } from './entities/plugin-error.entity';
+import { PluginTest } from './entities/plugin-test.entity';
+import { PluginTestRun } from './entities/plugin-test-run.entity';
 import { LoggerModule } from '../logger/logger.module';
 import { StoreModule } from '../store/store.module';
 import { WebsocketModule } from '../websocket/websocket.module';
@@ -36,6 +39,8 @@ import { WebsocketModule } from '../websocket/websocket.module';
       PluginNotification,
       PluginStorage,
       PluginError,
+      PluginTest,
+      PluginTestRun,
     ]),
     LoggerModule,
     WebsocketModule,
@@ -58,6 +63,7 @@ import { WebsocketModule } from '../websocket/websocket.module';
     PluginErrorService,
     PluginCircuitBreakerService,
     PluginIsolationService,
+    PluginTestService,
   ],
   exports: [
     PluginsService,
@@ -75,6 +81,7 @@ import { WebsocketModule } from '../websocket/websocket.module';
     PluginErrorService,
     PluginCircuitBreakerService,
     PluginIsolationService,
+    PluginTestService,
   ],
 })
 export class PluginsModule {}
