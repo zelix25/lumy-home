@@ -21,8 +21,11 @@ import { PluginErrorService } from './plugin-error.service';
 import { PluginCircuitBreakerService } from './plugin-circuit-breaker.service';
 import { PluginIsolationService } from './plugin-isolation.service';
 import { PluginTestService } from './plugin-test.service';
+import { PluginAnalyticsService } from './plugin-analytics.service';
+import { PluginMonitoringService } from './plugin-monitoring.service';
 import { ErrorSeverity, ErrorStatus } from './entities/plugin-error.entity';
 import { TestType } from './entities/plugin-test.entity';
+import { AnalyticsEventType } from './entities/plugin-analytics.entity';
 import { CreateTestDto } from './dto/create-test.dto';
 import { InstallPluginDto } from './dto/install-plugin.dto';
 import { InstallFromStoreDto } from './dto/install-from-store.dto';
@@ -46,6 +49,8 @@ export class PluginsController {
     private readonly circuitBreakerService: PluginCircuitBreakerService,
     private readonly isolationService: PluginIsolationService,
     private readonly testService: PluginTestService,
+    private readonly analyticsService: PluginAnalyticsService,
+    private readonly monitoringService: PluginMonitoringService,
   ) {}
 
   /**
@@ -530,6 +535,99 @@ export class PluginsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteTest(@Param('testId') testId: string) {
     await this.testService.deleteTest(testId);
+  }
+
+  /**
+   * Enregistre un événement d'analytics pour un plugin
+   */
+  @Post(':id/analytics/track')
+  @HttpCode(HttpStatus.CREATED)
+  async trackEvent(
+    @Param('id') pluginId: string,
+    @Body() eventDto: { eventType: AnalyticsEventType; userId?: string; metadata?: Record<string, any>; context?: string },
+  ) {
+    return this.analyticsService.trackEvent(pluginId, eventDto);
+  }
+
+  /**
+   * Récupère les statistiques d'analytics d'un plugin
+   */
+  @Get(':id/analytics/stats')
+  async getPluginAnalyticsStats(
+    @Param('id') pluginId: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const start = startDate ? new Date(startDate) : undefined;
+    const end = endDate ? new Date(endDate) : undefined;
+    return this.analyticsService.getPluginStats(pluginId, start, end);
+  }
+
+  /**
+   * Récupère les événements d'analytics d'un plugin
+   */
+  @Get(':id/analytics/events')
+  async getPluginAnalyticsEvents(
+    @Param('id') pluginId: string,
+    @Query('limit') limit?: number,
+    @Query('eventType') eventType?: AnalyticsEventType,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const start = startDate ? new Date(startDate) : undefined;
+    const end = endDate ? new Date(endDate) : undefined;
+    return this.analyticsService.getPluginEvents(
+      pluginId,
+      limit ? parseInt(limit.toString(), 10) : 100,
+      eventType,
+      start,
+      end,
+    );
+  }
+
+  /**
+   * Récupère les statistiques globales d'analytics
+   */
+  @Get('analytics/global')
+  async getGlobalAnalytics(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const start = startDate ? new Date(startDate) : undefined;
+    const end = endDate ? new Date(endDate) : undefined;
+    return this.analyticsService.getGlobalStats(start, end);
+  }
+
+  /**
+   * Récupère les métriques de monitoring d'un plugin
+   */
+  @Get(':id/monitoring/metrics')
+  async getPluginMetrics(@Param('id') pluginId: string) {
+    return this.monitoringService.getPluginMetrics(pluginId);
+  }
+
+  /**
+   * Récupère les statistiques d'exécution d'un plugin
+   */
+  @Get(':id/monitoring/execution-stats')
+  async getExecutionStats(@Param('id') pluginId: string) {
+    return this.monitoringService.getExecutionStats(pluginId);
+  }
+
+  /**
+   * Récupère le rapport de santé d'un plugin
+   */
+  @Get(':id/monitoring/health')
+  async getHealthReport(@Param('id') pluginId: string) {
+    return this.monitoringService.getHealthReport(pluginId);
+  }
+
+  /**
+   * Récupère les métriques de tous les plugins
+   */
+  @Get('monitoring/all-metrics')
+  async getAllPluginsMetrics() {
+    return this.monitoringService.getAllPluginsMetrics();
   }
 }
 

@@ -68,8 +68,8 @@ Liste des 30 points de développement pour le système de plugins complet de Lum
 
 ## 10. Analytics et monitoring
 
-27. [ ] ✅ **Créer le système d'analytics** - Suivi des installations, utilisations, erreurs, popularité (PluginAnalytics)
-28. [ ] ✅ **Implémenter le système de monitoring** - Métriques de performance, logs, statistiques d'exécution (PluginMonitoringService)
+27. [x] ✅ **Créer le système d'analytics** - Suivi des installations, utilisations, erreurs, popularité (PluginAnalytics)
+28. [x] ✅ **Implémenter le système de monitoring** - Métriques de performance, logs, statistiques d'exécution (PluginMonitoringService)
 
 ## 11. Paiements et licences
 

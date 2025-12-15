@@ -4,6 +4,8 @@ import {
   NotFoundException,
   Logger,
   OnModuleInit,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -16,6 +18,8 @@ import {
 import { Plugin, PluginStatus } from './entities/plugin.entity';
 import { LoggerService } from '../logger/logger.service';
 import { WebsocketGateway } from '../websocket/websocket.gateway';
+import { PluginAnalyticsService } from './plugin-analytics.service';
+import { AnalyticsEventType } from './entities/plugin-analytics.entity';
 
 export interface CreateNotificationDto {
   title: string;
@@ -37,6 +41,8 @@ export class PluginNotificationService implements OnModuleInit {
     private pluginRepository: Repository<Plugin>,
     private loggerService: LoggerService,
     private websocketGateway: WebsocketGateway,
+    @Inject(forwardRef(() => PluginAnalyticsService))
+    private analyticsService: PluginAnalyticsService,
   ) {
     this.logger = new Logger(PluginNotificationService.name);
   }
@@ -110,6 +116,16 @@ export class PluginNotificationService implements OnModuleInit {
 
     // Envoyer la notification via WebSocket
     await this.deliverNotification(saved);
+
+    // Enregistrer l'événement analytics
+    try {
+      await this.analyticsService.trackEvent(pluginId, {
+        eventType: AnalyticsEventType.NOTIFICATION_SENT,
+        metadata: { notificationId: saved.id },
+      });
+    } catch (error: any) {
+      // Ignorer les erreurs d'analytics
+    }
 
     this.logger.log(
       `Notification envoyée par le plugin ${plugin.name}: ${saved.title}`,

@@ -212,9 +212,9 @@ export class PluginTestService {
       testRun.status = result.status;
       testRun.completedAt = new Date();
       testRun.duration = duration;
-      testRun.output = result.output;
-      testRun.error = result.error;
-      testRun.results = result.results;
+      testRun.output = result.output ?? null;
+      testRun.error = result.error ?? null;
+      testRun.results = result.results ?? null;
       testRun.assertionsPassed = result.assertionsPassed || 0;
       testRun.assertionsFailed = result.assertionsFailed || 0;
 

@@ -16,6 +16,7 @@ import { PluginNotificationService } from './plugin-notification.service';
 import { PluginStorageService } from './plugin-storage.service';
 import { PluginErrorService } from './plugin-error.service';
 import { PluginTestService } from './plugin-test.service';
+import { PluginAnalyticsService } from './plugin-analytics.service';
 import { LoggerService } from '../logger/logger.service';
 
 @Injectable()
@@ -34,6 +35,7 @@ export class PluginUninstallService {
     private pluginStorageService: PluginStorageService,
     private pluginErrorService: PluginErrorService,
     private pluginTestService: PluginTestService,
+    private pluginAnalyticsService: PluginAnalyticsService,
     private loggerService: LoggerService,
   ) {
     this.logger = new Logger(PluginUninstallService.name);
@@ -146,6 +148,9 @@ export class PluginUninstallService {
 
       // Supprimer les tests
       await this.pluginTestService.removePluginTests(plugin.id);
+
+      // Supprimer les analytics
+      await this.pluginAnalyticsService.removePluginAnalytics(plugin.id);
 
       // TODO: Nettoyer les données dans les autres services
       // - PluginStorageService : supprimer les données de stockage

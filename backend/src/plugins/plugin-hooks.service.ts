@@ -11,6 +11,9 @@ import { Plugin, PluginStatus } from './entities/plugin.entity';
 import { PluginRuntimeService } from './plugin-runtime.service';
 import { LoggerService } from '../logger/logger.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { PluginAnalyticsService } from './plugin-analytics.service';
+import { PluginMonitoringService } from './plugin-monitoring.service';
+import { AnalyticsEventType } from './entities/plugin-analytics.entity';
 
 export enum PluginHookType {
   ON_DEVICE_UPDATE = 'onDeviceUpdate',
@@ -148,6 +151,7 @@ export class PluginHooksService implements OnModuleInit {
     handler: Function,
     data: Record<string, any>,
   ): Promise<void> {
+    const startTime = Date.now();
     const loadedPlugin = this.pluginRuntimeService.getLoadedPlugin(pluginId);
 
     if (!loadedPlugin) {

@@ -4,6 +4,8 @@ import {
   NotFoundException,
   Logger,
   OnModuleInit,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -11,6 +13,8 @@ import { Repository, LessThan } from 'typeorm';
 import { PluginStorage } from './entities/plugin-storage.entity';
 import { Plugin, PluginStatus } from './entities/plugin.entity';
 import { LoggerService } from '../logger/logger.service';
+import { PluginAnalyticsService } from './plugin-analytics.service';
+import { AnalyticsEventType } from './entities/plugin-analytics.entity';
 
 @Injectable()
 export class PluginStorageService implements OnModuleInit {
@@ -22,6 +26,8 @@ export class PluginStorageService implements OnModuleInit {
     @InjectRepository(Plugin)
     private pluginRepository: Repository<Plugin>,
     private loggerService: LoggerService,
+    @Inject(forwardRef(() => PluginAnalyticsService))
+    private analyticsService: PluginAnalyticsService,
   ) {
     this.logger = new Logger(PluginStorageService.name);
   }
@@ -118,12 +124,23 @@ export class PluginStorageService implements OnModuleInit {
 
     const saved = await this.storageRepository.save(storage);
 
-    this.logger.debug(
-      `Clé "${key}" créée pour le plugin ${plugin.name}`,
-      'PluginStorageService',
-    );
+      // Enregistrer l'événement analytics
+      try {
+        await this.analyticsService.trackEvent(pluginId, {
+          eventType: AnalyticsEventType.STORAGE_ACCESS,
+          context: 'set',
+          metadata: { key, size: valueSize },
+        });
+      } catch (error: any) {
+        // Ignorer les erreurs d'analytics
+      }
 
-    return saved;
+      this.logger.debug(
+        `Clé "${key}" créée pour le plugin ${plugin.name}`,
+        'PluginStorageService',
+      );
+
+      return saved;
   }
 
   /**

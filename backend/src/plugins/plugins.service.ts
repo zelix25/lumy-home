@@ -22,6 +22,9 @@ import { PluginNotificationService } from './plugin-notification.service';
 import { PluginErrorService } from './plugin-error.service';
 import { PluginCircuitBreakerService } from './plugin-circuit-breaker.service';
 import { PluginIsolationService } from './plugin-isolation.service';
+import { PluginAnalyticsService } from './plugin-analytics.service';
+import { PluginMonitoringService } from './plugin-monitoring.service';
+import { AnalyticsEventType } from './entities/plugin-analytics.entity';
 
 @Injectable()
 export class PluginsService {
@@ -55,6 +58,10 @@ export class PluginsService {
     private circuitBreakerService: PluginCircuitBreakerService,
     @Inject(forwardRef(() => PluginIsolationService))
     private isolationService: PluginIsolationService,
+    @Inject(forwardRef(() => PluginAnalyticsService))
+    private analyticsService: PluginAnalyticsService,
+    @Inject(forwardRef(() => PluginMonitoringService))
+    private monitoringService: PluginMonitoringService,
   ) {
     this.logger = new Logger(PluginsService.name);
   }
@@ -128,6 +135,18 @@ export class PluginsService {
 
     const savedPlugin = await this.pluginRepository.save(plugin);
 
+    // Enregistrer l'événement d'installation
+    try {
+      await this.analyticsService.trackEvent(savedPlugin.id, {
+        eventType: AnalyticsEventType.INSTALL,
+      });
+    } catch (error: any) {
+      this.logger.warn(
+        `Erreur lors de l'enregistrement de l'événement d'installation: ${error.message}`,
+        'PluginsService',
+      );
+    }
+
     this.logger.log(
       `Plugin installé: ${savedPlugin.name} (v${savedPlugin.version})`,
       'PluginsService',
@@ -171,6 +190,18 @@ export class PluginsService {
 
       const updatedPlugin = await this.pluginRepository.save(plugin);
 
+      // Enregistrer l'événement d'activation
+      try {
+        await this.analyticsService.trackEvent(updatedPlugin.id, {
+          eventType: AnalyticsEventType.ENABLE,
+        });
+      } catch (error: any) {
+        this.logger.warn(
+          `Erreur lors de l'enregistrement de l'événement d'activation: ${error.message}`,
+          'PluginsService',
+        );
+      }
+
       this.logger.log(`Plugin activé: ${updatedPlugin.name}`, 'PluginsService');
 
       return updatedPlugin;
@@ -212,6 +243,18 @@ export class PluginsService {
       plugin.status = PluginStatus.DISABLED;
 
       const updatedPlugin = await this.pluginRepository.save(plugin);
+
+      // Enregistrer l'événement de désactivation
+      try {
+        await this.analyticsService.trackEvent(updatedPlugin.id, {
+          eventType: AnalyticsEventType.DISABLE,
+        });
+      } catch (error: any) {
+        this.logger.warn(
+          `Erreur lors de l'enregistrement de l'événement de désactivation: ${error.message}`,
+          'PluginsService',
+        );
+      }
 
       this.logger.log(`Plugin désactivé: ${updatedPlugin.name}`, 'PluginsService');
 
