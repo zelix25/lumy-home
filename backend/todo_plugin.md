@@ -73,8 +73,8 @@ Liste des 30 points de développement pour le système de plugins complet de Lum
 
 ## 11. Paiements et licences
 
-29. [ ] ✅ **Créer le système de paiement/abonnement** - Intégration Stripe/PayPal pour les plugins premium (PluginPaymentService)
-30. [ ] ✅ **Implémenter la gestion des licences** - Vérification des licences, gestion des abonnements, génération de clés (PluginLicense)
+29. [x] ✅ **Créer le système de paiement/abonnement** - Intégration Stripe/PayPal pour les plugins premium (PluginPaymentService)
+30. [x] ✅ **Implémenter la gestion des licences** - Vérification des licences, gestion des abonnements, génération de clés (PluginLicense)
 
 ---
 
