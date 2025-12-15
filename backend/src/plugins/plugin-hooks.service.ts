@@ -2,6 +2,8 @@ import {
   Injectable,
   Logger,
   OnModuleInit,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -41,6 +43,7 @@ export class PluginHooksService implements OnModuleInit {
   constructor(
     @InjectRepository(Plugin)
     private pluginRepository: Repository<Plugin>,
+    @Inject(forwardRef(() => PluginRuntimeService))
     private pluginRuntimeService: PluginRuntimeService,
     private loggerService: LoggerService,
     private eventEmitter: EventEmitter2,

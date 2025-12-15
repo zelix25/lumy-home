@@ -12,11 +12,14 @@ import { PluginPermissionsService } from './plugin-permissions.service';
 import { PluginUIExtensionService } from './plugin-ui-extension.service';
 import { PluginAutomationExtensionService } from './plugin-automation-extension.service';
 import { PluginHooksService } from './plugin-hooks.service';
+import { PluginNotificationService } from './plugin-notification.service';
 import { Plugin } from './entities/plugin.entity';
 import { PluginUIExtension } from './entities/plugin-ui-extension.entity';
 import { PluginAutomationExtension } from './entities/plugin-automation-extension.entity';
+import { PluginNotification } from './entities/plugin-notification.entity';
 import { LoggerModule } from '../logger/logger.module';
 import { StoreModule } from '../store/store.module';
+import { WebsocketModule } from '../websocket/websocket.module';
 
 @Module({
   imports: [
@@ -24,8 +27,10 @@ import { StoreModule } from '../store/store.module';
       Plugin,
       PluginUIExtension,
       PluginAutomationExtension,
+      PluginNotification,
     ]),
     LoggerModule,
+    WebsocketModule,
     forwardRef(() => StoreModule),
   ],
   controllers: [PluginsController, PluginsStaticController],
@@ -40,6 +45,7 @@ import { StoreModule } from '../store/store.module';
     PluginUIExtensionService,
     PluginAutomationExtensionService,
     PluginHooksService,
+    PluginNotificationService,
   ],
   exports: [
     PluginsService,
@@ -52,6 +58,7 @@ import { StoreModule } from '../store/store.module';
     PluginUIExtensionService,
     PluginAutomationExtensionService,
     PluginHooksService,
+    PluginNotificationService,
   ],
 })
 export class PluginsModule {}

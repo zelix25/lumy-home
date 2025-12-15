@@ -12,6 +12,7 @@ import { Plugin, PluginStatus } from './entities/plugin.entity';
 import { PluginRuntimeService } from './plugin-runtime.service';
 import { PluginUIExtensionService } from './plugin-ui-extension.service';
 import { PluginAutomationExtensionService } from './plugin-automation-extension.service';
+import { PluginNotificationService } from './plugin-notification.service';
 import { LoggerService } from '../logger/logger.service';
 
 @Injectable()
@@ -26,6 +27,7 @@ export class PluginUninstallService {
     private pluginRuntimeService: PluginRuntimeService,
     private pluginUIExtensionService: PluginUIExtensionService,
     private pluginAutomationExtensionService: PluginAutomationExtensionService,
+    private pluginNotificationService: PluginNotificationService,
     private loggerService: LoggerService,
   ) {
     this.logger = new Logger(PluginUninstallService.name);
@@ -126,6 +128,9 @@ export class PluginUninstallService {
 
       // Supprimer les extensions d'automatisation
       await this.pluginAutomationExtensionService.removePluginExtensions(plugin.id);
+
+      // Supprimer les notifications
+      await this.pluginNotificationService.removePluginNotifications(plugin.id);
 
       // TODO: Nettoyer les données dans les autres services
       // - PluginStorageService : supprimer les données de stockage

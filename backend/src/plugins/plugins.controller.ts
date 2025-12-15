@@ -14,9 +14,11 @@ import {
 import { PluginsService } from './plugins.service';
 import { PluginUIExtensionService } from './plugin-ui-extension.service';
 import { PluginAutomationExtensionService } from './plugin-automation-extension.service';
+import { PluginNotificationService } from './plugin-notification.service';
 import { InstallPluginDto } from './dto/install-plugin.dto';
 import { InstallFromStoreDto } from './dto/install-from-store.dto';
 import { UpdateConfigDto } from './dto/update-config.dto';
+import { CreateNotificationDto } from './dto/create-notification.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UIExtensionType } from './entities/plugin-ui-extension.entity';
@@ -28,6 +30,7 @@ export class PluginsController {
     private readonly pluginsService: PluginsService,
     private readonly uiExtensionService: PluginUIExtensionService,
     private readonly automationExtensionService: PluginAutomationExtensionService,
+    private readonly notificationService: PluginNotificationService,
   ) {}
 
   /**
@@ -199,6 +202,72 @@ export class PluginsController {
     @Query('type') type?: string,
   ) {
     return this.automationExtensionService.getPluginExtensions(id, type as any);
+  }
+
+  /**
+   * Envoie une notification depuis un plugin
+   */
+  @Post(':id/notifications')
+  @HttpCode(HttpStatus.CREATED)
+  async sendNotification(
+    @Param('id') pluginId: string,
+    @Body() notificationDto: CreateNotificationDto,
+  ) {
+    return this.notificationService.sendNotification(pluginId, {
+      ...notificationDto,
+      expiresAt: notificationDto.expiresAt
+        ? new Date(notificationDto.expiresAt)
+        : undefined,
+    });
+  }
+
+  /**
+   * Récupère les notifications de l'utilisateur
+   */
+  @Get('notifications')
+  async getUserNotifications(
+    @CurrentUser() user: { id: string },
+    @Query('limit') limit?: number,
+    @Query('unreadOnly') unreadOnly?: boolean,
+  ) {
+    return this.notificationService.getUserNotifications(
+      user.id,
+      limit ? parseInt(limit.toString(), 10) : 50,
+      unreadOnly === true,
+    );
+  }
+
+  /**
+   * Marque une notification comme lue
+   */
+  @Put('notifications/:notificationId/read')
+  @HttpCode(HttpStatus.OK)
+  async markNotificationAsRead(
+    @Param('notificationId') notificationId: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    await this.notificationService.markAsRead(notificationId, user.id);
+    return { message: 'Notification marquée comme lue' };
+  }
+
+  /**
+   * Supprime une notification
+   */
+  @Delete('notifications/:notificationId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteNotification(
+    @Param('notificationId') notificationId: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    await this.notificationService.deleteNotification(notificationId, user.id);
+  }
+
+  /**
+   * Récupère les statistiques de notifications d'un plugin
+   */
+  @Get(':id/notifications/stats')
+  async getPluginNotificationStats(@Param('id') pluginId: string) {
+    return this.notificationService.getPluginNotificationStats(pluginId);
   }
 }
 

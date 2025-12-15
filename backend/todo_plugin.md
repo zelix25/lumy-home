@@ -47,8 +47,8 @@ Liste des 30 points de développement pour le système de plugins complet de Lum
 
 ## 6. Notifications
 
-18. [ ] ✅ **Créer le système de notifications** - Permettre aux plugins d'envoyer des notifications aux utilisateurs (PluginNotification)
-19. [ ] ✅ **Implémenter la livraison en temps réel** - Intégration WebSocket pour les notifications instantanées
+18. [x] ✅ **Créer le système de notifications** - Permettre aux plugins d'envoyer des notifications aux utilisateurs (PluginNotification)
+19. [x] ✅ **Implémenter la livraison en temps réel** - Intégration WebSocket pour les notifications instantanées
 
 ## 7. Stockage de données
 

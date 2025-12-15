@@ -18,6 +18,7 @@ import { PluginPermissionsService } from './plugin-permissions.service';
 import { PluginUIExtensionService } from './plugin-ui-extension.service';
 import { PluginAutomationExtensionService } from './plugin-automation-extension.service';
 import { PluginHooksService } from './plugin-hooks.service';
+import { PluginNotificationService } from './plugin-notification.service';
 
 @Injectable()
 export class PluginsService {
@@ -43,6 +44,8 @@ export class PluginsService {
     private pluginAutomationExtensionService: PluginAutomationExtensionService,
     @Inject(forwardRef(() => PluginHooksService))
     private pluginHooksService: PluginHooksService,
+    @Inject(forwardRef(() => PluginNotificationService))
+    private pluginNotificationService: PluginNotificationService,
   ) {
     this.logger = new Logger(PluginsService.name);
   }
