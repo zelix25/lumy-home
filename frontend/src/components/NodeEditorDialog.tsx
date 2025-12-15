@@ -622,6 +622,40 @@ export default function NodeEditorDialog({
   const { t } = useTranslation();
   const { devices } = useDevices();
   const { addNotification } = useNotification();
+
+  // Fonction helper pour obtenir le label d'un type de déclencheur
+  const getTriggerTypeLabel = (type: AutomationTriggerType): string => {
+    switch (type) {
+      case AutomationTriggerType.MOTION:
+        return t('automations.triggerMotion');
+      case AutomationTriggerType.CONTACT:
+        return t('automations.triggerContact');
+      case AutomationTriggerType.TEMPERATURE:
+        return t('automations.triggerTemperature');
+      case AutomationTriggerType.BUTTON:
+        return t('automations.triggerButton');
+      case AutomationTriggerType.VIBRATION:
+        return t('automations.triggerVibration');
+      case AutomationTriggerType.ILLUMINANCE:
+        return t('automations.triggerIlluminance');
+      case AutomationTriggerType.HUMIDITY:
+        return t('automations.triggerHumidity');
+      case AutomationTriggerType.WATER_LEAK:
+        return t('automations.triggerWaterLeak');
+      case AutomationTriggerType.SMOKE:
+        return t('automations.triggerSmoke');
+      case AutomationTriggerType.GAS:
+        return t('automations.triggerGas');
+      case AutomationTriggerType.SUNRISE_SUNSET:
+        return t('automations.triggerSunriseSunset');
+      case AutomationTriggerType.TIME:
+        return t('automations.triggerTime');
+      case AutomationTriggerType.MANUAL:
+        return t('automations.triggerManual');
+      default:
+        return type;
+    }
+  };
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null);
@@ -665,7 +699,7 @@ export default function NodeEditorDialog({
         type: 'trigger',
         position: { x: xPosition, y: 100 },
         data: {
-          label: mainTrigger.deviceName || t(`automations.triggerTypes.${mainTrigger.type}`),
+          label: mainTrigger.deviceName || getTriggerTypeLabel(mainTrigger.type),
           triggerType: mainTrigger.type,
           deviceId: mainTrigger.deviceId || '',
           deviceName: mainTrigger.deviceName || '',
@@ -687,7 +721,7 @@ export default function NodeEditorDialog({
           type: 'trigger',
           position: { x: xPosition, y: 100 + (index + 1) * ySpacing },
           data: {
-            label: condition.deviceName || t(`automations.triggerTypes.${condition.type}`),
+            label: condition.deviceName || getTriggerTypeLabel(condition.type),
             triggerType: condition.type,
             deviceId: condition.deviceId || '',
             deviceName: condition.deviceName || '',
@@ -743,7 +777,7 @@ export default function NodeEditorDialog({
           type: 'trigger',
           position: { x: xPosition, y: 100 + index * ySpacing },
           data: {
-            label: trigger.deviceName || t(`automations.triggerTypes.${trigger.type}`),
+            label: trigger.deviceName || getTriggerTypeLabel(trigger.type),
             triggerType: trigger.type,
             deviceId: trigger.deviceId || '',
             deviceName: trigger.deviceName || '',
@@ -795,7 +829,7 @@ export default function NodeEditorDialog({
           type: 'trigger',
           position: { x: xPosition, y: 100 },
           data: {
-            label: automation.trigger.deviceName || t(`automations.triggerTypes.${automation.trigger.type}`),
+            label: automation.trigger.deviceName || getTriggerTypeLabel(automation.trigger.type),
             triggerType: automation.trigger.type,
             deviceId: automation.trigger.deviceId || '',
             deviceName: automation.trigger.deviceName || '',

@@ -17,6 +17,10 @@ import { PluginUIExtensionService } from './plugin-ui-extension.service';
 import { PluginAutomationExtensionService } from './plugin-automation-extension.service';
 import { PluginNotificationService } from './plugin-notification.service';
 import { PluginStorageService } from './plugin-storage.service';
+import { PluginErrorService } from './plugin-error.service';
+import { PluginCircuitBreakerService } from './plugin-circuit-breaker.service';
+import { PluginIsolationService } from './plugin-isolation.service';
+import { ErrorSeverity, ErrorStatus } from './entities/plugin-error.entity';
 import { InstallPluginDto } from './dto/install-plugin.dto';
 import { InstallFromStoreDto } from './dto/install-from-store.dto';
 import { UpdateConfigDto } from './dto/update-config.dto';
@@ -35,6 +39,9 @@ export class PluginsController {
     private readonly automationExtensionService: PluginAutomationExtensionService,
     private readonly notificationService: PluginNotificationService,
     private readonly storageService: PluginStorageService,
+    private readonly errorService: PluginErrorService,
+    private readonly circuitBreakerService: PluginCircuitBreakerService,
+    private readonly isolationService: PluginIsolationService,
   ) {}
 
   /**
@@ -367,6 +374,84 @@ export class PluginsController {
   @Get(':id/storage/stats')
   async getStorageStats(@Param('id') pluginId: string) {
     return this.storageService.getStats(pluginId);
+  }
+
+  /**
+   * Récupère les erreurs d'un plugin
+   */
+  @Get(':id/errors')
+  async getPluginErrors(
+    @Param('id') pluginId: string,
+    @Query('limit') limit?: number,
+    @Query('severity') severity?: ErrorSeverity,
+    @Query('status') status?: ErrorStatus,
+  ) {
+    return this.errorService.getPluginErrors(
+      pluginId,
+      limit ? parseInt(limit.toString(), 10) : 50,
+      severity,
+      status,
+    );
+  }
+
+  /**
+   * Récupère les statistiques d'erreurs d'un plugin
+   */
+  @Get(':id/errors/stats')
+  async getPluginErrorStats(@Param('id') pluginId: string) {
+    return this.errorService.getPluginErrorStats(pluginId);
+  }
+
+  /**
+   * Marque une erreur comme résolue
+   */
+  @Put('errors/:errorId/resolve')
+  @HttpCode(HttpStatus.OK)
+  async resolveError(@Param('errorId') errorId: string) {
+    return this.errorService.markAsResolved(errorId);
+  }
+
+  /**
+   * Marque une erreur comme ignorée
+   */
+  @Put('errors/:errorId/ignore')
+  @HttpCode(HttpStatus.OK)
+  async ignoreError(@Param('errorId') errorId: string) {
+    return this.errorService.markAsIgnored(errorId);
+  }
+
+  /**
+   * Récupère l'état du circuit breaker d'un plugin
+   */
+  @Get(':id/circuit-breaker/state')
+  async getCircuitBreakerState(@Param('id') pluginId: string) {
+    const state = this.circuitBreakerService.getCircuitState(pluginId);
+    const stats = this.circuitBreakerService.getCircuitStats(pluginId);
+    return {
+      state: state || 'closed',
+      stats: stats || null,
+    };
+  }
+
+  /**
+   * Réinitialise le circuit breaker d'un plugin
+   */
+  @Post(':id/circuit-breaker/reset')
+  @HttpCode(HttpStatus.OK)
+  async resetCircuitBreaker(@Param('id') pluginId: string) {
+    this.circuitBreakerService.resetCircuit(pluginId);
+    this.isolationService.resetIsolation(pluginId);
+    return { message: 'Circuit breaker réinitialisé' };
+  }
+
+  /**
+   * Récupère toutes les erreurs non résolues
+   */
+  @Get('errors/unresolved')
+  async getUnresolvedErrors(@Query('limit') limit?: number) {
+    return this.errorService.getUnresolvedErrors(
+      limit ? parseInt(limit.toString(), 10) : 100,
+    );
   }
 }
 

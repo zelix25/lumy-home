@@ -19,6 +19,9 @@ import { PluginUIExtensionService } from './plugin-ui-extension.service';
 import { PluginAutomationExtensionService } from './plugin-automation-extension.service';
 import { PluginHooksService } from './plugin-hooks.service';
 import { PluginNotificationService } from './plugin-notification.service';
+import { PluginErrorService } from './plugin-error.service';
+import { PluginCircuitBreakerService } from './plugin-circuit-breaker.service';
+import { PluginIsolationService } from './plugin-isolation.service';
 
 @Injectable()
 export class PluginsService {
@@ -46,6 +49,12 @@ export class PluginsService {
     private pluginHooksService: PluginHooksService,
     @Inject(forwardRef(() => PluginNotificationService))
     private pluginNotificationService: PluginNotificationService,
+    @Inject(forwardRef(() => PluginErrorService))
+    private pluginErrorService: PluginErrorService,
+    @Inject(forwardRef(() => PluginCircuitBreakerService))
+    private circuitBreakerService: PluginCircuitBreakerService,
+    @Inject(forwardRef(() => PluginIsolationService))
+    private isolationService: PluginIsolationService,
   ) {
     this.logger = new Logger(PluginsService.name);
   }

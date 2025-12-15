@@ -115,7 +115,12 @@ export default function SimpleAutomationCard({
     setDeleteDialogOpen(false);
   };
 
-  const getTriggerConditionText = (conditionType: AutomationTriggerType, deviceName?: string, condition?: Record<string, any>): string => {
+  const getTriggerConditionText = (
+    conditionType: AutomationTriggerType,
+    deviceName?: string,
+    condition?: Record<string, any>,
+    triggerData?: { sunriseSunsetType?: 'sunrise' | 'sunset'; offsetMinutes?: number }
+  ): string => {
     let baseText = '';
     switch (conditionType) {
       case AutomationTriggerType.MOTION:
@@ -158,8 +163,8 @@ export default function SimpleAutomationCard({
         baseText = t('automations.whenGas', { device: deviceName || '' });
         break;
       case AutomationTriggerType.SUNRISE_SUNSET:
-        const sunriseSunsetType = trigger.sunriseSunsetType || 'sunrise';
-        const offsetMinutes = trigger.offsetMinutes || 0;
+        const sunriseSunsetType = triggerData?.sunriseSunsetType || 'sunrise';
+        const offsetMinutes = triggerData?.offsetMinutes || 0;
         const offsetText = offsetMinutes !== 0 
           ? ` ${offsetMinutes > 0 ? '+' : ''}${offsetMinutes} ${t('automations.minutes')}`
           : '';
@@ -178,7 +183,11 @@ export default function SimpleAutomationCard({
     let mainTriggerText = getTriggerConditionText(
       trigger.type,
       trigger.deviceName || trigger.deviceId,
-      trigger.condition
+      trigger.condition,
+      {
+        sunriseSunsetType: trigger.sunriseSunsetType,
+        offsetMinutes: trigger.offsetMinutes,
+      }
     );
 
     // Si des conditions supplémentaires existent, les ajouter

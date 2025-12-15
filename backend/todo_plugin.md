@@ -57,9 +57,9 @@ Liste des 30 points de développement pour le système de plugins complet de Lum
 
 ## 8. Gestion des erreurs
 
-22. [ ] ✅ **Créer le système de gestion d'erreurs** - Enregistrement et suivi des erreurs par plugin (PluginError)
-23. [ ] ✅ **Implémenter le circuit breaker** - Protection contre les plugins défaillants avec seuils configurables
-24. [ ] ✅ **Implémenter l'isolation des crashes** - Empêcher qu'un plugin crash n'affecte le système principal
+22. [x] ✅ **Créer le système de gestion d'erreurs** - Enregistrement et suivi des erreurs par plugin (PluginError)
+23. [x] ✅ **Implémenter le circuit breaker** - Protection contre les plugins défaillants avec seuils configurables
+24. [x] ✅ **Implémenter l'isolation des crashes** - Empêcher qu'un plugin crash n'affecte le système principal
 
 ## 9. Tests et validation
 
