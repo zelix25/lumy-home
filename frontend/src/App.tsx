@@ -17,8 +17,12 @@ import AccountPage from './pages/AccountPage';
 import SettingsPage from './pages/SettingsPage';
 import StoreConnectPage from './pages/StoreConnectPage';
 import NotificationSnackbar from './components/NotificationSnackbar';
+import { usePluginRoutes } from './hooks/usePluginRoutes';
 
 function App() {
+  // Charger les routes des plugins dynamiquement
+  const pluginRoutes = usePluginRoutes();
+
   return (
     <Routes>
       {/* Routes publiques */}
@@ -45,6 +49,14 @@ function App() {
                     <Route path="/account" element={<AccountPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/store" element={<StoreConnectPage />} />
+                    {/* Routes dynamiques des plugins */}
+                    {pluginRoutes.map((route) => (
+                      <Route
+                        key={route.path}
+                        path={route.path}
+                        element={route.element}
+                      />
+                    ))}
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </Box>

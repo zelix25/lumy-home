@@ -10,6 +10,7 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import { Plugin, PluginStatus } from './entities/plugin.entity';
 import { PluginRuntimeService } from './plugin-runtime.service';
+import { PluginUIExtensionService } from './plugin-ui-extension.service';
 import { LoggerService } from '../logger/logger.service';
 
 @Injectable()
@@ -22,6 +23,7 @@ export class PluginUninstallService {
     private pluginRepository: Repository<Plugin>,
     private configService: ConfigService,
     private pluginRuntimeService: PluginRuntimeService,
+    private pluginUIExtensionService: PluginUIExtensionService,
     private loggerService: LoggerService,
   ) {
     this.logger = new Logger(PluginUninstallService.name);
@@ -117,6 +119,9 @@ export class PluginUninstallService {
    */
   private async cleanupPluginData(plugin: Plugin): Promise<void> {
     try {
+      // Supprimer les extensions UI
+      await this.pluginUIExtensionService.removePluginExtensions(plugin.id);
+
       // TODO: Nettoyer les données dans les autres services
       // - PluginStorageService : supprimer les données de stockage
       // - PluginErrorService : supprimer les erreurs enregistrées

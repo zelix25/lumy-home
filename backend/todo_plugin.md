@@ -35,10 +35,10 @@ Liste des 30 points de développement pour le système de plugins complet de Lum
 
 ## 4. Extensions UI
 
-12. [ ] ✅ **Créer le système d'extensions UI** - Enregistrement de pages, composants, widgets et éléments de menu (PluginUIExtension)
-13. [ ] ✅ **Implémenter le chargement dynamique des routes** - Intégration des routes de plugins dans React Router (usePluginRoutes)
-14. [ ] ✅ **Implémenter le chargement dynamique des composants** - Chargement des composants React depuis les plugins (PluginComponentLoader)
-15. [ ] ✅ **Implémenter le chargement dynamique des widgets** - Affichage des widgets dans le dashboard
+12. [x] ✅ **Créer le système d'extensions UI** - Enregistrement de pages, composants, widgets et éléments de menu (PluginUIExtension)
+13. [x] ✅ **Implémenter le chargement dynamique des routes** - Intégration des routes de plugins dans React Router (usePluginRoutes)
+14. [x] ✅ **Implémenter le chargement dynamique des composants** - Chargement des composants React depuis les plugins (PluginComponentLoader)
+15. [x] ✅ **Implémenter le chargement dynamique des widgets** - Affichage des widgets dans le dashboard
 
 ## 5. Extensions d'automatisation
 

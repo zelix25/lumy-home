@@ -15,6 +15,7 @@ import { PluginRuntimeService } from './plugin-runtime.service';
 import { PluginUninstallService } from './plugin-uninstall.service';
 import { PluginConfigService } from './plugin-config.service';
 import { PluginPermissionsService } from './plugin-permissions.service';
+import { PluginUIExtensionService } from './plugin-ui-extension.service';
 
 @Injectable()
 export class PluginsService {
@@ -34,6 +35,8 @@ export class PluginsService {
     private pluginConfigService: PluginConfigService,
     @Inject(forwardRef(() => PluginPermissionsService))
     private pluginPermissionsService: PluginPermissionsService,
+    @Inject(forwardRef(() => PluginUIExtensionService))
+    private pluginUIExtensionService: PluginUIExtensionService,
   ) {
     this.logger = new Logger(PluginsService.name);
   }
@@ -134,6 +137,9 @@ export class PluginsService {
     try {
       // Charger le plugin en mémoire
       await this.pluginRuntimeService.loadPlugin(plugin);
+
+      // Enregistrer les extensions UI depuis le manifest
+      await this.registerUIExtensions(plugin);
 
       // Mettre à jour le statut
       plugin.status = PluginStatus.ENABLED;
@@ -275,6 +281,51 @@ export class PluginsService {
     // Cette méthode sera utilisée lors de l'exécution pour vérifier les permissions
     // Pour l'instant, on retourne false si le plugin n'est pas trouvé
     return false; // Sera implémenté avec le runtime
+  }
+
+  /**
+   * Enregistre les extensions UI d'un plugin depuis son manifest
+   */
+  private async registerUIExtensions(plugin: Plugin): Promise<void> {
+    try {
+      const loadedPlugin = this.pluginRuntimeService.getLoadedPlugin(plugin.id);
+      
+      if (!loadedPlugin || !loadedPlugin.manifest) {
+        this.logger.warn(
+          `Impossible d'enregistrer les extensions UI pour ${plugin.name}: manifest non chargé`,
+          'PluginsService',
+        );
+        return;
+      }
+
+      const manifest = loadedPlugin.manifest;
+      const uiExtensions = manifest.uiExtensions || manifest.ui || [];
+
+      if (!Array.isArray(uiExtensions) || uiExtensions.length === 0) {
+        this.logger.log(
+          `Aucune extension UI définie pour le plugin ${plugin.name}`,
+          'PluginsService',
+        );
+        return;
+      }
+
+      // Enregistrer toutes les extensions
+      await this.pluginUIExtensionService.registerExtensions(
+        plugin.id,
+        uiExtensions,
+      );
+
+      this.logger.log(
+        `${uiExtensions.length} extension(s) UI enregistrée(s) pour le plugin ${plugin.name}`,
+        'PluginsService',
+      );
+    } catch (error: any) {
+      this.logger.warn(
+        `Erreur lors de l'enregistrement des extensions UI pour ${plugin.name}: ${error.message}`,
+        'PluginsService',
+      );
+      // Ne pas faire échouer l'activation si l'enregistrement des extensions échoue
+    }
   }
 }
 

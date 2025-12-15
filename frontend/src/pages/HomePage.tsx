@@ -9,9 +9,11 @@ import PersonPinCircleIcon from '@mui/icons-material/PersonPinCircle';
 import { useEffect, useState, useMemo } from 'react';
 import { devicesService, DeviceStats, Device } from '../services/devices.service';
 import { useDevices } from '../hooks/useDevices';
+import { usePluginWidgets } from '../hooks/usePluginWidgets';
 import PlanViewMode from '../components/PlanViewMode';
 import RoomCard from '../components/RoomCard';
 import WeatherCard from '../components/WeatherCard';
+import PluginWidgetLoader from '../components/PluginWidgetLoader';
 import i18n from '@/i18n';
 
 export default function HomePage() {
@@ -19,6 +21,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const { devices } = useDevices();
   const [viewMode, setViewMode] = useState<'normal' | 'plan'>('normal');
+  const pluginWidgets = usePluginWidgets();
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -253,6 +256,18 @@ export default function HomePage() {
               <Grid item xs={12} md={6} lg={4}>
                 <WeatherCard />
               </Grid>
+
+              {/* Widgets des plugins */}
+              {pluginWidgets.map((widget) => (
+                <PluginWidgetLoader
+                  key={widget.id}
+                  extension={widget}
+                  xs={12}
+                  sm={6}
+                  md={4}
+                  lg={3}
+                />
+              ))}
 
               {/* Cartes par pièce - Chaque pièce affiche ses appareils en grille */}
               {Object.entries(devicesByRoom).map(([roomName, roomDevices]) => (

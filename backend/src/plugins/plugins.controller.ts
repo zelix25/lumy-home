@@ -5,22 +5,28 @@ import {
   Put,
   Delete,
   Param,
+  Query,
   Body,
   HttpCode,
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
 import { PluginsService } from './plugins.service';
+import { PluginUIExtensionService } from './plugin-ui-extension.service';
 import { InstallPluginDto } from './dto/install-plugin.dto';
 import { InstallFromStoreDto } from './dto/install-from-store.dto';
 import { UpdateConfigDto } from './dto/update-config.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { UIExtensionType } from './entities/plugin-ui-extension.entity';
 
 @Controller('plugins')
 @UseGuards(JwtAuthGuard)
 export class PluginsController {
-  constructor(private readonly pluginsService: PluginsService) {}
+  constructor(
+    private readonly pluginsService: PluginsService,
+    private readonly uiExtensionService: PluginUIExtensionService,
+  ) {}
 
   /**
    * Récupère tous les plugins
@@ -105,6 +111,49 @@ export class PluginsController {
   @HttpCode(HttpStatus.OK)
   async analyzePermissions(@Param('id') id: string) {
     return this.pluginsService.analyzePermissions(id);
+  }
+
+  /**
+   * Récupère toutes les extensions UI disponibles
+   */
+  @Get('ui-extensions')
+  async getAllExtensions(@Query('type') type?: UIExtensionType) {
+    return this.uiExtensionService.getAllExtensions(type);
+  }
+
+  /**
+   * Récupère toutes les pages disponibles
+   */
+  @Get('ui-extensions/pages')
+  async getAvailablePages() {
+    return this.uiExtensionService.getAvailablePages();
+  }
+
+  /**
+   * Récupère tous les widgets disponibles
+   */
+  @Get('ui-extensions/widgets')
+  async getAvailableWidgets() {
+    return this.uiExtensionService.getAvailableWidgets();
+  }
+
+  /**
+   * Récupère tous les éléments de menu disponibles
+   */
+  @Get('ui-extensions/menu-items')
+  async getAvailableMenuItems() {
+    return this.uiExtensionService.getAvailableMenuItems();
+  }
+
+  /**
+   * Récupère toutes les extensions UI d'un plugin
+   */
+  @Get(':id/ui-extensions')
+  async getPluginExtensions(
+    @Param('id') id: string,
+    @Query('type') type?: UIExtensionType,
+  ) {
+    return this.uiExtensionService.getPluginExtensions(id, type);
   }
 }
 
