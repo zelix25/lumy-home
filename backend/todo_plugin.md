@@ -42,8 +42,8 @@ Liste des 30 points de développement pour le système de plugins complet de Lum
 
 ## 5. Extensions d'automatisation
 
-16. [ ] ✅ **Créer le système d'extensions d'automatisation** - Enregistrement de triggers, conditions et actions (PluginAutomationExtension)
-17. [ ] ✅ **Implémenter le système de hooks** - Déclenchement d'événements pour les plugins (onDeviceUpdate, onSchedule, onTime, etc.)
+16. [x] ✅ **Créer le système d'extensions d'automatisation** - Enregistrement de triggers, conditions et actions (PluginAutomationExtension)
+17. [x] ✅ **Implémenter le système de hooks** - Déclenchement d'événements pour les plugins (onDeviceUpdate, onSchedule, onTime, etc.)
 
 ## 6. Notifications
 

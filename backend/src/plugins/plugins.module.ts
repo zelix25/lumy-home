@@ -10,14 +10,21 @@ import { PluginManifestValidatorService } from './plugin-manifest-validator.serv
 import { PluginConfigService } from './plugin-config.service';
 import { PluginPermissionsService } from './plugin-permissions.service';
 import { PluginUIExtensionService } from './plugin-ui-extension.service';
+import { PluginAutomationExtensionService } from './plugin-automation-extension.service';
+import { PluginHooksService } from './plugin-hooks.service';
 import { Plugin } from './entities/plugin.entity';
 import { PluginUIExtension } from './entities/plugin-ui-extension.entity';
+import { PluginAutomationExtension } from './entities/plugin-automation-extension.entity';
 import { LoggerModule } from '../logger/logger.module';
 import { StoreModule } from '../store/store.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Plugin, PluginUIExtension]),
+    TypeOrmModule.forFeature([
+      Plugin,
+      PluginUIExtension,
+      PluginAutomationExtension,
+    ]),
     LoggerModule,
     forwardRef(() => StoreModule),
   ],
@@ -31,6 +38,8 @@ import { StoreModule } from '../store/store.module';
     PluginConfigService,
     PluginPermissionsService,
     PluginUIExtensionService,
+    PluginAutomationExtensionService,
+    PluginHooksService,
   ],
   exports: [
     PluginsService,
@@ -41,6 +50,8 @@ import { StoreModule } from '../store/store.module';
     PluginConfigService,
     PluginPermissionsService,
     PluginUIExtensionService,
+    PluginAutomationExtensionService,
+    PluginHooksService,
   ],
 })
 export class PluginsModule {}

@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { PluginsService } from './plugins.service';
 import { PluginUIExtensionService } from './plugin-ui-extension.service';
+import { PluginAutomationExtensionService } from './plugin-automation-extension.service';
 import { InstallPluginDto } from './dto/install-plugin.dto';
 import { InstallFromStoreDto } from './dto/install-from-store.dto';
 import { UpdateConfigDto } from './dto/update-config.dto';
@@ -26,6 +27,7 @@ export class PluginsController {
   constructor(
     private readonly pluginsService: PluginsService,
     private readonly uiExtensionService: PluginUIExtensionService,
+    private readonly automationExtensionService: PluginAutomationExtensionService,
   ) {}
 
   /**
@@ -154,6 +156,49 @@ export class PluginsController {
     @Query('type') type?: UIExtensionType,
   ) {
     return this.uiExtensionService.getPluginExtensions(id, type);
+  }
+
+  /**
+   * Récupère toutes les extensions d'automatisation disponibles
+   */
+  @Get('automation-extensions')
+  async getAllAutomationExtensions(@Query('type') type?: string) {
+    return this.automationExtensionService.getAllExtensions(type as any);
+  }
+
+  /**
+   * Récupère tous les triggers disponibles
+   */
+  @Get('automation-extensions/triggers')
+  async getAvailableTriggers() {
+    return this.automationExtensionService.getAvailableTriggers();
+  }
+
+  /**
+   * Récupère toutes les conditions disponibles
+   */
+  @Get('automation-extensions/conditions')
+  async getAvailableConditions() {
+    return this.automationExtensionService.getAvailableConditions();
+  }
+
+  /**
+   * Récupère toutes les actions disponibles
+   */
+  @Get('automation-extensions/actions')
+  async getAvailableActions() {
+    return this.automationExtensionService.getAvailableActions();
+  }
+
+  /**
+   * Récupère toutes les extensions d'automatisation d'un plugin
+   */
+  @Get(':id/automation-extensions')
+  async getPluginAutomationExtensions(
+    @Param('id') id: string,
+    @Query('type') type?: string,
+  ) {
+    return this.automationExtensionService.getPluginExtensions(id, type as any);
   }
 }
 

@@ -4,6 +4,8 @@ import {
   Logger,
   OnModuleInit,
   OnModuleDestroy,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -12,6 +14,7 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import { Plugin, PluginStatus } from './entities/plugin.entity';
 import { LoggerService } from '../logger/logger.service';
+import { PluginHooksService } from './plugin-hooks.service';
 
 interface LoadedPlugin {
   plugin: Plugin;
@@ -31,6 +34,8 @@ export class PluginRuntimeService implements OnModuleInit, OnModuleDestroy {
     private pluginRepository: Repository<Plugin>,
     private configService: ConfigService,
     private loggerService: LoggerService,
+    @Inject(forwardRef(() => PluginHooksService))
+    private pluginHooksService: PluginHooksService,
   ) {
     this.logger = new Logger(PluginRuntimeService.name);
     this.pluginsDirectory = path.join(
@@ -144,6 +149,9 @@ export class PluginRuntimeService implements OnModuleInit, OnModuleDestroy {
 
       // Exécuter les hooks d'initialisation si définis
       await this.executeInitHooks(loadedPlugin);
+      
+      // Déclencher le hook onInit via PluginHooksService
+      await this.pluginHooksService.triggerInitHooks(plugin.id);
     } catch (error: any) {
       this.logger.error(
         `Erreur lors du chargement du plugin ${plugin.name}: ${error.message}`,
@@ -170,6 +178,12 @@ export class PluginRuntimeService implements OnModuleInit, OnModuleDestroy {
     try {
       // Exécuter les hooks de nettoyage si définis
       await this.executeCleanupHooks(loadedPlugin);
+      
+      // Déclencher le hook onDestroy via PluginHooksService
+      await this.pluginHooksService.triggerDestroyHooks(pluginId);
+      
+      // Supprimer les hooks enregistrés
+      this.pluginHooksService.removePluginHooks(pluginId);
 
       // Nettoyer les ressources
       // TODO: Décharger les modules, fermer les connexions, etc.

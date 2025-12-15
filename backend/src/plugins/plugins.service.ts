@@ -16,6 +16,8 @@ import { PluginUninstallService } from './plugin-uninstall.service';
 import { PluginConfigService } from './plugin-config.service';
 import { PluginPermissionsService } from './plugin-permissions.service';
 import { PluginUIExtensionService } from './plugin-ui-extension.service';
+import { PluginAutomationExtensionService } from './plugin-automation-extension.service';
+import { PluginHooksService } from './plugin-hooks.service';
 
 @Injectable()
 export class PluginsService {
@@ -37,6 +39,10 @@ export class PluginsService {
     private pluginPermissionsService: PluginPermissionsService,
     @Inject(forwardRef(() => PluginUIExtensionService))
     private pluginUIExtensionService: PluginUIExtensionService,
+    @Inject(forwardRef(() => PluginAutomationExtensionService))
+    private pluginAutomationExtensionService: PluginAutomationExtensionService,
+    @Inject(forwardRef(() => PluginHooksService))
+    private pluginHooksService: PluginHooksService,
   ) {
     this.logger = new Logger(PluginsService.name);
   }
@@ -141,6 +147,12 @@ export class PluginsService {
       // Enregistrer les extensions UI depuis le manifest
       await this.registerUIExtensions(plugin);
 
+      // Enregistrer les extensions d'automatisation depuis le manifest
+      await this.registerAutomationExtensions(plugin);
+
+      // Déclencher les hooks d'activation
+      await this.pluginHooksService.triggerEnableHooks(plugin.id);
+
       // Mettre à jour le statut
       plugin.status = PluginStatus.ENABLED;
       plugin.error = '';
@@ -178,6 +190,9 @@ export class PluginsService {
     }
 
     try {
+      // Déclencher les hooks de désactivation
+      await this.pluginHooksService.triggerDisableHooks(id);
+
       // Décharger le plugin de la mémoire
       await this.pluginRuntimeService.unloadPlugin(id);
 
@@ -281,6 +296,51 @@ export class PluginsService {
     // Cette méthode sera utilisée lors de l'exécution pour vérifier les permissions
     // Pour l'instant, on retourne false si le plugin n'est pas trouvé
     return false; // Sera implémenté avec le runtime
+  }
+
+  /**
+   * Enregistre les extensions d'automatisation d'un plugin depuis son manifest
+   */
+  private async registerAutomationExtensions(plugin: Plugin): Promise<void> {
+    try {
+      const loadedPlugin = this.pluginRuntimeService.getLoadedPlugin(plugin.id);
+      
+      if (!loadedPlugin || !loadedPlugin.manifest) {
+        this.logger.warn(
+          `Impossible d'enregistrer les extensions d'automatisation pour ${plugin.name}: manifest non chargé`,
+          'PluginsService',
+        );
+        return;
+      }
+
+      const manifest = loadedPlugin.manifest;
+      const automationExtensions = manifest.automationExtensions || manifest.automation || [];
+
+      if (!Array.isArray(automationExtensions) || automationExtensions.length === 0) {
+        this.logger.log(
+          `Aucune extension d'automatisation définie pour le plugin ${plugin.name}`,
+          'PluginsService',
+        );
+        return;
+      }
+
+      // Enregistrer toutes les extensions
+      await this.pluginAutomationExtensionService.registerExtensions(
+        plugin.id,
+        automationExtensions,
+      );
+
+      this.logger.log(
+        `${automationExtensions.length} extension(s) d'automatisation enregistrée(s) pour le plugin ${plugin.name}`,
+        'PluginsService',
+      );
+    } catch (error: any) {
+      this.logger.warn(
+        `Erreur lors de l'enregistrement des extensions d'automatisation pour ${plugin.name}: ${error.message}`,
+        'PluginsService',
+      );
+      // Ne pas faire échouer l'activation si l'enregistrement des extensions échoue
+    }
   }
 
   /**
