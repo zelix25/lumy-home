@@ -13,10 +13,12 @@ import { PluginUIExtensionService } from './plugin-ui-extension.service';
 import { PluginAutomationExtensionService } from './plugin-automation-extension.service';
 import { PluginHooksService } from './plugin-hooks.service';
 import { PluginNotificationService } from './plugin-notification.service';
+import { PluginStorageService } from './plugin-storage.service';
 import { Plugin } from './entities/plugin.entity';
 import { PluginUIExtension } from './entities/plugin-ui-extension.entity';
 import { PluginAutomationExtension } from './entities/plugin-automation-extension.entity';
 import { PluginNotification } from './entities/plugin-notification.entity';
+import { PluginStorage } from './entities/plugin-storage.entity';
 import { LoggerModule } from '../logger/logger.module';
 import { StoreModule } from '../store/store.module';
 import { WebsocketModule } from '../websocket/websocket.module';
@@ -28,6 +30,7 @@ import { WebsocketModule } from '../websocket/websocket.module';
       PluginUIExtension,
       PluginAutomationExtension,
       PluginNotification,
+      PluginStorage,
     ]),
     LoggerModule,
     WebsocketModule,
@@ -46,6 +49,7 @@ import { WebsocketModule } from '../websocket/websocket.module';
     PluginAutomationExtensionService,
     PluginHooksService,
     PluginNotificationService,
+    PluginStorageService,
   ],
   exports: [
     PluginsService,
@@ -59,6 +63,7 @@ import { WebsocketModule } from '../websocket/websocket.module';
     PluginAutomationExtensionService,
     PluginHooksService,
     PluginNotificationService,
+    PluginStorageService,
   ],
 })
 export class PluginsModule {}

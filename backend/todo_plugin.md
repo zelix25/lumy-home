@@ -52,8 +52,8 @@ Liste des 30 points de développement pour le système de plugins complet de Lum
 
 ## 7. Stockage de données
 
-20. [ ] ✅ **Créer le système de stockage isolé** - API de stockage clé-valeur isolée par plugin (PluginStorage)
-21. [ ] ✅ **Implémenter la gestion du cycle de vie des données** - Expiration automatique, nettoyage, comptage et taille
+20. [x] ✅ **Créer le système de stockage isolé** - API de stockage clé-valeur isolée par plugin (PluginStorage)
+21. [x] ✅ **Implémenter la gestion du cycle de vie des données** - Expiration automatique, nettoyage, comptage et taille
 
 ## 8. Gestion des erreurs
 

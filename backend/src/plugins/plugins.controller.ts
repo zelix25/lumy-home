@@ -10,15 +10,18 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  NotFoundException,
 } from '@nestjs/common';
 import { PluginsService } from './plugins.service';
 import { PluginUIExtensionService } from './plugin-ui-extension.service';
 import { PluginAutomationExtensionService } from './plugin-automation-extension.service';
 import { PluginNotificationService } from './plugin-notification.service';
+import { PluginStorageService } from './plugin-storage.service';
 import { InstallPluginDto } from './dto/install-plugin.dto';
 import { InstallFromStoreDto } from './dto/install-from-store.dto';
 import { UpdateConfigDto } from './dto/update-config.dto';
 import { CreateNotificationDto } from './dto/create-notification.dto';
+import { SetStorageDto } from './dto/set-storage.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UIExtensionType } from './entities/plugin-ui-extension.entity';
@@ -31,6 +34,7 @@ export class PluginsController {
     private readonly uiExtensionService: PluginUIExtensionService,
     private readonly automationExtensionService: PluginAutomationExtensionService,
     private readonly notificationService: PluginNotificationService,
+    private readonly storageService: PluginStorageService,
   ) {}
 
   /**
@@ -268,6 +272,101 @@ export class PluginsController {
   @Get(':id/notifications/stats')
   async getPluginNotificationStats(@Param('id') pluginId: string) {
     return this.notificationService.getPluginNotificationStats(pluginId);
+  }
+
+  /**
+   * Stocke une valeur pour un plugin
+   */
+  @Post(':id/storage')
+  @HttpCode(HttpStatus.CREATED)
+  async setStorage(
+    @Param('id') pluginId: string,
+    @Body() setStorageDto: SetStorageDto,
+  ) {
+    return this.storageService.set(
+      pluginId,
+      setStorageDto.key,
+      setStorageDto.value,
+      setStorageDto.ttl,
+    );
+  }
+
+  /**
+   * Récupère une valeur pour un plugin
+   */
+  @Get(':id/storage/:key')
+  async getStorage(
+    @Param('id') pluginId: string,
+    @Param('key') key: string,
+  ) {
+    const value = await this.storageService.get(pluginId, key);
+    if (value === null) {
+      throw new NotFoundException(`Clé "${key}" non trouvée pour ce plugin`);
+    }
+    return { key, value };
+  }
+
+  /**
+   * Vérifie si une clé existe pour un plugin
+   */
+  @Get(':id/storage/:key/exists')
+  async hasStorage(
+    @Param('id') pluginId: string,
+    @Param('key') key: string,
+  ) {
+    const exists = await this.storageService.has(pluginId, key);
+    return { key, exists };
+  }
+
+  /**
+   * Récupère toutes les clés d'un plugin
+   */
+  @Get(':id/storage/keys')
+  async getStorageKeys(@Param('id') pluginId: string) {
+    const keys = await this.storageService.keys(pluginId);
+    return { keys };
+  }
+
+  /**
+   * Récupère toutes les entrées d'un plugin
+   */
+  @Get(':id/storage')
+  async getAllStorage(@Param('id') pluginId: string) {
+    const data = await this.storageService.getAll(pluginId);
+    return data;
+  }
+
+  /**
+   * Supprime une clé pour un plugin
+   */
+  @Delete(':id/storage/:key')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteStorage(
+    @Param('id') pluginId: string,
+    @Param('key') key: string,
+  ) {
+    const deleted = await this.storageService.delete(pluginId, key);
+    if (!deleted) {
+      throw new NotFoundException(`Clé "${key}" non trouvée pour ce plugin`);
+    }
+  }
+
+  /**
+   * Supprime toutes les données d'un plugin
+   */
+  @Delete(':id/storage')
+  @HttpCode(HttpStatus.OK)
+  async clearStorage(@Param('id') pluginId: string) {
+    const count = await this.storageService.clear(pluginId);
+    return { message: `${count} entrée(s) supprimée(s)`, count };
+  }
+
+  /**
+   * Récupère les statistiques de stockage d'un plugin
+   */
+  @Get(':id/storage/stats')
+  async getStorageStats(@Param('id') pluginId: string) {
+    return this.storageService.getStats(pluginId);
   }
 }
 
