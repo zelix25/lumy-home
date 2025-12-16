@@ -25,6 +25,7 @@ import { PluginIsolationService } from './plugin-isolation.service';
 import { PluginAnalyticsService } from './plugin-analytics.service';
 import { PluginMonitoringService } from './plugin-monitoring.service';
 import { AnalyticsEventType } from './entities/plugin-analytics.entity';
+import { StoreApiService } from '../store/store-api.service';
 
 @Injectable()
 export class PluginsService {
@@ -62,6 +63,8 @@ export class PluginsService {
     private analyticsService: PluginAnalyticsService,
     @Inject(forwardRef(() => PluginMonitoringService))
     private monitoringService: PluginMonitoringService,
+    @Inject(forwardRef(() => StoreApiService))
+    private storeApiService: StoreApiService,
   ) {
     this.logger = new Logger(PluginsService.name);
   }
@@ -310,6 +313,144 @@ export class PluginsService {
     );
 
     return updatedPlugin;
+  }
+
+  /**
+   * Récupère les plugins disponibles sur le Lumy Store
+   * Utilise l'endpoint public /api/plugins/public qui ne nécessite pas d'authentification
+   * Selon la documentation ENDPOINTS_API_TOKEN.md
+   */
+  async getAvailablePluginsFromStore(
+    userId: string,
+    search?: string,
+    category?: string,
+  ): Promise<any[]> {
+    try {
+      const params: Record<string, any> = {};
+      if (search) {
+        params.search = search;
+      }
+      if (category) {
+        params.category = category;
+      }
+      // Ajouter des paramètres par défaut pour la pagination
+      params.limit = params.limit || 50;
+      params.offset = params.offset || 0;
+
+      // Utiliser l'endpoint public /api/plugins/public qui ne nécessite pas d'authentification
+      // Si l'utilisateur est connecté, on peut aussi essayer d'obtenir les infos utilisateur
+      let plugins: any[];
+      
+      try {
+        // Essayer d'abord avec authentification pour avoir les infos utilisateur (userHasPurchased, etc.)
+        // L'endpoint /api/plugins/:id avec auth retourne plus d'infos, mais pour la liste on utilise le public
+        const response = await this.storeApiService.getPublic<any>(
+          '/api/plugins/public',
+          params,
+        );
+
+        // La méthode searchPublic du store retourne { plugins: Plugin[], total: number }
+        // Vérifier le format de la réponse et extraire le tableau de plugins
+        if (Array.isArray(response)) {
+          plugins = response;
+        } else if (response && Array.isArray(response.plugins)) {
+          // Format attendu: { plugins: [...], total: number }
+          plugins = response.plugins;
+        } else if (response && Array.isArray(response.data)) {
+          plugins = response.data;
+        } else if (response && Array.isArray(response.items)) {
+          plugins = response.items;
+        } else {
+          this.logger.warn(
+            `Format de réponse inattendu du store: ${JSON.stringify(response).substring(0, 200)}`,
+            'PluginsService',
+          );
+          plugins = [];
+        }
+      } catch (error: any) {
+        this.logger.warn(
+          `Erreur lors de la récupération des plugins publics: ${error.message}`,
+          'PluginsService',
+        );
+        throw error;
+      }
+
+      // Note: L'endpoint public retourne les infos de base
+      // Si besoin d'enrichir avec les infos utilisateur (userHasPurchased, etc.),
+      // on peut faire des appels GET /api/plugins/:id avec auth pour chaque plugin
+      // mais cela nécessiterait beaucoup d'appels API, donc on garde la liste publique simple
+
+      // S'assurer que plugins est un tableau
+      if (!Array.isArray(plugins)) {
+        this.logger.error(
+          `La réponse du store n'est pas un tableau après extraction: ${typeof plugins}, valeur: ${JSON.stringify(plugins).substring(0, 200)}`,
+          'PluginsService',
+        );
+        plugins = [];
+      }
+
+      // Récupérer les plugins installés pour marquer ceux qui sont déjà installés
+      const installedPlugins = await this.findAll();
+      const installedPluginNames = new Set(
+        installedPlugins.map((p) => p.name),
+      );
+
+      return plugins.map((plugin) => ({
+        ...plugin,
+        installed: installedPluginNames.has(plugin.name),
+      }));
+    } catch (error: any) {
+      this.logger.error(
+        `Erreur lors de la récupération des plugins du store: ${error.message}`,
+        'PluginsService',
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Récupère les détails d'un plugin depuis le Lumy Store
+   * Utilise l'endpoint /api/plugins/:id avec authentification pour avoir les infos utilisateur
+   * Si l'utilisateur n'est pas connecté, utilise l'endpoint public /api/plugins/public/:id
+   */
+  async getPluginFromStore(userId: string, pluginId: string): Promise<any> {
+    try {
+      let plugin: any;
+      
+      try {
+        // Essayer d'abord avec authentification pour avoir les infos utilisateur (userHasPurchased, etc.)
+        plugin = await this.storeApiService.get<any>(
+          userId,
+          `/api/plugins/${pluginId}`,
+        );
+      } catch (error: any) {
+        // Si l'authentification échoue, utiliser l'endpoint public
+        this.logger.debug(
+          `Utilisateur non connecté, utilisation de l'endpoint public pour le plugin ${pluginId}`,
+          'PluginsService',
+        );
+        plugin = await this.storeApiService.getPublic<any>(
+          `/api/plugins/public/${pluginId}`,
+        );
+      }
+
+      // Vérifier si le plugin est déjà installé
+      const installedPlugin = await this.pluginRepository.findOne({
+        where: { name: plugin.name },
+      });
+
+      return {
+        ...plugin,
+        installed: !!installedPlugin,
+        installedPluginId: installedPlugin?.id,
+      };
+    } catch (error: any) {
+      this.logger.error(
+        `Erreur lors de la récupération du plugin ${pluginId} du store: ${error.message}`,
+        'PluginsService',
+      );
+      throw error;
+    }
   }
 
   /**

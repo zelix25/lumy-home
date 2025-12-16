@@ -53,7 +53,7 @@ export class PluginPaymentService {
     const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
     if (stripeSecretKey) {
       this.stripe = new Stripe(stripeSecretKey, {
-        apiVersion: '2024-12-18.acacia',
+        apiVersion: '2025-11-17.clover',
       });
       this.logger.log('Stripe initialisé', 'PluginPaymentService');
     } else {
@@ -241,14 +241,28 @@ export class PluginPaymentService {
         },
       });
 
-      const paymentIntent = (subscription.latest_invoice as Stripe.Invoice)
-        ?.payment_intent as Stripe.PaymentIntent;
+      // Accéder au payment_intent depuis l'invoice expandé
+      const latestInvoice = subscription.latest_invoice as Stripe.Invoice;
+      let paymentIntent: Stripe.PaymentIntent | null = null;
+      
+      if (latestInvoice && 'payment_intent' in latestInvoice) {
+        const paymentIntentValue = (latestInvoice as any).payment_intent;
+        if (typeof paymentIntentValue === 'object' && paymentIntentValue !== null) {
+          paymentIntent = paymentIntentValue as Stripe.PaymentIntent;
+        }
+      }
 
       // Mettre à jour la licence avec l'ID de l'abonnement
       savedLicense.subscriptionId = subscription.id;
       savedLicense.customerId = subscription.customer as string;
       if (paymentIntent?.client_secret) {
         savedLicense.paymentId = paymentIntent.id;
+      } else if (latestInvoice && 'payment_intent' in latestInvoice) {
+        // Si payment_intent est un ID string, l'utiliser directement
+        const paymentIntentValue = (latestInvoice as any).payment_intent;
+        if (typeof paymentIntentValue === 'string') {
+          savedLicense.paymentId = paymentIntentValue;
+        }
       }
       await this.licenseRepository.save(savedLicense);
 
@@ -333,8 +347,9 @@ export class PluginPaymentService {
     if (this.stripe) {
       try {
         const subscription = await this.stripe.subscriptions.retrieve(subscriptionId);
-        if (subscription.current_period_end) {
-          license.expiresAt = new Date(subscription.current_period_end * 1000);
+        const currentPeriodEnd = (subscription as any).current_period_end;
+        if (currentPeriodEnd && typeof currentPeriodEnd === 'number') {
+          license.expiresAt = new Date(currentPeriodEnd * 1000);
         }
       } catch (error: any) {
         this.logger.warn(
@@ -442,7 +457,7 @@ export class PluginPaymentService {
           deletedLicense.status = LicenseStatus.CANCELLED;
           await this.licenseRepository.save(deletedLicense);
         }
-        return { processed: true, license: deletedLicense };
+        return { processed: true, license: deletedLicense || undefined };
 
       default:
         return { processed: false };

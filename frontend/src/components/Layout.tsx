@@ -54,6 +54,7 @@ const getNavItems = (t: (key: string) => string): NavItem[] => [
   { label: t('common.assistant'), path: '/assistant', icon: <SmartToyIcon /> },
   { label: t('common.history'), path: '/historique', icon: <HistoryIcon /> },
   { label: t('common.plan'), path: '/plan', icon: <MapIcon /> },
+  { label: t('menu.store'), path: '/store', icon: <StoreIcon /> },
   { label: t('common.debug'), path: '/debug', icon: <BugReportIcon /> },
 ];
 

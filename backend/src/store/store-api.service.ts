@@ -58,7 +58,7 @@ export class StoreApiService {
   }
 
   /**
-   * Fait une requête GET vers l'API du store
+   * Fait une requête GET vers l'API du store (avec authentification)
    */
   async get<T = any>(
     userId: string,
@@ -80,6 +80,49 @@ export class StoreApiService {
       return response.data;
     } catch (error: any) {
       return this.handleError(error, userId);
+    }
+  }
+
+  /**
+   * Fait une requête GET vers l'API du store sans authentification (endpoints publics)
+   */
+  async getPublic<T = any>(
+    endpoint: string,
+    params?: Record<string, any>,
+    options?: { responseType?: 'json' | 'arraybuffer' | 'blob' },
+  ): Promise<T> {
+    try {
+      const response = await this.axiosInstance.get(endpoint, {
+        params,
+        responseType: options?.responseType || 'json',
+      });
+
+      return response.data;
+    } catch (error: any) {
+      if (error.response) {
+        const status = error.response.status;
+        const data = error.response.data as any;
+
+        if (status === 404) {
+          throw new BadRequestException(
+            data?.message || 'Ressource non trouvée sur le store',
+          );
+        }
+
+        throw new BadRequestException(
+          data?.message || `Erreur lors de la communication avec le store: ${error.message}`,
+        );
+      }
+
+      if (error.request) {
+        throw new BadRequestException(
+          'Impossible de contacter le Lumy Store. Vérifiez votre connexion internet.',
+        );
+      }
+
+      throw new BadRequestException(
+        `Erreur lors de la communication avec le store: ${error.message}`,
+      );
     }
   }
 

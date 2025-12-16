@@ -38,8 +38,10 @@ export class StoreAuthController {
     const isConnected = await this.storeAuthService.isConnectedToStore(
       user.id,
     );
+    const apiToken = await this.storeAuthService.getStoreApiToken(user.id);
     return {
       connected: isConnected,
+      storeEmail: apiToken ? 'connected' : undefined, // Optionnel: on pourrait récupérer l'email du store
     };
   }
 }

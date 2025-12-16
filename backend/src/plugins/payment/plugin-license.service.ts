@@ -16,7 +16,8 @@ import {
 } from '../entities/plugin-license.entity';
 import { Plugin } from '../entities/plugin.entity';
 import { LoggerService } from '../../logger/logger.service';
-import { PluginAnalyticsService, AnalyticsEventType } from '../plugin-analytics.service';
+import { PluginAnalyticsService } from '../plugin-analytics.service';
+//import { AnalyticsEventType } from '../entities/plugin-analytics.entity';
 
 export interface CreateLicenseDto {
   pluginId: string;

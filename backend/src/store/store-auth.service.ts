@@ -182,12 +182,12 @@ export class StoreAuthService {
       throw new UnauthorizedException('Utilisateur non trouvé');
     }
 
-    if (!user.storeApiToken) {
+    if (!user.storeApiToken || user.storeApiToken.trim().length === 0) {
       throw new BadRequestException('Aucune connexion au store active');
     }
 
-    user.storeApiToken = '';
-    user.storeApiTokenGeneratedAt = new Date();
+    user.storeApiToken = null;
+    user.storeApiTokenGeneratedAt = null;
     await this.userRepository.save(user);
 
     this.logger.log(
@@ -204,10 +204,29 @@ export class StoreAuthService {
   async isConnectedToStore(userId: string): Promise<boolean> {
     const user = await this.userRepository.findOne({
       where: { id: userId },
-      select: ['id', 'storeApiToken'],
     });
 
-    return !!user?.storeApiToken;
+    if (!user) {
+      this.logger.warn(
+        `Utilisateur ${userId} non trouvé lors de la vérification de connexion au store`,
+        'StoreAuthService',
+      );
+      return false;
+    }
+
+    // Vérifier que le token existe et n'est pas une chaîne vide
+    const hasToken = !!(
+      user.storeApiToken &&
+      typeof user.storeApiToken === 'string' &&
+      user.storeApiToken.trim().length > 0
+    );
+    
+    this.logger.debug(
+      `Vérification connexion store pour ${userId}: ${hasToken ? 'connecté' : 'non connecté'} (token: ${user.storeApiToken ? `présent (${user.storeApiToken.substring(0, 10)}...)` : 'absent'})`,
+      'StoreAuthService',
+    );
+
+    return hasToken;
   }
 
   /**

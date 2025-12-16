@@ -597,6 +597,22 @@
       "message": "Connecté au store avec le compte : {{email}}",
       "unknown": "compte inconnu",
       "description": "Vous êtes connecté au Lumy Store. Vous pouvez maintenant installer et utiliser des plugins depuis le store."
+    },
+    "plugins": {
+      "title": "Boutique de plugins",
+      "searchPlaceholder": "Rechercher un plugin...",
+      "notConnected": "Vous devez être connecté au Lumy Store pour accéder aux plugins.",
+      "notConnectedWarning": "Vous n'êtes pas connecté au Lumy Store. Vous pouvez parcourir les plugins, mais vous devrez vous connecter pour les installer.",
+      "installRequiresConnection": "Vous devez être connecté au Lumy Store pour installer des plugins.",
+      "noPlugins": "Aucun plugin disponible pour le moment.",
+      "loadError": "Erreur lors du chargement des plugins.",
+      "install": "Installer",
+      "installed": "Installé",
+      "alreadyInstalled": "Ce plugin est déjà installé.",
+      "installSuccess": "Plugin {{name}} installé avec succès !",
+      "installError": "Erreur lors de l'installation du plugin.",
+      "details": "Détails",
+      "version": "Version"
     }
   }
 }

@@ -85,6 +85,34 @@ class PluginsService {
   async getPlugin(pluginId: string): Promise<Plugin> {
     return apiService.get<Plugin>(`/plugins/${pluginId}`);
   }
+
+  /**
+   * Récupère les plugins disponibles sur le Lumy Store
+   */
+  async getAvailablePluginsFromStore(
+    search?: string,
+    category?: string,
+  ): Promise<any[]> {
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    if (category) params.append('category', category);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return apiService.get<any[]>(`/plugins/store/available${query}`);
+  }
+
+  /**
+   * Récupère les détails d'un plugin depuis le Lumy Store
+   */
+  async getPluginFromStore(pluginId: string): Promise<any> {
+    return apiService.get<any>(`/plugins/store/${pluginId}`);
+  }
+
+  /**
+   * Installe un plugin depuis le Lumy Store
+   */
+  async installFromStore(pluginId: string): Promise<Plugin> {
+    return apiService.post<Plugin>('/plugins/store/install', { pluginId });
+  }
 }
 
 export const pluginsService = new PluginsService();

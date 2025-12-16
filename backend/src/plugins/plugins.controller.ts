@@ -79,6 +79,29 @@ export class PluginsController {
   }
 
   /**
+   * Récupère les plugins disponibles sur le Lumy Store
+   */
+  @Get('store/available')
+  async getAvailablePluginsFromStore(
+    @CurrentUser() user: { id: string; email: string },
+    @Query('search') search?: string,
+    @Query('category') category?: string,
+  ) {
+    return this.pluginsService.getAvailablePluginsFromStore(user.id, search, category);
+  }
+
+  /**
+   * Récupère les détails d'un plugin depuis le Lumy Store
+   */
+  @Get('store/:pluginId')
+  async getPluginFromStore(
+    @CurrentUser() user: { id: string; email: string },
+    @Param('pluginId') pluginId: string,
+  ) {
+    return this.pluginsService.getPluginFromStore(user.id, pluginId);
+  }
+
+  /**
    * Installe un plugin depuis le Lumy Store
    */
   @Post('store/install')

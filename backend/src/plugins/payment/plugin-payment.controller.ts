@@ -114,7 +114,7 @@ export class PluginPaymentController {
   @Post('webhook/stripe')
   @HttpCode(HttpStatus.OK)
   async handleStripeWebhook(@Req() req: RawBodyRequest<Request>) {
-    const sig = req.headers['stripe-signature'] as string;
+    const sig = req.headers.get('stripe-signature') as string;
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
     if (!webhookSecret) {
@@ -126,7 +126,7 @@ export class PluginPaymentController {
     try {
       // Vérifier la signature du webhook
       event = this.paymentService.verifyWebhookSignature(
-        req.rawBody,
+        req.rawBody || '',
         sig,
         webhookSecret,
       );
