@@ -16,7 +16,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  IconButton,
   Stack,
 } from '@mui/material';
 import {
@@ -40,6 +39,7 @@ interface StorePlugin {
   version: string;
   author?: string;
   icon?: string;
+  screenshots?: string[];
   price?: number;
   category?: string;
   installed?: boolean;
@@ -49,7 +49,7 @@ interface StorePlugin {
 
 export default function StorePage() {
   const { t } = useTranslation();
-  const { showNotification } = useNotification();
+  const { addNotification } = useNotification();
   const navigate = useNavigate();
   const [plugins, setPlugins] = useState<StorePlugin[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,10 +95,10 @@ export default function StorePage() {
       setPlugins(storePlugins || []);
     } catch (error: any) {
       console.error('Erreur lors du chargement des plugins:', error);
-      showNotification(
-        error.message || t('store.plugins.loadError'),
-        'error',
-      );
+      addNotification({
+        message: error.message || t('store.plugins.loadError'),
+        type: 'error',
+      });
     } finally {
       setLoading(false);
     }
@@ -106,16 +106,19 @@ export default function StorePage() {
 
   const handleInstall = async (plugin: StorePlugin) => {
     if (plugin.installed) {
-      showNotification(t('store.plugins.alreadyInstalled'), 'info');
+      addNotification({
+        message: t('store.plugins.alreadyInstalled'),
+        type: 'info',
+      });
       return;
     }
 
     // Vérifier la connexion avant d'installer
     if (!connected) {
-      showNotification(
-        t('store.plugins.installRequiresConnection'),
-        'warning',
-      );
+      addNotification({
+        message: t('store.plugins.installRequiresConnection'),
+        type: 'warning',
+      });
       navigate('/store/connect');
       return;
     }
@@ -123,18 +126,18 @@ export default function StorePage() {
     try {
       setInstalling(plugin.id);
       await pluginsService.installFromStore(plugin.id);
-      showNotification(
-        t('store.plugins.installSuccess', { name: plugin.displayName }),
-        'success',
-      );
+      addNotification({
+        message: t('store.plugins.installSuccess', { name: plugin.displayName }),
+        type: 'success',
+      });
       // Recharger les plugins pour mettre à jour le statut
       await loadPlugins();
     } catch (error: any) {
       console.error('Erreur lors de l\'installation:', error);
-      showNotification(
-        error.message || t('store.plugins.installError'),
-        'error',
-      );
+      addNotification({
+        message: error.message || t('store.plugins.installError'),
+        type: 'error',
+      });
     } finally {
       setInstalling(null);
     }
@@ -143,6 +146,26 @@ export default function StorePage() {
   const handleViewDetails = (plugin: StorePlugin) => {
     setSelectedPlugin(plugin);
     setDialogOpen(true);
+  };
+
+  // Fonction helper pour construire l'URL complète avec VITE_STORE_URL
+  const getStoreUrl = (path?: string): string | undefined => {
+    if (!path) return undefined;
+    // Si l'URL est déjà absolue (commence par http:// ou https://), la retourner telle quelle
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return path;
+    }
+    // Sinon, préfixer avec VITE_STORE_URL
+    const storeUrl = import.meta.env.VITE_STORE_URL || '';
+    if (!storeUrl) return path;
+    // S'assurer que storeUrl se termine par / et que path ne commence pas par /
+    const cleanStoreUrl = storeUrl.endsWith('/') ? storeUrl.slice(0, -1) : storeUrl;
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    // Si storeUrl ne contient pas de protocole, ajouter http://
+    if (!cleanStoreUrl.startsWith('http://') && !cleanStoreUrl.startsWith('https://')) {
+      return `http://${cleanStoreUrl}${cleanPath}`;
+    }
+    return `${cleanStoreUrl}${cleanPath}`;
   };
 
   // Ne plus bloquer l'affichage si non connecté, mais afficher un avertissement
@@ -219,7 +242,7 @@ export default function StorePage() {
                     {plugin.icon ? (
                       <Box
                         component="img"
-                        src={plugin.icon}
+                        src={getStoreUrl(plugin.icon)}
                         alt={plugin.displayName}
                         sx={{
                           width: 64,
@@ -332,7 +355,7 @@ export default function StorePage() {
                 {selectedPlugin.icon && (
                   <Box
                     component="img"
-                    src={selectedPlugin.icon}
+                    src={getStoreUrl(selectedPlugin.icon)}
                     alt={selectedPlugin.displayName}
                     sx={{
                       width: 48,
@@ -379,6 +402,32 @@ export default function StorePage() {
                   />
                 )}
               </Stack>
+              {selectedPlugin.screenshots && selectedPlugin.screenshots.length > 0 && (
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="h6" gutterBottom>
+                    {t('store.plugins.screenshots')}
+                  </Typography>
+                  <Grid container spacing={2}>
+                    {selectedPlugin.screenshots.map((screenshot, index) => (
+                      <Grid item xs={12} sm={6} key={index}>
+                        <Box
+                          component="img"
+                          src={getStoreUrl(screenshot)}
+                          alt={`${selectedPlugin.displayName} - Screenshot ${index + 1}`}
+                          sx={{
+                            width: '100%',
+                            height: 'auto',
+                            borderRadius: 1,
+                            objectFit: 'cover',
+                            border: '1px solid',
+                            borderColor: 'divider',
+                          }}
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Box>
+              )}
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setDialogOpen(false)}>

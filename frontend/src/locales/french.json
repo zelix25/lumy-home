@@ -22,7 +22,8 @@
     "skip": "Passer",
     "create": "Ajouter",
     "none": "Aucun",
-    "selected": "Sélectionné"
+    "selected": "Sélectionné",
+    "close": "Fermer"
   },
   "devices": {
     "title": "Appareils",
@@ -612,7 +613,8 @@
       "installSuccess": "Plugin {{name}} installé avec succès !",
       "installError": "Erreur lors de l'installation du plugin.",
       "details": "Détails",
-      "version": "Version"
+      "version": "Version",
+      "screenshots": "Captures d'écran"
     }
   }
 }

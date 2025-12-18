@@ -21,7 +21,8 @@
     "success": "Success",
     "skip": "Skip",
     "none": "None",
-    "selected": "Selected"
+    "selected": "Selected",
+    "close": "Close"
   },
   "devices": {
     "title": "Devices",
@@ -611,7 +612,8 @@
       "installSuccess": "Plugin {{name}} installed successfully!",
       "installError": "Error installing plugin.",
       "details": "Details",
-      "version": "Version"
+      "version": "Version",
+      "screenshots": "Screenshots"
     }
   }
 }
