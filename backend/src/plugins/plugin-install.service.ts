@@ -76,7 +76,9 @@ export class PluginInstallService {
         'PluginInstallService',
       );
 
-      const storePlugin = await this.storeApiService.get<{
+      // Utiliser l'endpoint authentifié pour récupérer les informations du plugin
+      // Cela permet d'avoir accès au downloadUrl et aux informations utilisateur
+      let storePlugin: {
         id: string;
         name: string;
         displayName: string;
@@ -91,7 +93,24 @@ export class PluginInstallService {
         dependencies?: Record<string, string>;
         configSchema?: Record<string, any>;
         metadata?: Record<string, any>;
-      }>(userId, `/api/plugins/public/${pluginId}`);
+      };
+
+      try {
+        // Essayer d'abord avec l'endpoint authentifié
+        storePlugin = await this.storeApiService.get<typeof storePlugin>(
+          userId,
+          `/api/plugins/${pluginId}`,
+        );
+      } catch (error: any) {
+        // Si l'authentification échoue, essayer l'endpoint public
+        this.logger.warn(
+          `Impossible d'utiliser l'endpoint authentifié pour ${pluginId}, utilisation de l'endpoint public`,
+          'PluginInstallService',
+        );
+        storePlugin = await this.storeApiService.getPublic<typeof storePlugin>(
+          `/api/plugins/public/${pluginId}`,
+        );
+      }
 
       if (!storePlugin) {
         throw new NotFoundException(

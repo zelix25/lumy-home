@@ -54,6 +54,23 @@ export class StoreApiService {
       );
     }
 
+    // Vérifier que le token a le bon format (doit commencer par "lumy_")
+    if (!apiToken.startsWith('lumy_')) {
+      this.logger.warn(
+        `Token API invalide pour l'utilisateur ${userId}: le token ne commence pas par "lumy_" (format: ${apiToken.substring(0, 10)}...)`,
+        'StoreApiService',
+      );
+      throw new UnauthorizedException(
+        'Token API invalide: format incorrect. Le token doit commencer par "lumy_"',
+      );
+    }
+
+    // Log pour déboguer (seulement les 10 premiers caractères pour la sécurité)
+    this.logger.debug(
+      `Token API récupéré pour l'utilisateur ${userId}: ${apiToken.substring(0, 10)}... (longueur: ${apiToken.length})`,
+      'StoreApiService',
+    );
+
     return apiToken;
   }
 
@@ -69,6 +86,11 @@ export class StoreApiService {
     const apiToken = await this.getValidApiToken(userId);
 
     try {
+      this.logger.debug(
+        `Requête GET vers le store: ${endpoint} avec token ${apiToken.substring(0, 10)}...`,
+        'StoreApiService',
+      );
+      
       const response = await this.axiosInstance.get(endpoint, {
         params,
         headers: {
@@ -79,7 +101,7 @@ export class StoreApiService {
 
       return response.data;
     } catch (error: any) {
-      return this.handleError(error, userId);
+      return await this.handleError(error, userId);
     }
   }
 
@@ -145,7 +167,7 @@ export class StoreApiService {
 
       return response.data;
     } catch (error: any) {
-      return this.handleError(error, userId);
+      return await this.handleError(error, userId);
     }
   }
 
@@ -187,14 +209,14 @@ export class StoreApiService {
 
       return response.data;
     } catch (error: any) {
-      return this.handleError(error, userId);
+      return await this.handleError(error, userId);
     }
   }
 
   /**
    * Gère les erreurs des requêtes API
    */
-  private handleError(error: AxiosError, userId: string): never {
+  private async handleError(error: AxiosError, userId: string): Promise<never> {
     if (error.response) {
       // Erreur HTTP du store
       const status = error.response.status;
@@ -202,16 +224,25 @@ export class StoreApiService {
 
       if (status === 401) {
         // Token invalide ou expiré
-        this.logger.warn(
-          `Token API invalide pour l'utilisateur ${userId}, déconnexion du store`,
-          'StoreApiService',
-        );
+        // Récupérer le token pour le log de débogage
+        const apiToken = await this.storeAuthService.getStoreApiToken(userId);
+        if (apiToken) {
+          this.logger.warn(
+            `Token API invalide pour l'utilisateur ${userId}. Token utilisé: ${apiToken.substring(0, 10)}... (longueur: ${apiToken.length}, commence par "lumy_": ${apiToken.startsWith('lumy_')}). Réponse du store: ${JSON.stringify(data)}. URL: ${error.config?.url || 'unknown'}`,
+            'StoreApiService',
+          );
+        } else {
+          this.logger.warn(
+            `Token API manquant pour l'utilisateur ${userId}. Réponse du store: ${JSON.stringify(data)}. URL: ${error.config?.url || 'unknown'}`,
+            'StoreApiService',
+          );
+        }
 
         // Optionnel : déconnecter automatiquement l'utilisateur
         // await this.storeAuthService.disconnectStore(userId);
 
         throw new UnauthorizedException(
-          'Votre connexion au store a expiré. Veuillez vous reconnecter.',
+          data?.message || 'Votre connexion au store a expiré. Veuillez vous reconnecter.',
         );
       }
 
