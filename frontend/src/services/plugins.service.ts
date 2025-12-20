@@ -111,7 +111,49 @@ class PluginsService {
    * Installe un plugin depuis le Lumy Store
    */
   async installFromStore(pluginId: string): Promise<Plugin> {
-    return apiService.post<Plugin>('/plugins/store/install', { pluginId });
+    // Récupérer le tokenStore du localStorage
+    const tokenStore = localStorage.getItem('tokenStore');
+    
+    // Créer les headers avec le tokenStore si disponible
+    const headers: HeadersInit = {};
+    if (tokenStore) {
+      headers['X-Store-Token'] = tokenStore;
+    }
+    
+    // Utiliser apiService.post avec des headers personnalisés
+    const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+    const url = API_BASE_URL.startsWith('http') 
+      ? `${API_BASE_URL}/plugins/store/install` 
+      : `${API_BASE_URL}/plugins/store/install`;
+    
+    const token = localStorage.getItem('lumy_token');
+    const allHeaders: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...headers,
+    };
+    if (token) {
+      allHeaders['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: allHeaders,
+      body: JSON.stringify({ pluginId }),
+    });
+    
+    if (response.status === 401) {
+      localStorage.removeItem('lumy_token');
+      localStorage.removeItem('lumy_user');
+      window.location.href = '/login';
+      throw new Error('Non autorisé');
+    }
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || `HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
   }
 }
 

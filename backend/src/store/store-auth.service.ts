@@ -47,7 +47,7 @@ export class StoreAuthService {
   async connectStore(
     userId: string,
     connectDto: ConnectStoreDto,
-  ): Promise<{ message: string; storeEmail: string }> {
+  ): Promise<{ message: string; storeEmail: string; tokenStore: string }> {
     const user = await this.userRepository.findOne({
       where: { id: userId },
     });
@@ -151,6 +151,7 @@ export class StoreAuthService {
       return {
         message: 'Connexion au store réussie',
         storeEmail: connectDto.email,
+        tokenStore: accessToken, // Token JWT du store à stocker dans le navigateur
       };
     } catch (error: any) {
       if (error.response) {

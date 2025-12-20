@@ -81,20 +81,39 @@ export class StoreApiService {
     userId: string,
     endpoint: string,
     params?: Record<string, any>,
-    options?: { responseType?: 'json' | 'arraybuffer' | 'blob' },
+    options?: { responseType?: 'json' | 'arraybuffer' | 'blob'; tokenStore?: string },
   ): Promise<T> {
+    // Récupérer le storeApiToken de la base de données pour l'ajouter comme paramètre
     const apiToken = await this.getValidApiToken(userId);
+    
+    // Utiliser le tokenStore JWT si fourni, sinon utiliser le storeApiToken pour l'authentification
+    const authToken = options?.tokenStore || apiToken;
+    
+    // Log pour confirmer l'utilisation du tokenStore JWT
+    if (options?.tokenStore) {
+      this.logger.debug(
+        `Utilisation du tokenStore JWT pour l'authentification (${authToken.substring(0, 20)}...)`,
+        'StoreApiService',
+      );
+    }
 
     try {
       this.logger.debug(
-        `Requête GET vers le store: ${endpoint} avec token ${apiToken.substring(0, 10)}...`,
+        `Requête GET vers le store: ${endpoint} avec Bearer token ${authToken.substring(0, 20)}...`,
         'StoreApiService',
       );
       
+      // Ajouter le storeApiToken comme paramètre dans les requêtes
+      const requestParams = {
+        ...params,
+        storeApiToken: apiToken,
+      };
+      
+      // Construire la requête avec le Bearer token JWT dans le header Authorization
       const response = await this.axiosInstance.get(endpoint, {
-        params,
+        params: requestParams,
         headers: {
-          Authorization: `Bearer ${apiToken}`,
+          Authorization: `Bearer ${authToken}`, // Bearer token JWT (tokenStore) ou storeApiToken
         },
         responseType: options?.responseType || 'json',
       });

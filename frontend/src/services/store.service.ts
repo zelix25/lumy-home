@@ -12,6 +12,7 @@ export interface StoreConnectionStatus {
 export interface ConnectStoreResponse {
   message: string;
   storeEmail: string;
+  tokenStore?: string; // Token JWT du store à stocker dans le navigateur
 }
 
 class StoreService {

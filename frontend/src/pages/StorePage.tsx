@@ -60,8 +60,15 @@ export default function StorePage() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
+    // Vérifier si le tokenStore est présent dans le navigateur
+    const tokenStore = localStorage.getItem('tokenStore');
+    if (!tokenStore) {
+      // Rediriger vers la page de connexion si le token n'est pas présent
+      navigate('/store/connect', { replace: true });
+      return;
+    }
     checkConnectionAndLoadPlugins();
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     // Charger les plugins même si l'utilisateur n'est pas connecté (endpoint public)

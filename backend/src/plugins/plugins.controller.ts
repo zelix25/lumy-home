@@ -11,6 +11,7 @@ import {
   HttpStatus,
   UseGuards,
   NotFoundException,
+  Headers,
 } from '@nestjs/common';
 import { PluginsService } from './plugins.service';
 import { PluginUIExtensionService } from './plugin-ui-extension.service';
@@ -109,8 +110,9 @@ export class PluginsController {
   async installFromStore(
     @CurrentUser() user: { id: string; email: string },
     @Body() installDto: InstallFromStoreDto,
+    @Headers('x-store-token') tokenStore?: string,
   ) {
-    return this.pluginsService.installFromStore(user.id, installDto.pluginId);
+    return this.pluginsService.installFromStore(user.id, installDto.pluginId, tokenStore);
   }
 
   /**

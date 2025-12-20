@@ -57,6 +57,12 @@ export default function StoreConnectPage() {
       const response = await storeService.connectStore(credentials);
       setConnected(true);
       setStoreEmail(response.storeEmail);
+      
+      // Stocker le token JWT du store dans le navigateur
+      if (response.tokenStore) {
+        localStorage.setItem('tokenStore', response.tokenStore);
+      }
+      
       setSuccess(t('store.connect.success'));
       setEmail('');
       setPassword('');
@@ -77,6 +83,10 @@ export default function StoreConnectPage() {
       await storeService.disconnectStore();
       setConnected(false);
       setStoreEmail(null);
+      
+      // Supprimer le token JWT du store du navigateur
+      localStorage.removeItem('tokenStore');
+      
       setSuccess(t('store.disconnect.success'));
     } catch (err: any) {
       const errorMessage = err.message || t('store.disconnect.error');
