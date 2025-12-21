@@ -611,6 +611,10 @@
       "alreadyInstalled": "This plugin is already installed.",
       "installSuccess": "Plugin {{name}} installed successfully!",
       "installError": "Error installing plugin.",
+      "uninstall": "Uninstall",
+      "uninstallSuccess": "Plugin {{name}} uninstalled successfully!",
+      "uninstallError": "Error uninstalling plugin.",
+      "uninstallConfirm": "Are you sure you want to uninstall this plugin? This action is irreversible.",
       "details": "Details",
       "version": "Version",
       "screenshots": "Screenshots"

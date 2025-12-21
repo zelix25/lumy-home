@@ -155,6 +155,13 @@ class PluginsService {
     
     return response.json();
   }
+
+  /**
+   * Désinstalle un plugin
+   */
+  async uninstall(pluginId: string): Promise<void> {
+    await apiService.delete(`/plugins/${pluginId}`);
+  }
 }
 
 export const pluginsService = new PluginsService();

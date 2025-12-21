@@ -24,6 +24,7 @@ import {
   CheckCircle as CheckCircleIcon,
   Store as StoreIcon,
   Info as InfoIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { pluginsService } from '../services/plugins.service';
@@ -43,6 +44,7 @@ interface StorePlugin {
   price?: number;
   category?: string;
   installed?: boolean;
+  installedPluginId?: string; // ID du plugin installé (pour la désinstallation)
   rating?: number;
   downloads?: number;
 }
@@ -54,10 +56,13 @@ export default function StorePage() {
   const [plugins, setPlugins] = useState<StorePlugin[]>([]);
   const [loading, setLoading] = useState(true);
   const [installing, setInstalling] = useState<string | null>(null);
+  const [uninstalling, setUninstalling] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [connected, setConnected] = useState(false);
   const [selectedPlugin, setSelectedPlugin] = useState<StorePlugin | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [uninstallDialogOpen, setUninstallDialogOpen] = useState(false);
+  const [pluginToUninstall, setPluginToUninstall] = useState<StorePlugin | null>(null);
 
   useEffect(() => {
     // Vérifier si le tokenStore est présent dans le navigateur
@@ -99,7 +104,20 @@ export default function StorePage() {
       const storePlugins = await pluginsService.getAvailablePluginsFromStore(
         search || undefined,
       );
-      setPlugins(storePlugins || []);
+      
+      // Récupérer les plugins installés pour obtenir leurs IDs
+      const installedPlugins = await pluginsService.getAllPlugins();
+      const installedPluginsMap = new Map(
+        installedPlugins.map((p) => [p.name, p.id])
+      );
+      
+      // Enrichir les plugins du store avec les IDs des plugins installés
+      const enrichedPlugins = (storePlugins || []).map((plugin: StorePlugin) => ({
+        ...plugin,
+        installedPluginId: installedPluginsMap.get(plugin.name),
+      }));
+      
+      setPlugins(enrichedPlugins);
     } catch (error: any) {
       console.error('Erreur lors du chargement des plugins:', error);
       addNotification({
@@ -148,6 +166,42 @@ export default function StorePage() {
     } finally {
       setInstalling(null);
     }
+  };
+
+  const handleUninstall = async (plugin: StorePlugin) => {
+    if (!plugin.installedPluginId) {
+      addNotification({
+        message: t('store.plugins.uninstallError'),
+        type: 'error',
+      });
+      return;
+    }
+
+    try {
+      setUninstalling(plugin.id);
+      await pluginsService.uninstall(plugin.installedPluginId);
+      addNotification({
+        message: t('store.plugins.uninstallSuccess', { name: plugin.displayName }),
+        type: 'success',
+      });
+      // Recharger les plugins pour mettre à jour le statut
+      await loadPlugins();
+    } catch (error: any) {
+      console.error('Erreur lors de la désinstallation:', error);
+      addNotification({
+        message: error.message || t('store.plugins.uninstallError'),
+        type: 'error',
+      });
+    } finally {
+      setUninstalling(null);
+      setUninstallDialogOpen(false);
+      setPluginToUninstall(null);
+    }
+  };
+
+  const handleUninstallClick = (plugin: StorePlugin) => {
+    setPluginToUninstall(plugin);
+    setUninstallDialogOpen(true);
   };
 
   const handleViewDetails = (plugin: StorePlugin) => {
@@ -319,28 +373,46 @@ export default function StorePage() {
                   >
                     {t('store.plugins.details')}
                   </Button>
-                  <Button
-                    size="small"
-                    variant="contained"
-                    startIcon={
-                      installing === plugin.id ? (
-                        <CircularProgress size={16} />
-                      ) : (
-                        <InstallIcon />
-                      )
-                    }
-                    onClick={() => handleInstall(plugin)}
-                    disabled={
-                      installing === plugin.id ||
-                      plugin.installed ||
-                      !!installing
-                    }
-                    sx={{ ml: 'auto' }}
-                  >
-                    {plugin.installed
-                      ? t('store.plugins.installed')
-                      : t('store.plugins.install')}
-                  </Button>
+                  {plugin.installed ? (
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="error"
+                      startIcon={
+                        uninstalling === plugin.id ? (
+                          <CircularProgress size={16} />
+                        ) : (
+                          <DeleteIcon />
+                        )
+                      }
+                      onClick={() => handleUninstallClick(plugin)}
+                      disabled={uninstalling === plugin.id || !!uninstalling}
+                      sx={{ ml: 'auto' }}
+                    >
+                      {t('store.plugins.uninstall')}
+                    </Button>
+                  ) : (
+                    <Button
+                      size="small"
+                      variant="contained"
+                      startIcon={
+                        installing === plugin.id ? (
+                          <CircularProgress size={16} />
+                        ) : (
+                          <InstallIcon />
+                        )
+                      }
+                      onClick={() => handleInstall(plugin)}
+                      disabled={
+                        installing === plugin.id ||
+                        plugin.installed ||
+                        !!installing
+                      }
+                      sx={{ ml: 'auto' }}
+                    >
+                      {t('store.plugins.install')}
+                    </Button>
+                  )}
                 </CardActions>
               </Card>
             </Grid>
@@ -440,32 +512,96 @@ export default function StorePage() {
               <Button onClick={() => setDialogOpen(false)}>
                 {t('common.close')}
               </Button>
-              <Button
-                variant="contained"
-                startIcon={
-                  installing === selectedPlugin.id ? (
-                    <CircularProgress size={16} />
-                  ) : (
-                    <InstallIcon />
-                  )
-                }
-                onClick={() => {
-                  handleInstall(selectedPlugin);
-                  setDialogOpen(false);
-                }}
-                disabled={
-                  installing === selectedPlugin.id ||
-                  selectedPlugin.installed ||
-                  !!installing
-                }
-              >
-                {selectedPlugin.installed
-                  ? t('store.plugins.installed')
-                  : t('store.plugins.install')}
-              </Button>
+              {selectedPlugin.installed ? (
+                <Button
+                  variant="outlined"
+                  color="error"
+                  startIcon={
+                    uninstalling === selectedPlugin.id ? (
+                      <CircularProgress size={16} />
+                    ) : (
+                      <DeleteIcon />
+                    )
+                  }
+                  onClick={() => {
+                    setDialogOpen(false);
+                    handleUninstallClick(selectedPlugin);
+                  }}
+                  disabled={uninstalling === selectedPlugin.id || !!uninstalling}
+                >
+                  {t('store.plugins.uninstall')}
+                </Button>
+              ) : (
+                <Button
+                  variant="contained"
+                  startIcon={
+                    installing === selectedPlugin.id ? (
+                      <CircularProgress size={16} />
+                    ) : (
+                      <InstallIcon />
+                    )
+                  }
+                  onClick={() => {
+                    handleInstall(selectedPlugin);
+                    setDialogOpen(false);
+                  }}
+                  disabled={
+                    installing === selectedPlugin.id ||
+                    selectedPlugin.installed ||
+                    !!installing
+                  }
+                >
+                  {t('store.plugins.install')}
+                </Button>
+              )}
             </DialogActions>
           </>
         )}
+      </Dialog>
+
+      {/* Dialog de confirmation de désinstallation */}
+      <Dialog
+        open={uninstallDialogOpen}
+        onClose={() => {
+          setUninstallDialogOpen(false);
+          setPluginToUninstall(null);
+        }}
+      >
+        <DialogTitle>{t('store.plugins.uninstall')}</DialogTitle>
+        <DialogContent>
+          <Typography>
+            {pluginToUninstall &&
+              t('store.plugins.uninstallConfirm', {
+                name: pluginToUninstall.displayName,
+              })}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setUninstallDialogOpen(false);
+              setPluginToUninstall(null);
+            }}
+            disabled={uninstalling === pluginToUninstall?.id}
+          >
+            {t('common.cancel')}
+          </Button>
+          <Button
+            onClick={() => pluginToUninstall && handleUninstall(pluginToUninstall)}
+            color="error"
+            variant="contained"
+            disabled={uninstalling === pluginToUninstall?.id}
+            startIcon={
+              uninstalling === pluginToUninstall?.id ? (
+                <CircularProgress size={16} />
+              ) : (
+                <DeleteIcon />
+              )
+            }
+          >
+            {t('store.plugins.uninstall')}
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );
