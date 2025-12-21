@@ -468,7 +468,22 @@ export class PluginsService {
       this.pluginPermissionsService.validatePermissions(plugin.permissions);
     }
 
-    return plugin;
+    // Activer automatiquement le plugin après l'installation
+    try {
+      const enabledPlugin = await this.enable(plugin.id);
+      this.logger.log(
+        `Plugin ${plugin.name} activé automatiquement après l'installation`,
+        'PluginsService',
+      );
+      return enabledPlugin;
+    } catch (error: any) {
+      // Si l'activation échoue, retourner le plugin installé quand même
+      this.logger.warn(
+        `Impossible d'activer automatiquement le plugin ${plugin.name} après l'installation: ${error.message}`,
+        'PluginsService',
+      );
+      return plugin;
+    }
   }
 
   /**

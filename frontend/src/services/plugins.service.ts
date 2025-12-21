@@ -157,6 +157,20 @@ class PluginsService {
   }
 
   /**
+   * Active un plugin
+   */
+  async enable(pluginId: string): Promise<Plugin> {
+    return apiService.post<Plugin>(`/plugins/${pluginId}/enable`);
+  }
+
+  /**
+   * Désactive un plugin
+   */
+  async disable(pluginId: string): Promise<Plugin> {
+    return apiService.post<Plugin>(`/plugins/${pluginId}/disable`);
+  }
+
+  /**
    * Désinstalle un plugin
    */
   async uninstall(pluginId: string): Promise<void> {

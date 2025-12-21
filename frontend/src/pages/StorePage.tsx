@@ -61,6 +61,8 @@ export default function StorePage() {
   const [connected, setConnected] = useState(false);
   const [selectedPlugin, setSelectedPlugin] = useState<StorePlugin | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [installDialogOpen, setInstallDialogOpen] = useState(false);
+  const [pluginToInstall, setPluginToInstall] = useState<StorePlugin | null>(null);
   const [uninstallDialogOpen, setUninstallDialogOpen] = useState(false);
   const [pluginToUninstall, setPluginToUninstall] = useState<StorePlugin | null>(null);
 
@@ -129,7 +131,7 @@ export default function StorePage() {
     }
   };
 
-  const handleInstall = async (plugin: StorePlugin) => {
+  const handleInstallClick = (plugin: StorePlugin) => {
     if (plugin.installed) {
       addNotification({
         message: t('store.plugins.alreadyInstalled'),
@@ -148,11 +150,18 @@ export default function StorePage() {
       return;
     }
 
+    setPluginToInstall(plugin);
+    setInstallDialogOpen(true);
+  };
+
+  const handleInstallConfirm = async () => {
+    if (!pluginToInstall) return;
+
     try {
-      setInstalling(plugin.id);
-      await pluginsService.installFromStore(plugin.id);
+      setInstalling(pluginToInstall.id);
+      await pluginsService.installFromStore(pluginToInstall.id);
       addNotification({
-        message: t('store.plugins.installSuccess', { name: plugin.displayName }),
+        message: t('store.plugins.installSuccess', { name: pluginToInstall.displayName }),
         type: 'success',
       });
       // Recharger les plugins pour mettre à jour le statut
@@ -165,6 +174,8 @@ export default function StorePage() {
       });
     } finally {
       setInstalling(null);
+      setInstallDialogOpen(false);
+      setPluginToInstall(null);
     }
   };
 
@@ -179,6 +190,20 @@ export default function StorePage() {
 
     try {
       setUninstalling(plugin.id);
+      
+      // Désactiver le plugin avant la désinstallation
+      try {
+        await pluginsService.disable(plugin.installedPluginId);
+        addNotification({
+          message: t('store.plugins.disableSuccess', { name: plugin.displayName }),
+          type: 'info',
+        });
+      } catch (disableError: any) {
+        // Si la désactivation échoue, continuer quand même avec la désinstallation
+        console.warn('Erreur lors de la désactivation du plugin:', disableError);
+      }
+      
+      // Désinstaller le plugin
       await pluginsService.uninstall(plugin.installedPluginId);
       addNotification({
         message: t('store.plugins.uninstallSuccess', { name: plugin.displayName }),
@@ -402,7 +427,7 @@ export default function StorePage() {
                           <InstallIcon />
                         )
                       }
-                      onClick={() => handleInstall(plugin)}
+                      onClick={() => handleInstallClick(plugin)}
                       disabled={
                         installing === plugin.id ||
                         plugin.installed ||
@@ -541,10 +566,10 @@ export default function StorePage() {
                       <InstallIcon />
                     )
                   }
-                  onClick={() => {
-                    handleInstall(selectedPlugin);
-                    setDialogOpen(false);
-                  }}
+                onClick={() => {
+                  setDialogOpen(false);
+                  handleInstallClick(selectedPlugin);
+                }}
                   disabled={
                     installing === selectedPlugin.id ||
                     selectedPlugin.installed ||
@@ -559,6 +584,77 @@ export default function StorePage() {
         )}
       </Dialog>
 
+      {/* Dialog de confirmation d'installation */}
+      <Dialog
+        open={installDialogOpen}
+        onClose={() => {
+          setInstallDialogOpen(false);
+          setPluginToInstall(null);
+        }}
+      >
+        <DialogTitle>
+          <Stack direction="row" spacing={2} alignItems="center">
+            {pluginToInstall?.icon && (
+              <Box
+                component="img"
+                src={getStoreUrl(pluginToInstall.icon)}
+                alt={pluginToInstall.displayName}
+                sx={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 1,
+                  objectFit: 'cover',
+                }}
+              />
+            )}
+            <Box>
+              <Typography variant="h6">{t('store.plugins.install')}</Typography>
+              <Typography variant="body2" color="text.secondary">
+                {pluginToInstall?.displayName}
+              </Typography>
+            </Box>
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            {pluginToInstall &&
+              t('store.plugins.installConfirm', {
+                name: pluginToInstall.displayName,
+              })}
+          </Typography>
+          {pluginToInstall?.description && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+              {pluginToInstall.description}
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setInstallDialogOpen(false);
+              setPluginToInstall(null);
+            }}
+            disabled={installing === pluginToInstall?.id}
+          >
+            {t('common.cancel')}
+          </Button>
+          <Button
+            onClick={handleInstallConfirm}
+            variant="contained"
+            disabled={installing === pluginToInstall?.id}
+            startIcon={
+              installing === pluginToInstall?.id ? (
+                <CircularProgress size={16} />
+              ) : (
+                <InstallIcon />
+              )
+            }
+          >
+            {t('store.plugins.install')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Dialog de confirmation de désinstallation */}
       <Dialog
         open={uninstallDialogOpen}
@@ -567,7 +663,29 @@ export default function StorePage() {
           setPluginToUninstall(null);
         }}
       >
-        <DialogTitle>{t('store.plugins.uninstall')}</DialogTitle>
+        <DialogTitle>
+          <Stack direction="row" spacing={2} alignItems="center">
+            {pluginToUninstall?.icon && (
+              <Box
+                component="img"
+                src={getStoreUrl(pluginToUninstall.icon)}
+                alt={pluginToUninstall.displayName}
+                sx={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 1,
+                  objectFit: 'cover',
+                }}
+              />
+            )}
+            <Box>
+              <Typography variant="h6">{t('store.plugins.uninstall')}</Typography>
+              <Typography variant="body2" color="text.secondary">
+                {pluginToUninstall?.displayName}
+              </Typography>
+            </Box>
+          </Stack>
+        </DialogTitle>
         <DialogContent>
           <Typography>
             {pluginToUninstall &&

@@ -53,10 +53,11 @@ export class PluginUIExtensionService {
       throw new NotFoundException(`Plugin ${pluginId} non trouvé`);
     }
 
-    // Vérifier que le plugin est activé
-    if (plugin.status !== PluginStatus.ENABLED) {
+    // Vérifier que le plugin est activé ou en cours d'installation
+    // Permettre INSTALLED car on peut enregistrer les extensions lors de l'activation
+    if (plugin.status !== PluginStatus.ENABLED && plugin.status !== PluginStatus.INSTALLED) {
       throw new BadRequestException(
-        `Le plugin ${plugin.name} doit être activé pour enregistrer des extensions UI`,
+        `Le plugin ${plugin.name} doit être activé ou installé pour enregistrer des extensions UI`,
       );
     }
 
