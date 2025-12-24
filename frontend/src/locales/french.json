@@ -620,7 +620,9 @@
       "disableSuccess": "Plugin {{name}} désactivé avec succès.",
       "details": "Détails",
       "version": "Version",
-      "screenshots": "Captures d'écran"
+      "screenshots": "Captures d'écran",
+      "showInstalledOnly": "Installés uniquement",
+      "noInstalledPlugins": "Aucun plugin installé."
     }
   }
 }

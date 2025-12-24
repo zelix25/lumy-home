@@ -619,7 +619,9 @@
       "disableSuccess": "Plugin {{name}} disabled successfully.",
       "details": "Details",
       "version": "Version",
-      "screenshots": "Screenshots"
+      "screenshots": "Screenshots",
+      "showInstalledOnly": "Installed only",
+      "noInstalledPlugins": "No installed plugins."
     }
   }
 }

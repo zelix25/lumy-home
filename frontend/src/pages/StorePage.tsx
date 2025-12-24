@@ -25,6 +25,7 @@ import {
   Store as StoreIcon,
   Info as InfoIcon,
   Delete as DeleteIcon,
+  FilterList as FilterListIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { pluginsService } from '../services/plugins.service';
@@ -58,6 +59,7 @@ export default function StorePage() {
   const [installing, setInstalling] = useState<string | null>(null);
   const [uninstalling, setUninstalling] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [showInstalledOnly, setShowInstalledOnly] = useState(false);
   const [connected, setConnected] = useState(false);
   const [selectedPlugin, setSelectedPlugin] = useState<StorePlugin | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -117,6 +119,7 @@ export default function StorePage() {
       const enrichedPlugins = (storePlugins || []).map((plugin: StorePlugin) => ({
         ...plugin,
         installedPluginId: installedPluginsMap.get(plugin.name),
+        installed: !!installedPluginsMap.get(plugin.name),
       }));
       
       setPlugins(enrichedPlugins);
@@ -284,19 +287,29 @@ export default function StorePage() {
       )}
 
       <Box sx={{ mb: 3 }}>
-        <TextField
-          fullWidth
-          placeholder={t('store.plugins.searchPlaceholder')}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-        />
+        <Stack direction="row" spacing={2} alignItems="center">
+          <TextField
+            fullWidth
+            placeholder={t('store.plugins.searchPlaceholder')}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+          />
+          <Button
+            variant={showInstalledOnly ? 'contained' : 'outlined'}
+            startIcon={<FilterListIcon />}
+            onClick={() => setShowInstalledOnly(!showInstalledOnly)}
+            sx={{ whiteSpace: 'nowrap' }}
+          >
+            {t('store.plugins.showInstalledOnly')}
+          </Button>
+        </Stack>
       </Box>
 
       {loading ? (
@@ -314,7 +327,9 @@ export default function StorePage() {
         <Alert severity="info">{t('store.plugins.noPlugins')}</Alert>
       ) : (
         <Grid container spacing={3}>
-          {plugins.map((plugin) => (
+          {plugins
+            .filter((plugin) => !showInstalledOnly || plugin.installed)
+            .map((plugin) => (
             <Grid item xs={12} sm={6} md={4} key={plugin.id}>
               <Card
                 sx={{
@@ -442,6 +457,11 @@ export default function StorePage() {
               </Card>
             </Grid>
           ))}
+          {showInstalledOnly && plugins.filter((p) => p.installed).length === 0 && (
+            <Grid item xs={12}>
+              <Alert severity="info">{t('store.plugins.noInstalledPlugins')}</Alert>
+            </Grid>
+          )}
         </Grid>
       )}
 
