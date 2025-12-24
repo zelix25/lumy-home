@@ -622,7 +622,12 @@
       "version": "Version",
       "screenshots": "Captures d'écran",
       "showInstalledOnly": "Installés uniquement",
-      "noInstalledPlugins": "Aucun plugin installé."
+      "noInstalledPlugins": "Aucun plugin installé.",
+      "settings": "Paramètres",
+      "noSettings": "Ce plugin n'a pas de paramètres configurables.",
+      "settingsLoadError": "Erreur lors du chargement des paramètres.",
+      "settingsSaveSuccess": "Paramètres du plugin {{name}} sauvegardés avec succès !",
+      "settingsSaveError": "Erreur lors de la sauvegarde des paramètres."
     }
   }
 }

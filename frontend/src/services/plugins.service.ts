@@ -176,6 +176,13 @@ class PluginsService {
   async uninstall(pluginId: string): Promise<void> {
     await apiService.delete(`/plugins/${pluginId}`);
   }
+
+  /**
+   * Met à jour la configuration d'un plugin
+   */
+  async updateConfig(pluginId: string, config: Record<string, any>): Promise<Plugin> {
+    return apiService.put<Plugin>(`/plugins/${pluginId}/config`, { config });
+  }
 }
 
 export const pluginsService = new PluginsService();

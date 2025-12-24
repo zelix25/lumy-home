@@ -621,7 +621,12 @@
       "version": "Version",
       "screenshots": "Screenshots",
       "showInstalledOnly": "Installed only",
-      "noInstalledPlugins": "No installed plugins."
+      "noInstalledPlugins": "No installed plugins.",
+      "settings": "Settings",
+      "noSettings": "This plugin has no configurable settings.",
+      "settingsLoadError": "Error loading settings.",
+      "settingsSaveSuccess": "Plugin {{name}} settings saved successfully!",
+      "settingsSaveError": "Error saving settings."
     }
   }
 }

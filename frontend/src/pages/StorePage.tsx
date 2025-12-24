@@ -17,6 +17,10 @@ import {
   DialogContent,
   DialogActions,
   Stack,
+  IconButton,
+  Menu,
+  MenuItem,
+  Divider,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -26,6 +30,8 @@ import {
   Info as InfoIcon,
   Delete as DeleteIcon,
   FilterList as FilterListIcon,
+  MoreVert as MoreVertIcon,
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { pluginsService } from '../services/plugins.service';
@@ -67,6 +73,12 @@ export default function StorePage() {
   const [pluginToInstall, setPluginToInstall] = useState<StorePlugin | null>(null);
   const [uninstallDialogOpen, setUninstallDialogOpen] = useState(false);
   const [pluginToUninstall, setPluginToUninstall] = useState<StorePlugin | null>(null);
+  const [settingsMenuAnchor, setSettingsMenuAnchor] = useState<null | HTMLElement>(null);
+  const [settingsMenuPluginId, setSettingsMenuPluginId] = useState<string | null>(null);
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const [pluginForSettings, setPluginForSettings] = useState<{ id: string; name: string; config: Record<string, any> } | null>(null);
+  const [pluginConfig, setPluginConfig] = useState<Record<string, any>>({});
+  const [savingConfig, setSavingConfig] = useState(false);
 
   useEffect(() => {
     // Vérifier si le tokenStore est présent dans le navigateur
@@ -368,10 +380,24 @@ export default function StorePage() {
                         <StoreIcon />
                       </Box>
                     )}
-                    <Box sx={{ flexGrow: 1 }}>
-                      <Typography variant="h6" component="h3" gutterBottom>
-                        {plugin.displayName}
-                      </Typography>
+                    <Box sx={{ flexGrow: 1, position: 'relative' }}>
+                      <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                        <Typography variant="h6" component="h3" gutterBottom sx={{ flexGrow: 1 }}>
+                          {plugin.displayName}
+                        </Typography>
+                        {plugin.installed && plugin.installedPluginId && (
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              setSettingsMenuAnchor(e.currentTarget);
+                              setSettingsMenuPluginId(plugin.installedPluginId || null);
+                            }}
+                            sx={{ mt: -1, mr: -1 }}
+                          >
+                            <MoreVertIcon />
+                          </IconButton>
+                        )}
+                      </Stack>
                       <Typography
                         variant="body2"
                         color="text.secondary"
@@ -671,6 +697,143 @@ export default function StorePage() {
             }
           >
             {t('store.plugins.install')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Menu de paramètres */}
+      <Menu
+        anchorEl={settingsMenuAnchor}
+        open={Boolean(settingsMenuAnchor)}
+        onClose={() => {
+          setSettingsMenuAnchor(null);
+          setSettingsMenuPluginId(null);
+        }}
+      >
+        <MenuItem
+          onClick={async () => {
+            if (!settingsMenuPluginId) return;
+            try {
+              const plugin = await pluginsService.getPlugin(settingsMenuPluginId);
+              setPluginForSettings({
+                id: settingsMenuPluginId,
+                name: plugin.displayName || plugin.name,
+                config: plugin.config || {},
+              });
+              setPluginConfig(plugin.config || {});
+              setSettingsDialogOpen(true);
+            } catch (error: any) {
+              console.error('Erreur lors du chargement des paramètres:', error);
+              addNotification({
+                message: error.message || t('store.plugins.settingsLoadError'),
+                type: 'error',
+              });
+            } finally {
+              setSettingsMenuAnchor(null);
+              setSettingsMenuPluginId(null);
+            }
+          }}
+        >
+          <SettingsIcon sx={{ mr: 1, fontSize: 20 }} />
+          {t('store.plugins.settings')}
+        </MenuItem>
+      </Menu>
+
+      {/* Dialog de paramètres */}
+      <Dialog
+        open={settingsDialogOpen}
+        onClose={() => {
+          setSettingsDialogOpen(false);
+          setPluginForSettings(null);
+          setPluginConfig({});
+        }}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <SettingsIcon />
+            <Box>
+              <Typography variant="h6">
+                {t('store.plugins.settings')} - {pluginForSettings?.name}
+              </Typography>
+            </Box>
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          {Object.keys(pluginConfig).length === 0 ? (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              {t('store.plugins.noSettings')}
+            </Alert>
+          ) : (
+            <Box sx={{ mt: 2 }}>
+              {Object.entries(pluginConfig).map(([key, value]) => (
+                <TextField
+                  key={key}
+                  fullWidth
+                  label={key}
+                  value={typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                  onChange={(e) => {
+                    const newConfig = { ...pluginConfig };
+                    try {
+                      // Essayer de parser comme JSON si possible
+                      const parsed = JSON.parse(e.target.value);
+                      newConfig[key] = parsed;
+                    } catch {
+                      // Sinon, garder comme string
+                      newConfig[key] = e.target.value;
+                    }
+                    setPluginConfig(newConfig);
+                  }}
+                  multiline={typeof value === 'object'}
+                  rows={typeof value === 'object' ? 4 : 1}
+                  sx={{ mb: 2 }}
+                />
+              ))}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setSettingsDialogOpen(false);
+              setPluginForSettings(null);
+              setPluginConfig({});
+            }}
+            disabled={savingConfig}
+          >
+            {t('common.cancel')}
+          </Button>
+          <Button
+            onClick={async () => {
+              if (!pluginForSettings) return;
+              try {
+                setSavingConfig(true);
+                await pluginsService.updateConfig(pluginForSettings.id, pluginConfig);
+                addNotification({
+                  message: t('store.plugins.settingsSaveSuccess', { name: pluginForSettings.name }),
+                  type: 'success',
+                });
+                setSettingsDialogOpen(false);
+                setPluginForSettings(null);
+                setPluginConfig({});
+                // Recharger les plugins pour mettre à jour
+                await loadPlugins();
+              } catch (error: any) {
+                console.error('Erreur lors de la sauvegarde des paramètres:', error);
+                addNotification({
+                  message: error.message || t('store.plugins.settingsSaveError'),
+                  type: 'error',
+                });
+              } finally {
+                setSavingConfig(false);
+              }
+            }}
+            variant="contained"
+            disabled={savingConfig || Object.keys(pluginConfig).length === 0}
+            startIcon={savingConfig ? <CircularProgress size={16} /> : undefined}
+          >
+            {t('common.save')}
           </Button>
         </DialogActions>
       </Dialog>
