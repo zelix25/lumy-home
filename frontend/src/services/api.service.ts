@@ -39,7 +39,10 @@ class ApiService {
       // Token invalide ou expiré
       localStorage.removeItem('lumy_token');
       localStorage.removeItem('lumy_user');
-      window.location.href = '/login';
+      // Ne rediriger que si on n'est pas déjà sur la page de login
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
       throw new Error('Non autorisé');
     }
     
@@ -86,7 +89,10 @@ class ApiService {
     if (response.status === 401) {
       localStorage.removeItem('lumy_token');
       localStorage.removeItem('lumy_user');
-      window.location.href = '/login';
+      // Ne rediriger que si on n'est pas déjà sur la page de login
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
       throw new Error('Non autorisé');
     }
     
@@ -110,7 +116,10 @@ class ApiService {
     if (response.status === 401) {
       localStorage.removeItem('lumy_token');
       localStorage.removeItem('lumy_user');
-      window.location.href = '/login';
+      // Ne rediriger que si on n'est pas déjà sur la page de login
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
       throw new Error('Non autorisé');
     }
     
@@ -133,7 +142,10 @@ class ApiService {
     if (response.status === 401) {
       localStorage.removeItem('lumy_token');
       localStorage.removeItem('lumy_user');
-      window.location.href = '/login';
+      // Ne rediriger que si on n'est pas déjà sur la page de login
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
       throw new Error('Non autorisé');
     }
     
@@ -156,7 +168,10 @@ class ApiService {
     if (response.status === 401) {
       localStorage.removeItem('lumy_token');
       localStorage.removeItem('lumy_user');
-      window.location.href = '/login';
+      // Ne rediriger que si on n'est pas déjà sur la page de login
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
       throw new Error('Non autorisé');
     }
     

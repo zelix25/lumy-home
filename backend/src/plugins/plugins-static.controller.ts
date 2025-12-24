@@ -2,12 +2,13 @@ import {
   Controller,
   Get,
   Param,
+  Req,
   Res,
   UseGuards,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PluginsService } from './plugins.service';
 import { ConfigService } from '@nestjs/config';
@@ -36,7 +37,7 @@ export class PluginsStaticController {
   @Get(':id/static/*')
   async serveStaticFile(
     @Param('id') pluginId: string,
-    @Param('0') filePath: string,
+    @Req() req: Request,
     @Res() res: Response,
   ) {
     // Récupérer le plugin
@@ -46,6 +47,30 @@ export class PluginsStaticController {
       throw new NotFoundException(
         `Plugin ${pluginId} n'a pas de chemin d'installation`,
       );
+    }
+
+    // Extraire le chemin du fichier depuis l'URL
+    // L'URL est de la forme: /api/plugins/:id/static/path/to/file.js
+    const url = req.url || '';
+    const staticPattern = `/plugins/${pluginId}/static/`;
+    const staticIndex = url.indexOf(staticPattern);
+    
+    if (staticIndex === -1) {
+      throw new BadRequestException('Chemin du fichier non trouvé dans l\'URL');
+    }
+    
+    // Extraire le chemin après /static/
+    let filePath = url.substring(staticIndex + staticPattern.length);
+    
+    // Décoder l'URL si nécessaire
+    try {
+      filePath = decodeURIComponent(filePath);
+    } catch (e) {
+      // Si le décodage échoue, utiliser le chemin tel quel
+    }
+    
+    if (!filePath || filePath.trim() === '') {
+      throw new BadRequestException('Chemin du fichier vide');
     }
 
     // Construire le chemin complet du fichier

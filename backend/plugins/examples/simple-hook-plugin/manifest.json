@@ -11,8 +11,7 @@
   "tags": ["example", "hook"],
   "dependencies": {},
   "permissions": [
-    "read:devices",
-    "read:device_state",
+    "devices:read",
     "notifications:send"
   ],
   "hooks": {
@@ -22,6 +21,16 @@
     "hookPriorities": {
       "device:update": 100
     }
-  }
+  },
+  "uiExtensions": [
+    {
+      "type": "widget",
+      "name": "control-widget",
+      "displayName": "Contrôle du Plugin",
+      "description": "Widget pour activer ou désactiver le plugin depuis le dashboard",
+      "componentPath": "./dist/widget.js",
+      "menuOrder": 1
+    }
+  ]
 }
 

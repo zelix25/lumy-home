@@ -77,7 +77,11 @@ export default function PluginWidgetLoader({
         <CardContent sx={{ flexGrow: 1, pt: extension.displayName ? 0 : 2 }}>
           <PluginComponentLoader
             extension={extension}
-            props={extension.props || {}}
+            props={{
+              ...(extension.props || {}),
+              pluginId: extension.pluginId,
+              pluginName: extension.displayName,
+            }}
           />
         </CardContent>
       </Card>
