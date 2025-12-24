@@ -111,8 +111,21 @@ class PluginsService {
    * Installe un plugin depuis le Lumy Store
    */
   async installFromStore(pluginId: string): Promise<Plugin> {
-    // Récupérer le tokenStore du localStorage
-    const tokenStore = localStorage.getItem('tokenStore');
+    // Récupérer le token du store depuis localStorage (clé lumy_store)
+    let tokenStore: string | null = null;
+    const lumyStore = localStorage.getItem('lumy_store');
+    if (lumyStore) {
+      try {
+        const storeData = JSON.parse(lumyStore);
+        tokenStore = storeData.token || null;
+      } catch (e) {
+        // Si le format est invalide, essayer l'ancienne clé tokenStore
+        tokenStore = localStorage.getItem('tokenStore');
+      }
+    } else {
+      // Fallback vers l'ancienne clé tokenStore
+      tokenStore = localStorage.getItem('tokenStore');
+    }
     
     // Créer les headers avec le tokenStore si disponible
     const headers: HeadersInit = {};

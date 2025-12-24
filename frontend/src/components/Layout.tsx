@@ -107,7 +107,7 @@ export default function Layout({ children }: LayoutProps) {
   };
 
   const handleStore = () => {
-    navigate('/store');
+    navigate('/store/connect');
     handleMenuClose();
   };
 

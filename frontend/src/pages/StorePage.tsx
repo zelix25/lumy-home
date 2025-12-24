@@ -81,9 +81,9 @@ export default function StorePage() {
   const [savingConfig, setSavingConfig] = useState(false);
 
   useEffect(() => {
-    // Vérifier si le tokenStore est présent dans le navigateur
-    const tokenStore = localStorage.getItem('tokenStore');
-    if (!tokenStore) {
+    // Vérifier si lumy_store est présent dans le navigateur
+    const lumyStore = localStorage.getItem('lumy_store');
+    if (!lumyStore) {
       // Rediriger vers la page de connexion si le token n'est pas présent
       navigate('/store/connect', { replace: true });
       return;

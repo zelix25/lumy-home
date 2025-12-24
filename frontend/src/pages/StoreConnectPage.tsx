@@ -26,6 +26,19 @@ export default function StoreConnectPage() {
   const [storeEmail, setStoreEmail] = useState<string | null>(null);
 
   useEffect(() => {
+    // Récupérer l'email depuis localStorage si disponible
+    const lumyStore = localStorage.getItem('lumy_store');
+    if (lumyStore) {
+      try {
+        const storeData = JSON.parse(lumyStore);
+        if (storeData.email) {
+          setStoreEmail(storeData.email);
+        }
+      } catch (e) {
+        // Si le format est invalide, ignorer
+        console.warn('Format invalide pour lumy_store:', e);
+      }
+    }
     checkConnectionStatus();
   }, []);
 
@@ -58,9 +71,15 @@ export default function StoreConnectPage() {
       setConnected(true);
       setStoreEmail(response.storeEmail);
       
-      // Stocker le token JWT du store dans le navigateur
+      // Stocker le token JWT et l'email du store dans le navigateur sous la clé lumy_store
       if (response.tokenStore) {
-        localStorage.setItem('tokenStore', response.tokenStore);
+        const storeData = {
+          token: response.tokenStore,
+          email: response.storeEmail,
+        };
+        localStorage.setItem('lumy_store', JSON.stringify(storeData));
+        // Supprimer l'ancienne clé tokenStore si elle existe
+        localStorage.removeItem('tokenStore');
       }
       
       setSuccess(t('store.connect.success'));
@@ -84,7 +103,9 @@ export default function StoreConnectPage() {
       setConnected(false);
       setStoreEmail(null);
       
-      // Supprimer le token JWT du store du navigateur
+      // Supprimer le token JWT et l'email du store du navigateur
+      localStorage.removeItem('lumy_store');
+      // Supprimer aussi l'ancienne clé tokenStore si elle existe
       localStorage.removeItem('tokenStore');
       
       setSuccess(t('store.disconnect.success'));
