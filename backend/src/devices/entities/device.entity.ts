@@ -18,6 +18,7 @@ export enum DeviceType {
   COVER = 'cover',
   MOTION = 'motion',
   BUTTON = 'button',
+  ENERGY = 'energy',
   UNKNOWN = 'unknown',
   OTHER = 'other',
 }

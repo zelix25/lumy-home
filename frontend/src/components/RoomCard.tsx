@@ -20,6 +20,10 @@ import {
   Blinds,
   DirectionsRun,
   WaterDrop,
+  RadioButtonUnchecked,
+  Warning,
+  LocalFireDepartment,
+  BatteryFull,
 } from '@mui/icons-material';
 import { Device } from '../services/devices.service';
 import { devicesService } from '../services/devices.service';
@@ -137,6 +141,40 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
       : '#BDBDBD';
     const iconSize = 32;
 
+    // Pour les capteurs, déterminer l'icône en fonction des données disponibles
+    if (device.type === 'sensor' || device.type === 'temperature') {
+      // Détecter le type de capteur en fonction des données disponibles
+      if (device.state?.temperature !== undefined) {
+        return <Thermostat sx={{ fontSize: iconSize, color: '#2196F3' }} />;
+      }
+      if (device.state?.humidity !== undefined) {
+        return <WaterDrop sx={{ fontSize: iconSize, color: '#2196F3' }} />;
+      }
+      if (device.state?.motion !== undefined || device.state?.presence !== undefined || device.state?.occupancy !== undefined) {
+        return <DirectionsRun sx={{ fontSize: iconSize, color: '#FF9800' }} />;
+      }
+      if (device.state?.illuminance !== undefined) {
+        return <LightMode sx={{ fontSize: iconSize, color: '#FFC107' }} />;
+      }
+      if (device.state?.contact !== undefined) {
+        return <Window sx={{ fontSize: iconSize, color: iconColor }} />;
+      }
+      if (device.state?.water_leak !== undefined) {
+        return <WaterDrop sx={{ fontSize: iconSize, color: '#F44336' }} />;
+      }
+      if (device.state?.smoke !== undefined) {
+        return <LocalFireDepartment sx={{ fontSize: iconSize, color: '#F44336' }} />;
+      }
+      if (device.state?.vibration !== undefined) {
+        return <Warning sx={{ fontSize: iconSize, color: '#FF9800' }} />;
+      }
+      if (device.state?.battery !== undefined) {
+        return <BatteryFull sx={{ fontSize: iconSize, color: iconColor }} />;
+      }
+      // Capteur générique par défaut
+      return <Sensors sx={{ fontSize: iconSize, color: iconColor }} />;
+    }
+
     switch (device.type) {
       case 'light':
         return <Lightbulb sx={{ fontSize: iconSize, color: iconColor }} />;
@@ -144,17 +182,31 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
         return <Power sx={{ fontSize: iconSize, color: iconColor }} />;
       case 'plug':
         return <ElectricalServices sx={{ fontSize: iconSize, color: iconColor }} />;
+      case 'energy':
+        return <ElectricalServices sx={{ fontSize: iconSize, color: '#FF9800' }} />;
       case 'cover':
         return <Blinds sx={{ fontSize: iconSize, color: iconColor }} />;
-      case 'sensor':
       case 'temperature':
         return <Thermostat sx={{ fontSize: iconSize, color: '#2196F3' }} />;
       case 'motion':
         return <DirectionsRun sx={{ fontSize: iconSize, color: iconColor }} />;
       case 'illuminance':
         return <LightMode sx={{ fontSize: iconSize, color: '#FFC107' }} />;
+      case 'humidity':
+        return <WaterDrop sx={{ fontSize: iconSize, color: '#2196F3' }} />;
       case 'window':
         return <Window sx={{ fontSize: iconSize, color: iconColor }} />;
+      case 'presence':
+      case 'occupancy':
+        return <Person sx={{ fontSize: iconSize, color: iconColor }} />;
+      case 'contact':
+        return <Window sx={{ fontSize: iconSize, color: iconColor }} />;
+      case 'water_leak':
+        return <WaterDrop sx={{ fontSize: iconSize, color: '#F44336' }} />;
+      case 'smoke':
+        return <LocalFireDepartment sx={{ fontSize: iconSize, color: '#F44336' }} />;
+      case 'button':
+        return <RadioButtonUnchecked sx={{ fontSize: iconSize, color: iconColor }} />;
       default:
         return <Sensors sx={{ fontSize: iconSize, color: iconColor }} />;
     }
@@ -173,6 +225,22 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
     if (device.type === 'cover') {
       const position = coverPositions[device.ieeeAddress] ?? 0;
       return `${position} %`;
+    }
+    // Pour les appareils energy, afficher la puissance si disponible
+    if (device.type === 'energy') {
+      if (device.state?.power !== undefined) {
+        const power = typeof device.state.power === 'number' 
+          ? device.state.power.toFixed(1) 
+          : device.state.power;
+        return `${power} W`;
+      }
+      // Sinon, afficher la tension si disponible
+      if (device.state?.voltage !== undefined) {
+        const voltage = typeof device.state.voltage === 'number' 
+          ? device.state.voltage.toFixed(2) 
+          : device.state.voltage;
+        return `${voltage} V`;
+      }
     }
     if (device.state?.temperature !== undefined) {
       const temp = typeof device.state.temperature === 'number' 
@@ -373,17 +441,82 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
                       </Box>
 
                       {/* Valeur/Statut */}
-                      <Typography 
-                        variant="h6" 
-                        sx={{ 
-                          fontWeight: 400,
-                          fontSize: '1rem',
-                          mb: hasTemperature ? 0.5 : 0,
-                          color: 'text.primary',
-                        }}
-                      >
-                        {getDeviceValue(device)}
-                      </Typography>
+                      {device.type === 'energy' ? (
+                        <Box sx={{ mb: 0.5 }}>
+                          {/* Tension */}
+                          {device.state?.voltage !== undefined && (
+                            <Typography 
+                              variant="body2" 
+                              sx={{ 
+                                fontWeight: 500,
+                                fontSize: '0.75rem',
+                                color: 'text.primary',
+                                mb: 0.25,
+                              }}
+                            >
+                              {i18n.t('devices.voltage')}: {typeof device.state.voltage === 'number' 
+                                ? `${device.state.voltage.toFixed(2)} V`
+                                : `${device.state.voltage} V`}
+                            </Typography>
+                          )}
+                          {/* Puissance */}
+                          {device.state?.power !== undefined && (
+                            <Typography 
+                              variant="body2" 
+                              sx={{ 
+                                fontWeight: 500,
+                                fontSize: '0.75rem',
+                                color: 'text.primary',
+                                mb: 0.25,
+                              }}
+                            >
+                              {i18n.t('devices.power')}: {typeof device.state.power === 'number' 
+                                ? `${device.state.power.toFixed(1)} W`
+                                : `${device.state.power} W`}
+                            </Typography>
+                          )}
+                          {/* Intensité */}
+                          {device.state?.current !== undefined && (
+                            <Typography 
+                              variant="body2" 
+                              sx={{ 
+                                fontWeight: 500,
+                                fontSize: '0.75rem',
+                                color: 'text.primary',
+                              }}
+                            >
+                              {i18n.t('devices.current')}: {typeof device.state.current === 'number' 
+                                ? `${device.state.current.toFixed(2)} A`
+                                : `${device.state.current} A`}
+                            </Typography>
+                          )}
+                          {/* Si aucune donnée disponible */}
+                          {!device.state?.voltage && !device.state?.power && !device.state?.current && (
+                            <Typography 
+                              variant="body2" 
+                              sx={{ 
+                                fontWeight: 400,
+                                fontSize: '0.75rem',
+                                color: 'text.secondary',
+                              }}
+                            >
+                              {getDeviceValue(device)}
+                            </Typography>
+                          )}
+                        </Box>
+                      ) : (
+                        <Typography 
+                          variant="h6" 
+                          sx={{ 
+                            fontWeight: 400,
+                            fontSize: '1rem',
+                            mb: hasTemperature ? 0.5 : 0,
+                            color: 'text.primary',
+                          }}
+                        >
+                          {getDeviceValue(device)}
+                        </Typography>
+                      )}
 
                       {/* Graphique pour température */}
                       {hasTemperature && chartData.length > 0 && (

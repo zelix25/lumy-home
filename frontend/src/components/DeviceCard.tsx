@@ -23,6 +23,12 @@ import {
   RadioButtonChecked,
   HelpOutline,
   Blinds,
+  WaterDrop,
+  Person,
+  LightMode,
+  LocalFireDepartment,
+  Warning,
+  BatteryFull,
 } from '@mui/icons-material';
 import { Device } from '../services/devices.service';
 import i18n from '@/i18n';
@@ -33,16 +39,52 @@ interface DeviceCardProps {
   onCoverPositionChange?: (device: Device, position: number) => void;
 }
 
-const getDeviceIcon = (type: string) => {
+const getDeviceIcon = (type: string, device?: { state?: Record<string, any> }) => {
+  // Pour les capteurs, déterminer l'icône en fonction des données disponibles
+  if (type === 'sensor' || type === 'temperature') {
+    if (device?.state) {
+      // Détecter le type de capteur en fonction des données disponibles
+      if (device.state.temperature !== undefined) {
+        return <Thermostat sx={{ fontSize: 48 }} />;
+      }
+      if (device.state.humidity !== undefined) {
+        return <WaterDrop sx={{ fontSize: 48 }} />;
+      }
+      if (device.state.motion !== undefined || device.state.presence !== undefined || device.state.occupancy !== undefined) {
+        return <DirectionsRun sx={{ fontSize: 48 }} />;
+      }
+      if (device.state.illuminance !== undefined) {
+        return <LightMode sx={{ fontSize: 48 }} />;
+      }
+      if (device.state.contact !== undefined) {
+        return <Window sx={{ fontSize: 48 }} />;
+      }
+      if (device.state.water_leak !== undefined) {
+        return <WaterDrop sx={{ fontSize: 48, color: '#F44336' }} />;
+      }
+      if (device.state.smoke !== undefined) {
+        return <LocalFireDepartment sx={{ fontSize: 48, color: '#F44336' }} />;
+      }
+      if (device.state.vibration !== undefined) {
+        return <Warning sx={{ fontSize: 48 }} />;
+      }
+      if (device.state.battery !== undefined) {
+        return <BatteryFull sx={{ fontSize: 48 }} />;
+      }
+    }
+    // Capteur générique par défaut
+    return <Sensors sx={{ fontSize: 48 }} />;
+  }
+
   switch (type) {
     case 'light':
       return <Lightbulb sx={{ fontSize: 48 }} />;
     case 'switch':
       return <Power sx={{ fontSize: 48 }} />;
-    case 'sensor':
-      return <Sensors sx={{ fontSize: 48 }} />;
     case 'plug':
       return <ElectricalServices sx={{ fontSize: 48 }} />;
+    case 'energy':
+      return <ElectricalServices sx={{ fontSize: 48, color: '#FF9800' }} />;
     /*case 'door':
       return <Door sx={{ fontSize: 48 }} />;*/
     case 'window':
@@ -53,6 +95,19 @@ const getDeviceIcon = (type: string) => {
       return <Thermostat sx={{ fontSize: 48 }} />;
     case 'motion':
       return <DirectionsRun sx={{ fontSize: 48 }} />;
+    case 'humidity':
+      return <WaterDrop sx={{ fontSize: 48 }} />;
+    case 'illuminance':
+      return <LightMode sx={{ fontSize: 48 }} />;
+    case 'presence':
+    case 'occupancy':
+      return <Person sx={{ fontSize: 48 }} />;
+    case 'contact':
+      return <Window sx={{ fontSize: 48 }} />;
+    case 'water_leak':
+      return <WaterDrop sx={{ fontSize: 48, color: '#F44336' }} />;
+    case 'smoke':
+      return <LocalFireDepartment sx={{ fontSize: 48, color: '#F44336' }} />;
     case 'button':
       return <RadioButtonChecked sx={{ fontSize: 48 }} />;
     default:
@@ -173,7 +228,7 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
               alignItems: 'center',
             }}
           >
-            {getDeviceIcon(device.type)}
+            {getDeviceIcon(device.type, device)}
           </Box>
           <Box sx={{ flexGrow: 1 }}>
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
@@ -424,15 +479,66 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
                   </Typography>
                 </Grid>
               )}
-              {device.state.voltage !== undefined && (
+              {/* Données pour les appareils "energy" : tension, puissance, intensité */}
+              {device.type === 'energy' && (
+                <>
+                  {device.state.voltage !== undefined && (
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        {i18n.t('devices.voltage')}
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {typeof device.state.voltage === 'number'
+                          ? `${device.state.voltage.toFixed(2)} V`
+                          : `${device.state.voltage} V`}
+                      </Typography>
+                    </Grid>
+                  )}
+                  {device.state.power !== undefined && (
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        {i18n.t('devices.power')}
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {typeof device.state.power === 'number'
+                          ? `${device.state.power.toFixed(1)} W`
+                          : `${device.state.power} W`}
+                      </Typography>
+                    </Grid>
+                  )}
+                  {device.state.current !== undefined && (
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        {i18n.t('devices.current')}
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {typeof device.state.current === 'number'
+                          ? `${device.state.current.toFixed(2)} A`
+                          : `${device.state.current} A`}
+                      </Typography>
+                    </Grid>
+                  )}
+                </>
+              )}
+              
+              {/* Tension pour les autres types d'appareils */}
+              {device.type !== 'energy' && device.state.voltage !== undefined && (
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary" display="block">
                     {i18n.t('devices.voltage')}
                   </Typography>
                   <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    {typeof device.state.voltage === 'number'
-                      ? `${(device.state.voltage / 1000).toFixed(2)}V`
-                      : `${device.state.voltage}V`}
+                    {(() => {
+                      if (typeof device.state.voltage === 'number') {
+                        // Pour les types "switch", afficher la valeur réelle sans diviser
+                        if (device.type === 'switch') {
+                          return `${device.state.voltage.toFixed(2)} V`;
+                        }
+                        // Pour les autres types, diviser par 1000 (millivolts -> volts)
+                        return `${(device.state.voltage / 1000).toFixed(2)} V`;
+                      }
+                      return `${device.state.voltage} V`;
+                    })()}
                   </Typography>
                 </Grid>
               )}

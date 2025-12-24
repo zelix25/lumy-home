@@ -156,6 +156,7 @@ export default function DevicesPage() {
     { value: 'all', label: i18n.t('devices.all') },
     { value: 'light', label: i18n.t('devices.light') },
     { value: 'switch', label: i18n.t('devices.switch') },
+    { value: 'energy', label: i18n.t('devices.energy') },
     { value: 'sensor', label: i18n.t('devices.sensor') },
     { value: 'plug', label: i18n.t('devices.plug') },
     { value: 'motion', label: i18n.t('devices.motion') },

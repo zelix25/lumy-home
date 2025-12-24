@@ -142,6 +142,7 @@ export class Zigbee2MqttService implements OnModuleInit {
       motion: DeviceType.MOTION,
       button: DeviceType.BUTTON,
       cover: DeviceType.COVER, // Les covers sont traités comme des switches (contacteurs de volet)
+      energy: DeviceType.ENERGY,
       other: DeviceType.OTHER,
       unknown: DeviceType.UNKNOWN,
     };
@@ -501,8 +502,8 @@ export class Zigbee2MqttService implements OnModuleInit {
         'Zigbee2MqttService',
       );
 
-      // Enregistrer la découverte dans l'historique
-      if (this.historyTimelineService) {
+      // Enregistrer la découverte dans l'historique (sauf pour les appareils "energy")
+      if (this.historyTimelineService && deviceType !== DeviceType.ENERGY) {
         try {
           await this.historyTimelineService.logDeviceDiscovered(
             newDevice.ieeeAddress,
@@ -650,7 +651,7 @@ export class Zigbee2MqttService implements OnModuleInit {
     // Enregistrer les données de capteurs dans l'historique
     if (this.historyService) {
       try {
-        await this.logSensorData(savedDevice.ieeeAddress, oldState, mergedState);
+        await this.logSensorData(savedDevice.ieeeAddress, savedDevice.type, oldState, mergedState);
       } catch (error) {
         this.logger.error(
           `Erreur lors de l'enregistrement des données capteurs: ${error.message}`,
@@ -1023,8 +1024,8 @@ export class Zigbee2MqttService implements OnModuleInit {
       'Zigbee2MqttService',
     );
 
-    // Enregistrer le changement de statut dans l'historique
-    if (this.historyTimelineService && oldStatus !== device.status) {
+    // Enregistrer le changement de statut dans l'historique (sauf pour les appareils "energy")
+    if (this.historyTimelineService && oldStatus !== device.status && device.type !== DeviceType.ENERGY) {
       try {
         if (device.status === DeviceStatus.ONLINE) {
           await this.historyTimelineService.logDeviceOnline(
@@ -1079,8 +1080,8 @@ export class Zigbee2MqttService implements OnModuleInit {
           device.status = DeviceStatus.OFFLINE;
           await this.deviceRepository.save(device);
           
-          // Enregistrer l'événement offline dans l'historique
-          if (this.historyTimelineService && oldStatus !== DeviceStatus.OFFLINE) {
+          // Enregistrer l'événement offline dans l'historique (sauf pour les appareils "energy")
+          if (this.historyTimelineService && oldStatus !== DeviceStatus.OFFLINE && device.type !== DeviceType.ENERGY) {
             try {
               await this.historyTimelineService.logDeviceOffline(
                 device.ieeeAddress,
@@ -1119,20 +1120,25 @@ export class Zigbee2MqttService implements OnModuleInit {
     const description = device.definition?.description?.toLowerCase() || '';
     
     // PRIORITÉ 0: Chercher dans le fichier de mapping par modèle (et vendor si disponible)
-    if (this.deviceTypeMapping.length > 0 && model) {
+    if (this.deviceTypeMapping.length > 0) {
       // Normaliser le modèle pour la recherche (trim, lowercase, supprimer espaces multiples)
-      const normalizedModel = modelLower.trim().replace(/\s+/g, ' ');
+      const normalizedModel = model ? modelLower.trim().replace(/\s+/g, ' ') : '';
+      const normalizedVendor = vendor ? vendor.trim().toLowerCase() : '';
       
-      // Chercher une correspondance exacte par modèle (normalisé)
-      let mappingEntry = this.deviceTypeMapping.find(
-        (entry) => {
-          const entryModel = entry.model?.toLowerCase().trim().replace(/\s+/g, ' ') || '';
-          return entryModel === normalizedModel;
-        },
-      );
+      let mappingEntry: DeviceTypeMappingEntry | undefined = undefined;
+      
+      // 1. Chercher une correspondance exacte par modèle (si disponible)
+      if (normalizedModel) {
+        mappingEntry = this.deviceTypeMapping.find(
+          (entry) => {
+            const entryModel = entry.model?.toLowerCase().trim().replace(/\s+/g, ' ') || '';
+            return entryModel === normalizedModel;
+          },
+        );
+      }
 
-      // Si pas trouvé, essayer une correspondance partielle (le modèle du mapping contient le modèle de l'appareil ou vice versa)
-      if (!mappingEntry) {
+      // 2. Si pas trouvé, essayer une correspondance partielle (le modèle du mapping contient le modèle de l'appareil ou vice versa)
+      if (!mappingEntry && normalizedModel) {
         mappingEntry = this.deviceTypeMapping.find(
           (entry) => {
             const entryModel = entry.model?.toLowerCase().trim().replace(/\s+/g, ' ') || '';
@@ -1141,9 +1147,8 @@ export class Zigbee2MqttService implements OnModuleInit {
         );
       }
 
-      // Si pas trouvé et qu'on a un vendor, chercher avec modèle + vendor
-      if (!mappingEntry && vendor) {
-        const normalizedVendor = vendor.trim();
+      // 3. Si pas trouvé et qu'on a un vendor, chercher avec modèle + vendor
+      if (!mappingEntry && normalizedModel && normalizedVendor) {
         mappingEntry = this.deviceTypeMapping.find(
           (entry) => {
             const entryModel = entry.model?.toLowerCase().trim().replace(/\s+/g, ' ') || '';
@@ -1153,26 +1158,38 @@ export class Zigbee2MqttService implements OnModuleInit {
         );
       }
 
+      // 4. Si toujours pas trouvé et qu'on a un vendor, chercher uniquement par vendor (si plusieurs entrées avec le même vendor, prendre la première)
+      if (!mappingEntry && normalizedVendor) {
+        mappingEntry = this.deviceTypeMapping.find(
+          (entry) => {
+            const entryVendor = entry.vendor?.toLowerCase().trim() || '';
+            return entryVendor === normalizedVendor;
+          },
+        );
+      }
+
       // Si trouvé, utiliser le type du mapping
       if (mappingEntry) {
         const mappedType = this.mapJsonTypeToDeviceType(mappingEntry.type);
         this.logger.log(
-          `✅ Type détecté par mapping JSON: ${mappedType} pour ${device.friendly_name} (modèle: ${model}${vendor ? `, vendor: ${vendor}` : ''}, type mapping: ${mappingEntry.type})`,
+          `✅ Type détecté par mapping JSON: ${mappedType} pour ${device.friendly_name} (modèle: ${model || 'N/A'}${vendor ? `, vendor: ${vendor}` : ''}, type mapping: ${mappingEntry.type})`,
           'Zigbee2MqttService',
         );
         return mappedType;
       } else {
         // Log pour déboguer si le modèle n'est pas trouvé
-        this.logger.debug(
-          `🔍 Modèle "${model}" non trouvé dans le mapping (${this.deviceTypeMapping.length} entrées disponibles)`,
-          'Zigbee2MqttService',
-        );
+        if (normalizedModel) {
+          this.logger.debug(
+            `🔍 Modèle "${model}" non trouvé dans le mapping (${this.deviceTypeMapping.length} entrées disponibles)${vendor ? `, vendor: ${vendor}` : ''}`,
+            'Zigbee2MqttService',
+          );
+        } else {
+          this.logger.debug(
+            `⚠️ Pas de modèle disponible pour ${device.friendly_name}, impossible de chercher dans le mapping${vendor ? ` (vendor: ${vendor})` : ''}`,
+            'Zigbee2MqttService',
+          );
+        }
       }
-    } else if (!model) {
-      this.logger.debug(
-        `⚠️ Pas de modèle disponible pour ${device.friendly_name}, impossible de chercher dans le mapping`,
-        'Zigbee2MqttService',
-      );
     } else if (this.deviceTypeMapping.length === 0) {
       this.logger.debug(
         `⚠️ Fichier de mapping non chargé ou vide, utilisation de la détection par exposes/type`,
@@ -1771,12 +1788,15 @@ export class Zigbee2MqttService implements OnModuleInit {
    */
   private async logSensorData(
     deviceId: string,
+    deviceType: string,
     oldState: Record<string, any>,
     newState: Record<string, any>,
   ): Promise<void> {
     if (!this.historyService) return;
 
     const sensorValues: Array<{ sensorType: SensorType; value: number }> = [];
+    const isEnergyDevice = deviceType === 'energy';
+    const isSwitchDevice = deviceType === 'switch';
 
     // Enregistrer la température si elle a changé
     if (newState.temperature !== undefined && typeof newState.temperature === 'number') {
@@ -1813,12 +1833,29 @@ export class Zigbee2MqttService implements OnModuleInit {
       }
     }
 
-    // Enregistrer la tension si elle a changé (convertir mV en V)
+    // Enregistrer la tension si elle a changé
     if (newState.voltage !== undefined && typeof newState.voltage === 'number') {
       if (oldState.voltage === undefined || oldState.voltage !== newState.voltage) {
-        // La tension est généralement en mV, on la convertit en V
-        const voltageInV = newState.voltage / 1000;
-        sensorValues.push({ sensorType: SensorType.VOLTAGE, value: voltageInV });
+        // Pour les appareils "energy" et "switch", historiser la valeur réelle (déjà en volts)
+        // Pour les autres appareils, convertir mV en V
+        const voltageValue = isEnergyDevice || isSwitchDevice 
+          ? newState.voltage 
+          : newState.voltage / 1000;
+        sensorValues.push({ sensorType: SensorType.VOLTAGE, value: voltageValue });
+      }
+    }
+
+    // Enregistrer la puissance si elle a changé (uniquement pour les appareils "energy")
+    if (isEnergyDevice && newState.power !== undefined && typeof newState.power === 'number') {
+      if (oldState.power === undefined || oldState.power !== newState.power) {
+        sensorValues.push({ sensorType: SensorType.POWER, value: newState.power });
+      }
+    }
+
+    // Enregistrer l'intensité si elle a changé (uniquement pour les appareils "energy")
+    if (isEnergyDevice && newState.current !== undefined && typeof newState.current === 'number') {
+      if (oldState.current === undefined || oldState.current !== newState.current) {
+        sensorValues.push({ sensorType: SensorType.CURRENT, value: newState.current });
       }
     }
 
@@ -1841,6 +1878,9 @@ export class Zigbee2MqttService implements OnModuleInit {
     newState: Record<string, any>,
   ): Promise<void> {
     if (!this.historyTimelineService) return;
+    
+    // Ne pas enregistrer les événements pour les appareils de type "energy"
+    if (device.type === DeviceType.ENERGY) return;
 
     // Détection de mouvement
     if (

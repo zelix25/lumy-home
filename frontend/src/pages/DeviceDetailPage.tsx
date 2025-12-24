@@ -893,9 +893,17 @@ export default function DeviceDetailPage() {
                             ⚡ Tension
                           </Typography>
                           <Typography variant="h6" color="primary.main">
-                            {typeof device.state.voltage === 'number'
-                              ? `${(device.state.voltage / 1000).toFixed(2)}V`
-                              : `${device.state.voltage}V`}
+                            {(() => {
+                              if (typeof device.state.voltage === 'number') {
+                                // Pour les types "energy" et "switch", afficher la valeur réelle sans diviser
+                                if (device.type === 'energy' || device.type === 'switch') {
+                                  return `${device.state.voltage.toFixed(2)}V`;
+                                }
+                                // Pour les autres types, diviser par 1000 (millivolts -> volts)
+                                return `${(device.state.voltage / 1000).toFixed(2)}V`;
+                              }
+                              return `${device.state.voltage}V`;
+                            })()}
                           </Typography>
                         </Box>
                       </Grid>

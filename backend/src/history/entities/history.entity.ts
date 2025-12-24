@@ -13,6 +13,8 @@ export enum SensorType {
   ILLUMINANCE = 'illuminance',
   BATTERY = 'battery',
   VOLTAGE = 'voltage',
+  POWER = 'power',
+  CURRENT = 'current',
   LINKQUALITY = 'linkquality',
 }
 
