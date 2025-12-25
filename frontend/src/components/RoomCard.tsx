@@ -7,6 +7,7 @@ import {
   Switch,
   Slider,
   Grid,
+  Chip,
 } from '@mui/material';
 import {
   Thermostat,
@@ -30,6 +31,7 @@ import { devicesService } from '../services/devices.service';
 import { SensorType } from '../services/sensor-history.service';
 import i18n from '@/i18n';
 import RoomSensorChartModal from './RoomSensorChartModal';
+import DeviceChartModal from './DeviceChartModal';
 
 interface RoomCardProps {
   roomName: string;
@@ -48,6 +50,8 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
     unit: string;
     color: string;
   } | null>(null);
+  const [deviceChartModalOpen, setDeviceChartModalOpen] = useState(false);
+  const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
 
   // Filtrer le coordinateur
   const validDevices = useMemo(() => {
@@ -403,6 +407,10 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
                     return (
                 <Grid item xs={6} key={device.ieeeAddress}>
                   <Card
+                    onClick={() => {
+                      setSelectedDevice(device);
+                      setDeviceChartModalOpen(true);
+                    }}
                     sx={{
                       backgroundColor: '#FFFFFF',
                       border: '1px solid #E0E0E0',
@@ -442,53 +450,63 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
 
                       {/* Valeur/Statut */}
                       {device.type === 'energy' ? (
-                        <Box sx={{ mb: 0.5 }}>
-                          {/* Tension */}
+                        <Box sx={{ mb: 0.5, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                          {/* Tension - Badge vert */}
                           {device.state?.voltage !== undefined && (
-                            <Typography 
-                              variant="body2" 
-                              sx={{ 
-                                fontWeight: 500,
-                                fontSize: '0.75rem',
-                                color: 'text.primary',
-                                mb: 0.25,
-                              }}
-                            >
-                              {i18n.t('devices.voltage')}: {typeof device.state.voltage === 'number' 
+                            <Chip
+                              label={`${typeof device.state.voltage === 'number' 
                                 ? `${device.state.voltage.toFixed(2)} V`
-                                : `${device.state.voltage} V`}
-                            </Typography>
-                          )}
-                          {/* Puissance */}
-                          {device.state?.power !== undefined && (
-                            <Typography 
-                              variant="body2" 
-                              sx={{ 
+                                : `${device.state.voltage} V`}`}
+                              size="small"
+                              sx={{
+                                fontSize: '0.7rem',
                                 fontWeight: 500,
-                                fontSize: '0.75rem',
-                                color: 'text.primary',
-                                mb: 0.25,
+                                height: '20px',
+                                backgroundColor: '#4CAF50', // Vert
+                                color: '#FFFFFF',
+                                '& .MuiChip-label': {
+                                  px: 0.75,
+                                },
                               }}
-                            >
-                              {i18n.t('devices.power')}: {typeof device.state.power === 'number' 
-                                ? `${device.state.power.toFixed(1)} W`
-                                : `${device.state.power} W`}
-                            </Typography>
+                            />
                           )}
-                          {/* Intensité */}
+                          {/* Intensité - Badge rouge */}
                           {device.state?.current !== undefined && (
-                            <Typography 
-                              variant="body2" 
-                              sx={{ 
-                                fontWeight: 500,
-                                fontSize: '0.75rem',
-                                color: 'text.primary',
-                              }}
-                            >
-                              {i18n.t('devices.current')}: {typeof device.state.current === 'number' 
+                            <Chip
+                              label={`${typeof device.state.current === 'number' 
                                 ? `${device.state.current.toFixed(2)} A`
-                                : `${device.state.current} A`}
-                            </Typography>
+                                : `${device.state.current} A`}`}
+                              size="small"
+                              sx={{
+                                fontSize: '0.7rem',
+                                fontWeight: 500,
+                                height: '20px',
+                                backgroundColor: '#F44336', // Rouge
+                                color: '#FFFFFF',
+                                '& .MuiChip-label': {
+                                  px: 0.75,
+                                },
+                              }}
+                            />
+                          )}
+                          {/* Puissance - Badge orange */}
+                          {device.state?.power !== undefined && (
+                            <Chip
+                              label={`${typeof device.state.power === 'number' 
+                                ? `${device.state.power.toFixed(1)} W`
+                                : `${device.state.power} W`}`}
+                              size="small"
+                              sx={{
+                                fontSize: '0.7rem',
+                                fontWeight: 500,
+                                height: '20px',
+                                backgroundColor: '#FF9800', // Orange
+                                color: '#FFFFFF',
+                                '& .MuiChip-label': {
+                                  px: 0.75,
+                                },
+                              }}
+                            />
                           )}
                           {/* Si aucune donnée disponible */}
                           {!device.state?.voltage && !device.state?.power && !device.state?.current && (
@@ -536,11 +554,15 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
 
                       {/* Contrôles pour les lumières */}
                       {device.type === 'light' && (
-                        <Box sx={{ mt: 1 }}>
+                        <Box sx={{ mt: 1 }} onClick={(e) => e.stopPropagation()}>
                           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: isOn ? 0.5 : 0 }}>
                           <Switch
                             checked={isOn}
-                            onChange={(e) => handleToggle(device, e.target.checked)}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              handleToggle(device, e.target.checked);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
                             size="small"
                           />
                         </Box>
@@ -548,6 +570,7 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
                             <Slider
                               value={brightness}
                               onChange={(_, value) => handleBrightnessChange(device, value as number)}
+                              onClick={(e) => e.stopPropagation()}
                               min={0}
                               max={100}
                               step={1}
@@ -571,10 +594,14 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
 
                       {/* Contrôles pour les switches/plugs */}
                       {(device.type === 'switch' || device.type === 'plug') && (
-                        <Box sx={{ mt: 1, display: 'flex', justifyContent: 'flex-end' }}>
+                        <Box sx={{ mt: 1, display: 'flex', justifyContent: 'flex-end' }} onClick={(e) => e.stopPropagation()}>
                           <Switch
                             checked={isOn}
-                            onChange={(e) => handleToggle(device, e.target.checked)}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              handleToggle(device, e.target.checked);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
                             size="small"
                           />
                         </Box>
@@ -582,10 +609,11 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
 
                       {/* Contrôles pour les volets */}
                       {device.type === 'cover' && (
-                        <Box sx={{ mt: 1 }}>
+                        <Box sx={{ mt: 1 }} onClick={(e) => e.stopPropagation()}>
                           <Slider
                             value={coverPosition}
                             onChange={(_, value) => handleCoverPositionChange(device, value as number)}
+                            onClick={(e) => e.stopPropagation()}
                             disabled={device.status !== 'online'}
                             min={0}
                             max={100}
@@ -631,6 +659,16 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
           sensorColor={selectedSensor.color}
         />
       )}
+
+      {/* Modal pour les graphiques d'un appareil */}
+      <DeviceChartModal
+        open={deviceChartModalOpen}
+        onClose={() => {
+          setDeviceChartModalOpen(false);
+          setSelectedDevice(null);
+        }}
+        device={selectedDevice}
+      />
     </>
   );
 }

@@ -6,6 +6,7 @@ import {
   Typography,
   CircularProgress,
   Stack,
+  Grid,
 } from '@mui/material';
 import {
   WbSunny,
@@ -15,6 +16,7 @@ import {
   Air,
   Opacity,
   Thunderstorm,
+  Thermostat,
 } from '@mui/icons-material';
 import { weatherService, Weather } from '../services/weather.service';
 import i18n from '@/i18n';
@@ -282,141 +284,268 @@ export default function WeatherCard() {
 
   if (loading) {
     return (
-      <Card
-        sx={{
-          height: '100%',
-          backgroundColor: '#FFFFFF',
-          border: 'none',
-          borderRadius: 1,
-          boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
-        }}
-      >
-        <CardContent sx={{ p: 2, textAlign: 'center' }}>
-          <CircularProgress size={24} />
-        </CardContent>
-      </Card>
+      <Grid container spacing={2}>
+        {[1, 2, 3, 4].map((i) => (
+          <Grid item xs={6} sm={3} key={i}>
+            <Card
+              sx={{
+                height: '100%',
+                backgroundColor: '#FFFFFF',
+                border: 'none',
+                borderRadius: 1,
+                boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+              }}
+            >
+              <CardContent sx={{ p: 2, textAlign: 'center' }}>
+                <CircularProgress size={24} />
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
     );
   }
 
   if (!weather) {
     return (
-      <Card
-        sx={{
-          height: '100%',
-          backgroundColor: '#FFFFFF',
-          border: 'none',
-          borderRadius: 1,
-          boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
-        }}
-      >
-        <CardContent sx={{ p: 2 }}>
-          <Typography 
-            variant="body2" 
-            color="text.secondary"
-            sx={{ whiteSpace: 'pre-line' }}
+      <Grid container spacing={2}>
+        <Grid item xs={12}>
+          <Card
+            sx={{
+              height: '100%',
+              backgroundColor: '#FFFFFF',
+              border: 'none',
+              borderRadius: 1,
+              boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+            }}
           >
-            {i18n.t('weather.noData')}
-          </Typography>
-        </CardContent>
-      </Card>
+            <CardContent sx={{ p: 2 }}>
+              <Typography 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ whiteSpace: 'pre-line' }}
+              >
+                {i18n.t('weather.noData')}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
     );
   }
 
   return (
-    <Card
-      sx={{
-        height: '100%',
-        backgroundColor: '#FFFFFF',
-        border: 'none',
-        borderRadius: 1,
-        boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
-        transition: 'all 0.15s ease-in-out',
-        position: 'relative',
-        overflow: 'hidden',
-        '&:hover': {
-          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-        },
-      }}
-    >
-      {/* Animation météo en haut à droite */}
-      {getWeatherAnimation(weather.weather_code)}
-      
-      <CardContent sx={{ p: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <Box
-            sx={{
-              color: '#86A6A0',
-              mr: 2,
-              p: 1,
-              borderRadius: 1,
-              backgroundColor: '#86A6A015',
-            }}
-          >
-            {getWeatherIcon(weather.weather_code)}
-          </Box>
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="h6" sx={{ fontWeight: 500, mb: 0.5 }}>
-              {i18n.t('weather.title')}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
+    <Grid container spacing={2}>
+      {/* Carte principale - Condition météo */}
+      <Grid item xs={6} sm={3}>
+        <Card
+          sx={{
+            height: '100%',
+            backgroundColor: '#FFFFFF',
+            border: 'none',
+            borderRadius: 1,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+            transition: 'all 0.15s ease-in-out',
+            position: 'relative',
+            overflow: 'hidden',
+            '&:hover': {
+              boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+            },
+          }}
+        >
+          {/* Animation météo en haut à droite */}
+          {getWeatherAnimation(weather.weather_code)}
+          
+          <CardContent sx={{ p: 1.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <Box
+                sx={{
+                  color: '#86A6A0',
+                  mr: 1,
+                  p: 0.75,
+                  borderRadius: 1,
+                  backgroundColor: '#86A6A015',
+                }}
+              >
+                {getWeatherIcon(weather.weather_code)}
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.75rem' }}>
+                  {i18n.t('weather.title')}
+                </Typography>
+              </Box>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
               {getWeatherDescription(weather.weather_code)}
             </Typography>
-          </Box>
-        </Box>
+          </CardContent>
+        </Card>
+      </Grid>
 
-        {weather.temperature_2m !== null && (
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="h3" sx={{ fontWeight: 500, color: '#C4A5A5' }}>
-              {weather.temperature_2m.toFixed(1)}°C
-            </Typography>
-          </Box>
-        )}
+      {/* Carte température */}
+      {weather.temperature_2m !== null && (
+        <Grid item xs={6} sm={3}>
+          <Card
+            sx={{
+              height: '100%',
+              backgroundColor: '#FFFFFF',
+              border: 'none',
+              borderRadius: 1,
+              boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+              transition: 'all 0.15s ease-in-out',
+              '&:hover': {
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+              },
+            }}
+          >
+            <CardContent sx={{ p: 1.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <Box
+                  sx={{
+                    color: '#C4A5A5',
+                    mr: 1,
+                    p: 0.75,
+                    borderRadius: 1,
+                    backgroundColor: '#C4A5A515',
+                  }}
+                >
+                  <Thermostat sx={{ fontSize: 20 }} />
+                </Box>
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                  {i18n.t('devices.temperature')}
+                </Typography>
+              </Box>
+              <Typography variant="h5" sx={{ fontWeight: 500, color: '#C4A5A5' }}>
+                {weather.temperature_2m.toFixed(1)}°C
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      )}
 
-        <Stack spacing={1.5}>
-          {weather.relative_humidity_2m !== null && (
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Opacity sx={{ fontSize: 18, color: '#86A6A0', mr: 1 }} />
-                <Typography variant="body2" color="text.secondary">
+      {/* Carte humidité */}
+      {weather.relative_humidity_2m !== null && (
+        <Grid item xs={6} sm={3}>
+          <Card
+            sx={{
+              height: '100%',
+              backgroundColor: '#FFFFFF',
+              border: 'none',
+              borderRadius: 1,
+              boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+              transition: 'all 0.15s ease-in-out',
+              '&:hover': {
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+              },
+            }}
+          >
+            <CardContent sx={{ p: 1.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <Box
+                  sx={{
+                    color: '#86A6A0',
+                    mr: 1,
+                    p: 0.75,
+                    borderRadius: 1,
+                    backgroundColor: '#86A6A015',
+                  }}
+                >
+                  <Opacity sx={{ fontSize: 20 }} />
+                </Box>
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
                   {i18n.t('devices.humidity')}
                 </Typography>
               </Box>
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              <Typography variant="h5" sx={{ fontWeight: 500, color: '#86A6A0' }}>
                 {weather.relative_humidity_2m}%
               </Typography>
-            </Box>
-          )}
+            </CardContent>
+          </Card>
+        </Grid>
+      )}
 
-          {weather.wind_speed_10m !== null && (
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Air sx={{ fontSize: 18, color: '#86A6A0', mr: 1 }} />
-                <Typography variant="body2" color="text.secondary">
+      {/* Carte vent */}
+      {weather.wind_speed_10m !== null && (
+        <Grid item xs={6} sm={3}>
+          <Card
+            sx={{
+              height: '100%',
+              backgroundColor: '#FFFFFF',
+              border: 'none',
+              borderRadius: 1,
+              boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+              transition: 'all 0.15s ease-in-out',
+              '&:hover': {
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+              },
+            }}
+          >
+            <CardContent sx={{ p: 1.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <Box
+                  sx={{
+                    color: '#86A6A0',
+                    mr: 1,
+                    p: 0.75,
+                    borderRadius: 1,
+                    backgroundColor: '#86A6A015',
+                  }}
+                >
+                  <Air sx={{ fontSize: 20 }} />
+                </Box>
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
                   {i18n.t('weather.windSpeed')}
                 </Typography>
               </Box>
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              <Typography variant="h5" sx={{ fontWeight: 500, color: '#86A6A0' }}>
                 {weather.wind_speed_10m.toFixed(1)} {i18n.t('weather.kmh')}
               </Typography>
-            </Box>
-          )}
+            </CardContent>
+          </Card>
+        </Grid>
+      )}
 
-          {weather.precipitation !== null && weather.precipitation > 0 && (
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <WaterDrop sx={{ fontSize: 18, color: '#86A6A0', mr: 1 }} />
-                <Typography variant="body2" color="text.secondary">
+      {/* Carte précipitations */}
+      {weather.precipitation !== null && weather.precipitation > 0 && (
+        <Grid item xs={6} sm={3}>
+          <Card
+            sx={{
+              height: '100%',
+              backgroundColor: '#FFFFFF',
+              border: 'none',
+              borderRadius: 1,
+              boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+              transition: 'all 0.15s ease-in-out',
+              '&:hover': {
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+              },
+            }}
+          >
+            <CardContent sx={{ p: 1.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <Box
+                  sx={{
+                    color: '#86A6A0',
+                    mr: 1,
+                    p: 0.75,
+                    borderRadius: 1,
+                    backgroundColor: '#86A6A015',
+                  }}
+                >
+                  <WaterDrop sx={{ fontSize: 20 }} />
+                </Box>
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
                   {i18n.t('weather.precipitation')}
                 </Typography>
               </Box>
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              <Typography variant="h5" sx={{ fontWeight: 500, color: '#86A6A0' }}>
                 {weather.precipitation.toFixed(1)} mm
               </Typography>
-            </Box>
-          )}
-        </Stack>
-      </CardContent>
-    </Card>
+            </CardContent>
+          </Card>
+        </Grid>
+      )}
+    </Grid>
   );
 }
 

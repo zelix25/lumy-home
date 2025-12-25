@@ -252,8 +252,8 @@ export default function HomePage() {
                 </Grid>
               ))}
 
-              {/* Carte météo */}
-              <Grid item xs={12} md={6} lg={4}>
+              {/* Cartes météo */}
+              <Grid item xs={12}>
                 <WeatherCard />
               </Grid>
 
