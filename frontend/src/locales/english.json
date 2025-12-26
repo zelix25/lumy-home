@@ -322,8 +322,18 @@
     "alreadyHaveAccount": "Already have an account? Login",
     "fillAllFields": "Please fill all fields",
     "passwordsDoNotMatch": "Passwords do not match",
-    "passwordTooShort": "Password must be at least 6 characters",
-    "error": "An error occurred"
+    "error": "An error occurred",
+    "tokenGenerationError": "Error generating JWT token",
+    "passwordStrength": {
+      "verification": "Password difficulty verification",
+      "requirements": "Password must contain at least 8 characters with an uppercase letter and a special character",
+      "weak": "Weak",
+      "medium": "Medium",
+      "strong": "Strong"
+    },
+    "passwordTooShort": "Password must contain at least 8 characters",
+    "passwordMissingUppercase": "Password must contain at least one uppercase letter",
+    "passwordMissingSpecial": "Password must contain at least one special character"
   },
   "setup": {
     "welcome": "Welcome to Lumy Home",
@@ -341,6 +351,8 @@
     "errorSaving": "Error saving",
     "stepUpdate": "Update",
     "stepAccount": "Account",
+    "stepStore": "Store",
+    "stepAI": "AI Assistant",
     "stepDevices": "Devices",
     "stepComplete": "Complete",
     "checkingUpdates": "Checking for updates",
@@ -349,7 +361,32 @@
     "updating": "Updating...",
     "updateError": "Error checking for updates",
     "retry": "Retry",
-    "createAccount": "Create account"
+    "createAccount": "Create account",
+    "store": {
+      "title": "Connect to Lumy Store",
+      "description": "Connect to Lumy Store to access plugins and additional features.",
+      "connect": "Connect",
+      "skip": "Skip",
+      "connected": "Successfully connected to Lumy Store",
+      "error": "Error connecting to store",
+      "noAccount": "Don't have a Lumy Store account yet?",
+      "createAccountLink": "You can create one by clicking here",
+      "noToken": "JWT token missing. Please create an account first.",
+      "authError": "Authentication error. Check your store credentials or try again."
+    },
+    "ai": {
+      "title": "Enable AI Assistant",
+      "description": "Enable the AI assistant to create automations in natural language.",
+      "enable": "Enable AI assistant",
+      "type": "AI assistant type",
+      "cloud": "Cloud",
+      "cloudDescription": "100% anonymous data, processing in the cloud",
+      "local": "Local",
+      "localDescription": "100% local data, processing on your server",
+      "localDisabled": "Not available (RAM < 8GB or ARM CPU)",
+      "checkingSystem": "Checking system information...",
+      "systemInfo": "RAM: {{ram}} GB | CPU: {{cpuType}} ({{cpuArch}})"
+    }
   },
   "menu": {
     "myAccount": "My account",

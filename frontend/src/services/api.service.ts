@@ -21,6 +21,11 @@ class ApiService {
     const token = localStorage.getItem('lumy_token');
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+    } else {
+      // Log pour debug si le token est manquant
+      if (window.location.pathname === '/setup') {
+        console.warn('Token JWT manquant lors de la requête API');
+      }
     }
 
     return headers;
@@ -39,8 +44,8 @@ class ApiService {
       // Token invalide ou expiré
       localStorage.removeItem('lumy_token');
       localStorage.removeItem('lumy_user');
-      // Ne rediriger que si on n'est pas déjà sur la page de login
-      if (window.location.pathname !== '/login') {
+      // Ne rediriger que si on n'est pas déjà sur la page de login ou de setup
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/setup') {
         window.location.href = '/login';
       }
       throw new Error('Non autorisé');
@@ -87,11 +92,14 @@ class ApiService {
     });
     
     if (response.status === 401) {
-      localStorage.removeItem('lumy_token');
-      localStorage.removeItem('lumy_user');
-      // Ne rediriger que si on n'est pas déjà sur la page de login
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      // Ne pas supprimer le token si on est sur la page de setup (l'utilisateur vient peut-être de créer son compte)
+      if (window.location.pathname !== '/setup') {
+        localStorage.removeItem('lumy_token');
+        localStorage.removeItem('lumy_user');
+        // Ne rediriger que si on n'est pas déjà sur la page de login
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
       }
       throw new Error('Non autorisé');
     }
@@ -114,11 +122,14 @@ class ApiService {
     });
     
     if (response.status === 401) {
-      localStorage.removeItem('lumy_token');
-      localStorage.removeItem('lumy_user');
-      // Ne rediriger que si on n'est pas déjà sur la page de login
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      // Ne pas supprimer le token si on est sur la page de setup (l'utilisateur vient peut-être de créer son compte)
+      if (window.location.pathname !== '/setup') {
+        localStorage.removeItem('lumy_token');
+        localStorage.removeItem('lumy_user');
+        // Ne rediriger que si on n'est pas déjà sur la page de login
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
       }
       throw new Error('Non autorisé');
     }
@@ -140,11 +151,14 @@ class ApiService {
     });
     
     if (response.status === 401) {
-      localStorage.removeItem('lumy_token');
-      localStorage.removeItem('lumy_user');
-      // Ne rediriger que si on n'est pas déjà sur la page de login
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      // Ne pas supprimer le token si on est sur la page de setup (l'utilisateur vient peut-être de créer son compte)
+      if (window.location.pathname !== '/setup') {
+        localStorage.removeItem('lumy_token');
+        localStorage.removeItem('lumy_user');
+        // Ne rediriger que si on n'est pas déjà sur la page de login
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
       }
       throw new Error('Non autorisé');
     }
@@ -166,11 +180,14 @@ class ApiService {
     });
     
     if (response.status === 401) {
-      localStorage.removeItem('lumy_token');
-      localStorage.removeItem('lumy_user');
-      // Ne rediriger que si on n'est pas déjà sur la page de login
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      // Ne pas supprimer le token si on est sur la page de setup (l'utilisateur vient peut-être de créer son compte)
+      if (window.location.pathname !== '/setup') {
+        localStorage.removeItem('lumy_token');
+        localStorage.removeItem('lumy_user');
+        // Ne rediriger que si on n'est pas déjà sur la page de login
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
       }
       throw new Error('Non autorisé');
     }

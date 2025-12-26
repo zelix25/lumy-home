@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { Box } from '@mui/material';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
-import SetupChecker from './components/SetupChecker';
+import GlobalSetupChecker from './components/GlobalSetupChecker';
 import HomePage from './pages/HomePage';
 import DevicesPage from './pages/DevicesPage';
 import DeviceDetailPage from './pages/DeviceDetailPage';
@@ -25,16 +25,16 @@ function App() {
   const pluginRoutes = usePluginRoutes();
 
   return (
-    <Routes>
-      {/* Routes publiques */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/setup" element={<SetupPage />} />
+    <GlobalSetupChecker>
+      <Routes>
+        {/* Routes publiques */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/setup" element={<SetupPage />} />
 
-      {/* Routes protégées - nécessitent une authentification */}
-      <Route
-        path="/*"
-        element={
-          <SetupChecker>
+        {/* Routes protégées - nécessitent une authentification */}
+        <Route
+          path="/*"
+          element={
             <ProtectedRoute requireAuth={true}>
               <Layout>
                 <Box sx={{ flexGrow: 1, p: 3 }}>
@@ -65,10 +65,10 @@ function App() {
                 <NotificationSnackbar />
               </Layout>
             </ProtectedRoute>
-          </SetupChecker>
-        }
-      />
-    </Routes>
+          }
+        />
+      </Routes>
+    </GlobalSetupChecker>
   );
 }
 

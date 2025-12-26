@@ -27,6 +27,15 @@ export class SettingsController {
   }
 
   /**
+   * Récupère les informations système (RAM, CPU) - route publique
+   */
+  @Public()
+  @Get('system-info')
+  async getSystemInfo(): Promise<{ ram: number; cpuArch: string; cpuType: string }> {
+    return this.settingsService.getSystemInfo();
+  }
+
+  /**
    * Met à jour les paramètres
    */
   @Put()

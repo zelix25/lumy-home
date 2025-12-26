@@ -1,6 +1,7 @@
 import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as os from 'os';
 import { Settings } from './entities/settings.entity';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
 import { LoggerService } from '../logger/logger.service';
@@ -211,6 +212,30 @@ export class SettingsService {
   ): Promise<Settings[K]> {
     const settings = await this.getSettings();
     return settings[key];
+  }
+
+  /**
+   * Récupère les informations système (RAM en Go, architecture CPU, type CPU)
+   */
+  getSystemInfo(): { ram: number; cpuArch: string; cpuType: string } {
+    const totalMemoryBytes = os.totalmem();
+    const totalMemoryGB = totalMemoryBytes / (1024 * 1024 * 1024);
+    const ram = Math.round(totalMemoryGB * 100) / 100; // Arrondir à 2 décimales
+
+    const cpuArch = os.arch();
+    const cpus = os.cpus();
+    const cpuModel = cpus.length > 0 ? cpus[0].model : 'Unknown';
+    
+    // Détecter si c'est un CPU ARM
+    const isARM = cpuArch.includes('arm') || cpuArch.includes('aarch64') || 
+                  cpuModel.toLowerCase().includes('arm') || 
+                  cpuModel.toLowerCase().includes('apple');
+
+    return {
+      ram,
+      cpuArch,
+      cpuType: isARM ? 'arm' : 'x86',
+    };
   }
 }
 
