@@ -22,6 +22,7 @@ import {
   Delete as DeleteIcon,
   Edit as EditIcon,
   AccountTree as AccountTreeIcon,
+  PlayArrow as PlayArrowIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import {
@@ -113,6 +114,28 @@ export default function SimpleAutomationCard({
 
   const handleDeleteCancel = () => {
     setDeleteDialogOpen(false);
+  };
+
+  const handleExecute = async () => {
+    handleMenuClose();
+    setLoading(true);
+    try {
+      await simpleAutomationsService.execute(automation.id);
+      addNotification({
+        type: 'success',
+        title: t('automations.executed'),
+        message: t('automations.executedMessage', { name: automation.name }),
+      });
+      onUpdate();
+    } catch (error: any) {
+      addNotification({
+        type: 'error',
+        title: t('automations.error'),
+        message: error.message || t('automations.executeError'),
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getTriggerConditionText = (
@@ -306,6 +329,10 @@ export default function SimpleAutomationCard({
         </Stack>
 
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+          <MenuItem onClick={handleExecute} disabled={loading || automation.status !== AutomationStatus.ACTIVE}>
+            <PlayArrowIcon sx={{ mr: 1 }} fontSize="small" />
+            {t('automations.execute')}
+          </MenuItem>
           {onEdit && (
             <MenuItem
               onClick={() => {

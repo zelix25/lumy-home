@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { Automation, AutomationTriggerType, AutomationActionType, AutomationStatus } from '../ai/entities/automation.entity';
 import { AutomationExecutionLog } from './entities/automation-execution-log.entity';
 import { CreateAutomationDto } from './dto/create-automation.dto';
@@ -16,11 +17,15 @@ import { Zigbee2MqttService } from '../devices/zigbee2mqtt.service';
 import { DevicesService } from '../devices/devices.service';
 import { LoggerService } from '../logger/logger.service';
 import { WebsocketGateway } from '../websocket/websocket.gateway';
+import { WeatherService } from '../weather/weather.service';
 
 @Injectable()
 export class AutomationsService implements OnModuleInit {
   // Map pour stocker les timers d'extinction automatique (deviceId -> timeout)
   private turnOffTimers: Map<string, NodeJS.Timeout> = new Map();
+  // Suivi des événements sunrise/sunset déjà déclenchés aujourd'hui
+  private lastSunriseDate: string | null = null;
+  private lastSunsetDate: string | null = null;
 
   constructor(
     @InjectRepository(Automation)
@@ -31,6 +36,8 @@ export class AutomationsService implements OnModuleInit {
     private readonly zigbee2MqttService: Zigbee2MqttService,
     @Inject(forwardRef(() => DevicesService))
     private readonly devicesService: DevicesService,
+    @Inject(forwardRef(() => WeatherService))
+    private readonly weatherService: WeatherService,
     private readonly logger: LoggerService,
     private readonly websocketGateway: WebsocketGateway,
   ) {}
@@ -39,6 +46,91 @@ export class AutomationsService implements OnModuleInit {
     // S'abonner aux événements Zigbee pour déclencher les automatisations
     this.subscribeToZigbeeEvents();
     this.logger.log('Module Automations initialisé', 'AutomationsService');
+  }
+
+  /**
+   * Vérifie toutes les minutes si l'heure actuelle correspond à sunrise/sunset
+   * et déclenche les événements correspondants
+   */
+  @Cron(CronExpression.EVERY_MINUTE)
+  async checkSunriseSunset() {
+    try {
+      // Récupérer les données météo d'aujourd'hui
+      const todayWeather = await this.weatherService.getTodayWeather();
+      
+      if (!todayWeather || !todayWeather.sunrise || !todayWeather.sunset) {
+        return; // Pas de données météo disponibles
+      }
+
+      const now = new Date();
+      const todayStr = now.toISOString().split('T')[0];
+
+      // Réinitialiser les dates si on est un nouveau jour
+      if (this.lastSunriseDate && this.lastSunriseDate !== todayStr) {
+        this.lastSunriseDate = null;
+      }
+      if (this.lastSunsetDate && this.lastSunsetDate !== todayStr) {
+        this.lastSunsetDate = null;
+      }
+
+      // Vérifier le lever du soleil
+      if (todayWeather.sunrise) {
+        // Le format est HH:mm:ss, extraire l'heure et les minutes
+        const sunriseParts = todayWeather.sunrise.split(':');
+        if (sunriseParts.length >= 2) {
+          const sunriseHour = parseInt(sunriseParts[0], 10);
+          const sunriseMinute = parseInt(sunriseParts[1], 10);
+          
+          // Vérifier si l'heure actuelle correspond à sunrise (à la minute près)
+          if (
+            !isNaN(sunriseHour) &&
+            !isNaN(sunriseMinute) &&
+            now.getHours() === sunriseHour &&
+            now.getMinutes() === sunriseMinute &&
+            this.lastSunriseDate !== todayStr
+          ) {
+            this.logger.log(
+              `🌅 Lever du soleil détecté à ${todayWeather.sunrise} - Déclenchement des automatisations`,
+              'AutomationsService',
+            );
+            this.lastSunriseDate = todayStr;
+            await this.handleZigbeeEvent('weather', 'sunrise', { sunrise: true });
+          }
+        }
+      }
+
+      // Vérifier le coucher du soleil
+      if (todayWeather.sunset) {
+        // Le format est HH:mm:ss, extraire l'heure et les minutes
+        const sunsetParts = todayWeather.sunset.split(':');
+        if (sunsetParts.length >= 2) {
+          const sunsetHour = parseInt(sunsetParts[0], 10);
+          const sunsetMinute = parseInt(sunsetParts[1], 10);
+          
+          // Vérifier si l'heure actuelle correspond à sunset (à la minute près)
+          if (
+            !isNaN(sunsetHour) &&
+            !isNaN(sunsetMinute) &&
+            now.getHours() === sunsetHour &&
+            now.getMinutes() === sunsetMinute &&
+            this.lastSunsetDate !== todayStr
+          ) {
+            this.logger.log(
+              `🌇 Coucher du soleil détecté à ${todayWeather.sunset} - Déclenchement des automatisations`,
+              'AutomationsService',
+            );
+            this.lastSunsetDate = todayStr;
+            await this.handleZigbeeEvent('weather', 'sunset', { sunset: true });
+          }
+        }
+      }
+    } catch (error) {
+      this.logger.error(
+        `Erreur lors de la vérification sunrise/sunset: ${error.message}`,
+        error.stack,
+        'AutomationsService',
+      );
+    }
   }
 
   private subscribeToZigbeeEvents() {
@@ -1188,6 +1280,31 @@ export class AutomationsService implements OnModuleInit {
       where: { automationId },
       order: { timestamp: 'DESC' },
       take: limit,
+    });
+  }
+
+  /**
+   * Exécute manuellement une automation
+   */
+  async executeManually(id: string): Promise<void> {
+    const automation = await this.findOne(id);
+    
+    if (automation.status !== AutomationStatus.ACTIVE) {
+      throw new BadRequestException(
+        `L'automatisation "${automation.name}" n'est pas active. Veuillez l'activer avant de l'exécuter manuellement.`,
+      );
+    }
+
+    this.logger.log(
+      `[AUTOMATION MANUAL] 🎯 Exécution manuelle de l'automatisation "${automation.name}" (ID: ${automation.id})`,
+      'AutomationsService',
+    );
+
+    // Exécuter l'automation avec un événement manuel
+    await this.executeAutomation(automation, {
+      manual: true,
+      triggeredBy: 'user',
+      timestamp: new Date(),
     });
   }
 }

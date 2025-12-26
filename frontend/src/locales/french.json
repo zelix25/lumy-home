@@ -484,6 +484,10 @@
     "confirmDelete": "Êtes-vous sûr de vouloir supprimer l'automatisation \"{{name}}\" ? Cette action est irréversible.",
     "active": "Active",
     "inactive": "Inactive",
+    "execute": "Exécuter",
+    "executed": "Automatisation exécutée",
+    "executedMessage": "L'automatisation \"{{name}}\" a été exécutée avec succès",
+    "executeError": "Erreur lors de l'exécution de l'automatisation",
     "executions": "{{count}} exécution",
     "executions_plural": "{{count}} exécutions",
     "whenMotion": "Quand mouvement détecté sur {{device}}",
@@ -558,7 +562,12 @@
       "helpTip": "💡 Astuce : Seuls les appareils compatibles avec le type de déclencheur sélectionné sont affichés",
       "emptyState": "Commencez par ajouter un déclencheur en faisant un clic droit sur la zone de travail",
       "selectDeviceHelp": "Sélectionnez l'appareil qui déclenchera cette automatisation",
-      "selectActionDeviceHelp": "Sélectionnez l'appareil sur lequel cette action sera effectuée"
+      "selectActionDeviceHelp": "Sélectionnez l'appareil sur lequel cette action sera effectuée",
+      "zoomIn": "Zoomer",
+      "zoomOut": "Dézoomer",
+      "fitView": "Ajuster la vue",
+      "fullscreen": "Plein écran",
+      "exitFullscreen": "Quitter le plein écran"
     }
   },
   "weather": {

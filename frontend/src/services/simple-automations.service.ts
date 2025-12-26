@@ -135,6 +135,10 @@ class SimpleAutomationsService {
   async getExecutionLogs(id: string, limit: number = 50): Promise<AutomationExecutionLog[]> {
     return apiService.get<AutomationExecutionLog[]>(`/automations/${id}/logs?limit=${limit}`);
   }
+
+  async execute(id: string): Promise<void> {
+    return apiService.post<void>(`/automations/${id}/execute`);
+  }
 }
 
 export const simpleAutomationsService = new SimpleAutomationsService();

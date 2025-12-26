@@ -483,6 +483,10 @@
     "confirmDelete": "Are you sure you want to delete the automation \"{{name}}\"? This action is irreversible.",
     "active": "Active",
     "inactive": "Inactive",
+    "execute": "Execute",
+    "executed": "Automation executed",
+    "executedMessage": "Automation \"{{name}}\" has been executed successfully",
+    "executeError": "Error executing automation",
     "executions": "{{count}} execution",
     "executions_plural": "{{count}} executions",
     "whenMotion": "When motion detected on {{device}}",
@@ -557,7 +561,12 @@
       "helpTip": "💡 Tip: Only devices compatible with the selected trigger type are displayed",
       "emptyState": "Start by adding a trigger by right-clicking on the workspace",
       "selectDeviceHelp": "Select the device that will trigger this automation",
-      "selectActionDeviceHelp": "Select the device on which this action will be performed"
+      "selectActionDeviceHelp": "Select the device on which this action will be performed",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "fitView": "Fit view",
+      "fullscreen": "Fullscreen",
+      "exitFullscreen": "Exit fullscreen"
     }
   },
   "weather": {

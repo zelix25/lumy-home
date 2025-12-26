@@ -32,6 +32,8 @@ import {
   ZoomIn as ZoomInIcon,
   ZoomOut as ZoomOutIcon,
   FitScreen as FitScreenIcon,
+  Fullscreen as FullscreenIcon,
+  FullscreenExit as FullscreenExitIcon,
   HelpOutline as HelpOutlineIcon,
   Lightbulb as LightbulbIcon,
   DirectionsRun as MotionIcon,
@@ -420,6 +422,7 @@ function FlowContent({
   edgeContextMenu,
   setEdgeContextMenu,
   handleDeleteEdge,
+  onZoomControlsReady,
 }: {
   nodes: Node[];
   setNodes: React.Dispatch<React.SetStateAction<Node[]>>;
@@ -441,11 +444,23 @@ function FlowContent({
   edgeContextMenu: { x: number; y: number; edgeId: string } | null;
   setEdgeContextMenu: (menu: { x: number; y: number; edgeId: string } | null) => void;
   handleDeleteEdge: (edgeId: string) => void;
+  onZoomControlsReady?: (controls: { zoomIn: () => void; zoomOut: () => void; fitView: () => void }) => void;
 }) {
   const selectedNode = useMemo(() => {
     return nodes.find((n) => n.id === selectedNodeId) || null;
   }, [nodes, selectedNodeId]);
-  const { screenToFlowPosition } = useReactFlow();
+  const { screenToFlowPosition, zoomIn, zoomOut, fitView } = useReactFlow();
+
+  // Exposer les fonctions de zoom au parent
+  useEffect(() => {
+    if (onZoomControlsReady) {
+      onZoomControlsReady({
+        zoomIn: () => zoomIn(),
+        zoomOut: () => zoomOut(),
+        fitView: () => fitView(),
+      });
+    }
+  }, [zoomIn, zoomOut, fitView, onZoomControlsReady]);
 
   const handleAddNode = useCallback(
     (type: 'trigger' | 'action' | 'condition', screenPosition: { x: number; y: number }) => {
@@ -663,6 +678,8 @@ export default function NodeEditorDialog({
   const [edgeContextMenu, setEdgeContextMenu] = useState<{ x: number; y: number; edgeId: string } | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [zoomControls, setZoomControls] = useState<{ zoomIn: () => void; zoomOut: () => void; fitView: () => void } | null>(null);
 
   // Fonction pour convertir une automation en nodes et edges
   const convertAutomationToNodes = useCallback((automation: any): { nodes: Node[]; edges: Edge[] } => {
@@ -957,6 +974,25 @@ export default function NodeEditorDialog({
       };
     }
   }, [open]);
+
+  // Gérer le plein écran
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement || !!(document as any).webkitFullscreenElement || !!(document as any).mozFullScreenElement || !!(document as any).msFullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, []);
 
   // Calculer les valeurs pour le trigger sélectionné
   const triggerSettings = useMemo(() => {
@@ -1266,15 +1302,50 @@ export default function NodeEditorDialog({
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6">{t('automations.nodeEditor.title')}</Typography>
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <IconButton size="small" onClick={() => {/* Zoom in */}}>
-              <ZoomInIcon />
-            </IconButton>
-            <IconButton size="small" onClick={() => {/* Zoom out */}}>
-              <ZoomOutIcon />
-            </IconButton>
-            <IconButton size="small" onClick={() => {/* Fit screen */}}>
-              <FitScreenIcon />
-            </IconButton>
+            <Tooltip title={t('automations.nodeEditor.zoomIn')}>
+              <IconButton 
+                size="small" 
+                onClick={() => zoomControls?.zoomIn()}
+                disabled={!zoomControls}
+              >
+                <ZoomInIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title={t('automations.nodeEditor.zoomOut')}>
+              <IconButton 
+                size="small" 
+                onClick={() => zoomControls?.zoomOut()}
+                disabled={!zoomControls}
+              >
+                <ZoomOutIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title={t('automations.nodeEditor.fitView')}>
+              <IconButton 
+                size="small" 
+                onClick={() => zoomControls?.fitView()}
+                disabled={!zoomControls}
+              >
+                <FitScreenIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title={isFullscreen ? t('automations.nodeEditor.exitFullscreen') : t('automations.nodeEditor.fullscreen')}>
+              <IconButton 
+                size="small" 
+                onClick={() => {
+                  if (!isFullscreen) {
+                    const dialog = document.querySelector('[role="dialog"]') as HTMLElement;
+                    if (dialog) {
+                      dialog.requestFullscreen?.() || (dialog as any).webkitRequestFullscreen?.() || (dialog as any).mozRequestFullScreen?.() || (dialog as any).msRequestFullscreen?.();
+                    }
+                  } else {
+                    document.exitFullscreen?.() || (document as any).webkitExitFullscreen?.() || (document as any).mozCancelFullScreen?.() || (document as any).msExitFullscreen?.();
+                  }
+                }}
+              >
+                {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
+              </IconButton>
+            </Tooltip>
           </Box>
         </Box>
       </DialogTitle>
@@ -1438,6 +1509,7 @@ export default function NodeEditorDialog({
                 edgeContextMenu={edgeContextMenu}
                 setEdgeContextMenu={setEdgeContextMenu}
                 handleDeleteEdge={handleDeleteEdge}
+                onZoomControlsReady={setZoomControls}
               />
             </ReactFlowProvider>
           </Box>

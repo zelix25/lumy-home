@@ -57,5 +57,12 @@ export class AutomationsController {
   async getExecutionLogs(@Param('id') id: string) {
     return this.automationsService.getExecutionLogs(id);
   }
+
+  @Post(':id/execute')
+  @HttpCode(HttpStatus.OK)
+  async executeManually(@Param('id') id: string) {
+    await this.automationsService.executeManually(id);
+    return { message: 'Automation exécutée avec succès' };
+  }
 }
 
