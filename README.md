@@ -155,7 +155,7 @@ Les contributions sont les bienvenues ! N'hésitez pas à :
 
 ## 📝 Licence
 
-Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
+Ce projet est sous licence AGPL v3. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
 
 ## 🙏 Remerciements
 
@@ -309,7 +309,7 @@ Contributions are welcome! Feel free to:
 
 ## 📝 License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the AGPL v3 License. See the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 

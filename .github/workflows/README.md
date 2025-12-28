@@ -16,38 +16,54 @@ Ce workflow construit et publie les images Docker du frontend et du backend sur 
 
 Vous devez configurer les secrets suivants dans les paramètres du dépôt GitHub :
 
-- `DOCKER_REGISTRY_USERNAME` : Votre nom d'utilisateur sur le registry privé `hub.nod-app.com`
-- `DOCKER_REGISTRY_PASSWORD` : Votre mot de passe ou token d'accès au registry privé
+- `DOCKER_HUB_USERNAME` : Votre nom d'utilisateur Docker Hub
+- `DOCKER_HUB_TOKEN` : Votre token d'accès Docker Hub (pas votre mot de passe)
 
 ### Configuration des secrets GitHub
 
 1. Allez dans **Settings** > **Secrets and variables** > **Actions**
 2. Cliquez sur **New repository secret**
 3. Créez les deux secrets :
-   - `DOCKER_REGISTRY_USERNAME` : Votre nom d'utilisateur
-   - `DOCKER_REGISTRY_PASSWORD` : Votre mot de passe ou token
+   - `DOCKER_HUB_USERNAME` : Votre nom d'utilisateur Docker Hub
+   - `DOCKER_HUB_TOKEN` : Votre token d'accès Docker Hub
 
-Pour plus de détails, consultez le fichier [REGISTRY_SETUP.md](./REGISTRY_SETUP.md).
+#### Créer un token Docker Hub
+
+Pour créer un token d'accès Docker Hub :
+
+1. Connectez-vous sur [Docker Hub](https://hub.docker.com/)
+2. Allez dans **Account Settings** > **Security**
+3. Cliquez sur **New Access Token**
+4. Donnez un nom à votre token (ex: "GitHub Actions")
+5. Copiez le token généré et ajoutez-le comme secret GitHub `DOCKER_HUB_TOKEN`
+
+⚠️ **Important** : Utilisez un token d'accès, pas votre mot de passe Docker Hub.
 
 ### Tags d'images générés
 
 Pour chaque build, les images suivantes sont créées :
 
 #### Version stable (ex: `v1.0.0`)
-- `hub.nod-app.com/username/nodapp-backend:stable`
-- `hub.nod-app.com/username/nodapp-backend:stable-1.0.0`
-- `hub.nod-app.com/username/nodapp-backend:v1.0.0`
-- `hub.nod-app.com/username/nodapp-frontend:stable`
-- `hub.nod-app.com/username/nodapp-frontend:stable-1.0.0`
-- `hub.nod-app.com/username/nodapp-frontend:v1.0.0`
+- `username/lumy-home-backend:stable`
+- `username/lumy-home-backend:stable-1.0.0`
+- `username/lumy-home-backend:v1.0.0`
+- `username/lumy-home-backend:1.0.0`
+- `username/lumy-home-backend:1.0`
+- `username/lumy-home-backend:1`
+- `username/lumy-home-frontend:stable`
+- `username/lumy-home-frontend:stable-1.0.0`
+- `username/lumy-home-frontend:v1.0.0`
+- `username/lumy-home-frontend:1.0.0`
+- `username/lumy-home-frontend:1.0`
+- `username/lumy-home-frontend:1`
 
 #### Version beta (ex: `v1.0.0-beta`)
-- `hub.nod-app.com/username/nodapp-backend:beta`
-- `hub.nod-app.com/username/nodapp-backend:beta-1.0.0`
-- `hub.nod-app.com/username/nodapp-backend:v1.0.0-beta`
-- `hub.nod-app.com/username/nodapp-frontend:beta`
-- `hub.nod-app.com/username/nodapp-frontend:beta-1.0.0`
-- `hub.nod-app.com/username/nodapp-frontend:v1.0.0-beta`
+- `username/lumy-home-backend:beta`
+- `username/lumy-home-backend:beta-1.0.0`
+- `username/lumy-home-backend:v1.0.0-beta`
+- `username/lumy-home-frontend:beta`
+- `username/lumy-home-frontend:beta-1.0.0`
+- `username/lumy-home-frontend:v1.0.0-beta`
 
 ### Utilisation
 
@@ -73,13 +89,21 @@ git push origin v1.0.0-beta
 ### Cache Docker
 
 Le workflow utilise le cache Docker pour accélérer les builds :
-- Cache stocké dans `hub.nod-app.com/username/nodapp-backend:buildcache`
-- Cache stocké dans `hub.nod-app.com/username/nodapp-frontend:buildcache`
+- Cache stocké dans `username/lumy-home-backend:buildcache`
+- Cache stocké dans `username/lumy-home-frontend:buildcache`
 
 ### Structure des jobs
 
 1. **determine-version** : Détermine la version et le type (stable/beta) à partir du tag
 2. **build-and-push-backend** : Construit et publie l'image Docker du backend
 3. **build-and-push-frontend** : Construit et publie l'image Docker du frontend
-4. **summary** : Génère un résumé de la build dans les Actions GitHub
+4. **summary** : Génère un résumé de la build dans les Actions GitHub avec des liens vers Docker Hub
+
+### Liens Docker Hub
+
+Après chaque build réussi, le workflow génère des liens directs vers les images sur Docker Hub :
+- [Backend Image](https://hub.docker.com/r/username/lumy-home-backend)
+- [Frontend Image](https://hub.docker.com/r/username/lumy-home-frontend)
+
+Remplacez `username` par votre nom d'utilisateur Docker Hub.
 
