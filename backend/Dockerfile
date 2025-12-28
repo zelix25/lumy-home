@@ -7,11 +7,11 @@ RUN apk add --no-cache openssl
 COPY package*.json ./
 COPY tsconfig*.json ./
 COPY nest-cli.json ./
-COPY env.example.prod ./.env
+COPY env.example.prod ./env.production
 
 # Generate JWT_SECRET and replace it in .env file
 RUN JWT_SECRET=$(openssl rand -hex 32) && \
-    sed -i "s/JWT_SECRET=lumy-home-secret-key-change-in-production/JWT_SECRET=${JWT_SECRET}/" ./.env
+    sed -i "s/JWT_SECRET=lumy-home-secret-key-change-in-production/JWT_SECRET=${JWT_SECRET}/" ./env.production
 
 # Installer les dépendances
 RUN npm ci
