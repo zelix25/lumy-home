@@ -174,9 +174,9 @@ export default function PlanPage() {
         }
 
         // Fallback sur localStorage si pas de plan en DB
-        const savedFloors = localStorage.getItem('homehub-floors');
-        const savedRooms = localStorage.getItem('homehub-rooms');
-        const savedPositions = localStorage.getItem('homehub-device-positions');
+        const savedFloors = localStorage.getItem('lumy-floors');
+        const savedRooms = localStorage.getItem('lumy-rooms');
+        const savedPositions = localStorage.getItem('lumy-device-positions');
         const floorsFromLocal: Floor[] = savedFloors ? JSON.parse(savedFloors) : [];
         const roomsFromLocal: Room[] = savedRooms ? JSON.parse(savedRooms) : [];
         const positionsFromLocal: DevicePosition[] = savedPositions ? JSON.parse(savedPositions) : [];
@@ -192,9 +192,9 @@ export default function PlanPage() {
         await syncLocalPlanToServer(floorsFromLocal, roomsFromLocal, positionsFromLocal, false);
       } catch (error) {
         console.error('Erreur lors du chargement du plan:', error);
-        const savedFloors = localStorage.getItem('homehub-floors');
-        const savedRooms = localStorage.getItem('homehub-rooms');
-        const savedPositions = localStorage.getItem('homehub-device-positions');
+        const savedFloors = localStorage.getItem('lumy-floors');
+        const savedRooms = localStorage.getItem('lumy-rooms');
+        const savedPositions = localStorage.getItem('lumy-device-positions');
         const floorsFromLocal: Floor[] = savedFloors ? JSON.parse(savedFloors) : [];
         const roomsFromLocal: Room[] = savedRooms ? JSON.parse(savedRooms) : [];
         const positionsFromLocal: DevicePosition[] = savedPositions ? JSON.parse(savedPositions) : [];
@@ -234,19 +234,19 @@ export default function PlanPage() {
   // Sauvegarder dans le localStorage (backup)
   useEffect(() => {
     if (floors.length > 0) {
-      localStorage.setItem('homehub-floors', JSON.stringify(floors));
+      localStorage.setItem('lumy-floors', JSON.stringify(floors));
     }
   }, [floors]);
 
   useEffect(() => {
     if (rooms.length > 0) {
-      localStorage.setItem('homehub-rooms', JSON.stringify(rooms));
+      localStorage.setItem('lumy-rooms', JSON.stringify(rooms));
     }
   }, [rooms]);
 
   useEffect(() => {
     if (devicePositions.length > 0) {
-      localStorage.setItem('homehub-device-positions', JSON.stringify(devicePositions));
+      localStorage.setItem('lumy-device-positions', JSON.stringify(devicePositions));
     }
   }, [devicePositions]);
 
@@ -315,8 +315,8 @@ export default function PlanPage() {
         setDevicePositions([]);
         setSelectedRoom(null);
         setIsCreatingRoom(false);
-        localStorage.removeItem('homehub-rooms');
-        localStorage.removeItem('homehub-device-positions');
+        localStorage.removeItem('lumy-rooms');
+        localStorage.removeItem('lumy-device-positions');
         setConfirmDialogOpen(false);
         setConfirmDialogConfig(null);
       },
@@ -337,9 +337,9 @@ export default function PlanPage() {
           setDevicePositions([]);
           setSelectedRoom(null);
           setIsCreatingRoom(false);
-          localStorage.removeItem('homehub-rooms');
-          localStorage.removeItem('homehub-device-positions');
-          localStorage.removeItem('homehub-floors');
+          localStorage.removeItem('lumy-rooms');
+          localStorage.removeItem('lumy-device-positions');
+          localStorage.removeItem('lumy-floors');
           addNotification({
             type: 'success',
             title: t('plan.deleted'),

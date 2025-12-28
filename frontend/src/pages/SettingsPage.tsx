@@ -10,6 +10,8 @@ import {
   Stack,
   Switch,
   FormControlLabel,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { apiService } from '../services/api.service';
@@ -18,6 +20,11 @@ interface Settings {
   logout_delay: number;
   hostname: string;
   setup: boolean;
+  city?: string;
+  zipCode?: string;
+  country?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export default function SettingsPage() {
@@ -26,11 +33,15 @@ export default function SettingsPage() {
     logout_delay: 0,
     hostname: '',
     setup: false,
+    city: '',
+    zipCode: '',
+    country: '',
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState(0);
 
   useEffect(() => {
     loadSettings();
@@ -46,6 +57,11 @@ export default function SettingsPage() {
         logout_delay: data.logout_delay ?? 0,
         hostname: data.hostname ?? '',
         setup: data.setup ?? false,
+        city: data.city ?? '',
+        zipCode: data.zipCode ?? '',
+        country: data.country ?? '',
+        latitude: data.latitude ?? undefined,
+        longitude: data.longitude ?? undefined,
       });
     } catch (err: any) {
       setError(err.message || t('settings.errorLoading'));
@@ -61,10 +77,14 @@ export default function SettingsPage() {
 
     try {
       // Envoyer uniquement les champs modifiables
-      const payload = {
+      // Ne pas envoyer latitude/longitude car ils sont calculés automatiquement côté serveur
+      const payload: any = {
         logout_delay: settings.logout_delay,
         hostname: settings.hostname,
         setup: settings.setup,
+        city: settings.city || undefined,
+        zipCode: settings.zipCode || undefined,
+        country: settings.country || undefined,
       };
       const updated = await apiService.put<Settings>('/settings', payload);
       setSettings(updated);
@@ -99,44 +119,101 @@ export default function SettingsPage() {
           {loading ? (
             <Typography>{t('common.loading')}</Typography>
           ) : (
-            <Stack spacing={3}>
-              <TextField
-                label={t('settings.hostname')}
-                value={settings.hostname}
-                onChange={(e) =>
-                  setSettings({ ...settings, hostname: e.target.value })
-                }
-                fullWidth
-              />
+            <>
+              <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)} sx={{ mb: 3 }}>
+                <Tab label={t('settings.tabGeneral')} />
+                <Tab label={t('settings.tabLocation')} />
+              </Tabs>
 
-              <TextField
-                label={t('settings.logoutDelay')}
-                type="number"
-                value={settings.logout_delay}
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    logout_delay: parseInt(e.target.value) || 0,
-                  })
-                }
-                fullWidth
-                helperText={t('settings.logoutDelayHelp')}
-                inputProps={{ min: 0 }}
-              />
-
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={settings.setup}
+              {activeTab === 0 && (
+                <Stack spacing={3}>
+                  <TextField
+                    label={t('settings.hostname')}
+                    value={settings.hostname}
                     onChange={(e) =>
-                      setSettings({ ...settings, setup: e.target.checked })
+                      setSettings({ ...settings, hostname: e.target.value })
                     }
+                    fullWidth
                   />
-                }
-                label={t('settings.setup')}
-              />
 
-              <Box>
+                  <TextField
+                    label={t('settings.logoutDelay')}
+                    type="number"
+                    value={settings.logout_delay}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        logout_delay: parseInt(e.target.value) || 0,
+                      })
+                    }
+                    fullWidth
+                    helperText={t('settings.logoutDelayHelp')}
+                    inputProps={{ min: 0 }}
+                  />
+
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={settings.setup}
+                        onChange={(e) =>
+                          setSettings({ ...settings, setup: e.target.checked })
+                        }
+                      />
+                    }
+                    label={t('settings.setup')}
+                  />
+                </Stack>
+              )}
+
+              {activeTab === 1 && (
+                <Stack spacing={3}>
+                  <Alert severity="info" sx={{ mb: 1 }}>
+                    <Typography variant="body2">
+                      {t('settings.locationInfo')}
+                    </Typography>
+                  </Alert>
+
+                  <TextField
+                    label={t('settings.city')}
+                    value={settings.city || ''}
+                    onChange={(e) =>
+                      setSettings({ ...settings, city: e.target.value })
+                    }
+                    fullWidth
+                  />
+
+                  <TextField
+                    label={t('settings.zipCode')}
+                    value={settings.zipCode || ''}
+                    onChange={(e) =>
+                      setSettings({ ...settings, zipCode: e.target.value })
+                    }
+                    fullWidth
+                  />
+
+                  <TextField
+                    label={t('settings.country')}
+                    value={settings.country || ''}
+                    onChange={(e) =>
+                      setSettings({ ...settings, country: e.target.value })
+                    }
+                    fullWidth
+                  />
+
+                  {(settings.latitude && settings.longitude) && (
+                    <Alert severity="info">
+                      <Typography variant="body2">
+                        <strong>{t('settings.coordinates')}:</strong> {settings.latitude.toFixed(6)}, {settings.longitude.toFixed(6)}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {t('settings.coordinatesHelp')}
+                      </Typography>
+                    </Alert>
+                  )}
+                </Stack>
+              )}
+
+              <Box sx={{ mt: 3 }}>
                 <Button
                   variant="contained"
                   onClick={handleSave}
@@ -145,7 +222,7 @@ export default function SettingsPage() {
                   {saving ? t('common.loading') : t('common.save')}
                 </Button>
               </Box>
-            </Stack>
+            </>
           )}
         </CardContent>
       </Card>

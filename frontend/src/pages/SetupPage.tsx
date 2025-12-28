@@ -7,43 +7,73 @@ import {
   Typography,
   Button,
   TextField,
-  List,
-  ListItem,
-  ListItemText,
   CircularProgress,
   Alert,
   Stack,
   Stepper,
   Step,
   StepLabel,
+  FormControlLabel,
+  Radio,
+  RadioGroup,
+  FormControl,
+  FormLabel,
+  Checkbox,
+  Link,
+  LinearProgress,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import { useDevices } from '../hooks/useDevices';
-import { devicesService } from '../services/devices.service';
 import { useAuth } from '../contexts/AuthContext';
+import { authService } from '../services/auth.service';
 import { settingsService } from '../services/settings.service';
+import { storeService, ConnectStoreDto } from '../services/store.service';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 
-type SetupStep = 'update' | 'account' | 'devices' | 'complete';
+type SetupStep = 'update' | 'account' | 'store' | 'ai' | 'complete';
 
 export default function SetupPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { devices, refetch } = useDevices();
   const { register } = useAuth();
-  const [currentStep, setCurrentStep] = useState<SetupStep>('update');
+  
+  // Récupérer l'étape depuis localStorage ou utiliser 'update' par défaut
+  const getInitialStep = (): SetupStep => {
+    const savedStep = localStorage.getItem('setup_current_step');
+    if (savedStep && ['update', 'account', 'store', 'ai', 'complete'].includes(savedStep)) {
+      return savedStep as SetupStep;
+    }
+    return 'update';
+  };
+  
+  const [currentStep, setCurrentStep] = useState<SetupStep>(getInitialStep());
+  
+  // Sauvegarder l'étape dans localStorage à chaque changement
+  useEffect(() => {
+    localStorage.setItem('setup_current_step', currentStep);
+  }, [currentStep]);
   const [updateStatus, setUpdateStatus] = useState<'checking' | 'updating' | 'updated' | 'error'>('checking');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [deviceNames, setDeviceNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    checkUpdateStatus();
-  }, []);
+  const [passwordStrength, setPasswordStrength] = useState<{ score: number; label: string; color: string }>({ score: 0, label: '', color: '' });
+  
+  // Étape 3: Store
+  const [storeEmail, setStoreEmail] = useState('');
+  const [storePassword, setStorePassword] = useState('');
+  const [storeConnected, setStoreConnected] = useState(false);
+  const [storeLoading, setStoreLoading] = useState(false);
+  const [storeError, setStoreError] = useState<string | null>(null);
+  const [storeSuccess, setStoreSuccess] = useState<string | null>(null);
+  
+  // Étape 4: IA
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [aiType, setAiType] = useState<'cloud' | 'local'>('cloud');
+  const [systemInfo, setSystemInfo] = useState<{ ram: number; cpuArch: string; cpuType: string } | null>(null);
+  const [checkingSystemInfo, setCheckingSystemInfo] = useState(false);
+  const [localAiDisabled, setLocalAiDisabled] = useState(false);
 
   const checkUpdateStatus = async () => {
     setUpdateStatus('checking');
@@ -56,6 +86,84 @@ export default function SetupPage() {
       setUpdateStatus('error');
     }
   };
+
+  const checkSystemInfo = async () => {
+    setCheckingSystemInfo(true);
+    try {
+      const info = await settingsService.getSystemInfo();
+      setSystemInfo(info);
+      // Désactiver l'option Local si RAM < 8Go OU CPU ARM
+      const shouldDisableLocal = info.ram < 8 || info.cpuType === 'arm';
+      setLocalAiDisabled(shouldDisableLocal);
+      // Si Local est désactivé et que c'était sélectionné, passer à Cloud
+      if (shouldDisableLocal && aiType === 'local') {
+        setAiType('cloud');
+      }
+    } catch (err) {
+      console.error('Erreur lors de la vérification des informations système:', err);
+      // En cas d'erreur, désactiver Local par sécurité
+      setLocalAiDisabled(true);
+      if (aiType === 'local') {
+        setAiType('cloud');
+      }
+    } finally {
+      setCheckingSystemInfo(false);
+    }
+  };
+
+  useEffect(() => {
+    // Vérifier les mises à jour au chargement
+    checkUpdateStatus();
+  }, []);
+
+  // Fonction pour calculer la force du mot de passe
+  const calculatePasswordStrength = (pwd: string): { score: number; label: string; color: string } => {
+    if (!pwd) {
+      return { score: 0, label: '', color: '' };
+    }
+
+    let score = 0;
+    
+    // Longueur minimale
+    if (pwd.length >= 6) score += 1;
+    if (pwd.length >= 8) score += 1;
+    if (pwd.length >= 12) score += 1;
+    
+    // Contient des minuscules
+    if (/[a-z]/.test(pwd)) score += 1;
+    
+    // Contient des majuscules
+    if (/[A-Z]/.test(pwd)) score += 1;
+    
+    // Contient des chiffres
+    if (/[0-9]/.test(pwd)) score += 1;
+    
+    // Contient des caractères spéciaux
+    if (/[^a-zA-Z0-9]/.test(pwd)) score += 1;
+    
+    // Déterminer le label et la couleur
+    if (score <= 2) {
+      return { score: 1, label: t('auth.passwordStrength.weak'), color: '#f44336' };
+    } else if (score <= 4) {
+      return { score: 2, label: t('auth.passwordStrength.medium'), color: '#ff9800' };
+    } else {
+      return { score: 3, label: t('auth.passwordStrength.strong'), color: '#4caf50' };
+    }
+  };
+
+  // Mettre à jour la force du mot de passe quand il change
+  useEffect(() => {
+    const strength = calculatePasswordStrength(password);
+    setPasswordStrength(strength);
+  }, [password, t]);
+
+  useEffect(() => {
+    // Vérifier les informations système quand on arrive à l'étape IA
+    if (currentStep === 'ai') {
+      checkSystemInfo();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep]);
 
   /*const handleUpdate = async () => {
     setUpdateStatus('updating');
@@ -80,8 +188,19 @@ export default function SetupPage() {
       return;
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       setError(t('auth.passwordTooShort'));
+      return;
+    }
+    
+    // Vérifier les exigences du mot de passe
+    if (!/[A-Z]/.test(password)) {
+      setError(t('auth.passwordMissingUppercase'));
+      return;
+    }
+    
+    if (!/[^a-zA-Z0-9]/.test(password)) {
+      setError(t('auth.passwordMissingSpecial'));
       return;
     }
 
@@ -90,7 +209,17 @@ export default function SetupPage() {
 
     try {
       await register(email, password);
-      setCurrentStep('devices');
+      
+      // Vérifier que le token JWT a bien été généré et stocké
+      const token = authService.getToken();
+      if (!token) {
+        console.error('Token JWT non généré après la création du compte');
+        setError(t('auth.tokenGenerationError'));
+        return;
+      }
+      
+      console.log('Token JWT généré avec succès');
+      setCurrentStep('store');
     } catch (err: any) {
       setError(err.message || t('auth.error'));
     } finally {
@@ -98,42 +227,96 @@ export default function SetupPage() {
     }
   };
 
-  const handleDeviceNameChange = (ieeeAddress: string, name: string) => {
-    setDeviceNames((prev) => ({
-      ...prev,
-      [ieeeAddress]: name,
-    }));
-  };
-
-  const handleSaveDevices = async () => {
-    setLoading(true);
-    setError(null);
+  const handleConnectStore = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStoreError(null);
+    setStoreSuccess(null);
+    setStoreLoading(true);
 
     try {
-      const promises = Object.entries(deviceNames).map(([ieeeAddress, name]) => {
-        if (name.trim()) {
-          return devicesService.updateFriendlyName(ieeeAddress, name.trim());
-        }
-        return Promise.resolve();
-      });
+      // Vérifier que le token JWT est bien présent avant de se connecter au store
+      const token = authService.getToken();
+      if (!token) {
+        setStoreError(t('setup.store.noToken'));
+        setStoreLoading(false);
+        return;
+      }
 
-      await Promise.all(promises);
-      await refetch();
-      setCurrentStep('complete');
+      const credentials: ConnectStoreDto = {
+        email: storeEmail,
+        password: storePassword,
+      };
+
+      const response = await storeService.connectStore(credentials);
+      setStoreConnected(true);
+      
+      // Stocker le token JWT et l'email du store dans le navigateur
+      if (response.tokenStore) {
+        const storeData = {
+          token: response.tokenStore,
+          email: response.storeEmail,
+        };
+        localStorage.setItem('lumy_store', JSON.stringify(storeData));
+        localStorage.removeItem('tokenStore');
+      }
+      
+      setStoreSuccess(t('setup.store.connected'));
+      setStoreEmail('');
+      setStorePassword('');
     } catch (err: any) {
-      setError(err.message || t('setup.errorSaving'));
+      // Extraire le message d'erreur
+      let errorMessage = t('setup.store.error');
+      if (err.message) {
+        // Si c'est une erreur JSON, essayer de parser le message
+        try {
+          const errorData = JSON.parse(err.message);
+          errorMessage = errorData.message || errorData.error || err.message;
+        } catch {
+          errorMessage = err.message;
+        }
+      }
+      
+      // Si c'est une erreur 401, donner un message plus explicite
+      if (err.message?.includes('401') || err.message?.includes('Non autorisé') || err.message?.includes('Unauthorized')) {
+        // Vérifier si c'est une erreur d'authentification JWT ou d'identifiants store
+        const token = authService.getToken();
+        if (!token) {
+          errorMessage = t('setup.store.noToken');
+        } else {
+          errorMessage = t('setup.store.authError');
+        }
+      }
+      
+      setStoreError(errorMessage);
     } finally {
-      setLoading(false);
+      setStoreLoading(false);
     }
   };
+
+  const handleSkipStore = () => {
+    setCurrentStep('ai');
+  };
+
+  const handleContinueFromStore = () => {
+    setCurrentStep('ai');
+  };
+
+  const handleContinueFromAI = () => {
+    setCurrentStep('complete');
+  };
+
 
   const handleComplete = async () => {
     try {
       // Mettre à jour les settings pour indiquer que le setup est terminé
       await settingsService.updateSettings({ setup: false });
+      // Nettoyer le localStorage
+      localStorage.removeItem('setup_current_step');
       navigate('/');
     } catch (err) {
       console.error('Erreur lors de la finalisation du setup:', err);
+      // Nettoyer le localStorage même en cas d'erreur
+      localStorage.removeItem('setup_current_step');
       navigate('/');
     }
   };
@@ -141,7 +324,8 @@ export default function SetupPage() {
   const steps = [
     t('setup.stepUpdate'),
     t('setup.stepAccount'),
-    t('setup.stepDevices'),
+    t('setup.stepStore'),
+    t('setup.stepAI'),
     t('setup.stepComplete'),
   ];
 
@@ -151,10 +335,12 @@ export default function SetupPage() {
         return 0;
       case 'account':
         return 1;
-      case 'devices':
+      case 'store':
         return 2;
-      case 'complete':
+      case 'ai':
         return 3;
+      case 'complete':
+        return 4;
       default:
         return 0;
     }
@@ -249,6 +435,42 @@ export default function SetupPage() {
                 required
                 autoComplete="new-password"
               />
+              
+              {password && (
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                    <LinearProgress
+                      variant="determinate"
+                      value={(passwordStrength.score / 3) * 100}
+                      sx={{
+                        flexGrow: 1,
+                        height: 6,
+                        borderRadius: 1,
+                        backgroundColor: '#e0e0e0',
+                        '& .MuiLinearProgress-bar': {
+                          backgroundColor: passwordStrength.color,
+                        },
+                      }}
+                    />
+                    {passwordStrength.label && (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: passwordStrength.color,
+                          fontWeight: 500,
+                          minWidth: 60,
+                          textAlign: 'right',
+                        }}
+                      >
+                        {passwordStrength.label}
+                      </Typography>
+                    )}
+                  </Box>
+                  <Typography variant="caption" color="text.secondary">
+                    {t('auth.passwordStrength.requirements')}
+                  </Typography>
+                </Box>
+              )}
 
               <TextField
                 label={t('auth.confirmPassword')}
@@ -273,80 +495,191 @@ export default function SetupPage() {
           </Box>
         );
 
-      case 'devices':
-        const devicesToName = devices.filter(
-          (d) => !d.friendlyName || d.friendlyName === d.ieeeAddress,
-        );
-
+      case 'store':
         return (
           <Box>
             <Typography variant="h6" sx={{ mb: 3, fontWeight: 500 }}>
-              {t('setup.nameDevices')}
+              {t('setup.store.title')}
             </Typography>
 
-            {devicesToName.length > 0 && (
-              <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-                {t('setup.detectedDevices', { count: devicesToName.length })}
-              </Typography>
-            )}
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              {t('setup.store.description')}
+            </Typography>
 
-            {error && (
-              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-                {error}
+            {storeError && (
+              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setStoreError(null)}>
+                {storeError}
               </Alert>
             )}
 
-            {devicesToName.length > 0 ? (
-              <>
-                <List>
-                  {devicesToName.map((device) => (
-                    <ListItem key={device.ieeeAddress} sx={{ px: 0 }}>
-                      <ListItemText
-                        primary={device.model || device.ieeeAddress}
-                        secondary={device.type || t('devices.unknown')}
-                        sx={{ flex: '0 1 auto', mr: 2 }}
-                      />
-                      <TextField
-                        size="small"
-                        placeholder={t('setup.deviceNamePlaceholder')}
-                        value={deviceNames[device.ieeeAddress] || ''}
-                        onChange={(e) =>
-                          handleDeviceNameChange(device.ieeeAddress, e.target.value)
-                        }
-                        sx={{ flex: 1 }}
-                      />
-                    </ListItem>
-                  ))}
-                </List>
+            {storeSuccess && (
+              <Alert severity="success" sx={{ mb: 2 }} onClose={() => setStoreSuccess(null)}>
+                {storeSuccess}
+              </Alert>
+            )}
 
-                <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
-                  <Button
-                    variant="outlined"
-                    onClick={() => setCurrentStep('complete')}
-                    disabled={loading}
-                  >
-                    {t('common.skip')}
-                  </Button>
-                  <Button
-                    variant="contained"
-                    onClick={handleSaveDevices}
-                    disabled={loading}
-                    sx={{ flex: 1 }}
-                  >
-                    {loading ? t('common.loading') : t('common.save')}
-                  </Button>
+            {!storeConnected ? (
+              <form onSubmit={handleConnectStore}>
+                <Stack spacing={2}>
+                  <TextField
+                    label={t('auth.email')}
+                    type="email"
+                    value={storeEmail}
+                    onChange={(e) => setStoreEmail(e.target.value)}
+                    fullWidth
+                    required
+                    autoComplete="email"
+                  />
+
+                  <TextField
+                    label={t('auth.password')}
+                    type="password"
+                    value={storePassword}
+                    onChange={(e) => setStorePassword(e.target.value)}
+                    fullWidth
+                    required
+                    autoComplete="current-password"
+                  />
+
+                  <Stack direction="row" spacing={2}>
+                    <Button
+                      variant="outlined"
+                      onClick={handleSkipStore}
+                      fullWidth
+                    >
+                      {t('setup.store.skip')}
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      disabled={storeLoading}
+                      fullWidth
+                    >
+                      {storeLoading ? t('common.loading') : t('setup.store.connect')}
+                    </Button>
+                  </Stack>
+                  
+                  <Box sx={{ mt: 2, textAlign: 'center' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      {t('setup.store.noAccount')}{' '}
+                      <Link
+                        href="https://store.lumy-home.com/user/register"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{ cursor: 'pointer' }}
+                      >
+                        {t('setup.store.createAccountLink')}
+                      </Link>
+                    </Typography>
+                  </Box>
                 </Stack>
-              </>
+              </form>
             ) : (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-                  {t('setup.allDevicesNamed')}
-                </Typography>
-                <Button variant="contained" onClick={() => setCurrentStep('complete')}>
+              <Box>
+                <Alert severity="success" icon={<CheckCircleIcon />} sx={{ mb: 3 }}>
+                  {t('setup.store.connected')}
+                </Alert>
+                <Button variant="contained" onClick={handleContinueFromStore} fullWidth>
                   {t('setup.continue')}
                 </Button>
               </Box>
             )}
+          </Box>
+        );
+
+      case 'ai':
+        return (
+          <Box>
+            <Typography variant="h6" sx={{ mb: 3, fontWeight: 500 }}>
+              {t('setup.ai.title')}
+            </Typography>
+
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              {t('setup.ai.description')}
+            </Typography>
+
+            {checkingSystemInfo && (
+              <Box sx={{ textAlign: 'center', py: 2 }}>
+                <CircularProgress size={24} sx={{ mr: 2 }} />
+                <Typography variant="body2" color="text.secondary">
+                  {t('setup.ai.checkingSystem')}
+                </Typography>
+              </Box>
+            )}
+
+            {systemInfo && (
+              <Alert severity="info" sx={{ mb: 3 }}>
+                {t('setup.ai.systemInfo', { 
+                  ram: systemInfo.ram.toFixed(1), 
+                  cpuType: systemInfo.cpuType.toUpperCase(),
+                  cpuArch: systemInfo.cpuArch 
+                })}
+              </Alert>
+            )}
+
+            <Stack spacing={3}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={aiEnabled}
+                    onChange={(e) => setAiEnabled(e.target.checked)}
+                  />
+                }
+                label={t('setup.ai.enable')}
+              />
+
+              {aiEnabled && (
+                <FormControl component="fieldset">
+                  <FormLabel component="legend">{t('setup.ai.type')}</FormLabel>
+                  <RadioGroup
+                    value={aiType}
+                    onChange={(e) => setAiType(e.target.value as 'cloud' | 'local')}
+                  >
+                    <FormControlLabel
+                      value="cloud"
+                      control={<Radio />}
+                      label={
+                        <Box>
+                          <Typography variant="body1">{t('setup.ai.cloud')}</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {t('setup.ai.cloudDescription')}
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                    <FormControlLabel
+                      value="local"
+                      control={<Radio />}
+                      disabled={localAiDisabled}
+                      label={
+                        <Box>
+                          <Typography variant="body1">
+                            {t('setup.ai.local')}
+                            {localAiDisabled && (
+                              <Typography component="span" variant="caption" color="error" sx={{ ml: 1 }}>
+                                ({t('setup.ai.localDisabled')})
+                              </Typography>
+                            )}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {t('setup.ai.localDescription')}
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                  </RadioGroup>
+                </FormControl>
+              )}
+
+              <Button
+                variant="contained"
+                onClick={handleContinueFromAI}
+                fullWidth
+                sx={{ mt: 2 }}
+              >
+                {t('setup.continue')}
+              </Button>
+            </Stack>
           </Box>
         );
 

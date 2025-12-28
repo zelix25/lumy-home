@@ -10,6 +10,9 @@ async function bootstrap() {
     bufferLogs: true,
   });
 
+  // Préfixe global pour toutes les routes API
+  app.setGlobalPrefix('api');
+
   // Utiliser le logger personnalisé
   const logger = app.get(LoggerService);
   app.useLogger(logger);
@@ -42,7 +45,7 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port);
 
-  logger.log(`🚀 HomeHub IA démarré sur le port ${port}`, 'Bootstrap');
+  logger.log(`🚀 Lumy Home démarré sur le port ${port}`, 'Bootstrap');
 }
 
 bootstrap();

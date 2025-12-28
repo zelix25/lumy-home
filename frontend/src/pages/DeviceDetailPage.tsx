@@ -21,6 +21,8 @@ import {
   FormControl,
   InputLabel,
   Dialog,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
@@ -33,8 +35,12 @@ import AddIcon from '@mui/icons-material/Add';
 import { devicesService, Device } from '../services/devices.service';
 import { roomsService, Room } from '../services/rooms.service';
 import { useWebSocket } from '../hooks/useWebSocket';
+import { useDevices } from '../hooks/useDevices';
+import { useNotification } from '../hooks/useNotification';
+import { useTranslation } from 'react-i18next';
 import MultiSensorChart from '../components/MultiSensorChart';
 import { SensorType } from '../services/sensor-history.service';
+import AdvancedExposesSettings from '../components/AdvancedExposesSettings';
 
 const getDeviceTypeLabel = (type: string): string => {
   const labels: Record<string, string> = {
@@ -45,6 +51,21 @@ const getDeviceTypeLabel = (type: string): string => {
     door: 'Porte',
     window: 'Fenêtre',
     temperature: 'Température',
+    humidity: 'Humidité',
+    pressure: 'Pression',
+    illuminance: 'Luminosité',
+    occupancy: 'Occupation',
+    presence: 'Présence',
+    contact: 'Contact',
+    water_leak: 'Fuite d\'eau',
+    smoke: 'Fumée',
+    battery: 'Batterie',
+    voltage: 'Tension',
+    linkquality: 'Qualité du signal',
+    cover: 'Volet',
+    state: 'État',
+    brightness: 'Brillance',
+    color_temp: 'Température de couleur',
     motion: 'Mouvement',
     button: 'Bouton',
     unknown: 'Inconnu',
@@ -55,20 +76,27 @@ const getDeviceTypeLabel = (type: string): string => {
 export default function DeviceDetailPage() {
   const { ieeeAddress } = useParams<{ ieeeAddress: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const { addNotification } = useNotification();
   const [device, setDevice] = useState<Device | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
   const [friendlyName, setFriendlyName] = useState('');
   const [room, setRoom] = useState('');
   const [brightness, setBrightness] = useState(100);
   const [isOn, setIsOn] = useState(false);
+  const [coverPosition, setCoverPosition] = useState(0);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [newRoomDialogOpen, setNewRoomDialogOpen] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
+  const [advancedMode, setAdvancedMode] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
   const { isConnected, socket } = useWebSocket();
+  const { devices: allDevices } = useDevices();
 
   useEffect(() => {
     if (!ieeeAddress) return;
@@ -86,6 +114,22 @@ export default function DeviceDetailPage() {
             ? Math.round((data.state.brightness / 255) * 100)
             : 100,
         );
+        // Pour les volets, récupérer la position (0-100, où 0 = fermé, 100 = ouvert)
+        if (data.type === 'cover') {
+          if (data.state?.position !== undefined) {
+            setCoverPosition(
+              typeof data.state.position === 'number' 
+                ? data.state.position 
+                : parseInt(data.state.position) || 0
+            );
+          } else if (data.state?.state === 'open' || data.state?.state === 'OPEN') {
+            setCoverPosition(100);
+          } else if (data.state?.state === 'closed' || data.state?.state === 'CLOSED') {
+            setCoverPosition(0);
+          } else {
+            setCoverPosition(0);
+          }
+        }
       } catch (err) {
         setError('Impossible de charger les détails de l\'appareil');
         console.error(err);
@@ -129,6 +173,20 @@ export default function DeviceDetailPage() {
         if (eventData.state?.brightness !== undefined) {
           setBrightness(Math.round((eventData.state.brightness / 255) * 100));
         }
+        // Mettre à jour la position du volet si c'est un appareil cover
+        if (device?.type === 'cover') {
+          if (eventData.state?.position !== undefined) {
+            setCoverPosition(
+              typeof eventData.state.position === 'number' 
+                ? eventData.state.position 
+                : parseInt(eventData.state.position) || 0
+            );
+          } else if (eventData.state?.state === 'open' || eventData.state?.state === 'OPEN') {
+            setCoverPosition(100);
+          } else if (eventData.state?.state === 'closed' || eventData.state?.state === 'CLOSED') {
+            setCoverPosition(0);
+          }
+        }
         setDevice((prev) => (prev ? { ...prev, state: eventData.state } : null));
       }
     };
@@ -142,11 +200,48 @@ export default function DeviceDetailPage() {
 
   const handleSaveName = async () => {
     if (!ieeeAddress) return;
+    
+    // Vérifier l'unicité du nom
+    const trimmedName = friendlyName.trim();
+    if (!trimmedName) {
+      setNameError('Le nom ne peut pas être vide');
+      return;
+    }
+
+    // Vérifier si un autre appareil a déjà ce nom
+    const existingDevice = allDevices.find(
+      (d) => d.friendlyName.toLowerCase() === trimmedName.toLowerCase() && d.ieeeAddress !== ieeeAddress
+    );
+
+    if (existingDevice) {
+      setNameError(`Un appareil avec le nom "${trimmedName}" existe déjà`);
+      return;
+    }
+
+    setNameError(null);
+    
     try {
-      const updated = await devicesService.updateFriendlyName(ieeeAddress, friendlyName);
+      const updated = await devicesService.updateFriendlyName(ieeeAddress, trimmedName);
       setDevice(updated);
-    } catch (err) {
+      setFriendlyName(trimmedName);
+      
+      // Notification de succès
+      addNotification({
+        type: 'success',
+        title: t('devices.nameUpdateSuccess'),
+        message: t('devices.nameUpdateSuccessMessage', { name: trimmedName }),
+      });
+    } catch (err: any) {
       console.error('Erreur lors de la mise à jour du nom:', err);
+      const errorMessage = err.message || t('devices.nameUpdateError');
+      setNameError(errorMessage);
+      
+      // Notification d'erreur
+      addNotification({
+        type: 'error',
+        title: t('devices.nameUpdateError'),
+        message: errorMessage,
+      });
     }
   };
 
@@ -202,6 +297,21 @@ export default function DeviceDetailPage() {
     }
   };
 
+  const handleCoverPositionChange = async (_: Event, value: number | number[]) => {
+    if (!ieeeAddress) return;
+    const newPosition = Array.isArray(value) ? value[0] : value;
+    setCoverPosition(newPosition);
+    try {
+      // Pour Zigbee2MQTT, la position est envoyée comme un nombre de 0 à 100
+      // où 0 = fermé, 100 = ouvert
+      await devicesService.sendCommand(ieeeAddress, {
+        position: newPosition,
+      });
+    } catch (err) {
+      console.error('Erreur lors du changement de position du volet:', err);
+    }
+  };
+
   const handleDelete = async () => {
     if (!ieeeAddress) return;
     setDeleting(true);
@@ -250,216 +360,363 @@ export default function DeviceDetailPage() {
             {device.friendlyName}
           </Typography>
         </Box>
-        <Button
-          variant="outlined"
-          color="error"
-          startIcon={<DeleteIcon />}
-          onClick={() => setDeleteDialogOpen(true)}
-        >
-          Supprimer
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={advancedMode}
+                onChange={(e) => {
+                  const newMode = e.target.checked;
+                  setAdvancedMode(newMode);
+                  // Si on désactive le mode avancé et qu'on est sur l'onglet 2, revenir à l'onglet 0
+                  if (!newMode && activeTab === 2) {
+                    setActiveTab(0);
+                  }
+                }}
+              />
+            }
+            label="Mode avancé"
+          />
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<DeleteIcon />}
+            onClick={() => setDeleteDialogOpen(true)}
+          >
+            Supprimer
+          </Button>
+        </Box>
       </Box>
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={8}>
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
-                Informations
-              </Typography>
-              <Divider sx={{ mb: 2 }} />
+          <Card>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+              <Tabs
+                value={activeTab}
+                onChange={(_, newValue) => setActiveTab(newValue)}
+                aria-label="onglets de l'appareil"
+              >
+                <Tab label="Informations" />
+                <Tab label="Graphique des capteurs" />
+                {advancedMode && device.meta?.exposes && (
+                  <Tab label="Réglages avancés" />
+                )}
+              </Tabs>
+            </Box>
 
-              <Box sx={{ mb: 2 }}>
-                <TextField
-                  fullWidth
-                  label="Nom de l'appareil"
-                  value={friendlyName}
-                  onChange={(e) => setFriendlyName(e.target.value)}
-                  sx={{ mb: 1 }}
-                />
-                <Button
-                  variant="contained"
-                  startIcon={<SaveIcon />}
-                  onClick={handleSaveName}
-                  size="small"
-                >
-                  Enregistrer le nom
-                </Button>
-              </Box>
-
-              <Box>
-                <FormControl fullWidth sx={{ mb: 1 }}>
-                  <InputLabel id="room-select-label">Pièce</InputLabel>
-                  <Select
-                    labelId="room-select-label"
-                    value={room}
-                    label="Pièce"
-                    onChange={(e) => setRoom(e.target.value)}
-                    disabled={loadingRooms}
-                  >
-                    <MenuItem value="">
-                      <em>Aucune pièce</em>
-                    </MenuItem>
-                    {rooms.map((roomOption) => (
-                      <MenuItem key={roomOption.id} value={roomOption.name}>
-                        {roomOption.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button
-                    variant="outlined"
-                    startIcon={<AddIcon />}
-                    onClick={() => setNewRoomDialogOpen(true)}
-                    size="small"
-                  >
-                    Ajouter une pièce
-                  </Button>
+            {/* Onglet Informations */}
+            {activeTab === 0 && (
+              <CardContent>
+                <Box sx={{ mb: 2 }}>
+                  <TextField
+                    fullWidth
+                    label="Nom de l'appareil"
+                    value={friendlyName}
+                    onChange={(e) => {
+                      setFriendlyName(e.target.value);
+                      setNameError(null); // Réinitialiser l'erreur lors de la saisie
+                    }}
+                    error={!!nameError}
+                    helperText={nameError}
+                    sx={{ mb: 1 }}
+                  />
                   <Button
                     variant="contained"
                     startIcon={<SaveIcon />}
-                    onClick={handleSaveRoom}
+                    onClick={handleSaveName}
                     size="small"
-                    disabled={!room}
+                    disabled={!friendlyName.trim() || friendlyName.trim() === device.friendlyName}
                   >
-                    Enregistrer la pièce
+                    Enregistrer le nom
                   </Button>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-
-          {device.type === 'light' && (
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
-                  Contrôles
-                </Typography>
-                <Divider sx={{ mb: 3 }} />
-
-                <Box sx={{ mb: 3 }}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={isOn}
-                        onChange={(e) => handleToggle(e.target.checked)}
-                        disabled={device.status !== 'online'}
-                        size="medium"
-                      />
-                    }
-                    label={isOn ? 'Allumé' : 'Éteint'}
-                  />
                 </Box>
 
                 <Box>
-                  <Typography gutterBottom>Luminosité: {brightness}%</Typography>
-                  <Slider
-                    value={brightness}
-                    onChange={handleBrightnessChange}
-                    min={0}
-                    max={100}
-                    step={1}
-                    disabled={device.status !== 'online' || !isOn}
-                    sx={{ mb: 2 }}
-                  />
+                  <FormControl fullWidth sx={{ mb: 1 }}>
+                    <InputLabel id="room-select-label">Pièce</InputLabel>
+                    <Select
+                      labelId="room-select-label"
+                      value={room}
+                      label="Pièce"
+                      onChange={(e) => setRoom(e.target.value)}
+                      disabled={loadingRooms}
+                    >
+                      <MenuItem value="">
+                        <em>Aucune pièce</em>
+                      </MenuItem>
+                      {rooms.map((roomOption) => (
+                        <MenuItem key={roomOption.id} value={roomOption.name}>
+                          {roomOption.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button
+                      variant="outlined"
+                      startIcon={<AddIcon />}
+                      onClick={() => setNewRoomDialogOpen(true)}
+                      size="small"
+                    >
+                      Ajouter une pièce
+                    </Button>
+                    <Button
+                      variant="contained"
+                      startIcon={<SaveIcon />}
+                      onClick={handleSaveRoom}
+                      size="small"
+                      disabled={!room}
+                    >
+                      Enregistrer la pièce
+                    </Button>
+                  </Box>
                 </Box>
-              </CardContent>
-            </Card>
-          )}
 
-          {(device.type === 'switch' || device.type === 'plug') && (
-            <Card sx={{ mb: 3 }}>
-              <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
-                  Contrôles
-                </Typography>
-                <Divider sx={{ mb: 3 }} />
+                {device.type === 'light' && (
+                  <Box sx={{ mt: 3 }}>
+                    <Divider sx={{ mb: 3 }} />
+                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
+                      Contrôles
+                    </Typography>
+                    <Box sx={{ mb: 3 }}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={isOn}
+                            onChange={(e) => handleToggle(e.target.checked)}
+                            disabled={device.status !== 'online'}
+                            size="medium"
+                          />
+                        }
+                        label={isOn ? 'Allumé' : 'Éteint'}
+                      />
+                    </Box>
+                    <Box>
+                      <Typography gutterBottom>Luminosité: {brightness}%</Typography>
+                      <Slider
+                        value={brightness}
+                        onChange={handleBrightnessChange}
+                        min={0}
+                        max={100}
+                        step={1}
+                        disabled={device.status !== 'online' || !isOn}
+                        sx={{ mb: 2 }}
+                      />
+                    </Box>
+                  </Box>
+                )}
 
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={isOn}
-                      onChange={(e) => handleToggle(e.target.checked)}
-                      disabled={device.status !== 'online'}
-                      size="medium"
+                {(device.type === 'switch' || device.type === 'plug') && (
+                  <Box sx={{ mt: 3 }}>
+                    <Divider sx={{ mb: 3 }} />
+                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
+                      Contrôles
+                    </Typography>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={isOn}
+                          onChange={(e) => handleToggle(e.target.checked)}
+                          disabled={device.status !== 'online'}
+                          size="medium"
+                        />
+                      }
+                      label={isOn ? 'Activé' : 'Désactivé'}
                     />
-                  }
-                  label={isOn ? 'Activé' : 'Désactivé'}
-                />
-              </CardContent>
-            </Card>
-          )}
+                  </Box>
+                )}
 
-          {/* Graphique unifié des capteurs */}
-          {device.state && (() => {
-            const availableSensors: Array<{ type: SensorType; label: string; unit: string }> = [];
-            
-            if (device.state.temperature !== undefined) {
-              availableSensors.push({
-                type: SensorType.TEMPERATURE,
-                label: 'Température',
-                unit: '°C',
-              });
-            }
-            
-            if (device.state.humidity !== undefined) {
-              availableSensors.push({
-                type: SensorType.HUMIDITY,
-                label: 'Humidité',
-                unit: '%',
-              });
-            }
-            
-            if (device.state.pressure !== undefined) {
-              availableSensors.push({
-                type: SensorType.PRESSURE,
-                label: 'Pression',
-                unit: 'hPa',
-              });
-            }
-            
-            if (device.state.illuminance !== undefined) {
-              availableSensors.push({
-                type: SensorType.ILLUMINANCE,
-                label: 'Luminosité ambiante',
-                unit: 'lux',
-              });
-            }
-            
-            if (device.state.battery !== undefined) {
-              availableSensors.push({
-                type: SensorType.BATTERY,
-                label: 'Batterie',
-                unit: '%',
-              });
-            }
-            
-            if (device.state.voltage !== undefined) {
-              availableSensors.push({
-                type: SensorType.VOLTAGE,
-                label: 'Tension',
-                unit: 'V',
-              });
-            }
-            
-            if (device.state.linkquality !== undefined) {
-              availableSensors.push({
-                type: SensorType.LINKQUALITY,
-                label: 'Qualité du signal',
-                unit: '',
-              });
-            }
-            
-            return availableSensors.length > 0 ? (
-              <Box sx={{ mb: 3 }}>
-                <MultiSensorChart
+                {device.type === 'cover' && (
+                  <Box sx={{ mt: 3 }}>
+                    <Divider sx={{ mb: 3 }} />
+                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
+                      Contrôles
+                    </Typography>
+                    <Box sx={{ px: 1, py: 1 }}>
+                      <Typography variant="body2" color="text.secondary" display="block" sx={{ mb: 1, fontSize: '0.875rem' }}>
+                        {t('devices.position')}
+                      </Typography>
+                      <Box sx={{ position: 'relative', px: 1 }}>
+                        <Slider
+                          value={coverPosition}
+                          onChange={handleCoverPositionChange}
+                          disabled={device.status !== 'online'}
+                          min={0}
+                          max={100}
+                          step={1}
+                          marks={[
+                            { value: 50, label: '50%' },
+                          ]}
+                          valueLabelDisplay="auto"
+                          valueLabelFormat={(value) => `${value}%`}
+                          sx={{
+                            mb: 0.5,
+                            '& .MuiSlider-thumb': {
+                              width: 20,
+                              height: 20,
+                            },
+                            '& .MuiSlider-track': {
+                              height: 6,
+                            },
+                            '& .MuiSlider-rail': {
+                              height: 6,
+                            },
+                            '& .MuiSlider-markLabel': {
+                              fontSize: '0.75rem',
+                            },
+                            '& .MuiSlider-valueLabel': {
+                              fontSize: '0.75rem',
+                            },
+                          }}
+                        />
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                            {t('devices.closed')}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                            {t('devices.open')}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          fontSize: '0.875rem',
+                          fontWeight: 500,
+                          color: coverPosition < 50 ? 'error.main' : coverPosition < 100 ? 'warning.main' : 'success.main',
+                          display: 'block',
+                          mt: 1,
+                          textAlign: 'right',
+                        }}
+                      >
+                        {coverPosition}%
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
+              </CardContent>
+            )}
+
+            {/* Onglet Graphique des capteurs */}
+            {activeTab === 1 && (
+              <CardContent>
+                {device.state && (() => {
+                  const availableSensors: Array<{ type: SensorType; label: string; unit: string }> = [];
+                  
+                  if (device.state.temperature !== undefined) {
+                    availableSensors.push({
+                      type: SensorType.TEMPERATURE,
+                      label: 'Température',
+                      unit: '°C',
+                    });
+                  }
+                  
+                  if (device.state.humidity !== undefined) {
+                    availableSensors.push({
+                      type: SensorType.HUMIDITY,
+                      label: 'Humidité',
+                      unit: '%',
+                    });
+                  }
+                  
+                  if (device.state.pressure !== undefined) {
+                    availableSensors.push({
+                      type: SensorType.PRESSURE,
+                      label: 'Pression',
+                      unit: 'hPa',
+                    });
+                  }
+                  
+                  if (device.state.illuminance !== undefined) {
+                    availableSensors.push({
+                      type: SensorType.ILLUMINANCE,
+                      label: 'Luminosité ambiante',
+                      unit: 'lux',
+                    });
+                  }
+                  
+                  if (device.state.battery !== undefined) {
+                    availableSensors.push({
+                      type: SensorType.BATTERY,
+                      label: 'Batterie',
+                      unit: '%',
+                    });
+                  }
+                  
+                  if (device.state.voltage !== undefined) {
+                    availableSensors.push({
+                      type: SensorType.VOLTAGE,
+                      label: 'Tension',
+                      unit: 'V',
+                    });
+                  }
+                  
+                  if (device.state.linkquality !== undefined) {
+                    availableSensors.push({
+                      type: SensorType.LINKQUALITY,
+                      label: 'Qualité du signal',
+                      unit: '',
+                    });
+                  }
+                  
+                  return availableSensors.length > 0 ? (
+                    <Box sx={{ pr: 2.5 }}>
+                      <MultiSensorChart
+                        deviceId={device.ieeeAddress}
+                        availableSensors={availableSensors}
+                      />
+                    </Box>
+                  ) : (
+                    <Alert severity="info">
+                      Aucun capteur disponible pour cet appareil.
+                    </Alert>
+                  );
+                })()}
+              </CardContent>
+            )}
+
+            {/* Onglet Réglages avancés */}
+            {activeTab === 2 && advancedMode && device.meta?.exposes && (
+              <Box sx={{ p: 3 }}>
+                <AdvancedExposesSettings
                   deviceId={device.ieeeAddress}
-                  availableSensors={availableSensors}
+                  friendlyName={device.friendlyName}
+                  exposes={device.meta.exposes}
+                  currentState={device.state || {}}
+                  onStateUpdate={async () => {
+                    // Rafraîchir les données de l'appareil
+                    try {
+                      const updated = await devicesService.getDevice(device.ieeeAddress);
+                      setDevice(updated);
+                      setIsOn(updated.state?.state === 'ON' || updated.state?.state === true);
+                      if (updated.state?.brightness !== undefined) {
+                        setBrightness(Math.round((updated.state.brightness / 255) * 100));
+                      }
+                      // Mettre à jour la position du volet si c'est un appareil cover
+                      if (updated.type === 'cover') {
+                        if (updated.state?.position !== undefined) {
+                          setCoverPosition(
+                            typeof updated.state.position === 'number' 
+                              ? updated.state.position 
+                              : parseInt(updated.state.position) || 0
+                          );
+                        } else if (updated.state?.state === 'open' || updated.state?.state === 'OPEN') {
+                          setCoverPosition(100);
+                        } else if (updated.state?.state === 'closed' || updated.state?.state === 'CLOSED') {
+                          setCoverPosition(0);
+                        } else {
+                          setCoverPosition(0);
+                        }
+                      }
+                    } catch (err) {
+                      console.error('Erreur lors du rafraîchissement:', err);
+                    }
+                  }}
                 />
               </Box>
-            ) : null;
-          })()}
+            )}
+          </Card>
         </Grid>
 
         <Grid item xs={12} md={4}>
@@ -574,6 +831,19 @@ export default function DeviceDetailPage() {
                       </Grid>
                     )}
                     
+                    {device.state.vibration !== undefined && (
+                      <Grid item xs={6}>
+                        <Box sx={{ p: 1.5, bgcolor: device.state.vibration ? 'warning.light' : 'background.default', borderRadius: 1, height: '100%' }}>
+                          <Typography variant="body2" fontWeight={500} gutterBottom>
+                            📳 Vibration
+                          </Typography>
+                          <Typography variant="h6" color={device.state.vibration ? 'warning.main' : 'text.secondary'}>
+                            {device.state.vibration ? 'Détectée' : 'Aucune'}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    )}
+                    
                     {device.state.water_leak !== undefined && (
                       <Grid item xs={6}>
                         <Box sx={{ p: 1.5, bgcolor: device.state.water_leak ? 'error.light' : 'background.default', borderRadius: 1, height: '100%' }}>
@@ -623,9 +893,17 @@ export default function DeviceDetailPage() {
                             ⚡ Tension
                           </Typography>
                           <Typography variant="h6" color="primary.main">
-                            {typeof device.state.voltage === 'number'
-                              ? `${(device.state.voltage / 1000).toFixed(2)}V`
-                              : `${device.state.voltage}V`}
+                            {(() => {
+                              if (typeof device.state.voltage === 'number') {
+                                // Pour les types "energy" et "switch", afficher la valeur réelle sans diviser
+                                if (device.type === 'energy' || device.type === 'switch') {
+                                  return `${device.state.voltage.toFixed(2)}V`;
+                                }
+                                // Pour les autres types, diviser par 1000 (millivolts -> volts)
+                                return `${(device.state.voltage / 1000).toFixed(2)}V`;
+                              }
+                              return `${device.state.voltage}V`;
+                            })()}
                           </Typography>
                         </Box>
                       </Grid>

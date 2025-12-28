@@ -28,14 +28,51 @@ success() {
     echo -e "${BLUE}✅ $1${NC}"
 }
 
+info "Démarrage de la configuration de Mosquitto et Zigbee2MQTT..."
+
+# Créer les dossiers système dans /opt/exohome
+info "Création des dossiers système dans /opt/exohome..."
+EXOHOME_DIR="/opt/exohome"
+EXOHOME_DATA_DIR="$EXOHOME_DIR/data"
+
 # Déterminer le répertoire de base du projet
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-Z2MQTT_DIR="$PROJECT_ROOT/homehub"
-MOSQUITTO_CONFIG_DIR="$Z2MQTT_DIR/mosquitto/config"
+Z2MQTT_DIR="$EXOHOME_DATA_DIR/zigbee2mqtt"
+MOSQUITTO_CONFIG_DIR="$EXOHOME_DATA_DIR/mosquitto/config"
 Z2MQTT_DATA_DIR="$Z2MQTT_DIR/data"
 
-info "Démarrage de la configuration de Mosquitto et Zigbee2MQTT..."
+# Vérifier les permissions root pour créer dans /opt
+if [ "$EUID" -ne 0 ]; then
+    warn "Les permissions root sont nécessaires pour créer les dossiers dans /opt/exohome"
+    warn "Le script va tenter de créer les dossiers avec sudo..."
+    SUDO_CMD="sudo"
+else
+    SUDO_CMD=""
+fi
+
+# Créer le dossier principal
+if [ ! -d "$EXOHOME_DIR" ]; then
+    $SUDO_CMD mkdir -p "$EXOHOME_DIR"
+    success "Dossier $EXOHOME_DIR créé"
+else
+    info "Dossier $EXOHOME_DIR existe déjà"
+fi
+
+# Créer les sous-dossiers
+for dir in "$EXOHOME_DATA_DIR" "$EXOHOME_CONFIG_DIR" "$EXOHOME_LOG_DIR"; do
+    if [ ! -d "$dir" ]; then
+        $SUDO_CMD mkdir -p "$dir"
+        success "Dossier $dir créé"
+    else
+        info "Dossier $dir existe déjà"
+    fi
+done
+
+# Définir les permissions appropriées (si on est root)
+if [ "$EUID" -eq 0 ]; then
+    $SUDO_CMD chown -R "$USER:$USER" "$EXOHOME_DIR" 2>/dev/null || true
+    $SUDO_CMD chmod -R 755 "$EXOHOME_DIR"
+    success "Permissions définies pour $EXOHOME_DIR"
+fi
 
 # Vérifier que Docker est installé et en cours d'exécution
 if ! command -v docker &> /dev/null; then
@@ -216,6 +253,67 @@ EOF
 
 success "Fichier configuration.yaml créé avec succès"
 
+# 3. Configuration Backend .env
+info "Configuration du fichier .env pour le backend..."
+
+# Créer le dossier backend dans /opt/exohome/data si nécessaire
+BACKEND_ENV_DIR="$EXOHOME_DATA_DIR/backend"
+if [ ! -d "$BACKEND_ENV_DIR" ]; then
+    $SUDO_CMD mkdir -p "$BACKEND_ENV_DIR"
+    success "Dossier $BACKEND_ENV_DIR créé"
+    if [ "$EUID" -eq 0 ]; then
+        $SUDO_CMD chown -R "$USER:$USER" "$BACKEND_ENV_DIR" 2>/dev/null || true
+        $SUDO_CMD chmod -R 755 "$BACKEND_ENV_DIR"
+    fi
+else
+    info "Dossier $BACKEND_ENV_DIR existe déjà"
+fi
+
+BACKEND_ENV_FILE="$BACKEND_ENV_DIR/.env"
+
+# Générer un JWT secret aléatoire
+JWT_SECRET=$(openssl rand -base64 64 | tr -d "=+/" | cut -c1-64)
+
+# Créer le fichier .env pour le backend
+info "Création du fichier .env pour le backend dans $BACKEND_ENV_FILE..."
+cat > "$BACKEND_ENV_FILE" << EOF
+# Application
+# Renomer en .env
+
+NODE_ENV=production
+PORT=3000
+FRONTEND_URL=http://exohome-frontend:80
+
+# Database
+DATABASE_PATH=data/exohome.db
+
+# MQTT (Zigbee2MQTT)
+MQTT_BROKER_URL=mqtt://mosquitto:1883
+MQTT_USERNAME=exo
+MQTT_PASSWORD=$MQTT_PASSWORD
+MQTT_CLIENT_ID=exohome
+MQTT_RECONNECT_PERIOD=5000
+
+# Logging
+# debug | info | warn | error
+LOG_LEVEL=info
+
+# AI (Gemma 3 via Ollama)
+# Pour Docker, utilisez l'URL interne : http://ollama:11434
+LLAMA_API_URL=http://localhost:11434
+LLAMA_MODEL=gemma3
+USE_LOCAL_LLAMA=true
+
+# Auth
+# Changez cette clé en production !
+JWT_SECRET=$JWT_SECRET
+JWT_EXPIRES_IN=7d
+ENABLE_LOCAL_MODE=true
+EOF
+
+chmod 600 "$BACKEND_ENV_FILE"
+success "Fichier .env créé pour le backend avec succès"
+
 # Afficher un résumé
 echo ""
 info "=== Résumé de la configuration ==="
@@ -230,8 +328,13 @@ echo "  - Canal Zigbee: 11"
 echo "  - PAN ID: $PAN_ID_DECIMAL (0x$PAN_ID_HEX)"
 echo "  - Utilisateur MQTT: $MQTT_USER"
 echo ""
+success "Backend configuré:"
+echo "  - Fichier .env: $BACKEND_ENV_FILE"
+echo "  - JWT Secret généré automatiquement"
+echo ""
 warn "⚠️  Note: Les clés réseau ont été générées aléatoirement."
 warn "⚠️  Si vous avez déjà un réseau Zigbee, vous devrez utiliser les mêmes clés."
+warn "⚠️  Le fichier .env contient des informations sensibles. Ne le partagez pas !"
 echo ""
 success "Configuration terminée avec succès !"
 

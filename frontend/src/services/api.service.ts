@@ -18,9 +18,14 @@ class ApiService {
     };
 
     // Ajouter le token JWT si disponible
-    const token = localStorage.getItem('homehub_token');
+    const token = localStorage.getItem('lumy_token');
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+    } else {
+      // Log pour debug si le token est manquant
+      if (window.location.pathname === '/setup') {
+        console.warn('Token JWT manquant lors de la requête API');
+      }
     }
 
     return headers;
@@ -37,16 +42,43 @@ class ApiService {
     
     if (response.status === 401) {
       // Token invalide ou expiré
-      localStorage.removeItem('homehub_token');
-      localStorage.removeItem('homehub_user');
-      window.location.href = '/login';
+      localStorage.removeItem('lumy_token');
+      localStorage.removeItem('lumy_user');
+      // Ne rediriger que si on n'est pas déjà sur la page de login ou de setup
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/setup') {
+        window.location.href = '/login';
+      }
       throw new Error('Non autorisé');
     }
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    return response.json();
+    
+    // Si la réponse est 204 No Content, retourner null
+    if (response.status === 204) {
+      return null as T;
+    }
+    
+    // Vérifier le type de contenu
+    const contentType = response.headers.get('content-type');
+    if (!contentType?.includes('application/json')) {
+      return null as T;
+    }
+    
+    // Vérifier si la réponse a du contenu avant de parser en JSON
+    const text = await response.text();
+    if (!text || text.trim() === '') {
+      return null as T;
+    }
+    
+    try {
+      return JSON.parse(text);
+    } catch (error) {
+      // Si le parsing échoue, retourner null au lieu de lancer une erreur
+      console.warn('Failed to parse JSON response:', text);
+      return null as T;
+    }
   }
 
   async post<T>(endpoint: string, data?: unknown): Promise<T> {
@@ -60,9 +92,15 @@ class ApiService {
     });
     
     if (response.status === 401) {
-      localStorage.removeItem('homehub_token');
-      localStorage.removeItem('homehub_user');
-      window.location.href = '/login';
+      // Ne pas supprimer le token si on est sur la page de setup (l'utilisateur vient peut-être de créer son compte)
+      if (window.location.pathname !== '/setup') {
+        localStorage.removeItem('lumy_token');
+        localStorage.removeItem('lumy_user');
+        // Ne rediriger que si on n'est pas déjà sur la page de login
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      }
       throw new Error('Non autorisé');
     }
     
@@ -84,9 +122,15 @@ class ApiService {
     });
     
     if (response.status === 401) {
-      localStorage.removeItem('homehub_token');
-      localStorage.removeItem('homehub_user');
-      window.location.href = '/login';
+      // Ne pas supprimer le token si on est sur la page de setup (l'utilisateur vient peut-être de créer son compte)
+      if (window.location.pathname !== '/setup') {
+        localStorage.removeItem('lumy_token');
+        localStorage.removeItem('lumy_user');
+        // Ne rediriger que si on n'est pas déjà sur la page de login
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      }
       throw new Error('Non autorisé');
     }
     
@@ -107,9 +151,15 @@ class ApiService {
     });
     
     if (response.status === 401) {
-      localStorage.removeItem('homehub_token');
-      localStorage.removeItem('homehub_user');
-      window.location.href = '/login';
+      // Ne pas supprimer le token si on est sur la page de setup (l'utilisateur vient peut-être de créer son compte)
+      if (window.location.pathname !== '/setup') {
+        localStorage.removeItem('lumy_token');
+        localStorage.removeItem('lumy_user');
+        // Ne rediriger que si on n'est pas déjà sur la page de login
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      }
       throw new Error('Non autorisé');
     }
     
@@ -130,9 +180,15 @@ class ApiService {
     });
     
     if (response.status === 401) {
-      localStorage.removeItem('homehub_token');
-      localStorage.removeItem('homehub_user');
-      window.location.href = '/login';
+      // Ne pas supprimer le token si on est sur la page de setup (l'utilisateur vient peut-être de créer son compte)
+      if (window.location.pathname !== '/setup') {
+        localStorage.removeItem('lumy_token');
+        localStorage.removeItem('lumy_user');
+        // Ne rediriger que si on n'est pas déjà sur la page de login
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      }
       throw new Error('Non autorisé');
     }
     

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Script d'installation HomeHub
-# Ce script installe tous les prérequis nécessaires pour HomeHub
+# Script d'installation Lumy Home
+# Ce script installe tous les prérequis nécessaires pour Lumy Home
 
 # Couleurs pour les messages
 RED='\033[0;31m'
@@ -35,7 +35,7 @@ if ! command -v apt-get &> /dev/null; then
     exit 1
 fi
 
-info "Démarrage de l'installation de HomeHub..."
+info "Démarrage de l'installation de Lumy Home..."
 
 # 1. Mise à jour de l'OS
 info "Mise à jour de la liste des paquets..."
@@ -140,39 +140,39 @@ else
     docker-compose --version
 fi
 
-# 5. Changer le hostname en "homehub"
-info "Configuration du hostname en 'homehub'..."
+# 5. Changer le hostname en "Lumy Home"
+info "Configuration du hostname en 'Lumy Home'..."
 CURRENT_HOSTNAME=$(hostname)
-if [ "$CURRENT_HOSTNAME" != "homehub" ]; then
-    hostnamectl set-hostname homehub
+if [ "$CURRENT_HOSTNAME" != "Lumy Home" ]; then
+    hostnamectl set-hostname Lumy Home
     # Mettre à jour /etc/hosts
-    sed -i "s/127.0.1.1.*${CURRENT_HOSTNAME}/127.0.1.1\thomehub/" /etc/hosts 2>/dev/null || true
-    info "Hostname changé de '${CURRENT_HOSTNAME}' vers 'homehub'"
+    sed -i "s/127.0.1.1.*${CURRENT_HOSTNAME}/127.0.1.1\tLumy Home/" /etc/hosts 2>/dev/null || true
+    info "Hostname changé de '${CURRENT_HOSTNAME}' vers 'Lumy Home'"
     warn "Un redémarrage est recommandé pour que le changement de hostname prenne effet complètement"
 else
-    info "Le hostname est déjà configuré sur 'homehub'"
+    info "Le hostname est déjà configuré sur 'Lumy Home'"
 fi
 
-# 6. Créer le dossier /opt/homehub
-info "Création du dossier /opt/homehub..."
-mkdir -p /opt/homehub
-chmod 755 /opt/homehub
+# 6. Créer le dossier /opt/Lumy Home
+info "Création du dossier /opt/Lumy Home..."
+mkdir -p /opt/Lumy Home
+chmod 755 /opt/Lumy Home
 
-# 7. Télécharger et extraire homehub-core.tar.gz
-info "Téléchargement de homehub-core.tar.gz..."
+# 7. Télécharger et extraire Lumy Home-core.tar.gz
+info "Téléchargement de Lumy Home-core.tar.gz..."
 
 # URL du package (à adapter selon votre source)
-HOMEHUB_PACKAGE_URL="${HOMEHUB_PACKAGE_URL:-https://github.com/your-repo/homehub/releases/latest/download/homehub-core.tar.gz}"
-PACKAGE_NAME="homehub-core.tar.gz"
+Lumy Home_PACKAGE_URL="${Lumy Home_PACKAGE_URL:-https://github.com/your-repo/Lumy Home/releases/latest/download/Lumy Home-core.tar.gz}"
+PACKAGE_NAME="Lumy Home-core.tar.gz"
 TEMP_DIR=$(mktemp -d)
 
 # Télécharger le package
-if curl -L -f -o "${TEMP_DIR}/${PACKAGE_NAME}" "${HOMEHUB_PACKAGE_URL}"; then
+if curl -L -f -o "${TEMP_DIR}/${PACKAGE_NAME}" "${Lumy Home_PACKAGE_URL}"; then
     info "Package téléchargé avec succès"
 else
-    error "Échec du téléchargement du package depuis ${HOMEHUB_PACKAGE_URL}"
-    error "Vous pouvez définir HOMEHUB_PACKAGE_URL pour spécifier une URL personnalisée"
-    error "Exemple: HOMEHUB_PACKAGE_URL=https://example.com/homehub-core.tar.gz ./install.sh"
+    error "Échec du téléchargement du package depuis ${Lumy Home_PACKAGE_URL}"
+    error "Vous pouvez définir Lumy Home_PACKAGE_URL pour spécifier une URL personnalisée"
+    error "Exemple: Lumy Home_PACKAGE_URL=https://example.com/Lumy Home-core.tar.gz ./install.sh"
     rm -rf "${TEMP_DIR}"
     exit 1
 fi
@@ -184,17 +184,17 @@ if ! tar -tzf "${TEMP_DIR}/${PACKAGE_NAME}" >/dev/null 2>&1; then
     exit 1
 fi
 
-# Extraire le package dans /opt/homehub
-info "Extraction du package dans /opt/homehub..."
-tar -xzf "${TEMP_DIR}/${PACKAGE_NAME}" -C /opt/homehub --strip-components=1
+# Extraire le package dans /opt/Lumy Home
+info "Extraction du package dans /opt/Lumy Home..."
+tar -xzf "${TEMP_DIR}/${PACKAGE_NAME}" -C /opt/Lumy Home --strip-components=1
 
 # Nettoyer le fichier temporaire
 rm -rf "${TEMP_DIR}"
 
 # Vérifier que l'extraction a réussi
-if [ -d "/opt/homehub" ] && [ "$(ls -A /opt/homehub)" ]; then
-    info "Package extrait avec succès dans /opt/homehub"
-    ls -la /opt/homehub
+if [ -d "/opt/Lumy Home" ] && [ "$(ls -A /opt/Lumy Home)" ]; then
+    info "Package extrait avec succès dans /opt/Lumy Home"
+    ls -la /opt/Lumy Home
 else
     error "L'extraction du package a échoué"
     exit 1
@@ -203,7 +203,7 @@ fi
 # Résumé de l'installation
 echo ""
 info "=========================================="
-info "Installation de HomeHub terminée !"
+info "Installation de Lumy Home terminée !"
 info "=========================================="
 echo ""
 info "Résumé:"
@@ -212,7 +212,7 @@ info "  ✓ xz installé"
 info "  ✓ Docker CE installé: $(docker --version)"
 info "  ✓ Docker Compose installé: $(docker-compose --version)"
 info "  ✓ Hostname configuré: $(hostname)"
-info "  ✓ HomeHub installé dans: /opt/homehub"
+info "  ✓ Lumy Home installé dans: /opt/Lumy Home"
 echo ""
 warn "Note: Un redémarrage est recommandé pour que tous les changements prenne effet"
 echo ""

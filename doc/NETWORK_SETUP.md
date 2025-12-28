@@ -1,8 +1,8 @@
-# Configuration réseau Docker - HomeHub
+# Configuration réseau Docker - Lumy Home
 
 ## 🎯 Architecture réseau
 
-HomeHub utilise une architecture réseau Docker sécurisée où :
+Lumy Home utilise une architecture réseau Docker sécurisée où :
 
 - **Frontend** : Seul service accessible publiquement (port 80)
 - **Backend** : Accessible uniquement via le réseau Docker privé
@@ -11,7 +11,7 @@ HomeHub utilise une architecture réseau Docker sécurisée où :
 
 ## 🌐 Réseaux Docker
 
-### Réseau `homehub-network` (bridge externe)
+### Réseau `Lumy Home-network` (bridge externe)
 - **Services** : `mosquitto`, `backend`, `frontend`
 - **Type** : Bridge externe (créé manuellement)
 - **Usage** : Communication entre mosquitto et backend
@@ -47,7 +47,7 @@ Backend → Mosquitto (mosquitto:1883) via réseau Docker privé
 ### 1. Créer le réseau externe (si nécessaire)
 
 ```bash
-docker network create homehub-network
+docker network create Lumy Home-network
 ```
 
 ### 2. Ports exposés
@@ -105,8 +105,8 @@ Plus besoin de `VITE_API_URL` et `VITE_WS_URL` en Docker - utilisation de chemin
 
 ```bash
 docker network ls
-docker network inspect homehub-network
-docker network inspect homehub_frontend-backend
+docker network inspect Lumy Home-network
+docker network inspect Lumy Home_frontend-backend
 ```
 
 ### Tester la communication

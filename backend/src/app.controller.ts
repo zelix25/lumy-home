@@ -3,7 +3,6 @@ import { AppService } from './app.service';
 import { Public } from './auth/decorators/public.decorator';
 
 @Controller()
-@Public()
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
@@ -12,6 +11,10 @@ export class AppController {
     return this.appService.getHello();
   }
 
+  /**
+   * Health check endpoint - reste public pour le monitoring
+   */
+  @Public()
   @Get('health')
   getHealth(): { status: string; timestamp: string } {
     return this.appService.getHealth();

@@ -10,11 +10,13 @@ import {
   Alert,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import { useTranslation } from 'react-i18next';
 import { simpleAutomationsService, Automation } from '../services/simple-automations.service';
 import { useNotification } from '../hooks/useNotification';
 import SimpleAutomationCard from '../components/SimpleAutomationCard';
 import CreateSimpleAutomationDialog from '../components/CreateSimpleAutomationDialog';
+import NodeEditorDialog from '../components/NodeEditorDialog';
 
 export default function ScenesPage() {
   const { t } = useTranslation();
@@ -23,6 +25,8 @@ export default function ScenesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [nodeEditorOpen, setNodeEditorOpen] = useState(false);
+  const [editingAutomation, setEditingAutomation] = useState<Automation | null>(null);
 
   const fetchAutomations = async () => {
     setLoading(true);
@@ -48,6 +52,27 @@ export default function ScenesPage() {
 
   const handleCreateSuccess = () => {
     fetchAutomations();
+    setEditingAutomation(null);
+  };
+
+  const handleEdit = (automation: Automation) => {
+    setEditingAutomation(automation);
+    setCreateDialogOpen(true);
+  };
+
+  const handleEditNode = (automation: Automation) => {
+    setEditingAutomation(automation);
+    setNodeEditorOpen(true);
+  };
+
+  const handleDialogClose = () => {
+    setCreateDialogOpen(false);
+    setEditingAutomation(null);
+  };
+
+  const handleNodeEditorClose = () => {
+    setNodeEditorOpen(false);
+    setEditingAutomation(null);
   };
 
   if (loading) {
@@ -69,13 +94,22 @@ export default function ScenesPage() {
             {t('scenes.subtitle')}
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setCreateDialogOpen(true)}
-        >
-          {t('automations.createAutomation')}
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<AccountTreeIcon />}
+            onClick={() => setNodeEditorOpen(true)}
+          >
+            {t('scenes.nodeMode')}
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setCreateDialogOpen(true)}
+          >
+            {t('automations.createAutomation')}
+          </Button>
+        </Box>
       </Box>
 
       {error && (
@@ -111,6 +145,8 @@ export default function ScenesPage() {
               <SimpleAutomationCard
                 automation={automation}
                 onUpdate={fetchAutomations}
+                onEdit={handleEdit}
+                onEditNode={handleEditNode}
               />
             </Grid>
           ))}
@@ -119,8 +155,16 @@ export default function ScenesPage() {
 
       <CreateSimpleAutomationDialog
         open={createDialogOpen}
-        onClose={() => setCreateDialogOpen(false)}
+        onClose={handleDialogClose}
         onSuccess={handleCreateSuccess}
+        automation={editingAutomation}
+      />
+
+      <NodeEditorDialog
+        open={nodeEditorOpen}
+        onClose={handleNodeEditorClose}
+        onSuccess={handleCreateSuccess}
+        automation={editingAutomation}
       />
     </Box>
   );

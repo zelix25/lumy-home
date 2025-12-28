@@ -29,10 +29,12 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ComputerIcon from '@mui/icons-material/Computer';
 import LogoutIcon from '@mui/icons-material/Logout';
+import StoreIcon from '@mui/icons-material/Store';
 import LanguageSelector from './LanguageSelector';
 import SystemModal from './SystemModal';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
+import { usePluginMenuItems } from '../hooks/usePluginRoutes';
 
 const drawerWidth = 240; // Largeur sidebar selon guide scandinave
 
@@ -53,6 +55,7 @@ const getNavItems = (t: (key: string) => string): NavItem[] => [
   { label: t('common.assistant'), path: '/assistant', icon: <SmartToyIcon /> },
   { label: t('common.history'), path: '/historique', icon: <HistoryIcon /> },
   { label: t('common.plan'), path: '/plan', icon: <MapIcon /> },
+  { label: t('menu.store'), path: '/store', icon: <StoreIcon /> },
   { label: t('common.debug'), path: '/debug', icon: <BugReportIcon /> },
 ];
 
@@ -66,6 +69,7 @@ export default function Layout({ children }: LayoutProps) {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { t } = useTranslation();
   const { logout, isAuthenticated, user } = useAuth();
+  const pluginMenuItems = usePluginMenuItems();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -102,6 +106,11 @@ export default function Layout({ children }: LayoutProps) {
     handleMenuClose();
   };
 
+  const handleStore = () => {
+    navigate('/store/connect');
+    handleMenuClose();
+  };
+
   const handleSystem = () => {
     setSystemModalOpen(true);
     handleMenuClose();
@@ -128,7 +137,7 @@ export default function Layout({ children }: LayoutProps) {
         }}
       >
         <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 500 }}>
-          HomeHub IA
+          Lumy Home
         </Typography>
       </Toolbar>
       <List sx={{ pt: 2 }}>
@@ -174,6 +183,57 @@ export default function Layout({ children }: LayoutProps) {
             </ListItemButton>
           </ListItem>
         ))}
+        {/* Éléments de menu des plugins */}
+        {pluginMenuItems
+          .sort((a, b) => (a.menuOrder ?? 999) - (b.menuOrder ?? 999))
+          .map((item) => (
+            <ListItem key={item.id} disablePadding>
+              <ListItemButton
+                selected={location.pathname === item.menuPath}
+                onClick={() => item.menuPath && handleNavigation(item.menuPath)}
+                sx={{
+                  mx: 1,
+                  mb: 0.5,
+                  borderRadius: 8,
+                  transition: 'all 0.15s ease-in-out',
+                  '&:hover': {
+                    backgroundColor: 'rgba(0,0,0,0.04)',
+                  },
+                  '&.Mui-selected': {
+                    backgroundColor: 'rgba(134, 166, 160, 0.1)',
+                    color: '#1E1E1E',
+                    '&:hover': {
+                      backgroundColor: 'rgba(134, 166, 160, 0.15)',
+                    },
+                    '& .MuiListItemIcon-root': {
+                      color: '#86A6A0',
+                    },
+                  },
+                }}
+              >
+                <ListItemIcon
+                  sx={{
+                    color: location.pathname === item.menuPath ? '#86A6A0' : 'text.secondary',
+                    minWidth: 40,
+                  }}
+                >
+                  {item.icon ? (
+                    <Box component="span" sx={{ fontSize: 24 }}>
+                      {item.icon}
+                    </Box>
+                  ) : (
+                    <StoreIcon />
+                  )}
+                </ListItemIcon>
+                <ListItemText
+                  primary={item.displayName}
+                  primaryTypographyProps={{
+                    fontWeight: location.pathname === item.menuPath ? 500 : 400,
+                  }}
+                />
+              </ListItemButton>
+            </ListItem>
+          ))}
       </List>
     </Box>
   );
@@ -236,6 +296,12 @@ export default function Layout({ children }: LayoutProps) {
                     <SettingsIcon fontSize="small" />
                   </ListItemIcon>
                   <ListItemText>{t('menu.settings')}</ListItemText>
+                </MenuItem>
+                <MenuItem onClick={handleStore}>
+                  <ListItemIcon>
+                    <StoreIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>{t('menu.store')}</ListItemText>
                 </MenuItem>
                 <MenuItem onClick={handleSystem}>
                   <ListItemIcon>

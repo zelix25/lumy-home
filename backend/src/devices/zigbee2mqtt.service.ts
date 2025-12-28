@@ -1,8 +1,8 @@
 import { Injectable, OnModuleInit, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import * as fs from 'fs';
+import * as path from 'path';
 import { LoggerService } from '../logger/logger.service';
 import { MqttService } from '../mqtt/mqtt.service';
 import { WebsocketGateway } from '../websocket/websocket.gateway';
@@ -38,13 +38,23 @@ interface ZigbeeState {
   [key: string]: any;
 }
 
+interface DeviceTypeMappingEntry {
+  model: string;
+  vendor?: string;
+  type: string;
+  comment?: string;
+}
+
 @Injectable()
 export class Zigbee2MqttService implements OnModuleInit {
-  private deviceTypeMapping: Array<{
-    model: string;
-    vendor?: string;
-    type: DeviceType;
-  }> = [];
+  private deviceTypeMapping: DeviceTypeMappingEntry[] = [];
+  private permitJoinActive: boolean = false;
+  private permitJoinTimeRemaining: number = 0;
+  private permitJoinStartTime: Date | null = null;
+  private permitJoinDuration: number = 0;
+  // Debounce pour les événements de bouton (éviter les déclenchements multiples)
+  private lastButtonPressTime: Map<string, number> = new Map();
+  private readonly BUTTON_DEBOUNCE_MS = 200; // 200ms de debounce
 
   constructor(
     @InjectRepository(Device)
@@ -64,28 +74,42 @@ export class Zigbee2MqttService implements OnModuleInit {
 
   private loadDeviceTypeMapping(): void {
     try {
-      // Essayer d'abord depuis __dirname (après compilation dans dist/)
-      let mappingPath = join(__dirname, 'device-type-mapping.json');
+      // Chercher le fichier dans src/devices (développement) ou dist/devices (production)
+      // __dirname pointe vers dist/devices en production ou src/devices en développement
+      let mappingPath = path.join(__dirname, 'device-type-mapping.json');
       
-      // Si le fichier n'existe pas, essayer depuis le répertoire source (en développement)
-      try {
-        readFileSync(mappingPath, 'utf-8');
-      } catch {
-        mappingPath = join(process.cwd(), 'src', 'devices', 'device-type-mapping.json');
+      // Si le fichier n'existe pas à cet emplacement, essayer depuis la racine du projet
+      if (!fs.existsSync(mappingPath)) {
+        // Essayer depuis process.cwd() (racine du projet)
+        const rootPath = path.join(process.cwd(), 'src', 'devices', 'device-type-mapping.json');
+        if (fs.existsSync(rootPath)) {
+          mappingPath = rootPath;
+        } else {
+          // Essayer dans dist si on est en production
+          const distPath = path.join(process.cwd(), 'dist', 'devices', 'device-type-mapping.json');
+          if (fs.existsSync(distPath)) {
+            mappingPath = distPath;
+          }
+        }
+      }
+
+      if (!fs.existsSync(mappingPath)) {
+        throw new Error(`Fichier de mapping introuvable: ${mappingPath}`);
+      }
+
+      const mappingContent = fs.readFileSync(mappingPath, 'utf-8');
+      this.deviceTypeMapping = JSON.parse(mappingContent) as DeviceTypeMappingEntry[];
+      
+      // Vérifier que le fichier contient bien des données
+      if (!Array.isArray(this.deviceTypeMapping)) {
+        throw new Error('Le fichier de mapping ne contient pas un tableau valide');
       }
       
-      const mappingFile = readFileSync(mappingPath, 'utf-8');
-      const mappings = JSON.parse(mappingFile);
-
-      // Convertir les types string en DeviceType enum
-      this.deviceTypeMapping = mappings.map((m: any) => ({
-        model: m.model,
-        vendor: m.vendor,
-        type: DeviceType[m.type.toUpperCase() as keyof typeof DeviceType] || DeviceType.UNKNOWN,
-      }));
-
+      // Compter les types "other" pour information
+      const otherCount = this.deviceTypeMapping.filter(e => e.type?.toLowerCase() === 'other').length;
+      
       this.logger.log(
-        `✅ ${this.deviceTypeMapping.length} mappings de types d'appareils chargés depuis ${mappingPath}`,
+        `✅ Fichier de mapping chargé: ${this.deviceTypeMapping.length} entrées depuis ${mappingPath} (${otherCount} de type "other")`,
         'Zigbee2MqttService',
       );
     } catch (error) {
@@ -94,9 +118,36 @@ export class Zigbee2MqttService implements OnModuleInit {
         error.stack,
         'Zigbee2MqttService',
       );
-      // Utiliser un tableau vide en cas d'erreur
       this.deviceTypeMapping = [];
+      this.logger.log(
+        'Détection de type d\'appareil basée uniquement sur les données Zigbee2MQTT (exposes, type)',
+        'Zigbee2MqttService',
+      );
     }
+  }
+
+  /**
+   * Convertit un type du fichier de mapping vers DeviceType
+   */
+  private mapJsonTypeToDeviceType(jsonType: string): DeviceType {
+    const typeMap: Record<string, DeviceType> = {
+      light: DeviceType.LIGHT,
+      switch: DeviceType.SWITCH,
+      sensor: DeviceType.SENSOR,
+      plug: DeviceType.PLUG,
+      door: DeviceType.DOOR,
+      window: DeviceType.WINDOW,
+      temperature: DeviceType.TEMPERATURE,
+      humidity: DeviceType.HUMIDITY,
+      motion: DeviceType.MOTION,
+      button: DeviceType.BUTTON,
+      cover: DeviceType.COVER, // Les covers sont traités comme des switches (contacteurs de volet)
+      energy: DeviceType.ENERGY,
+      other: DeviceType.OTHER,
+      unknown: DeviceType.UNKNOWN,
+    };
+
+    return typeMap[jsonType?.toLowerCase()] || DeviceType.UNKNOWN;
   }
 
   getMqttStatus() {
@@ -252,6 +303,24 @@ export class Zigbee2MqttService implements OnModuleInit {
         );
       } else if (message.topic === 'zigbee2mqtt/bridge/state') {
         // État du bridge
+        const bridgeState = message.payload as any;
+        if (typeof bridgeState === 'object' && bridgeState !== null) {
+          // Mettre à jour l'état de permit_join si présent
+          if ('permit_join' in bridgeState) {
+            const wasActive = this.permitJoinActive;
+            this.permitJoinActive = bridgeState.permit_join === true;
+            
+            // Si permit_join devient inactif, réinitialiser l'état
+            if (wasActive && !this.permitJoinActive) {
+              this.permitJoinTimeRemaining = 0;
+              this.permitJoinStartTime = null;
+              this.permitJoinDuration = 0;
+            }
+            // Si permit_join devient actif mais qu'on n'a pas de timestamp de début,
+            // on ne peut pas calculer le temps restant exactement
+            // mais on marque comme actif (le frontend gérera l'affichage)
+          }
+        }
         this.logger.debug(
           `État bridge Zigbee2MQTT: ${JSON.stringify(message.payload)}`,
           'Zigbee2MqttService',
@@ -291,7 +360,43 @@ export class Zigbee2MqttService implements OnModuleInit {
     this.websocketGateway.broadcast('devices:updated', { devices: allDevices });
   }
 
+  /**
+   * Génère un nom MQTT à partir d'un nom friendly
+   * - Convertit en minuscules
+   * - Supprime les accents
+   * - Remplace les espaces par des tirets
+   * - Supprime les caractères spéciaux (garde uniquement lettres, chiffres, tirets)
+   */
+  private generateMqttName(friendlyName: string): string {
+    if (!friendlyName) return '';
+
+    // Normaliser les caractères Unicode (supprimer les accents)
+    let normalized = friendlyName
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Supprimer les diacritiques
+      .toLowerCase();
+
+    // Remplacer les espaces et caractères spéciaux par des tirets
+    normalized = normalized.replace(/[^a-z0-9]+/g, '-');
+
+    // Supprimer les tirets en début et fin
+    normalized = normalized.replace(/^-+|-+$/g, '');
+
+    // Si le résultat est vide, utiliser un nom par défaut
+    if (!normalized) {
+      normalized = 'device';
+    }
+
+    return normalized;
+  }
+
   private async processDevice(zigbeeDevice: ZigbeeDevice): Promise<void> {
+    // Log pour déboguer les données de l'appareil
+    this.logger.debug(
+      `🔍 Traitement appareil: ${zigbeeDevice.friendly_name}, modèle: "${zigbeeDevice.definition?.model || 'N/A'}", vendor: "${zigbeeDevice.definition?.vendor || 'N/A'}", type Zigbee2MQTT: "${zigbeeDevice.type || 'N/A'}"`,
+      'Zigbee2MqttService',
+    );
+    
     const deviceType = this.normalizeDeviceType(zigbeeDevice);
     const isSupported = this.isDeviceSupported(zigbeeDevice);
     const unsupportedReason = isSupported
@@ -302,9 +407,16 @@ export class Zigbee2MqttService implements OnModuleInit {
       where: { ieeeAddress: zigbeeDevice.ieee_address },
     });
 
+    // IMPORTANT: Zigbee2MQTT envoie le friendly_name qu'il utilise (qui est normalisé pour les topics)
+    // Pour les nouveaux appareils, on utilise ce nom comme friendlyName initial
+    // Pour les appareils existants, on préserve le friendlyName défini par l'utilisateur
+    const zigbeeFriendlyName = zigbeeDevice.friendly_name;
+    const mqttName = this.generateMqttName(zigbeeFriendlyName);
+
     const deviceData: Partial<Device> = {
       ieeeAddress: zigbeeDevice.ieee_address,
-      friendlyName: zigbeeDevice.friendly_name,
+      mqttName: mqttName, // Nom normalisé utilisé par Zigbee2MQTT dans les topics
+      friendlyName: zigbeeFriendlyName, // Pour les nouveaux appareils uniquement
       type: deviceType,
       manufacturer: zigbeeDevice.definition?.vendor || undefined,
       model: zigbeeDevice.definition?.model || undefined,
@@ -317,10 +429,15 @@ export class Zigbee2MqttService implements OnModuleInit {
         disabled: zigbeeDevice.disabled,
         exposes: zigbeeDevice.definition?.exposes || [],
         originalType: zigbeeDevice.type, // Stocker le type original de Zigbee2MQTT
+        originalZigbeeName: mqttName, // Stocker le nom normalisé utilisé par Zigbee2MQTT dans les topics
       },
     };
 
     if (existingDevice) {
+      // IMPORTANT: Ne pas écraser le friendlyName défini par l'utilisateur
+      // Le friendlyName est uniquement utilisé côté backend/frontend pour l'affichage
+      // Seul le mqttName doit être mis à jour avec le nom reçu de Zigbee2MQTT
+      
       // Mettre à jour les métadonnées pour inclure le type original si manquant
       const existingMeta = existingDevice.meta || {};
       deviceData.meta = {
@@ -329,20 +446,50 @@ export class Zigbee2MqttService implements OnModuleInit {
         disabled: zigbeeDevice.disabled,
         exposes: zigbeeDevice.definition?.exposes || existingMeta.exposes || [],
         originalType: existingMeta.originalType || zigbeeDevice.type, // Préserver ou ajouter le type original
+        // Mettre à jour le nom normalisé utilisé par Zigbee2MQTT dans les topics
+        originalZigbeeName: mqttName, // Toujours mettre à jour avec le nom normalisé actuel de Zigbee2MQTT
       };
-      // Mettre à jour l'appareil existant
-      Object.assign(existingDevice, deviceData);
+      
+      // Mettre à jour uniquement les champs techniques, pas le friendlyName utilisateur
+      existingDevice.mqttName = mqttName; // Mettre à jour le mqttName avec le nom reçu de Zigbee2MQTT
+      if (deviceData.type !== undefined) {
+        existingDevice.type = deviceData.type;
+      }
+      if (deviceData.manufacturer !== undefined) {
+        existingDevice.manufacturer = deviceData.manufacturer;
+      }
+      if (deviceData.model !== undefined) {
+        existingDevice.model = deviceData.model;
+      }
+      if (deviceData.description !== undefined) {
+        existingDevice.description = deviceData.description;
+      }
+      if (deviceData.isSupported !== undefined) {
+        existingDevice.isSupported = deviceData.isSupported;
+      }
+      if (deviceData.unsupportedReason !== undefined) {
+        existingDevice.unsupportedReason = deviceData.unsupportedReason;
+      }
+      if (deviceData.status !== undefined) {
+        existingDevice.status = deviceData.status;
+      }
+      if (deviceData.meta !== undefined) {
+        existingDevice.meta = deviceData.meta;
+      }
+      // Ne PAS mettre à jour existingDevice.friendlyName - il reste le nom défini par l'utilisateur
+      
       await this.deviceRepository.save(existingDevice);
 
-      // Si c'est un nouvel appareil (nouveau friendly_name), notifier
-      if (existingDevice.friendlyName !== zigbeeDevice.friendly_name) {
+      // Vérifier si le mqttName a changé (indique un renommage dans Zigbee2MQTT)
+      const oldMqttName = existingDevice.meta?.originalZigbeeName;
+      if (oldMqttName && oldMqttName !== mqttName) {
         this.logger.log(
-          `Appareil mis à jour: ${zigbeeDevice.friendly_name}`,
+          `Appareil renommé dans Zigbee2MQTT: ${oldMqttName} -> ${mqttName}`,
           'Zigbee2MqttService',
         );
         this.websocketGateway.broadcast('device:updated', {
           device: existingDevice,
-          message: `L'appareil ${zigbeeDevice.friendly_name} a été mis à jour`,
+          message: `L'appareil a été renommé dans Zigbee2MQTT`,
         });
       }
     } else {
@@ -355,8 +502,8 @@ export class Zigbee2MqttService implements OnModuleInit {
         'Zigbee2MqttService',
       );
 
-      // Enregistrer la découverte dans l'historique
-      if (this.historyTimelineService) {
+      // Enregistrer la découverte dans l'historique (sauf pour les appareils "energy")
+      if (this.historyTimelineService && deviceType !== DeviceType.ENERGY) {
         try {
           await this.historyTimelineService.logDeviceDiscovered(
             newDevice.ieeeAddress,
@@ -411,7 +558,22 @@ export class Zigbee2MqttService implements OnModuleInit {
       }
     }
     
-    // Si toujours pas trouvé, essayer de chercher par friendlyName (pour les cas où le topic utilise le nom au lieu de l'IEEE)
+    // Si toujours pas trouvé, essayer de chercher par mqttName (pour les cas où le topic utilise le nom MQTT)
+    if (!device) {
+      const allDevices = await this.deviceRepository.find();
+      const foundDevice = allDevices.find(
+        (d) => d.mqttName && d.mqttName.toLowerCase() === ieeeAddress.toLowerCase(),
+      );
+      if (foundDevice) {
+        device = foundDevice;
+        this.logger.debug(
+          `✅ Appareil trouvé par mqttName: ${device.mqttName} (IEEE: ${device.ieeeAddress})`,
+          'Zigbee2MqttService',
+        );
+      }
+    }
+    
+    // Si toujours pas trouvé, essayer de chercher par friendlyName (pour compatibilité avec les anciens noms)
     if (!device) {
       const allDevices = await this.deviceRepository.find();
       const foundDevice = allDevices.find(
@@ -489,7 +651,7 @@ export class Zigbee2MqttService implements OnModuleInit {
     // Enregistrer les données de capteurs dans l'historique
     if (this.historyService) {
       try {
-        await this.logSensorData(savedDevice.ieeeAddress, oldState, mergedState);
+        await this.logSensorData(savedDevice.ieeeAddress, savedDevice.type, oldState, mergedState);
       } catch (error) {
         this.logger.error(
           `Erreur lors de l'enregistrement des données capteurs: ${error.message}`,
@@ -555,7 +717,15 @@ export class Zigbee2MqttService implements OnModuleInit {
    * Déclenche les automatisations basées sur les événements Zigbee
    */
   private async triggerAutomations(device: Device, oldState: any, newState: any) {
-    if (!this.automationsService) return;
+    if (!this.automationsService) {
+      this.logger.debug('Service d\'automatisations non disponible, arrêt du déclenchement', 'Zigbee2MqttService');
+      return;
+    }
+
+    this.logger.debug(
+      `[AUTOMATION TRIGGER] Vérification des événements pour l'appareil: ${device.friendlyName} (${device.ieeeAddress})`,
+      'Zigbee2MqttService',
+    );
 
     // Détecter le type d'événement
     let eventType: string | null = null;
@@ -566,16 +736,25 @@ export class Zigbee2MqttService implements OnModuleInit {
       (oldState.occupancy !== true && oldState.occupancy !== 'true')
     ) {
       eventType = 'motion';
+      this.logger.log(
+        `[AUTOMATION TRIGGER] 🔔 MOUVEMENT détecté sur l'appareil "${device.friendlyName}" (${device.ieeeAddress}) - Ancien état: ${oldState.occupancy}, Nouvel état: ${newState.occupancy}`,
+        'Zigbee2MqttService',
+      );
       await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, newState);
     }
 
     // Détection de contact (porte/fenêtre)
     if (newState.contact !== undefined && oldState.contact !== newState.contact) {
       eventType = 'contact';
+      const isOpen = !newState.contact;
+      this.logger.log(
+        `[AUTOMATION TRIGGER] 🚪 CONTACT détecté sur l'appareil "${device.friendlyName}" (${device.ieeeAddress}) - Ancien état: ${oldState.contact ? 'fermé' : 'ouvert'}, Nouvel état: ${newState.contact ? 'fermé' : 'ouvert'} (${isOpen ? 'OUVERT' : 'FERMÉ'})`,
+        'Zigbee2MqttService',
+      );
       await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, {
         ...newState,
         contactChanged: true,
-        isOpen: !newState.contact, // contact: true = fermé, false = ouvert
+        isOpen: isOpen,
       });
     }
 
@@ -586,23 +765,194 @@ export class Zigbee2MqttService implements OnModuleInit {
       Math.abs(newState.temperature - oldState.temperature) > 0.5
     ) {
       eventType = 'temperature';
+      this.logger.log(
+        `[AUTOMATION TRIGGER] 🌡️ TEMPÉRATURE détectée sur l'appareil "${device.friendlyName}" (${device.ieeeAddress}) - Ancienne: ${oldState.temperature}°C, Nouvelle: ${newState.temperature}°C (différence: ${Math.abs(newState.temperature - oldState.temperature).toFixed(2)}°C)`,
+        'Zigbee2MqttService',
+      );
       await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, newState);
     }
 
     // Détection de bouton pressé
-    if (newState.action !== undefined && oldState.action !== newState.action) {
+    // Les boutons Zigbee peuvent utiliser différents champs : action, click, button_l, button_r, button_1, button_2, etc.
+    // Pour les interrupteurs/poussoirs, l'action "single" doit être détectée
+    const buttonFields = ['action', 'click', 'button_l', 'button_r', 'button_1', 'button_2', 'button_3', 'button_4'];
+    let buttonEventDetected = false;
+    let buttonField = null;
+    let buttonValue = null;
+    let oldButtonValue = null;
+
+    // Vérifier si l'appareil est de type SWITCH (Interrupteur) ou BUTTON (Poussoir)
+    const isSwitchOrButton = device.type === DeviceType.SWITCH || device.type === DeviceType.BUTTON;
+
+    // Vérifier le debounce pour éviter les déclenchements multiples
+    const now = Date.now();
+    const lastPressTime = this.lastButtonPressTime.get(device.ieeeAddress) || 0;
+    const timeSinceLastPress = now - lastPressTime;
+
+    for (const field of buttonFields) {
+      const newValue = newState[field];
+      const oldValue = oldState[field];
+      
+      // Détecter si un champ de bouton a changé ou est présent pour la première fois
+      if (newValue !== undefined) {
+        // Pour les interrupteurs/poussoirs, détecter spécifiquement l'action "single"
+        // IMPORTANT: Pour ces appareils, "single" est toujours la même valeur à chaque appui,
+        // donc on détecte chaque fois que "single" est présent dans le nouveau message,
+        // même si la valeur précédente était aussi "single" (car un nouveau message = nouvel appui)
+        // Mais on utilise un debounce pour éviter les déclenchements multiples
+        if (isSwitchOrButton && field === 'action' && newValue === 'single') {
+          // Vérifier le debounce : ne déclencher que si au moins BUTTON_DEBOUNCE_MS se sont écoulés
+          if (timeSinceLastPress >= this.BUTTON_DEBOUNCE_MS) {
+            buttonEventDetected = true;
+            buttonField = field;
+            buttonValue = newValue;
+            oldButtonValue = oldValue;
+            // Mettre à jour le timestamp du dernier appui
+            this.lastButtonPressTime.set(device.ieeeAddress, now);
+            this.logger.log(
+              `[AUTOMATION TRIGGER] 🔘 Action "single" détectée sur ${device.type === DeviceType.SWITCH ? 'interrupteur' : 'poussoir'} "${device.friendlyName}" (${device.ieeeAddress}) - Ancienne valeur: ${oldValue ?? 'undefined'}, Nouvelle valeur: ${newValue} (debounce: ${timeSinceLastPress}ms)`,
+              'Zigbee2MqttService',
+            );
+            break;
+          } else {
+            this.logger.debug(
+              `[AUTOMATION TRIGGER] ⏱️ Action "single" ignorée (debounce) sur "${device.friendlyName}" - ${timeSinceLastPress}ms depuis le dernier appui (minimum: ${this.BUTTON_DEBOUNCE_MS}ms)`,
+              'Zigbee2MqttService',
+            );
+          }
+        }
+        // Pour les autres boutons, détecter uniquement si la valeur a changé
+        else if (!isSwitchOrButton) {
+          // Si l'ancienne valeur n'existe pas ou est différente, c'est un événement
+          if (oldValue === undefined || oldValue !== newValue) {
+            if (newValue !== null && newValue !== '' && newValue !== false) {
+              // Vérifier le debounce pour les autres boutons aussi
+              if (timeSinceLastPress >= this.BUTTON_DEBOUNCE_MS) {
+                buttonEventDetected = true;
+                buttonField = field;
+                buttonValue = newValue;
+                oldButtonValue = oldValue;
+                // Mettre à jour le timestamp du dernier appui
+                this.lastButtonPressTime.set(device.ieeeAddress, now);
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (buttonEventDetected) {
       eventType = 'button';
+      this.logger.log(
+        `[AUTOMATION TRIGGER] 🔘 BOUTON détecté sur l'appareil "${device.friendlyName}" (${device.ieeeAddress}) - Type: ${device.type}, Champ: ${buttonField}, Ancienne valeur: ${oldButtonValue ?? 'undefined'}, Nouvelle valeur: ${buttonValue}`,
+        'Zigbee2MqttService',
+      );
       await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, {
         ...newState,
-        action: newState.action,
+        action: buttonValue, // Normaliser en 'action' pour la compatibilité
+        buttonField: buttonField, // Conserver le champ original pour le debug
+        buttonValue: buttonValue,
       });
+    }
+
+    // Détection de vibration
+    if (newState.vibration !== undefined && oldState.vibration !== newState.vibration) {
+      eventType = 'vibration';
+      this.logger.log(
+        `[AUTOMATION TRIGGER] 📳 VIBRATION détectée sur l'appareil "${device.friendlyName}" (${device.ieeeAddress}) - Ancien état: ${oldState.vibration}, Nouvel état: ${newState.vibration}`,
+        'Zigbee2MqttService',
+      );
+      await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, newState);
+    }
+
+    // Détection de luminosité (illuminance)
+    if (
+      newState.illuminance !== undefined &&
+      oldState.illuminance !== undefined &&
+      Math.abs(newState.illuminance - oldState.illuminance) > 10
+    ) {
+      eventType = 'illuminance';
+      this.logger.log(
+        `[AUTOMATION TRIGGER] 💡 LUMINOSITÉ détectée sur l'appareil "${device.friendlyName}" (${device.ieeeAddress}) - Ancienne: ${oldState.illuminance} lux, Nouvelle: ${newState.illuminance} lux`,
+        'Zigbee2MqttService',
+      );
+      await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, newState);
+    }
+
+    // Détection d'humidité
+    if (
+      newState.humidity !== undefined &&
+      oldState.humidity !== undefined &&
+      Math.abs(newState.humidity - oldState.humidity) > 2
+    ) {
+      eventType = 'humidity';
+      this.logger.log(
+        `[AUTOMATION TRIGGER] 💧 HUMIDITÉ détectée sur l'appareil "${device.friendlyName}" (${device.ieeeAddress}) - Ancienne: ${oldState.humidity}%, Nouvelle: ${newState.humidity}%`,
+        'Zigbee2MqttService',
+      );
+      await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, newState);
+    }
+
+    // Détection de fuite d'eau
+    if (
+      (newState.water_leak === true || newState.water === true) &&
+      (oldState.water_leak !== true && oldState.water !== true)
+    ) {
+      eventType = 'water_leak';
+      this.logger.log(
+        `[AUTOMATION TRIGGER] 💦 FUITE D'EAU détectée sur l'appareil "${device.friendlyName}" (${device.ieeeAddress})`,
+        'Zigbee2MqttService',
+      );
+      await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, newState);
+    }
+
+    // Détection de fumée
+    if (
+      (newState.smoke === true || newState.smoke_detected === true) &&
+      (oldState.smoke !== true && oldState.smoke_detected !== true)
+    ) {
+      eventType = 'smoke';
+      this.logger.log(
+        `[AUTOMATION TRIGGER] 🔥 FUMÉE détectée sur l'appareil "${device.friendlyName}" (${device.ieeeAddress})`,
+        'Zigbee2MqttService',
+      );
+      await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, newState);
+    }
+
+    // Détection de gaz
+    if (
+      (newState.gas === true || newState.gas_detected === true) &&
+      (oldState.gas !== true && oldState.gas_detected !== true)
+    ) {
+      eventType = 'gas';
+      this.logger.log(
+        `[AUTOMATION TRIGGER] ⛽ GAZ détecté sur l'appareil "${device.friendlyName}" (${device.ieeeAddress})`,
+        'Zigbee2MqttService',
+      );
+      await this.automationsService.handleZigbeeEvent(device.ieeeAddress, eventType, newState);
+    }
+
+    if (!eventType) {
+      this.logger.debug(
+        `[AUTOMATION TRIGGER] Aucun événement déclencheur détecté pour l'appareil "${device.friendlyName}" (${device.ieeeAddress})`,
+        'Zigbee2MqttService',
+      );
     }
   }
 
   private async handleDeviceState(friendlyName: string, state: ZigbeeState) {
-    const device = await this.deviceRepository.findOne({
-      where: { friendlyName },
+    // Le friendlyName dans le topic peut être soit le mqttName soit l'ancien friendlyName
+    // Chercher d'abord par mqttName (priorité), puis par friendlyName (compatibilité)
+    let device = await this.deviceRepository.findOne({
+      where: { mqttName: friendlyName },
     });
+
+    if (!device) {
+      device = await this.deviceRepository.findOne({
+        where: { friendlyName },
+      });
+    }
 
     if (!device) {
       // Si l'appareil n'existe pas encore, essayer de le créer depuis la liste des appareils
@@ -643,9 +993,17 @@ export class Zigbee2MqttService implements OnModuleInit {
   }
 
   private async handleDeviceAvailability(friendlyName: string, availability: any) {
-    const device = await this.deviceRepository.findOne({
-      where: { friendlyName },
+    // Le friendlyName dans le topic peut être soit le mqttName soit l'ancien friendlyName
+    // Chercher d'abord par mqttName (priorité), puis par friendlyName (compatibilité)
+    let device = await this.deviceRepository.findOne({
+      where: { mqttName: friendlyName },
     });
+
+    if (!device) {
+      device = await this.deviceRepository.findOne({
+        where: { friendlyName },
+      });
+    }
 
     if (!device) {
       return;
@@ -666,8 +1024,8 @@ export class Zigbee2MqttService implements OnModuleInit {
       'Zigbee2MqttService',
     );
 
-    // Enregistrer le changement de statut dans l'historique
-    if (this.historyTimelineService && oldStatus !== device.status) {
+    // Enregistrer le changement de statut dans l'historique (sauf pour les appareils "energy")
+    if (this.historyTimelineService && oldStatus !== device.status && device.type !== DeviceType.ENERGY) {
       try {
         if (device.status === DeviceStatus.ONLINE) {
           await this.historyTimelineService.logDeviceOnline(
@@ -722,8 +1080,8 @@ export class Zigbee2MqttService implements OnModuleInit {
           device.status = DeviceStatus.OFFLINE;
           await this.deviceRepository.save(device);
           
-          // Enregistrer l'événement offline dans l'historique
-          if (this.historyTimelineService && oldStatus !== DeviceStatus.OFFLINE) {
+          // Enregistrer l'événement offline dans l'historique (sauf pour les appareils "energy")
+          if (this.historyTimelineService && oldStatus !== DeviceStatus.OFFLINE && device.type !== DeviceType.ENERGY) {
             try {
               await this.historyTimelineService.logDeviceOffline(
                 device.ieeeAddress,
@@ -746,98 +1104,450 @@ export class Zigbee2MqttService implements OnModuleInit {
   }
 
 
+  /**
+   * Détermine le type d'appareil en se basant sur :
+   * 1. Le fichier de mapping device-type-mapping.json (priorité)
+   * 2. Les données Zigbee2MQTT (exposes, type, model, vendor) avec des regex et patterns améliorés
+   */
   private normalizeDeviceType(device: ZigbeeDevice): DeviceType {
-    const friendlyName = device.friendly_name.toLowerCase();
+    const friendlyName = device.friendly_name?.toLowerCase() || '';
     const type = device.type?.toLowerCase() || '';
-    const model = device.definition?.model?.toLowerCase() || '';
+    const exposes = device.definition?.exposes || [];
+    const exposesStr = JSON.stringify(exposes).toLowerCase();
+    const model = device.definition?.model || '';
+    const modelLower = model.toLowerCase();
     const vendor = device.definition?.vendor?.toLowerCase() || '';
-
-    // 1. Vérifier le tableau de correspondance par modèle/vendor
-    for (const mapping of this.deviceTypeMapping) {
-      const mappingModel = mapping.model.toLowerCase();
-      const mappingVendor = mapping.vendor?.toLowerCase();
+    const description = device.definition?.description?.toLowerCase() || '';
+    
+    // PRIORITÉ 0: Chercher dans le fichier de mapping par modèle (et vendor si disponible)
+    if (this.deviceTypeMapping.length > 0) {
+      // Normaliser le modèle pour la recherche (trim, lowercase, supprimer espaces multiples)
+      const normalizedModel = model ? modelLower.trim().replace(/\s+/g, ' ') : '';
+      const normalizedVendor = vendor ? vendor.trim().toLowerCase() : '';
       
-      if (model.includes(mappingModel) || model === mappingModel) {
-        // Si un vendor est spécifié, vérifier qu'il correspond aussi
-        if (mappingVendor) {
-          if (vendor.includes(mappingVendor) || vendor === mappingVendor) {
-            this.logger.debug(
-              `Type détecté par mapping: ${mapping.model} (${mapping.vendor}) -> ${mapping.type}`,
-              'Zigbee2MqttService',
-            );
-            return mapping.type;
-          }
-        } else {
-          // Pas de vendor spécifié, accepter n'importe quel vendor
+      let mappingEntry: DeviceTypeMappingEntry | undefined = undefined;
+      
+      // 1. Chercher une correspondance exacte par modèle (si disponible)
+      if (normalizedModel) {
+        mappingEntry = this.deviceTypeMapping.find(
+          (entry) => {
+            const entryModel = entry.model?.toLowerCase().trim().replace(/\s+/g, ' ') || '';
+            return entryModel === normalizedModel;
+          },
+        );
+      }
+
+      // 2. Si pas trouvé, essayer une correspondance partielle (le modèle du mapping contient le modèle de l'appareil ou vice versa)
+      if (!mappingEntry && normalizedModel) {
+        mappingEntry = this.deviceTypeMapping.find(
+          (entry) => {
+            const entryModel = entry.model?.toLowerCase().trim().replace(/\s+/g, ' ') || '';
+            return entryModel.includes(normalizedModel) || normalizedModel.includes(entryModel);
+          },
+        );
+      }
+
+      // 3. Si pas trouvé et qu'on a un vendor, chercher avec modèle + vendor
+      if (!mappingEntry && normalizedModel && normalizedVendor) {
+        mappingEntry = this.deviceTypeMapping.find(
+          (entry) => {
+            const entryModel = entry.model?.toLowerCase().trim().replace(/\s+/g, ' ') || '';
+            const entryVendor = entry.vendor?.toLowerCase().trim() || '';
+            return entryModel === normalizedModel && entryVendor === normalizedVendor;
+          },
+        );
+      }
+
+      // 4. Si toujours pas trouvé et qu'on a un vendor, chercher uniquement par vendor (si plusieurs entrées avec le même vendor, prendre la première)
+      if (!mappingEntry && normalizedVendor) {
+        mappingEntry = this.deviceTypeMapping.find(
+          (entry) => {
+            const entryVendor = entry.vendor?.toLowerCase().trim() || '';
+            return entryVendor === normalizedVendor;
+          },
+        );
+      }
+
+      // Si trouvé, utiliser le type du mapping
+      if (mappingEntry) {
+        const mappedType = this.mapJsonTypeToDeviceType(mappingEntry.type);
+        this.logger.log(
+          `✅ Type détecté par mapping JSON: ${mappedType} pour ${device.friendly_name} (modèle: ${model || 'N/A'}${vendor ? `, vendor: ${vendor}` : ''}, type mapping: ${mappingEntry.type})`,
+          'Zigbee2MqttService',
+        );
+        return mappedType;
+      } else {
+        // Log pour déboguer si le modèle n'est pas trouvé
+        if (normalizedModel) {
           this.logger.debug(
-            `Type détecté par mapping: ${mapping.model} -> ${mapping.type}`,
+            `🔍 Modèle "${model}" non trouvé dans le mapping (${this.deviceTypeMapping.length} entrées disponibles)${vendor ? `, vendor: ${vendor}` : ''}`,
             'Zigbee2MqttService',
           );
-          return mapping.type;
+        } else {
+          this.logger.debug(
+            `⚠️ Pas de modèle disponible pour ${device.friendly_name}, impossible de chercher dans le mapping${vendor ? ` (vendor: ${vendor})` : ''}`,
+            'Zigbee2MqttService',
+          );
         }
       }
+    } else if (this.deviceTypeMapping.length === 0) {
+      this.logger.debug(
+        `⚠️ Fichier de mapping non chargé ou vide, utilisation de la détection par exposes/type`,
+        'Zigbee2MqttService',
+      );
     }
+    
+    // Créer une chaîne combinée pour les recherches regex
+    const combinedStr = `${friendlyName} ${type} ${modelLower} ${vendor} ${description} ${exposesStr}`.toLowerCase();
 
-    // 2. Détection par type Zigbee2MQTT
-    if (type.includes('light') || friendlyName.includes('light') || friendlyName.includes('ampoule')) {
-      return DeviceType.LIGHT;
-    }
-    if (type.includes('switch') || friendlyName.includes('switch') || friendlyName.includes('interrupteur')) {
-      return DeviceType.SWITCH;
-    }
-    if (type.includes('sensor') || friendlyName.includes('sensor') || friendlyName.includes('capteur')) {
-      if (friendlyName.includes('motion') || friendlyName.includes('mouvement')) {
-        return DeviceType.MOTION;
-      }
-      if (friendlyName.includes('temperature') || friendlyName.includes('température')) {
-        return DeviceType.TEMPERATURE;
-      }
-      if (friendlyName.includes('door') || friendlyName.includes('porte')) {
-        return DeviceType.DOOR;
-      }
-      if (friendlyName.includes('window') || friendlyName.includes('fenêtre')) {
-        return DeviceType.WINDOW;
-      }
-      return DeviceType.SENSOR;
-    }
-    if (type.includes('plug') || friendlyName.includes('plug') || friendlyName.includes('prise')) {
-      return DeviceType.PLUG;
-    }
-    if (type.includes('button') || friendlyName.includes('button') || friendlyName.includes('bouton')) {
-      return DeviceType.BUTTON;
-    }
+    // Définir les patterns regex réutilisables
+    const vibrationPattern = /\b(vibration|vibrate|tilt|shock|impact)\b/i;
+    const coverPattern = /\b(cover|blind|shutter|curtain|window_covering|lift|position|tilt)\b/i;
+    const modelPatterns = {
+      vibration: /\b(vibration|vibrate|shock|tilt|rqbz|sjcgq|sjcgq11lm|sjcgq12lm)\b/i,
+      cover: /\b(cover|blind|shutter|curtain|moes|tuya|_ts|_tz|motor|lift|position)\b/i,
+      motion: /\b(motion|pir|presence|occupancy|rtcgq|sml001|sml002)\b/i,
+      contact: /\b(contact|door|window|magnet|mccgq|sensor_magnet)\b/i,
+      button: /\b(button|remote|switch_remote|wxcjkg|wxcjkg11lm|wxcjkg12lm|wxcjkg13lm)\b/i,
+    };
 
-    // 3. Détection par exposes
-    if (device.definition?.exposes) {
-      const exposes = device.definition.exposes;
-      if (exposes.some((e: any) => e.type === 'light' || e.features?.some((f: any) => f.type === 'light'))) {
-        return DeviceType.LIGHT;
+    // 1. Détection par exposes (le plus fiable - données directes de Zigbee2MQTT)
+    if (exposes.length > 0) {
+      // PRIORITÉ 1: Détection des capteurs de vibration (avant les boutons)
+      // Regex pour détecter vibration dans exposes, model, description
+      if (vibrationPattern.test(exposesStr) || 
+          vibrationPattern.test(model) || 
+          vibrationPattern.test(description) ||
+          exposes.some((e: any) => {
+            const eStr = JSON.stringify(e).toLowerCase();
+            return eStr.includes('vibration') || eStr.includes('tilt') || 
+                   e.name?.toLowerCase().includes('vibration') ||
+                   e.property?.toLowerCase().includes('vibration');
+          })) {
+        this.logger.debug(
+          `Type détecté par exposes/model: SENSOR (vibration) pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
+        return DeviceType.SENSOR;
       }
-      if (exposes.some((e: any) => e.type === 'switch')) {
+
+      // PRIORITÉ 2: Détection des volets roulants / contacteurs (cover, window_covering, lift)
+      // Regex pour détecter cover/blind/shutter dans exposes, model, description
+      const isCover = coverPattern.test(exposesStr) || 
+                      coverPattern.test(model) || 
+                      coverPattern.test(description) ||
+                      exposes.some((e: any) => {
+                        return e.type === 'cover' || 
+                               e.type === 'window_covering' ||
+                               e.name?.toLowerCase().includes('cover') ||
+                               e.name?.toLowerCase().includes('lift') ||
+                               e.name?.toLowerCase().includes('position');
+                      });
+      
+      // Si c'est un cover mais qu'il a aussi des features de switch/light, c'est probablement un contacteur de volet
+      if (isCover) {
+        // Les contacteurs de volet peuvent être classés comme SWITCH car ils contrôlent un moteur
+        this.logger.debug(
+          `Type détecté par exposes/model: SWITCH (cover/blind controller) pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
         return DeviceType.SWITCH;
       }
-    }
 
-    // 4. Détection par exposes (vérification plus approfondie)
-    if (device.definition?.exposes) {
-      const exposes = device.definition.exposes;
-      const exposesStr = JSON.stringify(exposes).toLowerCase();
-      
-      // Vérifier la présence de features spécifiques
-      if (exposesStr.includes('presence') || exposesStr.includes('occupancy')) {
+      // PRIORITÉ 3: Détection des lumières (mais pas si c'est un cover)
+      if (exposes.some((e: any) => {
+        if (e.type === 'light') return true;
+        if (e.features?.some((f: any) => f.type === 'light' || (f.name === 'state' && !isCover))) return true;
+        return false;
+      })) {
+        // Vérifier que ce n'est pas un cover qui a aussi des features de light
+        if (!isCover) {
+          this.logger.debug(
+            `Type détecté par exposes: LIGHT pour ${device.friendly_name}`,
+            'Zigbee2MqttService',
+          );
+          return DeviceType.LIGHT;
+        }
+      }
+
+      // PRIORITÉ 4: Détection des interrupteurs et boutons
+      if (exposes.some((e: any) => e.type === 'switch' || e.name === 'state')) {
+        // Vérifier si c'est un bouton (action, click, button dans exposes)
+        // Mais exclure les capteurs de vibration qui peuvent avoir des actions
+        const hasAction = exposesStr.includes('action') || 
+                         exposesStr.includes('click') || 
+                         exposesStr.includes('button');
+        const isVibrationSensor = vibrationPattern.test(exposesStr) || 
+                                 vibrationPattern.test(model) || 
+                                 vibrationPattern.test(description);
+        
+        if (hasAction && !isVibrationSensor) {
+          this.logger.debug(
+            `Type détecté par exposes: BUTTON pour ${device.friendly_name}`,
+            'Zigbee2MqttService',
+          );
+          return DeviceType.BUTTON;
+        }
+        this.logger.debug(
+          `Type détecté par exposes: SWITCH pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
+        return DeviceType.SWITCH;
+      }
+
+      // Détection des capteurs de mouvement
+      if (exposesStr.includes('presence') || exposesStr.includes('occupancy') || exposesStr.includes('motion')) {
+        this.logger.debug(
+          `Type détecté par exposes: MOTION pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
         return DeviceType.MOTION;
       }
+
+      // Détection des capteurs de température/humidité
       if (exposesStr.includes('temperature') && exposesStr.includes('humidity')) {
+        this.logger.debug(
+          `Type détecté par exposes: TEMPERATURE pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
         return DeviceType.TEMPERATURE;
       }
+
+      // Détection des capteurs de contact (porte/fenêtre)
       if (exposesStr.includes('contact')) {
+        // Distinguer porte et fenêtre par le nom si possible
+        if (friendlyName.includes('window') || friendlyName.includes('fenêtre')) {
+          this.logger.debug(
+            `Type détecté par exposes: WINDOW pour ${device.friendly_name}`,
+            'Zigbee2MqttService',
+          );
+          return DeviceType.WINDOW;
+        }
+        this.logger.debug(
+          `Type détecté par exposes: DOOR pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
         return DeviceType.DOOR;
       }
-      if (exposesStr.includes('illuminance')) {
+
+      // Détection des prises (prises intelligentes avec mesure de puissance)
+      if (exposesStr.includes('power') && (exposesStr.includes('switch') || exposesStr.includes('state'))) {
+        this.logger.debug(
+          `Type détecté par exposes: PLUG pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
+        return DeviceType.PLUG;
+      }
+      // Détection des prises simples (juste un switch/outlet)
+      if (exposes.some((e: any) => e.type === 'outlet' || (e.type === 'switch' && !exposesStr.includes('button')))) {
+        this.logger.debug(
+          `Type détecté par exposes: PLUG pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
+        return DeviceType.PLUG;
+      }
+
+      // Note: La détection des boutons est maintenant dans PRIORITÉ 4 (déjà traitée ci-dessus)
+
+      // Note: La détection des capteurs de vibration est maintenant en PRIORITÉ 1 (déjà traitée ci-dessus)
+
+      // Détection des capteurs de fuite d'eau
+      if (exposesStr.includes('water') || exposesStr.includes('leak')) {
+        this.logger.debug(
+          `Type détecté par exposes: SENSOR (water leak) pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
+        return DeviceType.SENSOR;
+      }
+
+      // Détection des capteurs de fumée/gaz
+      if (exposesStr.includes('smoke') || exposesStr.includes('gas')) {
+        this.logger.debug(
+          `Type détecté par exposes: SENSOR (smoke/gas) pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
+        return DeviceType.SENSOR;
+      }
+
+      // Détection des capteurs génériques (luminosité, pression, batterie, etc.)
+      if (exposesStr.includes('illuminance') || exposesStr.includes('luminosity') || 
+          exposesStr.includes('pressure') || (exposesStr.includes('battery') && !exposesStr.includes('button'))) {
+        this.logger.debug(
+          `Type détecté par exposes: SENSOR pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
         return DeviceType.SENSOR;
       }
     }
 
+    // 2. Détection par model/vendor avec regex (si exposes n'est pas suffisant)
+    // Vérifier les patterns dans model, vendor, description
+    if (modelPatterns.vibration.test(model) || 
+        modelPatterns.vibration.test(vendor) || 
+        modelPatterns.vibration.test(description)) {
+      this.logger.debug(
+        `Type détecté par model/vendor: SENSOR (vibration) pour ${device.friendly_name}`,
+        'Zigbee2MqttService',
+      );
+      return DeviceType.SENSOR;
+    }
+
+    if (modelPatterns.cover.test(model) || 
+        modelPatterns.cover.test(vendor) || 
+        modelPatterns.cover.test(description)) {
+      this.logger.debug(
+        `Type détecté par model/vendor: SWITCH (cover/blind) pour ${device.friendly_name}`,
+        'Zigbee2MqttService',
+      );
+      return DeviceType.SWITCH;
+    }
+
+    // 3. Détection par type Zigbee2MQTT (si exposes n'est pas disponible)
+    if (type) {
+      // Vérifier d'abord si c'est un cover dans le type
+      if (type.includes('cover') || type.includes('window_covering') || type.includes('blind')) {
+        this.logger.debug(
+          `Type détecté par type Zigbee2MQTT: SWITCH (cover) pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
+        return DeviceType.SWITCH;
+      }
+      
+      if (type.includes('light') || type === 'light') {
+        // Vérifier que ce n'est pas un cover
+        if (!coverPattern.test(combinedStr)) {
+          this.logger.debug(
+            `Type détecté par type Zigbee2MQTT: LIGHT pour ${device.friendly_name}`,
+            'Zigbee2MqttService',
+          );
+          return DeviceType.LIGHT;
+        }
+      }
+      if (type.includes('switch') || type === 'switch') {
+        this.logger.debug(
+          `Type détecté par type Zigbee2MQTT: SWITCH pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
+        return DeviceType.SWITCH;
+      }
+      if (type.includes('sensor') || type === 'sensor') {
+        // Essayer de déterminer le type de capteur avec regex
+        if (modelPatterns.vibration.test(combinedStr)) {
+          return DeviceType.SENSOR;
+        }
+        if (modelPatterns.motion.test(combinedStr) || 
+            friendlyName.includes('motion') || friendlyName.includes('mouvement') || 
+            friendlyName.includes('pir') || friendlyName.includes('presence')) {
+          return DeviceType.MOTION;
+        }
+        if (friendlyName.includes('temperature') || friendlyName.includes('température') ||
+            friendlyName.includes('humidity') || friendlyName.includes('humidité')) {
+          return DeviceType.TEMPERATURE;
+        }
+        if (modelPatterns.contact.test(combinedStr) || 
+            friendlyName.includes('door') || friendlyName.includes('porte')) {
+          return DeviceType.DOOR;
+        }
+        if (friendlyName.includes('window') || friendlyName.includes('fenêtre')) {
+          return DeviceType.WINDOW;
+        }
+        this.logger.debug(
+          `Type détecté par type Zigbee2MQTT: SENSOR pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
+        return DeviceType.SENSOR;
+      }
+      if (type.includes('plug') || type === 'plug' || type.includes('outlet')) {
+        this.logger.debug(
+          `Type détecté par type Zigbee2MQTT: PLUG pour ${device.friendly_name}`,
+          'Zigbee2MqttService',
+        );
+        return DeviceType.PLUG;
+      }
+      if (type.includes('button') || type === 'button') {
+        // Vérifier que ce n'est pas un capteur de vibration
+        if (!modelPatterns.vibration.test(combinedStr)) {
+          this.logger.debug(
+            `Type détecté par type Zigbee2MQTT: BUTTON pour ${device.friendly_name}`,
+            'Zigbee2MqttService',
+          );
+          return DeviceType.BUTTON;
+        }
+      }
+    }
+
+    // 3. Détection par nom friendly (dernier recours)
+    if (friendlyName.includes('light') || friendlyName.includes('ampoule') || friendlyName.includes('bulb') || 
+        friendlyName.includes('lamp') || friendlyName.includes('lampe')) {
+      this.logger.debug(
+        `Type détecté par nom: LIGHT pour ${device.friendly_name}`,
+        'Zigbee2MqttService',
+      );
+      return DeviceType.LIGHT;
+    }
+    if (friendlyName.includes('switch') || friendlyName.includes('interrupteur')) {
+      this.logger.debug(
+        `Type détecté par nom: SWITCH pour ${device.friendly_name}`,
+        'Zigbee2MqttService',
+      );
+      return DeviceType.SWITCH;
+    }
+    if (friendlyName.includes('plug') || friendlyName.includes('prise') || friendlyName.includes('socket')) {
+      this.logger.debug(
+        `Type détecté par nom: PLUG pour ${device.friendly_name}`,
+        'Zigbee2MqttService',
+      );
+      return DeviceType.PLUG;
+    }
+    if (friendlyName.includes('button') || friendlyName.includes('bouton') || friendlyName.includes('remote')) {
+      this.logger.debug(
+        `Type détecté par nom: BUTTON pour ${device.friendly_name}`,
+        'Zigbee2MqttService',
+      );
+      return DeviceType.BUTTON;
+    }
+    if (friendlyName.includes('motion') || friendlyName.includes('mouvement') || friendlyName.includes('pir')) {
+      this.logger.debug(
+        `Type détecté par nom: MOTION pour ${device.friendly_name}`,
+        'Zigbee2MqttService',
+      );
+      return DeviceType.MOTION;
+    }
+    if (friendlyName.includes('temperature') || friendlyName.includes('température') ||
+        friendlyName.includes('humidity') || friendlyName.includes('humidité')) {
+      this.logger.debug(
+        `Type détecté par nom: TEMPERATURE pour ${device.friendly_name}`,
+        'Zigbee2MqttService',
+      );
+      return DeviceType.TEMPERATURE;
+    }
+    if (friendlyName.includes('door') || friendlyName.includes('porte')) {
+      this.logger.debug(
+        `Type détecté par nom: DOOR pour ${device.friendly_name}`,
+        'Zigbee2MqttService',
+      );
+      return DeviceType.DOOR;
+    }
+    if (friendlyName.includes('window') || friendlyName.includes('fenêtre')) {
+      this.logger.debug(
+        `Type détecté par nom: WINDOW pour ${device.friendly_name}`,
+        'Zigbee2MqttService',
+      );
+      return DeviceType.WINDOW;
+    }
+    if (friendlyName.includes('sensor') || friendlyName.includes('capteur')) {
+      this.logger.debug(
+        `Type détecté par nom: SENSOR pour ${device.friendly_name}`,
+        'Zigbee2MqttService',
+      );
+      return DeviceType.SENSOR;
+    }
+
+    // Si aucun type n'a pu être déterminé, logger un avertissement
+    this.logger.warn(
+      `Impossible de déterminer le type pour ${device.friendly_name} (type: ${type}, exposes: ${exposes.length} features)`,
+      'Zigbee2MqttService',
+    );
     return DeviceType.UNKNOWN;
   }
 
@@ -920,15 +1630,20 @@ export class Zigbee2MqttService implements OnModuleInit {
     );
   }
 
-  public async removeDevice(friendlyName: string, ieeeAddress?: string): Promise<void> {
+  /**
+   * Supprime un appareil de Zigbee2MQTT
+   * @param mqttName - Nom MQTT de l'appareil (utilisé pour les logs)
+   * @param ieeeAddress - Adresse IEEE de l'appareil (utilisée dans le payload, prioritaire)
+   */
+  public async removeDevice(mqttName: string, ieeeAddress?: string): Promise<void> {
     // Supprimer un appareil de Zigbee2MQTT
-    // Utiliser le topic bridge/request/device/remove avec le friendly_name ou ieee_address
+    // Utiliser le topic bridge/request/device/remove avec l'ieee_address (prioritaire) ou le mqttName
     // Documentation: https://www.zigbee2mqtt.io/guide/usage/mqtt_topics_and_messages.html#zigbee2mqtt-bridge-request-device-remove
     const topic = 'zigbee2mqtt/bridge/request/device/remove';
     // Payload peut être {"id": "deviceID"} ou deviceID (string)
-    // On utilise l'ieee_address si disponible, sinon le friendly_name
+    // On utilise l'ieee_address si disponible (recommandé), sinon le mqttName
     // Toujours mettre "force": true pour forcer la suppression
-    const deviceId = ieeeAddress || friendlyName;
+    const deviceId = ieeeAddress || mqttName;
     const payload = {
       id: deviceId,
       force: true,
@@ -936,22 +1651,31 @@ export class Zigbee2MqttService implements OnModuleInit {
     
     this.mqttService.publish(topic, payload);
     this.logger.log(
-      `🗑️ Suppression forcée de l'appareil demandée [${friendlyName}] (${ieeeAddress || 'N/A'}) via ${topic}`,
+      `🗑️ Suppression forcée de l'appareil demandée [${mqttName}] (${ieeeAddress || 'N/A'}) via ${topic}`,
       'Zigbee2MqttService',
     );
   }
 
-  public renameDevice(oldFriendlyName: string, newFriendlyName: string): void {
+  /**
+   * Renomme un appareil dans Zigbee2MQTT
+   * Envoie le mqttName (nom normalisé) à Zigbee2MQTT qui l'utilisera comme friendly_name
+   * et pour générer les topics MQTT
+   * @param oldMqttName - Ancien nom MQTT de l'appareil (utilisé dans les topics)
+   * @param newMqttName - Nouveau nom MQTT de l'appareil (utilisé dans les topics)
+   */
+  public renameDevice(oldMqttName: string, newMqttName: string): void {
     // Topic correct pour renommer un appareil dans Zigbee2MQTT
     const topic = 'zigbee2mqtt/bridge/request/device/rename';
+    // Le payload envoie les mqttName (noms normalisés) à Zigbee2MQTT
+    // Zigbee2MQTT utilisera le champ "to" comme friendly_name et pour générer les topics
     const payload = {
-      from: oldFriendlyName,
-      to: newFriendlyName,
+      from: oldMqttName,
+      to: newMqttName, // mqttName normalisé (sans accents, espaces remplacés par tirets)
     };
     
     this.mqttService.publish(topic, payload);
     this.logger.log(
-      `🔄 Renommage de ${oldFriendlyName} vers ${newFriendlyName} via MQTT`,
+      `🔄 Renommage MQTT de "${oldMqttName}" vers "${newMqttName}" (payload: ${JSON.stringify(payload)})`,
       'Zigbee2MqttService',
     );
   }
@@ -973,6 +1697,12 @@ export class Zigbee2MqttService implements OnModuleInit {
     );
     
     this.mqttService.publish(topic, payload);
+    
+    // Mettre à jour l'état local
+    this.permitJoinActive = true;
+    this.permitJoinTimeRemaining = actualDuration;
+    this.permitJoinStartTime = new Date();
+    this.permitJoinDuration = actualDuration;
     
     this.logger.log(
       `🔍 Détection d'appareils activée: ${actualDuration}s (${Math.round(actualDuration / 60)} min)`,
@@ -1019,26 +1749,54 @@ export class Zigbee2MqttService implements OnModuleInit {
       'Zigbee2MqttService',
     );
     
-    this.logger.log(
-      'Détection d\'appareils désactivée',
-      'Zigbee2MqttService',
-    );
+    // Mettre à jour l'état local
+    this.permitJoinActive = false;
+    this.permitJoinTimeRemaining = 0;
+    this.permitJoinStartTime = null;
+    this.permitJoinDuration = 0;
   }
 
-  /**
-   * Enregistre les événements significatifs dans l'historique
-   */
+  public getPermitJoinStatus(): { active: boolean; timeRemaining?: number } {
+    if (!this.permitJoinActive || !this.permitJoinStartTime) {
+      return {
+        active: this.permitJoinActive,
+        timeRemaining: undefined,
+      };
+    }
+
+    // Calculer le temps restant en fonction du temps écoulé
+    const now = new Date();
+    const elapsedSeconds = Math.floor((now.getTime() - this.permitJoinStartTime.getTime()) / 1000);
+    const remaining = Math.max(0, this.permitJoinDuration - elapsedSeconds);
+
+    // Mettre à jour l'état si le temps est écoulé
+    if (remaining === 0) {
+      this.permitJoinActive = false;
+      this.permitJoinTimeRemaining = 0;
+      this.permitJoinStartTime = null;
+      this.permitJoinDuration = 0;
+    }
+
+    return {
+      active: this.permitJoinActive,
+      timeRemaining: remaining > 0 ? remaining : undefined,
+    };
+  }
+
   /**
    * Enregistre les données de capteurs dans l'historique
    */
   private async logSensorData(
     deviceId: string,
+    deviceType: string,
     oldState: Record<string, any>,
     newState: Record<string, any>,
   ): Promise<void> {
     if (!this.historyService) return;
 
     const sensorValues: Array<{ sensorType: SensorType; value: number }> = [];
+    const isEnergyDevice = deviceType === 'energy';
+    const isSwitchDevice = deviceType === 'switch';
 
     // Enregistrer la température si elle a changé
     if (newState.temperature !== undefined && typeof newState.temperature === 'number') {
@@ -1075,12 +1833,29 @@ export class Zigbee2MqttService implements OnModuleInit {
       }
     }
 
-    // Enregistrer la tension si elle a changé (convertir mV en V)
+    // Enregistrer la tension si elle a changé
     if (newState.voltage !== undefined && typeof newState.voltage === 'number') {
       if (oldState.voltage === undefined || oldState.voltage !== newState.voltage) {
-        // La tension est généralement en mV, on la convertit en V
-        const voltageInV = newState.voltage / 1000;
-        sensorValues.push({ sensorType: SensorType.VOLTAGE, value: voltageInV });
+        // Pour les appareils "energy" et "switch", historiser la valeur réelle (déjà en volts)
+        // Pour les autres appareils, convertir mV en V
+        const voltageValue = isEnergyDevice || isSwitchDevice 
+          ? newState.voltage 
+          : newState.voltage / 1000;
+        sensorValues.push({ sensorType: SensorType.VOLTAGE, value: voltageValue });
+      }
+    }
+
+    // Enregistrer la puissance si elle a changé (uniquement pour les appareils "energy")
+    if (isEnergyDevice && newState.power !== undefined && typeof newState.power === 'number') {
+      if (oldState.power === undefined || oldState.power !== newState.power) {
+        sensorValues.push({ sensorType: SensorType.POWER, value: newState.power });
+      }
+    }
+
+    // Enregistrer l'intensité si elle a changé (uniquement pour les appareils "energy")
+    if (isEnergyDevice && newState.current !== undefined && typeof newState.current === 'number') {
+      if (oldState.current === undefined || oldState.current !== newState.current) {
+        sensorValues.push({ sensorType: SensorType.CURRENT, value: newState.current });
       }
     }
 
@@ -1103,6 +1878,9 @@ export class Zigbee2MqttService implements OnModuleInit {
     newState: Record<string, any>,
   ): Promise<void> {
     if (!this.historyTimelineService) return;
+    
+    // Ne pas enregistrer les événements pour les appareils de type "energy"
+    if (device.type === DeviceType.ENERGY) return;
 
     // Détection de mouvement
     if (

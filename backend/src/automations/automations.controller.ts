@@ -13,8 +13,11 @@ import {
 import { AutomationsService } from './automations.service';
 import { CreateAutomationDto } from './dto/create-automation.dto';
 import { UpdateAutomationDto } from './dto/update-automation.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { UseGuards } from '@nestjs/common';
 
 @Controller('automations')
+@UseGuards(JwtAuthGuard)
 export class AutomationsController {
   constructor(private readonly automationsService: AutomationsService) {}
 
@@ -53,6 +56,13 @@ export class AutomationsController {
   @Get(':id/logs')
   async getExecutionLogs(@Param('id') id: string) {
     return this.automationsService.getExecutionLogs(id);
+  }
+
+  @Post(':id/execute')
+  @HttpCode(HttpStatus.OK)
+  async executeManually(@Param('id') id: string) {
+    await this.automationsService.executeManually(id);
+    return { message: 'Automation exécutée avec succès' };
   }
 }
 

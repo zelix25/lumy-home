@@ -14,10 +14,8 @@ import { UpdateFriendlyNameDto } from './dto/update-friendly-name.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { SendCommandDto } from './dto/send-command.dto';
 import { SendMqttMessageDto } from './dto/send-mqtt-message.dto';
-import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('devices')
-@Public()
 export class DevicesController {
   constructor(private readonly devicesService: DevicesService) {}
 
@@ -87,6 +85,12 @@ export class DevicesController {
       success: true,
       message: 'Détection d\'appareils désactivée',
     };
+  }
+
+  @Get('discovery/status')
+  async getDiscoveryStatus() {
+    const status = await this.devicesService.getDiscoveryStatus();
+    return status;
   }
 
   @Post('refresh-states')

@@ -6,7 +6,6 @@ WORKDIR /app
 COPY package*.json ./
 COPY tsconfig*.json ./
 COPY nest-cli.json ./
-COPY env.example.prod ./env.production
 
 # Installer les dépendances
 RUN npm ci
@@ -25,6 +24,8 @@ WORKDIR /app
 # Copier les fichiers nécessaires
 COPY package*.json ./
 COPY --from=builder /app/dist ./dist
+# Copier le fichier d'environnement de production et le renommer en .env
+COPY --from=builder /app/env.production ./.env
 
 # Installer uniquement les dépendances de production
 RUN npm ci --only=production

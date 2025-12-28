@@ -15,14 +15,14 @@ export class ConfigService {
       brokerUrl: this.get('MQTT_BROKER_URL', 'mqtt://localhost:1883'),
       username: this.get('MQTT_USERNAME'),
       password: this.get('MQTT_PASSWORD'),
-      clientId: this.get('MQTT_CLIENT_ID', 'homehub-backend'),
+      clientId: this.get('MQTT_CLIENT_ID', 'lumy'),
       reconnectPeriod: this.get('MQTT_RECONNECT_PERIOD', 5000),
     };
   }
 
   get database() {
     return {
-      path: this.get('DATABASE_PATH', 'data/homehub.db'),
+      path: this.get('DATABASE_PATH', 'data/lumy.db'),
     };
   }
 

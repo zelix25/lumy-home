@@ -7,6 +7,7 @@ import {
   Switch,
   Chip,
   Grid,
+  Slider,
   //IconButton,
   Tooltip,
 } from '@mui/material';
@@ -21,6 +22,13 @@ import {
   DirectionsRun,
   RadioButtonChecked,
   HelpOutline,
+  Blinds,
+  WaterDrop,
+  Person,
+  LightMode,
+  LocalFireDepartment,
+  Warning,
+  BatteryFull,
 } from '@mui/icons-material';
 import { Device } from '../services/devices.service';
 import i18n from '@/i18n';
@@ -28,26 +36,78 @@ import i18n from '@/i18n';
 interface DeviceCardProps {
   device: Device;
   onToggle?: (device: Device, state: boolean) => void;
+  onCoverPositionChange?: (device: Device, position: number) => void;
 }
 
-const getDeviceIcon = (type: string) => {
+const getDeviceIcon = (type: string, device?: { state?: Record<string, any> }) => {
+  // Pour les capteurs, déterminer l'icône en fonction des données disponibles
+  if (type === 'sensor' || type === 'temperature') {
+    if (device?.state) {
+      // Détecter le type de capteur en fonction des données disponibles
+      if (device.state.temperature !== undefined) {
+        return <Thermostat sx={{ fontSize: 48 }} />;
+      }
+      if (device.state.humidity !== undefined) {
+        return <WaterDrop sx={{ fontSize: 48 }} />;
+      }
+      if (device.state.motion !== undefined || device.state.presence !== undefined || device.state.occupancy !== undefined) {
+        return <DirectionsRun sx={{ fontSize: 48 }} />;
+      }
+      if (device.state.illuminance !== undefined) {
+        return <LightMode sx={{ fontSize: 48 }} />;
+      }
+      if (device.state.contact !== undefined) {
+        return <Window sx={{ fontSize: 48 }} />;
+      }
+      if (device.state.water_leak !== undefined) {
+        return <WaterDrop sx={{ fontSize: 48, color: '#F44336' }} />;
+      }
+      if (device.state.smoke !== undefined) {
+        return <LocalFireDepartment sx={{ fontSize: 48, color: '#F44336' }} />;
+      }
+      if (device.state.vibration !== undefined) {
+        return <Warning sx={{ fontSize: 48 }} />;
+      }
+      if (device.state.battery !== undefined) {
+        return <BatteryFull sx={{ fontSize: 48 }} />;
+      }
+    }
+    // Capteur générique par défaut
+    return <Sensors sx={{ fontSize: 48 }} />;
+  }
+
   switch (type) {
     case 'light':
       return <Lightbulb sx={{ fontSize: 48 }} />;
     case 'switch':
       return <Power sx={{ fontSize: 48 }} />;
-    case 'sensor':
-      return <Sensors sx={{ fontSize: 48 }} />;
     case 'plug':
       return <ElectricalServices sx={{ fontSize: 48 }} />;
+    case 'energy':
+      return <ElectricalServices sx={{ fontSize: 48, color: '#FF9800' }} />;
     /*case 'door':
       return <Door sx={{ fontSize: 48 }} />;*/
     case 'window':
       return <Window sx={{ fontSize: 48 }} />;
+    case 'cover':
+      return <Blinds sx={{ fontSize: 48 }} />;
     case 'temperature':
       return <Thermostat sx={{ fontSize: 48 }} />;
     case 'motion':
       return <DirectionsRun sx={{ fontSize: 48 }} />;
+    case 'humidity':
+      return <WaterDrop sx={{ fontSize: 48 }} />;
+    case 'illuminance':
+      return <LightMode sx={{ fontSize: 48 }} />;
+    case 'presence':
+    case 'occupancy':
+      return <Person sx={{ fontSize: 48 }} />;
+    case 'contact':
+      return <Window sx={{ fontSize: 48 }} />;
+    case 'water_leak':
+      return <WaterDrop sx={{ fontSize: 48, color: '#F44336' }} />;
+    case 'smoke':
+      return <LocalFireDepartment sx={{ fontSize: 48, color: '#F44336' }} />;
     case 'button':
       return <RadioButtonChecked sx={{ fontSize: 48 }} />;
     default:
@@ -63,18 +123,45 @@ const getDeviceTypeLabel = (type: string): string => {
     plug: i18n.t('devices.plug'),
     door: i18n.t('devices.door'),
     window: i18n.t('devices.window'),
+    cover: i18n.t('devices.cover'),
     temperature: i18n.t('devices.temperature'),
     motion: i18n.t('devices.motion'),
     button: i18n.t('devices.button'),
+    humidity: i18n.t('devices.humidity'),
+    pressure: i18n.t('devices.pressure'),
+    illuminance: i18n.t('devices.illuminance'),
+    occupancy: i18n.t('devices.occupancy'),
+    presence: i18n.t('devices.presence'),
+    contact: i18n.t('devices.contact'),
+    water_leak: i18n.t('devices.water_leak'),
+    smoke: i18n.t('devices.smoke'),
+    battery: i18n.t('devices.battery'),
+    voltage: i18n.t('devices.voltage'),
+    linkquality: i18n.t('devices.linkquality'),
+    state: i18n.t('devices.state'),
+    brightness: i18n.t('devices.brightness'),
+    color_temp: i18n.t('devices.color_temp'),
+    other: i18n.t('devices.other'),
     unknown: i18n.t('devices.unknown'),
   };
   return labels[type] || type;
 };
 
-export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
+export default function DeviceCard({ device, onToggle, onCoverPositionChange }: DeviceCardProps) {
   const navigate = useNavigate();
   const isOnline = device.status === 'online';
   const isOn = device.state?.state === 'ON' || device.state?.state === true;
+  
+  // Pour les volets, récupérer la position (0-100, où 0 = fermé, 100 = ouvert)
+  const coverPosition = device.type === 'cover' && device.state?.position !== undefined
+    ? typeof device.state.position === 'number' 
+      ? device.state.position 
+      : parseInt(device.state.position) || 0
+    : device.state?.state === 'open' || device.state?.state === 'OPEN'
+    ? 100
+    : device.state?.state === 'closed' || device.state?.state === 'CLOSED'
+    ? 0
+    : 0;
   
   // Debug: afficher les données de l'appareil
   console.log(`📊 DeviceCard [${device.friendlyName}]:`, {
@@ -90,8 +177,22 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
 
   const handleToggle = (event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
     event.stopPropagation();
+    event.preventDefault();
     if (onToggle && (device.type === 'light' || device.type === 'switch' || device.type === 'plug')) {
       onToggle(device, checked);
+    }
+  };
+
+  const handleSwitchClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+    event.preventDefault();
+  };
+
+  const handleCoverPositionChange = (event: Event, newValue: number | number[]) => {
+    event.stopPropagation();
+    if (onCoverPositionChange && device.type === 'cover') {
+      const position = typeof newValue === 'number' ? newValue : newValue[0];
+      onCoverPositionChange(device, position);
     }
   };
 
@@ -99,7 +200,6 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
     <Card
       sx={{
         height: '100%',
-        cursor: 'pointer',
         transition: 'all 0.15s ease-in-out',
         border: 'none',
         display: 'flex',
@@ -109,10 +209,17 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
           boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
         },
       }}
-      onClick={handleCardClick}
     >
       <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+        <Box 
+          sx={{ 
+            display: 'flex', 
+            alignItems: 'flex-start', 
+            mb: 2,
+            cursor: 'pointer',
+          }}
+          onClick={handleCardClick}
+        >
           <Box
             sx={{
               color: isOnline ? 'primary.main' : 'text.disabled',
@@ -121,7 +228,7 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
               alignItems: 'center',
             }}
           >
-            {getDeviceIcon(device.type)}
+            {getDeviceIcon(device.type, device)}
           </Box>
           <Box sx={{ flexGrow: 1 }}>
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
@@ -160,13 +267,16 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
               />
             {(device.type === 'light' || device.type === 'switch' || device.type === 'plug') && (
               <Tooltip title={isOn ? 'Éteindre' : 'Allumer'}>
-                <Switch
-                  checked={isOn}
-                  onChange={handleToggle}
-                  disabled={!isOnline}
-                  color="primary"
-                  size="medium"
-                />
+                <Box onClick={handleSwitchClick} onMouseDown={handleSwitchClick}>
+                  <Switch
+                    checked={isOn}
+                    onChange={handleToggle}
+                    disabled={!isOnline}
+                    color="primary"
+                    size="medium"
+                    onClick={handleSwitchClick}
+                  />
+                </Box>
               </Tooltip>
             )}
           </Box>
@@ -296,6 +406,24 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
                 </Grid>
               )}
               
+              {/* Vibration */}
+              {device.state.vibration !== undefined && (
+                <Grid item xs={6}>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    {i18n.t('devices.vibration')}
+                  </Typography>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      fontWeight: 500,
+                      color: device.state.vibration ? 'warning.main' : 'text.secondary'
+                    }}
+                  >
+                    {device.state.vibration ? i18n.t('devices.detected') : i18n.t('devices.none')}
+                  </Typography>
+                </Grid>
+              )}
+              
               {/* Fuite d'eau */}
               {device.state.water_leak !== undefined && (
                 <Grid item xs={6}>
@@ -351,15 +479,66 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
                   </Typography>
                 </Grid>
               )}
-              {device.state.voltage !== undefined && (
+              {/* Données pour les appareils "energy" : tension, puissance, intensité */}
+              {device.type === 'energy' && (
+                <>
+                  {device.state.voltage !== undefined && (
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        {i18n.t('devices.voltage')}
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {typeof device.state.voltage === 'number'
+                          ? `${device.state.voltage.toFixed(2)} V`
+                          : `${device.state.voltage} V`}
+                      </Typography>
+                    </Grid>
+                  )}
+                  {device.state.power !== undefined && (
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        {i18n.t('devices.power')}
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {typeof device.state.power === 'number'
+                          ? `${device.state.power.toFixed(1)} W`
+                          : `${device.state.power} W`}
+                      </Typography>
+                    </Grid>
+                  )}
+                  {device.state.current !== undefined && (
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        {i18n.t('devices.current')}
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {typeof device.state.current === 'number'
+                          ? `${device.state.current.toFixed(2)} A`
+                          : `${device.state.current} A`}
+                      </Typography>
+                    </Grid>
+                  )}
+                </>
+              )}
+              
+              {/* Tension pour les autres types d'appareils */}
+              {device.type !== 'energy' && device.state.voltage !== undefined && (
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary" display="block">
                     {i18n.t('devices.voltage')}
                   </Typography>
                   <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    {typeof device.state.voltage === 'number'
-                      ? `${(device.state.voltage / 1000).toFixed(2)}V`
-                      : `${device.state.voltage}V`}
+                    {(() => {
+                      if (typeof device.state.voltage === 'number') {
+                        // Pour les types "switch", afficher la valeur réelle sans diviser
+                        if (device.type === 'switch') {
+                          return `${device.state.voltage.toFixed(2)} V`;
+                        }
+                        // Pour les autres types, diviser par 1000 (millivolts -> volts)
+                        return `${(device.state.voltage / 1000).toFixed(2)} V`;
+                      }
+                      return `${device.state.voltage} V`;
+                    })()}
                   </Typography>
                 </Grid>
               )}
@@ -379,9 +558,78 @@ export default function DeviceCard({ device, onToggle }: DeviceCardProps) {
                   </Typography>
                 </Grid>
               )}
+              {device.type === 'cover' && (
+                <Grid item xs={6}>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    {i18n.t('devices.opening')}
+                  </Typography>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      fontWeight: 500,
+                      color: coverPosition < 50 ? 'error.main' : coverPosition < 100 ? 'warning.main' : 'success.main'
+                    }}
+                  >
+                    {coverPosition}%
+                  </Typography>
+                </Grid>
+              )}
+              
+              {/* Position du volet (cover) */}
+              {device.type === 'cover' && (
+                <Grid item xs={12}>
+                  <Box sx={{ px: 1, py: 1 }}>
+                    <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1, fontSize: '0.75rem' }}>
+                      {i18n.t('devices.position')}
+                    </Typography>
+                    <Box sx={{ position: 'relative', px: 1 }}>
+                      <Slider
+                        value={coverPosition}
+                        onChange={handleCoverPositionChange}
+                        disabled={!isOnline}
+                        min={0}
+                        max={100}
+                        step={1}
+                        marks={[
+                          { value: 50, label: '50%' },
+                        ]}
+                        valueLabelDisplay="auto"
+                        valueLabelFormat={(value) => `${value}%`}
+                        sx={{
+                          mb: 0.5,
+                          '& .MuiSlider-thumb': {
+                            width: 20,
+                            height: 20,
+                          },
+                          '& .MuiSlider-track': {
+                            height: 6,
+                          },
+                          '& .MuiSlider-rail': {
+                            height: 6,
+                          },
+                          '& .MuiSlider-markLabel': {
+                            fontSize: '0.75rem',
+                          },
+                          '& .MuiSlider-valueLabel': {
+                            fontSize: '0.75rem',
+                          },
+                        }}
+                      />
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                          {i18n.t('devices.closed')}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                          {i18n.t('devices.open')}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                </Grid>
+              )}
               
               {/* État ON/OFF pour les autres types */}
-              {device.state.state !== undefined && device.type !== 'light' && device.type !== 'switch' && device.type !== 'plug' && (
+              {device.state.state !== undefined && device.type !== 'light' && device.type !== 'switch' && device.type !== 'plug' && device.type !== 'cover' && (
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary" display="block">
                     {i18n.t('devices.state')}

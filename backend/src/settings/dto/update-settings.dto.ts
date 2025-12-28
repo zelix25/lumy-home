@@ -1,4 +1,4 @@
-import { IsNumber, IsString, IsBoolean, IsOptional, Min } from 'class-validator';
+import { IsNumber, IsString, IsBoolean, IsOptional, Min, IsLatitude, IsLongitude } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 
 export class UpdateSettingsDto {
@@ -20,5 +20,29 @@ export class UpdateSettingsDto {
   })
   @IsBoolean()
   setup?: boolean;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  zipCode?: string;
+
+  @IsOptional()
+  @IsString()
+  country?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : Number(value)))
+  @IsNumber()
+  @IsLatitude()
+  latitude?: number;
+
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : Number(value)))
+  @IsNumber()
+  @IsLongitude()
+  longitude?: number;
 }
 

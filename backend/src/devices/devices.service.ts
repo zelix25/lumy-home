@@ -1,16 +1,27 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Device } from './entities/device.entity';
+import { Repository, LessThan } from 'typeorm';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { Device, DeviceStatus } from './entities/device.entity';
 import { Zigbee2MqttService } from './zigbee2mqtt.service';
+import { WebsocketGateway } from '../websocket/websocket.gateway';
+import { LoggerService } from '../logger/logger.service';
 
 @Injectable()
-export class DevicesService {
+export class DevicesService implements OnModuleInit {
+  private readonly OFFLINE_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000; // 7 jours en millisecondes
+
   constructor(
     @InjectRepository(Device)
     private deviceRepository: Repository<Device>,
     private zigbee2MqttService: Zigbee2MqttService,
+    private websocketGateway: WebsocketGateway,
+    private logger: LoggerService,
   ) {}
+
+  onModuleInit() {
+    this.logger.log('DevicesService initialisé - Vérification périodique des appareils hors ligne activée', 'DevicesService');
+  }
 
   async findAll(): Promise<Device[]> {
     return this.deviceRepository.find({
@@ -37,18 +48,99 @@ export class DevicesService {
     });
   }
 
+  /**
+   * Génère un nom MQTT à partir d'un nom friendly
+   * - Convertit en minuscules
+   * - Supprime les accents
+   * - Remplace les espaces par des tirets
+   * - Supprime les caractères spéciaux (garde uniquement lettres, chiffres, tirets)
+   */
+  private generateMqttName(friendlyName: string): string {
+    if (!friendlyName) return '';
+
+    // Normaliser les caractères Unicode (supprimer les accents)
+    let normalized = friendlyName
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Supprimer les diacritiques
+      .toLowerCase();
+
+    // Remplacer les espaces et caractères spéciaux par des tirets
+    normalized = normalized.replace(/[^a-z0-9]+/g, '-');
+
+    // Supprimer les tirets en début et fin
+    normalized = normalized.replace(/^-+|-+$/g, '');
+
+    // Si le résultat est vide, utiliser un nom par défaut
+    if (!normalized) {
+      normalized = 'device';
+    }
+
+    return normalized;
+  }
+
   async updateFriendlyName(
     ieeeAddress: string,
     friendlyName: string,
   ): Promise<Device> {
     const device = await this.findOne(ieeeAddress);
     const oldFriendlyName = device.friendlyName;
+    const oldMqttName = device.mqttName;
+
+    // Si le nom change, vérifier qu'il n'existe pas déjà
+    if (friendlyName !== oldFriendlyName) {
+      const existingDevice = await this.deviceRepository.findOne({
+        where: { friendlyName },
+      });
+
+      if (existingDevice && existingDevice.ieeeAddress !== ieeeAddress) {
+        throw new ConflictException(
+          `Un appareil avec le nom "${friendlyName}" existe déjà`,
+        );
+      }
+    }
+
+    // IMPORTANT: Zigbee2MQTT utilise le friendly_name normalisé dans les topics MQTT
+    // Pour la requête de renommage, le champ "from" doit être le nom normalisé actuellement
+    // utilisé par Zigbee2MQTT dans ses topics (pas le friendly_name original)
+    // Le champ "to" sera le nouveau mqttName normalisé
+    
+    // Si l'appareil a déjà été renommé, meta.originalZigbeeName contient le mqttName précédent
+    // Sinon, Zigbee2MQTT utilise le friendly_name original qu'il a reçu, normalisé pour les topics
+    let currentZigbeeMqttName = device.meta?.originalZigbeeName;
+    
+    // Si pas de nom stocké, c'est la première fois qu'on renomme cet appareil
+    // Zigbee2MQTT utilise le friendly_name original, normalisé pour les topics
+    if (!currentZigbeeMqttName) {
+      // Utiliser le mqttName actuel s'il existe, sinon générer à partir du friendlyName
+      // car Zigbee2MQTT normalise automatiquement le friendly_name pour créer les topics
+      currentZigbeeMqttName = oldMqttName || this.generateMqttName(oldFriendlyName);
+    }
 
     device.friendlyName = friendlyName;
+    const newMqttName = this.generateMqttName(friendlyName);
+    device.mqttName = newMqttName;
+    
+    // Mettre à jour le nom original Zigbee2MQTT dans les métadonnées
+    if (!device.meta) {
+      device.meta = {};
+    }
+    
     await this.deviceRepository.save(device);
 
     // Renommer dans Zigbee2MQTT via le bridge
-    this.zigbee2MqttService.renameDevice(oldFriendlyName, friendlyName);
+    // Le champ "from" doit être le nom normalisé actuellement utilisé par Zigbee2MQTT dans ses topics
+    // Le champ "to" sera le nouveau mqttName normalisé
+    // Zigbee2MQTT utilisera ce nouveau mqttName comme friendly_name et pour générer les topics
+    this.logger.log(
+      `🔄 Tentative de renommage: de "${currentZigbeeMqttName}" vers "${newMqttName}"`,
+      'DevicesService',
+    );
+    this.zigbee2MqttService.renameDevice(currentZigbeeMqttName, newMqttName);
+    
+    // Mettre à jour le nom stocké après le renommage
+    // Après le renommage réussi, Zigbee2MQTT utilisera le nouveau mqttName
+    device.meta.originalZigbeeName = newMqttName;
+    await this.deviceRepository.save(device);
 
     return device;
   }
@@ -67,7 +159,9 @@ export class DevicesService {
     command: Record<string, any>,
   ): Promise<void> {
     const device = await this.findOne(ieeeAddress);
-    await this.zigbee2MqttService.sendCommand(device.friendlyName, command);
+    // Utiliser mqttName pour les topics MQTT, avec fallback sur friendlyName si mqttName n'existe pas
+    const mqttName = device.mqttName || this.generateMqttName(device.friendlyName);
+    await this.zigbee2MqttService.sendCommand(mqttName, command);
   }
 
   async getDeviceStats(): Promise<{
@@ -138,6 +232,10 @@ export class DevicesService {
     await this.zigbee2MqttService.stopPermitJoin();
   }
 
+  async getDiscoveryStatus(): Promise<{ active: boolean; timeRemaining?: number }> {
+    return this.zigbee2MqttService.getPermitJoinStatus();
+  }
+
   async refreshDeviceStates(): Promise<void> {
     // Forcer la récupération des états actuels
     await this.zigbee2MqttService.requestDeviceStates();
@@ -145,14 +243,18 @@ export class DevicesService {
 
   async forceReadDeviceState(ieeeAddress: string): Promise<void> {
     const device = await this.findOne(ieeeAddress);
-    await this.zigbee2MqttService.forceReadDeviceState(device.friendlyName);
+    // Utiliser mqttName pour les topics MQTT, avec fallback sur friendlyName si mqttName n'existe pas
+    const mqttName = device.mqttName || this.generateMqttName(device.friendlyName);
+    await this.zigbee2MqttService.forceReadDeviceState(mqttName);
   }
 
   async forceReadAllDeviceStates(): Promise<void> {
     const devices = await this.findAll();
     for (const device of devices) {
       if (device.status === 'online') {
-        await this.zigbee2MqttService.forceReadDeviceState(device.friendlyName);
+        // Utiliser mqttName pour les topics MQTT, avec fallback sur friendlyName si mqttName n'existe pas
+        const mqttName = device.mqttName || this.generateMqttName(device.friendlyName);
+        await this.zigbee2MqttService.forceReadDeviceState(mqttName);
         // Petit délai pour éviter de surcharger
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
@@ -176,11 +278,67 @@ export class DevicesService {
     
     // Supprimer l'appareil de Zigbee2MQTT avant de le supprimer de la DB
     if (device.friendlyName) {
-      await this.zigbee2MqttService.removeDevice(device.friendlyName, device.ieeeAddress);
+      // Utiliser mqttName pour les topics MQTT, avec fallback sur friendlyName si mqttName n'existe pas
+      const mqttName = device.mqttName || this.generateMqttName(device.friendlyName);
+      await this.zigbee2MqttService.removeDevice(mqttName, device.ieeeAddress);
     }
     
     // Supprimer l'appareil de la base de données
     await this.deviceRepository.remove(device);
+  }
+
+  /**
+   * Vérifie périodiquement les appareils et les passe en OFFLINE s'ils n'ont pas donné signe de vie depuis 7 jours
+   * Exécuté toutes les minutes
+   */
+  @Cron(CronExpression.EVERY_MINUTE)
+  async checkOfflineDevices(): Promise<void> {
+    try {
+      const now = new Date();
+      const thresholdDate = new Date(now.getTime() - this.OFFLINE_THRESHOLD_MS);
+
+      // Trouver tous les appareils en ligne qui n'ont pas été mis à jour depuis 7 jours
+      const devicesToMarkOffline = await this.deviceRepository.find({
+        where: {
+          status: DeviceStatus.ONLINE,
+          updatedAt: LessThan(thresholdDate),
+        },
+      });
+
+      if (devicesToMarkOffline.length > 0) {
+        this.logger.log(
+          `Vérification appareils hors ligne: ${devicesToMarkOffline.length} appareil(s) à passer en OFFLINE`,
+          'DevicesService',
+        );
+
+        for (const device of devicesToMarkOffline) {
+          const oldStatus = device.status;
+          device.status = DeviceStatus.OFFLINE;
+          await this.deviceRepository.save(device);
+
+          this.logger.log(
+            `Appareil ${device.friendlyName || device.ieeeAddress} passé en OFFLINE (dernière mise à jour: ${device.updatedAt.toISOString()})`,
+            'DevicesService',
+          );
+
+          // Diffuser la mise à jour via WebSocket
+          this.websocketGateway.broadcast('device:updated', {
+            device,
+            message: `L'appareil ${device.friendlyName || device.ieeeAddress} est maintenant hors ligne`,
+          });
+
+          // Enregistrer l'événement dans l'historique si disponible
+          // Note: On ne peut pas injecter HistoryTimelineService ici car cela créerait une dépendance circulaire
+          // Cette fonctionnalité est déjà gérée dans zigbee2mqtt.service.ts
+        }
+      }
+    } catch (error) {
+      this.logger.error(
+        `Erreur lors de la vérification des appareils hors ligne: ${error.message}`,
+        error.stack,
+        'DevicesService',
+      );
+    }
   }
 }
 

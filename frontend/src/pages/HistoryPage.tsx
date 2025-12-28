@@ -25,6 +25,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import MotionIcon from '@mui/icons-material/DirectionsRun';
 import LightIcon from '@mui/icons-material/Lightbulb';
+import SunIcon from '@mui/icons-material/WbSunny';
 import DoorIcon from '@mui/icons-material/DoorFront';
 import TemperatureIcon from '@mui/icons-material/Thermostat';
 import PowerIcon from '@mui/icons-material/Power';
@@ -108,11 +109,30 @@ export default function HistoryPage() {
     setOffset(0);
   };
 
-  const getEventIcon = (eventType: HistoryEventType) => {
+  const getEventIcon = (eventType: HistoryEventType, item?: HistoryItem) => {
+    // Vérifier si c'est un événement de luminosité (illuminance)
+    const isIlluminanceEvent = 
+      eventType === HistoryEventType.STATE_CHANGED &&
+      item?.data?.newState?.illuminance !== undefined;
+    
+    // Vérifier si c'est un événement de température
+    const isTemperatureEvent = 
+      eventType === HistoryEventType.STATE_CHANGED &&
+      item?.data?.newState?.temperature !== undefined;
+
     switch (eventType) {
       case HistoryEventType.MOTION_DETECTED:
         return <MotionIcon />;
       case HistoryEventType.STATE_CHANGED:
+        // Utiliser l'icône soleil pour les capteurs de luminosité
+        if (isIlluminanceEvent) {
+          return <SunIcon />;
+        }
+        // Utiliser l'icône thermomètre pour les capteurs de température
+        if (isTemperatureEvent) {
+          return <TemperatureIcon />;
+        }
+        // Utiliser l'icône ampoule pour les autres changements d'état
         return <LightIcon />;
       case HistoryEventType.CONTACT_CHANGED:
         return <DoorIcon />;
@@ -438,7 +458,7 @@ export default function HistoryPage() {
                         flexShrink: 0,
                       }}
                     >
-                      {getEventIcon(item.eventType)}
+                      {getEventIcon(item.eventType, item)}
                     </Box>
 
                     {/* Content */}

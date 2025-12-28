@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { LoggerModule } from './logger/logger.module';
@@ -15,6 +17,9 @@ import { AuthModule } from './auth/auth.module';
 import { SettingsModule } from './settings/settings.module';
 import { AutomationsModule } from './automations/automations.module';
 import { RoomsModule } from './rooms/rooms.module';
+import { WeatherModule } from './weather/weather.module';
+import { StoreModule } from './store/store.module';
+import { PluginsModule } from './plugins/plugins.module';
 import { configValidationSchema } from './config/config.validation';
 
 @Module({
@@ -22,6 +27,10 @@ import { configValidationSchema } from './config/config.validation';
     // Configuration globale
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: [
+        `.env.${process.env.NODE_ENV || 'development'}`,
+        '.env',
+      ],
       validationSchema: configValidationSchema,
       validationOptions: {
         allowUnknown: true,
@@ -32,7 +41,7 @@ import { configValidationSchema } from './config/config.validation';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        const dbPath = configService.get<string>('DATABASE_PATH', 'data/homehub.db');
+        const dbPath = configService.get<string>('DATABASE_PATH', 'data/lumy.db');
         const nodeEnv = configService.get<string>('NODE_ENV', 'development');
         return {
           type: 'sqlite',
@@ -40,11 +49,16 @@ import { configValidationSchema } from './config/config.validation';
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
           migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
           synchronize: nodeEnv !== 'production',
-          logging: nodeEnv === 'development',
+          /* logging: nodeEnv === 'development',*/
+          logging: false,
         };
       },
       inject: [ConfigService],
     }),
+    // Module de planification pour les tâches cron
+    ScheduleModule.forRoot(),
+    // Module d'événements pour les hooks de plugins
+    EventEmitterModule.forRoot(),
     // Modules personnalisés
     LoggerModule,
     MqttModule,
@@ -58,6 +72,9 @@ import { configValidationSchema } from './config/config.validation';
     SettingsModule,
     AutomationsModule,
     RoomsModule,
+    WeatherModule,
+    StoreModule,
+    PluginsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,4 +1,4 @@
-# 🧭 **HomeHub — Guide UI & UX pour les développeurs**
+# 🧭 **Lumy Home — Guide UI & UX pour les développeurs**
 
 ## 🎨 **1. Identité visuelle**
 
@@ -76,7 +76,7 @@
 
 ---
 
-# 🤖 **3. IA compagnon (HomeHub Assistant)**
+# 🤖 **3. IA compagnon (Lumy Home Assistant)**
 
 ### Style visuel
 

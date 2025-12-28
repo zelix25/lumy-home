@@ -1,6 +1,6 @@
-# HomeHub IA - Frontend
+# Lumy Home IA - Frontend
 
-Frontend React + Material-UI pour HomeHub IA, une interface intuitive pour la domotique Zigbee.
+Frontend React + Material-UI pour Lumy Home IA, une interface intuitive pour la domotique Zigbee.
 
 ## 🚀 Démarrage rapide
 

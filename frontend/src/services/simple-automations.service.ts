@@ -5,6 +5,13 @@ export enum AutomationTriggerType {
   CONTACT = 'contact',
   TEMPERATURE = 'temperature',
   BUTTON = 'button',
+  VIBRATION = 'vibration',
+  ILLUMINANCE = 'illuminance',
+  HUMIDITY = 'humidity',
+  WATER_LEAK = 'water_leak',
+  SMOKE = 'smoke',
+  GAS = 'gas',
+  SUNRISE_SUNSET = 'sunrise_sunset',
   TIME = 'time',
   MANUAL = 'manual',
 }
@@ -12,8 +19,13 @@ export enum AutomationTriggerType {
 export enum AutomationActionType {
   TURN_ON = 'turn_on',
   TURN_OFF = 'turn_off',
+  TOGGLE = 'toggle',
   SET_BRIGHTNESS = 'set_brightness',
   SET_COLOR = 'set_color',
+  SET_COLOR_TEMP = 'set_color_temp',
+  SET_THERMOSTAT = 'set_thermostat',
+  OPEN_COVER = 'open_cover',
+  CLOSE_COVER = 'close_cover',
   NOTIFY = 'notify',
 }
 
@@ -28,6 +40,15 @@ export interface AutomationTrigger {
   deviceId?: string;
   deviceName?: string;
   condition?: Record<string, any>;
+  additionalConditions?: Array<{
+    type: AutomationTriggerType;
+    deviceId?: string;
+    deviceName?: string;
+    condition?: Record<string, any>;
+  }>;
+  logicOperator?: 'AND' | 'OR';
+  sunriseSunsetType?: 'sunrise' | 'sunset';
+  offsetMinutes?: number;
 }
 
 export interface AutomationAction {
@@ -113,6 +134,10 @@ class SimpleAutomationsService {
 
   async getExecutionLogs(id: string, limit: number = 50): Promise<AutomationExecutionLog[]> {
     return apiService.get<AutomationExecutionLog[]>(`/automations/${id}/logs?limit=${limit}`);
+  }
+
+  async execute(id: string): Promise<void> {
+    return apiService.post<void>(`/automations/${id}/execute`);
   }
 }
 

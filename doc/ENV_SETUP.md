@@ -1,6 +1,6 @@
 # Configuration des variables d'environnement
 
-Ce document explique comment configurer les variables d'environnement pour HomeHub.
+Ce document explique comment configurer les variables d'environnement pourLumy Home.
 
 ## 📁 Fichiers .env
 
@@ -26,7 +26,7 @@ cp frontend/env.example frontend/.env
   - **Local** : `http://localhost:5173`
 
 #### Base de données
-- `DATABASE_PATH` : Chemin vers la base de données SQLite (défaut: `data/homehub.db`)
+- `DATABASE_PATH` : Chemin vers la base de données SQLite (défaut: `data/lumy.db`)
 
 #### MQTT
 - `MQTT_BROKER_URL` : URL du broker MQTT
@@ -34,7 +34,7 @@ cp frontend/env.example frontend/.env
   - **Local** : `mqtt://localhost:1883`
 - `MQTT_USERNAME` : Nom d'utilisateur MQTT (optionnel)
 - `MQTT_PASSWORD` : Mot de passe MQTT (optionnel)
-- `MQTT_CLIENT_ID` : ID du client MQTT (défaut: `homehub-backend`)
+- `MQTT_CLIENT_ID` : ID du client MQTT (défaut: `lumy`)
 - `MQTT_RECONNECT_PERIOD` : Période de reconnexion en ms (défaut: `5000`)
 
 #### Logging

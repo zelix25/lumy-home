@@ -43,6 +43,17 @@ export default function DevicesPage() {
     }
   };
 
+  const handleCoverPositionChange = async (device: Device, position: number) => {
+    try {
+      // Pour Zigbee2MQTT, la position est envoyée comme un nombre de 0 à 100
+      // où 0 = fermé, 100 = ouvert
+      const command = { position };
+      await devicesService.sendCommand(device.ieeeAddress, command);
+    } catch (error) {
+      console.error('Erreur lors du changement de position du volet:', error);
+    }
+  };
+
   const handleStartDiscovery = async () => {
     try {
       const duration = 254; // 254 secondes (maximum Zigbee2MQTT, environ 4 minutes)
@@ -86,6 +97,30 @@ export default function DevicesPage() {
     return `${mins}:${String(secs).padStart(2, '0')}`;
   };
 
+  // Vérifier l'état de la découverte au chargement de la page
+  useEffect(() => {
+    const checkDiscoveryStatus = async () => {
+      try {
+        const status = await devicesService.getDiscoveryStatus();
+        if (status.active) {
+          setDiscoveryActive(true);
+          // Si on a un temps restant, l'utiliser, sinon utiliser une valeur par défaut
+          if (status.timeRemaining !== undefined && status.timeRemaining > 0) {
+            setTimeRemaining(status.timeRemaining);
+          } else {
+            // Si on ne connaît pas le temps exact, on met une valeur par défaut
+            // et on laisse le timer continuer
+            setTimeRemaining(254);
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors de la vérification de l\'état de la découverte:', error);
+      }
+    };
+
+    checkDiscoveryStatus();
+  }, []);
+
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
     if (discoveryActive && timeRemaining > 0) {
@@ -121,10 +156,16 @@ export default function DevicesPage() {
     { value: 'all', label: i18n.t('devices.all') },
     { value: 'light', label: i18n.t('devices.light') },
     { value: 'switch', label: i18n.t('devices.switch') },
+    { value: 'energy', label: i18n.t('devices.energy') },
     { value: 'sensor', label: i18n.t('devices.sensor') },
     { value: 'plug', label: i18n.t('devices.plug') },
     { value: 'motion', label: i18n.t('devices.motion') },
     { value: 'temperature', label: i18n.t('devices.temperature') },
+    { value: 'pressure', label: i18n.t('devices.pressure') },
+    { value: 'illuminance', label: i18n.t('devices.illuminance') },
+    { value: 'contact', label: i18n.t('devices.contact') },
+    { value: 'cover', label: i18n.t('devices.cover') },
+    { value: 'other', label: i18n.t('devices.other') },
   ];
 
   if (loading) {
@@ -235,7 +276,11 @@ export default function DevicesPage() {
         <Grid container spacing={3}>
           {filteredDevices.map((device) => (
             <Grid item xs={12} sm={6} md={4} lg={3} key={device.ieeeAddress}>
-              <DeviceCard device={device} onToggle={handleToggle} />
+              <DeviceCard 
+                device={device} 
+                onToggle={handleToggle}
+                onCoverPositionChange={handleCoverPositionChange}
+              />
             </Grid>
           ))}
         </Grid>

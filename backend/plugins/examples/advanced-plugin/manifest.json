@@ -1,0 +1,70 @@
+{
+  "name": "advanced-plugin",
+  "displayName": "Advanced Plugin Example",
+  "version": "1.0.0",
+  "description": "Un exemple avancé de plugin avec point d'entrée, hooks et configuration",
+  "author": "Lumy Team",
+  "icon": "https://example.com/icon.png",
+  "repository": "https://github.com/lumy/advanced-plugin",
+  "lumyVersion": "^1.0.0",
+  "category": "automation",
+  "tags": ["example", "advanced", "automation"],
+  "dependencies": {},
+  "permissions": [
+    "read:devices",
+    "control:devices",
+    "read:automations",
+    "write:automations",
+    "notifications:send",
+    "storage:read",
+    "storage:write"
+  ],
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "apiKey": {
+        "type": "string",
+        "title": "Clé API",
+        "description": "Votre clé API pour le service externe",
+        "minLength": 10
+      },
+      "refreshInterval": {
+        "type": "number",
+        "title": "Intervalle de rafraîchissement",
+        "description": "En secondes",
+        "minimum": 1,
+        "maximum": 3600,
+        "default": 60
+      },
+      "enableNotifications": {
+        "type": "boolean",
+        "title": "Activer les notifications",
+        "default": true
+      },
+      "threshold": {
+        "type": "number",
+        "title": "Seuil de température",
+        "description": "Température en degrés Celsius",
+        "minimum": -50,
+        "maximum": 50,
+        "default": 25
+      }
+    },
+    "required": ["apiKey"],
+    "additionalProperties": false
+  },
+  "main": "index.js",
+  "hooks": {
+    "device:update": "hooks/device-update.js",
+    "automation:triggered": "hooks/automation-trigger.js",
+    "system:startup": "hooks/system-startup.js"
+  },
+  "metadata": {
+    "hookPriorities": {
+      "device:update": 50,
+      "automation:triggered": 100,
+      "system:startup": 10
+    }
+  }
+}
+

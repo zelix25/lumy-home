@@ -10,11 +10,19 @@ import {
   MenuItem,
   Chip,
   Stack,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
 } from '@mui/material';
 import {
   MoreVert as MoreVertIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
+  AccountTree as AccountTreeIcon,
+  PlayArrow as PlayArrowIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import {
@@ -30,17 +38,20 @@ interface SimpleAutomationCardProps {
   automation: Automation;
   onUpdate: () => void;
   onEdit?: (automation: Automation) => void;
+  onEditNode?: (automation: Automation) => void;
 }
 
 export default function SimpleAutomationCard({
   automation,
   onUpdate,
   onEdit,
+  onEditNode,
 }: SimpleAutomationCardProps) {
   const { t } = useTranslation();
   const { addNotification } = useNotification();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [loading, setLoading] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -74,10 +85,13 @@ export default function SimpleAutomationCard({
     }
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm(t('automations.confirmDelete'))) {
-      return;
-    }
+  const handleDeleteClick = () => {
+    handleMenuClose();
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    setDeleteDialogOpen(false);
     setLoading(true);
     try {
       await simpleAutomationsService.delete(automation.id);
@@ -95,24 +109,127 @@ export default function SimpleAutomationCard({
       });
     } finally {
       setLoading(false);
-      handleMenuClose();
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+  };
+
+  const handleExecute = async () => {
+    handleMenuClose();
+    setLoading(true);
+    try {
+      await simpleAutomationsService.execute(automation.id);
+      addNotification({
+        type: 'success',
+        title: t('automations.executed'),
+        message: t('automations.executedMessage', { name: automation.name }),
+      });
+      onUpdate();
+    } catch (error: any) {
+      addNotification({
+        type: 'error',
+        title: t('automations.error'),
+        message: error.message || t('automations.executeError'),
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getTriggerConditionText = (
+    conditionType: AutomationTriggerType,
+    deviceName?: string,
+    condition?: Record<string, any>,
+    triggerData?: { sunriseSunsetType?: 'sunrise' | 'sunset'; offsetMinutes?: number }
+  ): string => {
+    let baseText = '';
+    switch (conditionType) {
+      case AutomationTriggerType.MOTION:
+        baseText = t('automations.whenMotion', { device: deviceName || '' });
+        break;
+      case AutomationTriggerType.CONTACT:
+        baseText = t('automations.whenContact', { device: deviceName || '' });
+        break;
+      case AutomationTriggerType.TEMPERATURE:
+        baseText = t('automations.whenTemperature', { device: deviceName || '' });
+        if (condition?.operator && condition?.value !== undefined) {
+          baseText += ` ${condition.operator} ${condition.value}°C`;
+        }
+        break;
+      case AutomationTriggerType.BUTTON:
+        baseText = t('automations.whenButton', { device: deviceName || '' });
+        break;
+      case AutomationTriggerType.VIBRATION:
+        baseText = t('automations.whenVibration', { device: deviceName || '' });
+        break;
+      case AutomationTriggerType.ILLUMINANCE:
+        baseText = t('automations.whenIlluminance', { device: deviceName || '' });
+        if (condition?.operator && condition?.value !== undefined) {
+          baseText += ` ${condition.operator} ${condition.value} ${t('automations.lux')}`;
+        }
+        break;
+      case AutomationTriggerType.HUMIDITY:
+        baseText = t('automations.whenHumidity', { device: deviceName || '' });
+        if (condition?.operator && condition?.value !== undefined) {
+          baseText += ` ${condition.operator} ${condition.value}%`;
+        }
+        break;
+      case AutomationTriggerType.WATER_LEAK:
+        baseText = t('automations.whenWaterLeak', { device: deviceName || '' });
+        break;
+      case AutomationTriggerType.SMOKE:
+        baseText = t('automations.whenSmoke', { device: deviceName || '' });
+        break;
+      case AutomationTriggerType.GAS:
+        baseText = t('automations.whenGas', { device: deviceName || '' });
+        break;
+      case AutomationTriggerType.SUNRISE_SUNSET:
+        const sunriseSunsetType = triggerData?.sunriseSunsetType || 'sunrise';
+        const offsetMinutes = triggerData?.offsetMinutes || 0;
+        const offsetText = offsetMinutes !== 0 
+          ? ` ${offsetMinutes > 0 ? '+' : ''}${offsetMinutes} ${t('automations.minutes')}`
+          : '';
+        baseText = sunriseSunsetType === 'sunrise' 
+          ? `${t('automations.whenSunrise')}${offsetText}`
+          : `${t('automations.whenSunset')}${offsetText}`;
+        break;
+      default:
+        baseText = `${conditionType}: ${deviceName || ''}`;
+    }
+    return baseText;
   };
 
   const getTriggerDescription = () => {
     const trigger = automation.trigger;
-    switch (trigger.type) {
-      case AutomationTriggerType.MOTION:
-        return t('automations.whenMotion', { device: trigger.deviceName || trigger.deviceId });
-      case AutomationTriggerType.CONTACT:
-        return t('automations.whenContact', { device: trigger.deviceName || trigger.deviceId });
-      case AutomationTriggerType.TEMPERATURE:
-        return t('automations.whenTemperature', { device: trigger.deviceName || trigger.deviceId });
-      case AutomationTriggerType.BUTTON:
-        return t('automations.whenButton', { device: trigger.deviceName || trigger.deviceId });
-      default:
-        return `${trigger.type}: ${trigger.deviceName || trigger.deviceId}`;
+    let mainTriggerText = getTriggerConditionText(
+      trigger.type,
+      trigger.deviceName || trigger.deviceId,
+      trigger.condition,
+      {
+        sunriseSunsetType: trigger.sunriseSunsetType,
+        offsetMinutes: trigger.offsetMinutes,
+      }
+    );
+
+    // Si des conditions supplémentaires existent, les ajouter
+    if (trigger.additionalConditions && trigger.additionalConditions.length > 0) {
+      const logicOperator = trigger.logicOperator || 'AND';
+      const operatorText = logicOperator === 'AND' ? t('automations.and') : t('automations.or');
+      
+      const additionalConditionsTexts = trigger.additionalConditions.map((condition) => {
+        return getTriggerConditionText(
+          condition.type,
+          condition.deviceName || condition.deviceId,
+          condition.condition
+        );
+      });
+
+      return `${mainTriggerText} ${operatorText} ${additionalConditionsTexts.join(` ${operatorText} `)}`;
     }
+
+    return mainTriggerText;
   };
 
   const getActionDescription = () => {
@@ -121,9 +238,18 @@ export default function SimpleAutomationCard({
 
     switch (action.type) {
       case AutomationActionType.TURN_ON:
+        const duration = action.params?.duration;
+        if (duration && duration > 0) {
+          return t('automations.thenTurnOnWithDuration', { 
+            device: action.deviceName || action.deviceId,
+            seconds: duration 
+          });
+        }
         return t('automations.thenTurnOn', { device: action.deviceName || action.deviceId });
       case AutomationActionType.TURN_OFF:
         return t('automations.thenTurnOff', { device: action.deviceName || action.deviceId });
+      case AutomationActionType.TOGGLE:
+        return t('automations.thenToggle', { device: action.deviceName || action.deviceId });
       case AutomationActionType.SET_BRIGHTNESS:
         return t('automations.thenSetBrightness', {
           device: action.deviceName || action.deviceId,
@@ -131,6 +257,20 @@ export default function SimpleAutomationCard({
         });
       case AutomationActionType.SET_COLOR:
         return t('automations.thenSetColor', { device: action.deviceName || action.deviceId });
+      case AutomationActionType.SET_COLOR_TEMP:
+        return t('automations.thenSetColorTemp', {
+          device: action.deviceName || action.deviceId,
+          colorTemp: action.params?.color_temp || 370,
+        });
+      case AutomationActionType.SET_THERMOSTAT:
+        return t('automations.thenSetThermostat', {
+          device: action.deviceName || action.deviceId,
+          temperature: action.params?.temperature || 20,
+        });
+      case AutomationActionType.OPEN_COVER:
+        return t('automations.thenOpenCover', { device: action.deviceName || action.deviceId });
+      case AutomationActionType.CLOSE_COVER:
+        return t('automations.thenCloseCover', { device: action.deviceName || action.deviceId });
       case AutomationActionType.NOTIFY:
         return t('automations.thenNotify', { message: action.params?.message || '' });
       default:
@@ -189,6 +329,10 @@ export default function SimpleAutomationCard({
         </Stack>
 
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+          <MenuItem onClick={handleExecute} disabled={loading || automation.status !== AutomationStatus.ACTIVE}>
+            <PlayArrowIcon sx={{ mr: 1 }} fontSize="small" />
+            {t('automations.execute')}
+          </MenuItem>
           {onEdit && (
             <MenuItem
               onClick={() => {
@@ -200,11 +344,52 @@ export default function SimpleAutomationCard({
               {t('common.edit')}
             </MenuItem>
           )}
-          <MenuItem onClick={handleDelete}>
+          {onEditNode && (
+            <MenuItem
+              onClick={() => {
+                onEditNode(automation);
+                handleMenuClose();
+              }}
+            >
+              <AccountTreeIcon sx={{ mr: 1 }} fontSize="small" />
+              {t('automations.editNodeMode')}
+            </MenuItem>
+          )}
+          <MenuItem onClick={handleDeleteClick}>
             <DeleteIcon sx={{ mr: 1 }} fontSize="small" />
             {t('common.delete')}
           </MenuItem>
         </Menu>
+
+        {/* Modal de confirmation de suppression */}
+        <Dialog
+          open={deleteDialogOpen}
+          onClose={handleDeleteCancel}
+          aria-labelledby="delete-dialog-title"
+          aria-describedby="delete-dialog-description"
+        >
+          <DialogTitle id="delete-dialog-title">
+            {t('automations.confirmDeleteTitle')}
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText id="delete-dialog-description">
+              {t('automations.confirmDelete', { name: automation.name })}
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleDeleteCancel} color="inherit">
+              {t('common.cancel')}
+            </Button>
+            <Button
+              onClick={handleDeleteConfirm}
+              color="error"
+              variant="contained"
+              disabled={loading}
+            >
+              {t('common.delete')}
+            </Button>
+          </DialogActions>
+        </Dialog>
       </CardContent>
     </Card>
   );

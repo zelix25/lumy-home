@@ -56,7 +56,7 @@ export class WebsocketGateway
 
     // Envoyer un message de bienvenue
     client.emit('connected', {
-      message: 'Connecté à HomeHub IA',
+      message: 'Connecté à Lumy Home',
       timestamp: new Date().toISOString(),
     });
   }

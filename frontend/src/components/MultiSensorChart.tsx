@@ -1,6 +1,6 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import Chart from 'react-apexcharts';
-import { Box, Typography, CircularProgress, Card, CardContent, Chip, Stack, useTheme } from '@mui/material';
+import { Box, Typography, CircularProgress, Chip, Stack, useTheme } from '@mui/material';
 import { sensorHistoryService, SensorType } from '../services/sensor-history.service';
 import { ApexOptions } from 'apexcharts';
 
@@ -26,9 +26,12 @@ const SENSOR_COLORS: Record<string, string> = {
 
 export default function MultiSensorChart({ deviceId, availableSensors }: MultiSensorChartProps) {
   const theme = useTheme();
+  const chartRef = useRef<any>(null);
+  const chartInstanceRef = useRef<any>(null);
   const [sensorDataMap, setSensorDataMap] = useState<Record<string, Array<{ timestamp: string; value: number }>>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isInitialLoad = useRef(true);
   // État pour suivre quelles courbes sont visibles (toutes visibles par défaut)
   const [visibleSensors, setVisibleSensors] = useState<Set<SensorType>>(
     new Set(availableSensors.map((s) => s.type))
@@ -36,8 +39,12 @@ export default function MultiSensorChart({ deviceId, availableSensors }: MultiSe
 
   useEffect(() => {
     const fetchAllSensorData = async () => {
+      const wasInitialLoad = isInitialLoad.current;
       try {
-        setLoading(true);
+        // Ne mettre loading à true que lors du chargement initial
+        if (wasInitialLoad) {
+          setLoading(true);
+        }
         setError(null);
 
         // Récupérer les données historiques des 7 derniers jours
@@ -78,11 +85,14 @@ export default function MultiSensorChart({ deviceId, availableSensors }: MultiSe
         });
 
         setSensorDataMap(dataMap);
+        isInitialLoad.current = false;
       } catch (err: any) {
         console.error('Erreur lors de la récupération des données:', err);
         setError('Impossible de charger les données des capteurs');
       } finally {
-        setLoading(false);
+        if (wasInitialLoad) {
+          setLoading(false);
+        }
       }
     };
 
@@ -95,6 +105,53 @@ export default function MultiSensorChart({ deviceId, availableSensors }: MultiSe
   useEffect(() => {
     setVisibleSensors(new Set(availableSensors.map((s) => s.type)));
   }, [availableSensors]);
+
+  // Ajuster la position du tooltip pour éviter qu'il soit coupé à droite
+  useEffect(() => {
+    const adjustTooltipPosition = () => {
+      const tooltip = document.querySelector('.apexcharts-tooltip') as HTMLElement;
+      if (tooltip) {
+        const rect = tooltip.getBoundingClientRect();
+        const windowWidth = window.innerWidth;
+        
+        // Si le tooltip dépasse à droite de l'écran, le décaler vers la gauche
+        if (rect.right > windowWidth - 20) {
+          const offset = rect.right - windowWidth + 20;
+          const currentLeft = parseFloat(tooltip.style.left) || 0;
+          tooltip.style.left = `${currentLeft - offset}px`;
+        }
+      }
+    };
+
+    // Observer les changements du DOM pour détecter l'apparition/mouvement du tooltip
+    const observer = new MutationObserver(() => {
+      setTimeout(adjustTooltipPosition, 10);
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['style', 'class'],
+    });
+
+    // Ajuster aussi lors du mouvement de la souris sur le graphique
+    const handleMouseMove = () => {
+      setTimeout(adjustTooltipPosition, 10);
+    };
+
+    const chartContainer = document.querySelector('.apexcharts-canvas-container');
+    if (chartContainer) {
+      chartContainer.addEventListener('mousemove', handleMouseMove);
+    }
+
+    return () => {
+      observer.disconnect();
+      if (chartContainer) {
+        chartContainer.removeEventListener('mousemove', handleMouseMove);
+      }
+    };
+  }, []);
 
   // Gestionnaire pour masquer/afficher une courbe
   const toggleSensorVisibility = (sensorType: SensorType) => {
@@ -134,6 +191,46 @@ export default function MultiSensorChart({ deviceId, availableSensors }: MultiSe
       });
   }, [availableSensors, visibleSensors, sensorDataMap, theme]);
 
+  // Mettre à jour le graphique de manière transparente sans re-render complet
+  useEffect(() => {
+    if (chartInstanceRef.current && !isInitialLoad.current && chartSeries.length > 0) {
+      try {
+        chartInstanceRef.current.updateSeries(chartSeries, false);
+      } catch (err) {
+        console.error('Erreur lors de la mise à jour du graphique:', err);
+      }
+    }
+  }, [chartSeries]);
+
+  // Obtenir l'instance ApexCharts après le montage
+  useEffect(() => {
+    const getChartInstance = () => {
+      if (chartRef.current) {
+        // Accéder à l'instance ApexCharts via le DOM
+        const chartElement = chartRef.current.querySelector('.apexcharts-canvas');
+        if (chartElement) {
+          // L'instance est stockée dans l'élément parent ou dans window.ApexCharts
+          const instance = (chartElement as any).__apexcharts__ || 
+                          (chartElement.parentElement as any)?.__apexcharts__;
+          if (instance) {
+            chartInstanceRef.current = instance;
+            return true;
+          }
+        }
+      }
+      return false;
+    };
+
+    // Essayer immédiatement
+    if (!getChartInstance()) {
+      // Si pas trouvé, attendre un peu et réessayer
+      const timeout = setTimeout(() => {
+        getChartInstance();
+      }, 100);
+      return () => clearTimeout(timeout);
+    }
+  }, [chartSeries.length > 0, !isInitialLoad.current]);
+
   // Configuration ApexCharts
   const chartOptions: ApexOptions = useMemo(() => {
     return {
@@ -148,11 +245,34 @@ export default function MultiSensorChart({ deviceId, availableSensors }: MultiSe
           type: 'x',
         },
         animations: {
-          enabled: true,
-          easing: 'easeinout',
-          speed: 300,
+          enabled: false,
         },
         fontFamily: theme.typography.fontFamily,
+        events: {
+          dataPointMouseEnter: function(event: any, chartContext: any) {
+            // Ajuster la position du tooltip dynamiquement pour éviter qu'il soit coupé
+            setTimeout(() => {
+              const tooltipEl = document.querySelector('.apexcharts-tooltip') as HTMLElement;
+              if (tooltipEl && event && event.clientX) {
+                const chartWidth = chartContext.svgWidth || 0;
+                const clientX = event.clientX;
+                const chartRect = chartContext.el?.getBoundingClientRect();
+                const relativeX = chartRect ? clientX - chartRect.left : clientX;
+                
+                let offsetX = 0;
+                // Si on est dans les 30% de droite du graphique, décaler plus à gauche
+                if (relativeX > chartWidth * 0.7) {
+                  offsetX = -180;
+                } else if (relativeX > chartWidth * 0.5) {
+                  offsetX = -100;
+                } else {
+                  offsetX = -50;
+                }
+                tooltipEl.style.transform = `translateX(${offsetX}px)`;
+              }
+            }, 10);
+          },
+        },
       },
       stroke: {
         curve: 'smooth',
@@ -222,7 +342,13 @@ export default function MultiSensorChart({ deviceId, availableSensors }: MultiSe
         x: {
           format: 'dd/MM/yyyy HH:mm',
         },
-        custom: ({ seriesIndex, dataPointIndex }) => {
+        fixed: {
+          enabled: false,
+        },
+        followCursor: true,
+        offsetX: -50,
+        offsetY: 10,
+        custom: ({ seriesIndex, dataPointIndex, w }) => {
           const sensor = availableSensors.find((s) => visibleSensors.has(s.type) && 
             chartSeries.findIndex((cs) => cs.name === s.label) === seriesIndex);
           if (!sensor || !chartSeries[seriesIndex]) return '';
@@ -239,6 +365,21 @@ export default function MultiSensorChart({ deviceId, availableSensors }: MultiSe
             hour: '2-digit',
             minute: '2-digit',
           });
+          
+          // Calculer la position pour éviter que le tooltip soit coupé
+          let offsetX = 0;
+          if (w && w.globals) {
+            const chartWidth = w.globals.svgWidth || 0;
+            const clientX = w.globals.clientX || 0;
+            // Si on est dans les 30% de droite du graphique, décaler plus à gauche
+            if (clientX > chartWidth * 0.7) {
+              offsetX = -180;
+            } else if (clientX > chartWidth * 0.5) {
+              offsetX = -100;
+            } else {
+              offsetX = -50;
+            }
+          }
           
           return `
             <div style="padding: 8px 12px; background: white; border: 1px solid ${theme.palette.divider}; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
@@ -257,6 +398,9 @@ export default function MultiSensorChart({ deviceId, availableSensors }: MultiSe
             </div>
           `;
         },
+        onDatasetHover: {
+          highlightDataSeries: true,
+        },
       },
       legend: {
         show: false, // On utilise notre légende personnalisée
@@ -266,31 +410,19 @@ export default function MultiSensorChart({ deviceId, availableSensors }: MultiSe
 
   if (loading) {
     return (
-      <Card>
-        <CardContent>
-          <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
-            Graphique des capteurs
-          </Typography>
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-            <CircularProgress size={40} />
-          </Box>
-        </CardContent>
-      </Card>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+        <CircularProgress size={40} />
+      </Box>
     );
   }
 
   if (error) {
     return (
-      <Card>
-        <CardContent>
-          <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
-            Graphique des capteurs
-          </Typography>
-          <Typography variant="body2" color="error" sx={{ textAlign: 'center', py: 4 }}>
-            {error}
-          </Typography>
-        </CardContent>
-      </Card>
+      <Box>
+        <Typography variant="body2" color="error" sx={{ textAlign: 'center', py: 4 }}>
+          {error}
+        </Typography>
+      </Box>
     );
   }
 
@@ -298,28 +430,16 @@ export default function MultiSensorChart({ deviceId, availableSensors }: MultiSe
 
   if (!hasData) {
     return (
-      <Card>
-        <CardContent>
-          <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
-            Graphique des capteurs
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-            Aucune donnée disponible pour les 7 derniers jours
-          </Typography>
-        </CardContent>
-      </Card>
+      <Box>
+        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+          Aucune donnée disponible pour les 7 derniers jours
+        </Typography>
+      </Box>
     );
   }
 
   return (
-    <Card
-      sx={{
-        borderRadius: 2,
-        boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
-        border: 'none',
-      }}
-    >
-      <CardContent>
+    <Box>
         <Box sx={{ mb: 3 }}>
           <Typography variant="h6" gutterBottom sx={{ fontWeight: 500, color: theme.palette.text.primary }}>
             Graphique des capteurs
@@ -345,7 +465,7 @@ export default function MultiSensorChart({ deviceId, availableSensors }: MultiSe
           </Stack>
         </Box>
 
-        <Box sx={{ mb: 3 }}>
+        <Box sx={{ mb: 3 }} ref={chartRef}>
           <Chart
             options={chartOptions}
             series={chartSeries}
@@ -411,7 +531,6 @@ export default function MultiSensorChart({ deviceId, availableSensors }: MultiSe
             );
           })}
         </Box>
-      </CardContent>
-    </Card>
+    </Box>
   );
 }

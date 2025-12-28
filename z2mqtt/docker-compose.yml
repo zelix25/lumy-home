@@ -46,4 +46,4 @@ services:
 
 networks:
   default:
-    name: homehub-network
+    name: lumy-network

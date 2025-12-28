@@ -14,9 +14,13 @@ export enum DeviceType {
   DOOR = 'door',
   WINDOW = 'window',
   TEMPERATURE = 'temperature',
+  HUMIDITY = 'humidity',
+  COVER = 'cover',
   MOTION = 'motion',
   BUTTON = 'button',
+  ENERGY = 'energy',
   UNKNOWN = 'unknown',
+  OTHER = 'other',
 }
 
 export enum DeviceStatus {
@@ -29,6 +33,9 @@ export enum DeviceStatus {
 export class Device {
   @PrimaryColumn()
   ieeeAddress: string;
+
+  @Column({ nullable: true })
+  mqttName: string;
 
   @Column({ nullable: true })
   friendlyName: string;

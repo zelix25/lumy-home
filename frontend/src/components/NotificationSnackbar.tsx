@@ -41,14 +41,35 @@ export default function NotificationSnackbar() {
       // Ne pas afficher de notification pour les mises à jour de données de capteurs
     };
 
+    const handlePluginNotification = (data: unknown) => {
+      const notificationData = data as {
+        id: string;
+        pluginId: string;
+        title: string;
+        message: string;
+        type: 'info' | 'success' | 'warning' | 'error';
+        metadata?: Record<string, any>;
+        createdAt: string;
+      };
+      const notification: Notification = {
+        id: notificationData.id,
+        title: notificationData.title,
+        message: notificationData.message,
+        type: notificationData.type,
+      };
+      setNotifications((prev) => [...prev, notification]);
+    };
+
     socket.on('device:discovered', handleDeviceDiscovered);
     socket.on('device:updated', handleDeviceUpdated);
     socket.on('device:state', handleDeviceState);
+    socket.on('plugin:notification', handlePluginNotification);
 
     return () => {
       socket.off('device:discovered', handleDeviceDiscovered);
       socket.off('device:updated', handleDeviceUpdated);
       socket.off('device:state', handleDeviceState);
+      socket.off('plugin:notification', handlePluginNotification);
     };
   }, [isConnected, socket]);
 

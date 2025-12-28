@@ -3,11 +3,17 @@ import DevicesIcon from '@mui/icons-material/Devices';
 import SceneIcon from '@mui/icons-material/AutoAwesome';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import MapIcon from '@mui/icons-material/Map';
+import ThermostatIcon from '@mui/icons-material/Thermostat';
+import WaterDropIcon from '@mui/icons-material/WaterDrop';
+import PersonPinCircleIcon from '@mui/icons-material/PersonPinCircle';
 import { useEffect, useState, useMemo } from 'react';
 import { devicesService, DeviceStats, Device } from '../services/devices.service';
 import { useDevices } from '../hooks/useDevices';
+import { usePluginWidgets } from '../hooks/usePluginWidgets';
 import PlanViewMode from '../components/PlanViewMode';
 import RoomCard from '../components/RoomCard';
+import WeatherCard from '../components/WeatherCard';
+import PluginWidgetLoader from '../components/PluginWidgetLoader';
 import i18n from '@/i18n';
 
 export default function HomePage() {
@@ -15,6 +21,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const { devices } = useDevices();
   const [viewMode, setViewMode] = useState<'normal' | 'plan'>('normal');
+  const pluginWidgets = usePluginWidgets();
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -34,24 +41,90 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, []);
 
+  // Calculer les statistiques globales de la maison
+  const houseStats = useMemo(() => {
+    const onlineDevices = devices.filter((d) => d.status === 'online');
+
+    // Filtrer les coordinateurs
+    const validDevices = onlineDevices.filter((device) => {
+      const isCoordinator =
+        device.type === 'Coordinator' ||
+        (device.friendlyName && device.friendlyName.toLowerCase() === 'coordinator') ||
+        (device.meta?.originalType && device.meta.originalType.toLowerCase() === 'coordinator') ||
+        device.ieeeAddress === '0x0000000000000000';
+      return !isCoordinator;
+    });
+
+    // Température moyenne
+    const tempDevices = validDevices.filter((d) => d.state?.temperature !== undefined);
+    const avgTemperature =
+      tempDevices.length > 0
+        ? tempDevices.reduce(
+            (sum, d) =>
+              sum + (typeof d.state?.temperature === 'number' ? d.state.temperature : 0),
+            0
+          ) / tempDevices.length
+        : null;
+
+    // Humidité moyenne
+    const humidityDevices = validDevices.filter((d) => d.state?.humidity !== undefined);
+    const avgHumidity =
+      humidityDevices.length > 0
+        ? humidityDevices.reduce(
+            (sum, d) =>
+              sum + (typeof d.state?.humidity === 'number' ? d.state.humidity : 0),
+            0
+          ) / humidityDevices.length
+        : null;
+
+    // Présence détectée
+    const hasPresence = validDevices.some(
+      (d) => d.state?.presence === true || d.state?.occupancy === true
+    );
+
+    return {
+      temperature: avgTemperature,
+      humidity: avgHumidity,
+      presence: hasPresence,
+    };
+  }, [devices]);
+
   const displayStats = [
-    {
-      title: i18n.t('home.totalDevices'),
-      value: stats?.total.toString() || '0',
-      icon: <DevicesIcon sx={{ fontSize: 40 }} />,
-      color: '#86A6A0', // Vert-gris nordique
-    },
+    ...(houseStats.temperature !== null
+      ? [
+          {
+            title: i18n.t('home.temperature'),
+            value: `${houseStats.temperature.toFixed(1)}°C`,
+            icon: <ThermostatIcon sx={{ fontSize: 28 }} />,
+            color: '#C4A5A5', // Rouge doux
+            isSmall: true,
+          },
+        ]
+      : []),
+    ...(houseStats.humidity !== null
+      ? [
+          {
+            title: i18n.t('devices.humidity'),
+            value: `${Math.round(houseStats.humidity)}%`,
+            icon: <WaterDropIcon sx={{ fontSize: 28 }} />,
+            color: '#86A6A0', // Vert-gris nordique
+            isSmall: true,
+          },
+        ]
+      : []),
     {
       title: i18n.t('home.onlineDevices'),
       value: stats?.online.toString() || '0',
-      icon: <DevicesIcon sx={{ fontSize: 40 }} />,
+      icon: <DevicesIcon sx={{ fontSize: 28 }} />,
       color: '#86A6A0', // Vert-gris nordique
+      isSmall: true,
     },
     {
-      title: i18n.t('home.scenesActive'),
-      value: '0',
-      icon: <SceneIcon sx={{ fontSize: 40 }} />,
-      color: '#D0BFAE', // Bois clair
+      title: i18n.t('devices.presence'),
+      value: houseStats.presence ? i18n.t('devices.detected') : i18n.t('devices.none'),
+      icon: <PersonPinCircleIcon sx={{ fontSize: 28 }} />,
+      color: houseStats.presence ? '#2e7d32' : '#9e9e9e', // Vert si présence, gris sinon
+      isSmall: true,
     },
   ];
 
@@ -127,7 +200,13 @@ export default function HomePage() {
             <>
               {/* Statistiques globales */}
               {displayStats.map((stat, index) => (
-                <Grid item xs={12} sm={6} md={4} key={index}>
+                <Grid 
+                  item 
+                  xs={12} 
+                  sm={stat.isSmall ? 4 : 6} 
+                  md={stat.isSmall ? 3 : 4} 
+                  key={index}
+                >
                   <Card
                     sx={{
                       height: '100%',
@@ -141,24 +220,31 @@ export default function HomePage() {
                       },
                     }}
                   >
-                    <CardContent>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <CardContent sx={{ p: stat.isSmall ? 1.5 : 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: stat.isSmall ? 1 : 2 }}>
                         <Box
                           sx={{
                             color: stat.color,
-                            mr: 2,
-                            p: 1.5,
+                            mr: stat.isSmall ? 1.5 : 2,
+                            p: stat.isSmall ? 1 : 1.5,
                             borderRadius: 1,
                             backgroundColor: `${stat.color}15`,
                           }}
                         >
                           {stat.icon}
                         </Box>
-                        <Typography variant="h3" sx={{ fontWeight: 500, color: stat.color }}>
+                        <Typography 
+                          variant={stat.isSmall ? "h4" : "h3"} 
+                          sx={{ fontWeight: 500, color: stat.color }}
+                        >
                           {stat.value}
                         </Typography>
                       </Box>
-                      <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 400 }}>
+                      <Typography 
+                        variant={stat.isSmall ? "body2" : "h6"} 
+                        color="text.secondary" 
+                        sx={{ fontWeight: 400 }}
+                      >
                         {stat.title}
                       </Typography>
                     </CardContent>
@@ -166,17 +252,33 @@ export default function HomePage() {
                 </Grid>
               ))}
 
-              {/* Cartes par pièce */}
+              {/* Cartes météo */}
+              <Grid item xs={12}>
+                <WeatherCard />
+              </Grid>
+
+              {/* Widgets des plugins */}
+              {pluginWidgets.map((widget) => (
+                <PluginWidgetLoader
+                  key={widget.id}
+                  extension={widget}
+                  xs={12}
+                  sm={6}
+                  md={4}
+                  lg={3}
+                />
+              ))}
+
+              {/* Cartes par pièce - Chaque pièce affiche ses appareils en grille */}
               {Object.entries(devicesByRoom).map(([roomName, roomDevices]) => (
-                <Grid item xs={12} md={6} lg={4} key={roomName}>
                   <RoomCard
+                  key={roomName}
                     roomName={roomName}
                     devices={roomDevices}
                     onDeviceUpdate={() => {
                       // Les mises à jour sont gérées automatiquement par useDevices via WebSocket
                     }}
                   />
-                </Grid>
               ))}
 
               {/* Aucune pièce avec appareils */}
