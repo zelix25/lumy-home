@@ -1,0 +1,1 @@
+- verifier le curseur des volet dans la page appareils avec un contact de volet connecté

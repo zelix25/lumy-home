@@ -26,6 +26,8 @@ export class AutomationsService implements OnModuleInit {
   // Suivi des événements sunrise/sunset déjà déclenchés aujourd'hui
   private lastSunriseDate: string | null = null;
   private lastSunsetDate: string | null = null;
+  // Suivi des automations TIME déjà déclenchées aujourd'hui (automationId -> date)
+  private lastTimeTriggerDates: Map<string, string> = new Map();
 
   constructor(
     @InjectRepository(Automation)
@@ -133,6 +135,93 @@ export class AutomationsService implements OnModuleInit {
     }
   }
 
+  /**
+   * Vérifie toutes les minutes si l'heure actuelle correspond à une automation avec trigger TIME
+   * et déclenche les événements correspondants
+   */
+  @Cron(CronExpression.EVERY_MINUTE)
+  async checkTimeTriggers() {
+    try {
+      const now = new Date();
+      const todayStr = now.toISOString().split('T')[0];
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+
+      // Récupérer toutes les automations actives avec trigger TIME
+      const timeAutomations = await this.automationRepository.find({
+        where: {
+          status: AutomationStatus.ACTIVE,
+        },
+      });
+
+      for (const automation of timeAutomations) {
+        if (automation.trigger.type !== AutomationTriggerType.TIME) {
+          continue;
+        }
+
+        const triggerTime = automation.trigger.time;
+        if (!triggerTime) {
+          continue;
+        }
+
+        // Parser l'heure (format HH:MM)
+        const timeParts = triggerTime.split(':');
+        if (timeParts.length !== 2) {
+          this.logger.warn(
+            `Format d'heure invalide pour l'automation ${automation.id}: ${triggerTime}`,
+            'AutomationsService',
+          );
+          continue;
+        }
+
+        const triggerHour = parseInt(timeParts[0], 10);
+        const triggerMinute = parseInt(timeParts[1], 10);
+
+        if (isNaN(triggerHour) || isNaN(triggerMinute)) {
+          this.logger.warn(
+            `Heure invalide pour l'automation ${automation.id}: ${triggerTime}`,
+            'AutomationsService',
+          );
+          continue;
+        }
+
+        // Vérifier si l'heure actuelle correspond à l'heure du trigger
+        const lastTriggerDate = this.lastTimeTriggerDates.get(automation.id);
+        if (
+          currentHour === triggerHour &&
+          currentMinute === triggerMinute &&
+          lastTriggerDate !== todayStr
+        ) {
+          this.logger.log(
+            `⏰ Déclenchement de l'automation "${automation.name}" à ${triggerTime}`,
+            'AutomationsService',
+          );
+          this.lastTimeTriggerDates.set(automation.id, todayStr);
+          await this.handleZigbeeEvent('time', 'time_trigger', {
+            automationId: automation.id,
+            time: triggerTime,
+          });
+        }
+      }
+
+      // Nettoyer les dates obsolètes (automations supprimées ou modifiées)
+      const activeTimeAutomationIds = timeAutomations
+        .filter((a) => a.trigger.type === AutomationTriggerType.TIME)
+        .map((a) => a.id);
+      for (const [automationId] of this.lastTimeTriggerDates.entries()) {
+        if (!activeTimeAutomationIds.includes(automationId)) {
+          this.lastTimeTriggerDates.delete(automationId);
+        }
+      }
+    } catch (error) {
+      this.logger.error(
+        `Erreur lors de la vérification des triggers TIME: ${error.message}`,
+        error.stack,
+        'AutomationsService',
+      );
+    }
+  }
+
   private subscribeToZigbeeEvents() {
     // Cette méthode sera appelée pour écouter les événements Zigbee
     // L'implémentation sera faite via l'écoute des messages MQTT dans Zigbee2MqttService
@@ -140,9 +229,20 @@ export class AutomationsService implements OnModuleInit {
   }
 
   async findAll(): Promise<Automation[]> {
-    return this.automationRepository.find({
+    const automations = await this.automationRepository.find({
       order: { createdAt: 'DESC' },
     });
+
+    // Calculer le nombre total d'exécutions pour chaque automation
+    for (const automation of automations) {
+      const executionCount = await this.executionLogRepository.count({
+        where: { automationId: automation.id },
+      });
+      // Ajouter executionCount comme propriété dynamique
+      (automation as any).executionCount = executionCount;
+    }
+
+    return automations;
   }
 
   async findOne(id: string): Promise<Automation> {
@@ -153,6 +253,13 @@ export class AutomationsService implements OnModuleInit {
     if (!automation) {
       throw new NotFoundException(`Automatisation avec l'ID ${id} non trouvée`);
     }
+
+    // Calculer le nombre total d'exécutions
+    const executionCount = await this.executionLogRepository.count({
+      where: { automationId: automation.id },
+    });
+    // Ajouter executionCount comme propriété dynamique
+    (automation as any).executionCount = executionCount;
 
     return automation;
   }
@@ -529,6 +636,15 @@ export class AutomationsService implements OnModuleInit {
         );
         break;
 
+      case AutomationTriggerType.TIME:
+        // Vérifier que l'événement correspond à un trigger TIME
+        mainTriggerMet = eventType === 'time_trigger' && eventData.automationId === automation.id;
+        this.logger.debug(
+          `[AUTOMATION CHECK] Type HEURE - eventType: ${eventType}, automationId: ${eventData.automationId}, Résultat: ${mainTriggerMet}`,
+          'AutomationsService',
+        );
+        break;
+
       default:
         this.logger.debug(
           `[AUTOMATION CHECK] ❌ Type de déclencheur non supporté: ${trigger.type}`,
@@ -774,6 +890,9 @@ export class AutomationsService implements OnModuleInit {
           }
         }
         return eventType === 'sunrise' || eventType === 'sunset' || eventData.sunrise || eventData.sunset;
+
+      case AutomationTriggerType.TIME:
+        return eventType === 'time_trigger';
 
       default:
         return false;

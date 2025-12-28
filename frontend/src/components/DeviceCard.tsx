@@ -8,7 +8,6 @@ import {
   Chip,
   Grid,
   Slider,
-  //IconButton,
   Tooltip,
 } from '@mui/material';
 import {
@@ -16,7 +15,6 @@ import {
   Power,
   Sensors,
   ElectricalServices,
-  //Door,
   Window,
   Thermostat,
   DirectionsRun,
@@ -177,7 +175,6 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
 
   const handleToggle = (event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
     event.stopPropagation();
-    event.preventDefault();
     if (onToggle && (device.type === 'light' || device.type === 'switch' || device.type === 'plug')) {
       onToggle(device, checked);
     }
@@ -185,10 +182,9 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
 
   const handleSwitchClick = (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation();
-    event.preventDefault();
   };
 
-  const handleCoverPositionChange = (event: Event, newValue: number | number[]) => {
+  const handleCoverPositionChange = (event: Event | React.SyntheticEvent, newValue: number | number[]) => {
     event.stopPropagation();
     if (onCoverPositionChange && device.type === 'cover') {
       const position = typeof newValue === 'number' ? newValue : newValue[0];
@@ -267,10 +263,11 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
               />
             {(device.type === 'light' || device.type === 'switch' || device.type === 'plug') && (
               <Tooltip title={isOn ? 'Éteindre' : 'Allumer'}>
-                <Box onClick={handleSwitchClick} onMouseDown={handleSwitchClick}>
+                <Box onClick={handleSwitchClick}>
                   <Switch
                     checked={isOn}
                     onChange={handleToggle}
+                    onClick={(e) => e.stopPropagation()}
                     disabled={!isOnline}
                     color="primary"
                     size="medium"
@@ -577,14 +574,28 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
               {/* Position du volet (cover) */}
               {device.type === 'cover' && (
                 <Grid item xs={12}>
-                  <Box sx={{ px: 1, py: 1 }}>
+                  <Box 
+                    sx={{ px: 1, py: 1 }}
+                    onClick={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onMouseUp={(e) => e.stopPropagation()}
+                  >
                     <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1, fontSize: '0.75rem' }}>
                       {i18n.t('devices.position')}
                     </Typography>
-                    <Box sx={{ position: 'relative', px: 1 }}>
+                    <Box 
+                      sx={{ position: 'relative', px: 1 }}
+                      onClick={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onMouseUp={(e) => e.stopPropagation()}
+                    >
                       <Slider
                         value={coverPosition}
                         onChange={handleCoverPositionChange}
+                        onChangeCommitted={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onMouseUp={(e) => e.stopPropagation()}
                         disabled={!isOnline}
                         min={0}
                         max={100}

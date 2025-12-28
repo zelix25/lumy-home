@@ -195,6 +195,10 @@ export default function SimpleAutomationCard({
           ? `${t('automations.whenSunrise')}${offsetText}`
           : `${t('automations.whenSunset')}${offsetText}`;
         break;
+      case AutomationTriggerType.TIME:
+        const time = triggerData?.time || automation.trigger.time || '08:00';
+        baseText = t('automations.whenTime', { time });
+        break;
       default:
         baseText = `${conditionType}: ${deviceName || ''}`;
     }
@@ -210,6 +214,7 @@ export default function SimpleAutomationCard({
       {
         sunriseSunsetType: trigger.sunriseSunsetType,
         offsetMinutes: trigger.offsetMinutes,
+        time: trigger.time,
       }
     );
 
@@ -319,9 +324,9 @@ export default function SimpleAutomationCard({
             color={automation.status === AutomationStatus.ACTIVE ? 'success' : 'default'}
             size="small"
           />
-          {automation.executionLog && automation.executionLog.length > 0 && (
+          {(automation.executionCount !== undefined && automation.executionCount > 0) && (
             <Chip
-              label={t('automations.executions', { count: automation.executionLog.length })}
+              label={t('automations.executions', { count: automation.executionCount })}
               size="small"
               variant="outlined"
             />

@@ -609,11 +609,22 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
 
                       {/* Contrôles pour les volets */}
                       {device.type === 'cover' && (
-                        <Box sx={{ mt: 1 }} onClick={(e) => e.stopPropagation()}>
+                        <Box 
+                          sx={{ mt: 1 }} 
+                          onClick={(e) => e.stopPropagation()}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onMouseUp={(e) => e.stopPropagation()}
+                        >
                           <Slider
                             value={coverPosition}
-                            onChange={(_, value) => handleCoverPositionChange(device, value as number)}
+                            onChange={(e, value) => {
+                              e.stopPropagation();
+                              handleCoverPositionChange(device, value as number);
+                            }}
+                            onChangeCommitted={(e) => e.stopPropagation()}
                             onClick={(e) => e.stopPropagation()}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onMouseUp={(e) => e.stopPropagation()}
                             disabled={device.status !== 'online'}
                             min={0}
                             max={100}

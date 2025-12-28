@@ -103,7 +103,7 @@ export default function HomePage() {
     ...(houseStats.humidity !== null
       ? [
           {
-            title: i18n.t('devices.humidity'),
+            title: i18n.t('home.humidity'),
             value: `${Math.round(houseStats.humidity)}%`,
             icon: <WaterDropIcon sx={{ fontSize: 28 }} />,
             color: '#86A6A0', // Vert-gris nordique

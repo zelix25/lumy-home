@@ -173,6 +173,7 @@ interface TriggerNodeData {
   value?: number;
   sunriseSunsetType?: 'sunrise' | 'sunset';
   offsetMinutes?: number;
+  time?: string; // Format HH:MM pour le trigger TIME
 }
 
 interface ActionNodeData {
@@ -717,6 +718,7 @@ export default function NodeEditorDialog({
           value: mainTrigger.condition?.value,
           sunriseSunsetType: mainTrigger.sunriseSunsetType,
           offsetMinutes: mainTrigger.offsetMinutes,
+          time: mainTrigger.time,
         },
         sourcePosition: Position.Right,
         targetPosition: Position.Left,
@@ -739,6 +741,7 @@ export default function NodeEditorDialog({
             value: condition.condition?.value,
             sunriseSunsetType: condition.sunriseSunsetType,
             offsetMinutes: condition.offsetMinutes,
+            time: condition.time,
           },
           sourcePosition: Position.Right,
           targetPosition: Position.Left,
@@ -795,6 +798,7 @@ export default function NodeEditorDialog({
             value: trigger.condition?.value,
             sunriseSunsetType: trigger.sunriseSunsetType,
             offsetMinutes: trigger.offsetMinutes,
+            time: trigger.time,
           },
           sourcePosition: Position.Right,
           targetPosition: Position.Left,
@@ -847,6 +851,7 @@ export default function NodeEditorDialog({
             value: automation.trigger.condition?.value,
             sunriseSunsetType: automation.trigger.sunriseSunsetType,
             offsetMinutes: automation.trigger.offsetMinutes,
+            time: automation.trigger.time,
           },
           sourcePosition: Position.Right,
           targetPosition: Position.Left,
@@ -1138,6 +1143,13 @@ export default function NodeEditorDialog({
                     value: triggerData.value,
                   }
                 : undefined,
+              ...(triggerData.triggerType === AutomationTriggerType.SUNRISE_SUNSET && {
+                sunriseSunsetType: triggerData.sunriseSunsetType || 'sunrise',
+                offsetMinutes: triggerData.offsetMinutes || 0,
+              }),
+              ...(triggerData.triggerType === AutomationTriggerType.TIME && {
+                time: triggerData.time || '08:00',
+              }),
             };
           });
           
@@ -1247,6 +1259,9 @@ export default function NodeEditorDialog({
           ...(mainTriggerData.triggerType === AutomationTriggerType.SUNRISE_SUNSET && {
             sunriseSunsetType: mainTriggerData.sunriseSunsetType || 'sunrise',
             offsetMinutes: mainTriggerData.offsetMinutes || 0,
+          }),
+          ...(mainTriggerData.triggerType === AutomationTriggerType.TIME && {
+            time: mainTriggerData.time || '08:00',
           }),
         },
         actions,
@@ -1580,6 +1595,8 @@ export default function NodeEditorDialog({
                                     // Réinitialiser les paramètres sunrise/sunset si le type change
                                     sunriseSunsetType: triggerType === AutomationTriggerType.SUNRISE_SUNSET ? 'sunrise' : undefined,
                                     offsetMinutes: triggerType === AutomationTriggerType.SUNRISE_SUNSET ? 0 : undefined,
+                                    // Réinitialiser l'heure si le type change
+                                    time: triggerType === AutomationTriggerType.TIME ? '08:00' : undefined,
                                   },
                                 }
                               : node,
@@ -1753,6 +1770,46 @@ export default function NodeEditorDialog({
                         {t('automations.offsetMinutesDescription')}
                       </Typography>
                     </Box>
+                  </Box>
+                )}
+                {/* Options pour le déclencheur Heure */}
+                {(selectedNode?.data as TriggerNodeData)?.triggerType === AutomationTriggerType.TIME && (
+                  <Box sx={{ mt: 2 }}>
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
+                        {t('automations.timeInfoTitle')}
+                      </Typography>
+                      <Typography variant="body2">
+                        {t('automations.timeInfo')}
+                      </Typography>
+                    </Alert>
+                    <TextField
+                      label={t('automations.time')}
+                      type="time"
+                      value={(selectedNode?.data as TriggerNodeData)?.time || '08:00'}
+                      onChange={(e) => {
+                        setNodes((nds) =>
+                          nds.map((node) =>
+                            node.id === selectedNodeId
+                              ? {
+                                  ...node,
+                                  data: {
+                                    ...node.data,
+                                    time: e.target.value,
+                                  },
+                                }
+                              : node,
+                          ),
+                        );
+                      }}
+                      fullWidth
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                      inputProps={{
+                        step: 300, // 5 minutes
+                      }}
+                    />
                   </Box>
                 )}
                 {/* Inputs pour les valeurs (température, luminosité, humidité) */}

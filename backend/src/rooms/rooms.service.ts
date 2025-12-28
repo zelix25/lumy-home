@@ -4,10 +4,11 @@ import { Repository } from 'typeorm';
 import { Room } from './entities/room.entity';
 import { CreateRoomDto } from './dto/create-room.dto';
 
+// Les pièces par défaut sont triées par ordre alphabétique (à traduire avec i18n)
 const DEFAULT_ROOMS = [
   'Sous-Sol',
   'Garage',
-  'Buandrie',
+  'Buanderie',
   'Entrée',
   'Couloir',
   'Chambre',
