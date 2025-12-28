@@ -39,7 +39,7 @@ interface DeviceCardProps {
   onCoverPositionChange?: (device: Device, position: number) => void;
 }
 
-const getDeviceIcon = (type: string, device?: { state?: Record<string, any> }) => {
+const getDeviceIcon = (type: string, device?: { state?: Record<string, any> | null }) => {
   // Pour les capteurs, déterminer l'icône en fonction des données disponibles
   if (type === 'sensor' || type === 'temperature') {
     if (device?.state) {
@@ -183,7 +183,7 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
     }
   };
 
-  const handleSwitchClick = (event: React.MouseEvent<HTMLDivElement>) => {
+  const handleSwitchClick = (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation();
     event.preventDefault();
   };
@@ -274,7 +274,6 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
                     disabled={!isOnline}
                     color="primary"
                     size="medium"
-                    onClick={handleSwitchClick}
                   />
                 </Box>
               </Tooltip>

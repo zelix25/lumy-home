@@ -21,9 +21,6 @@ import {
   ListItemText,
   ListItemButton,
   Divider,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   Card,
   CardContent,
   FormControl,
@@ -31,7 +28,6 @@ import {
   Select,
   MenuItem,
 } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import LightbulbIcon from '@mui/icons-material/Lightbulb';
 import WindowIcon from '@mui/icons-material/Window';
 import ThermostatIcon from '@mui/icons-material/Thermostat';

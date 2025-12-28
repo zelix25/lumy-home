@@ -405,23 +405,19 @@ function FlowContent({
   nodes,
   setNodes,
   edges,
-  setEdges,
   onNodesChange,
   onEdgesChange,
   handleConnect,
   menuPosition,
   setMenuPosition,
-  selectedNodeId,
+  selectedNodeId: _selectedNodeId,
   setSelectedNodeId,
-  devices,
   t,
   defaultEdgeOptions,
   nodeContextMenu,
   setNodeContextMenu,
   handleDeleteNode,
-  edgeContextMenu,
   setEdgeContextMenu,
-  handleDeleteEdge,
   onZoomControlsReady,
 }: {
   nodes: Node[];
@@ -446,9 +442,6 @@ function FlowContent({
   handleDeleteEdge: (edgeId: string) => void;
   onZoomControlsReady?: (controls: { zoomIn: () => void; zoomOut: () => void; fitView: () => void }) => void;
 }) {
-  const selectedNode = useMemo(() => {
-    return nodes.find((n) => n.id === selectedNodeId) || null;
-  }, [nodes, selectedNodeId]);
   const { screenToFlowPosition, zoomIn, zoomOut, fitView } = useReactFlow();
 
   // Exposer les fonctions de zoom au parent

@@ -1,6 +1,5 @@
 import { Box, Typography, Grid, Card, CardContent, CircularProgress, ToggleButton, ToggleButtonGroup, Paper } from '@mui/material';
 import DevicesIcon from '@mui/icons-material/Devices';
-import SceneIcon from '@mui/icons-material/AutoAwesome';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import MapIcon from '@mui/icons-material/Map';
 import ThermostatIcon from '@mui/icons-material/Thermostat';

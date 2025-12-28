@@ -14,7 +14,6 @@ import Chart from 'react-apexcharts';
 import { sensorHistoryService, SensorType } from '../services/sensor-history.service';
 import { Device } from '../services/devices.service';
 import { ApexOptions } from 'apexcharts';
-import i18n from '@/i18n';
 
 interface RoomSensorChartModalProps {
   open: boolean;
@@ -28,11 +27,11 @@ interface RoomSensorChartModalProps {
 }
 
 // Couleurs de la charte graphique scandinave
-const SENSOR_COLORS: Record<string, string> = {
+/*const SENSOR_COLORS: Record<string, string> = {
   temperature: '#C4A5A5', // Rouge doux
   humidity: '#86A6A0', // Vert-gris nordique
   illuminance: '#9BBEB7', // Vert-gris clair
-};
+};*/
 
 export default function RoomSensorChartModal({
   open,

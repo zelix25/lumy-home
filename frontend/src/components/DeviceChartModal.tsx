@@ -46,7 +46,7 @@ const getAvailableSensorTypes = (device: Device | null): Array<{
   if (!device || !device.state) return [];
 
   const sensors: Array<{
-    type: SensorType | 'power' | 'current';
+    type: SensorType;
     label: string;
     unit: string;
     color: string;

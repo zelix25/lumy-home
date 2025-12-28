@@ -7,6 +7,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 
 // 1. Imports supplémentaires pour les plugins
 import * as MaterialUI from '@mui/material';
+import * as MaterialUIIcons from '@mui/icons-material';
 import * as EmotionReact from '@emotion/react';
 import * as EmotionStyled from '@emotion/styled';
 
@@ -22,6 +23,7 @@ declare global {
     React: typeof React;
     ReactDOM: typeof ReactDOM;
     MaterialUI: typeof MaterialUI;
+    MaterialUIIcons: typeof MaterialUIIcons;
     EmotionReact: typeof EmotionReact;
     EmotionStyled: typeof EmotionStyled;
   }
@@ -31,6 +33,7 @@ declare global {
 window.React = React;
 window.ReactDOM = ReactDOM;
 window.MaterialUI = MaterialUI;
+window.MaterialUIIcons = MaterialUIIcons;
 window.EmotionReact = EmotionReact;
 window.EmotionStyled = EmotionStyled;
 
