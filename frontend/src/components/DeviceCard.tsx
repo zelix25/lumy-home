@@ -30,6 +30,7 @@ import {
 } from '@mui/icons-material';
 import { Device } from '../services/devices.service';
 import i18n from '@/i18n';
+import { translateRoomName } from '../utils/roomTranslations';
 
 interface DeviceCardProps {
   device: Device;
@@ -237,7 +238,7 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
               </Typography>
               {device.room && (
                 <Chip
-                  label={device.room}
+                  label={translateRoomName(device.room)}
                   size="small"
                   sx={{ 
                     fontSize: '12px',

@@ -20,7 +20,6 @@ import {
 import {
   MoreVert as MoreVertIcon,
   Delete as DeleteIcon,
-  Edit as EditIcon,
   AccountTree as AccountTreeIcon,
   PlayArrow as PlayArrowIcon,
 } from '@mui/icons-material';
@@ -44,7 +43,6 @@ interface SimpleAutomationCardProps {
 export default function SimpleAutomationCard({
   automation,
   onUpdate,
-  onEdit,
   onEditNode,
 }: SimpleAutomationCardProps) {
   const { t } = useTranslation();

@@ -93,6 +93,9 @@
     "nameUpdateSuccess": "Nom mis à jour",
     "nameUpdateSuccessMessage": "Le nom de l'appareil a été mis à jour avec succès : {{name}}",
     "nameUpdateError": "Erreur de mise à jour",
+    "roomUpdateSuccess": "Pièce mise à jour",
+    "roomUpdateSuccessMessage": "La pièce de l'appareil a été mise à jour avec succès",
+    "roomUpdateError": "Erreur lors de la mise à jour de la pièce",
     "on": "Allumé",
     "off": "Éteint",
     "online": "En ligne",
@@ -204,7 +207,25 @@
     "normalView": "Vue normale",
     "noPlanAvailable": "Aucun plan disponible. Créez un plan dans la page Plan pour afficher la vue plan.",
     "unnamedRoom": "Pièce sans nom",
-    "noRoomsWithDevices": "Aucune pièce avec des appareils. Ajoutez des appareils et assignez-les à des pièces."
+    "noRoomsWithDevices": "Aucune pièce avec des appareils. Ajoutez des appareils et assignez-les à des pièces.",
+    "rooms": {
+      "house": "Maison",
+      "garden": "Jardin",
+      "pool": "Piscine",
+      "laundry": "Buanderie",
+      "bedroom": "Chambre",
+      "kitchen": "Cuisine",
+      "toilet": "Toilette",
+      "garage": "Garage",
+      "office": "Bureau",
+      "terrace": "Terrasse",
+      "hallway": "Hall entrée",
+      "corridor": "Couloir",
+      "bathroom": "Salle de Bain",
+      "livingRoom": "Salon",
+      "diningRoom": "Salle à manger",
+      "basement": "Sous-sol"   
+    }
   },
   "scenes": {
     "title": "Scènes & Automatisations",
@@ -676,25 +697,7 @@
       "zoomOut": "Dézoomer",
       "fitView": "Ajuster la vue",
       "fullscreen": "Plein écran",
-      "exitFullscreen": "Quitter le plein écran",
-      "rooms": {
-        "house": "Maison",
-        "garden": "Jardin",
-        "pool": "Piscine",
-        "laundry": "Buanderie",
-        "bedroom": "Chambre",
-        "kitchen": "Cuisine",
-        "toilet": "Toilette",
-        "garage": "Garage",
-        "office": "Bureau",
-        "terrace": "Terrasse",
-        "hallway": "Hall entrée",
-        "corridor": "Couloir",
-        "bathroom": "Salle de Bain",
-        "livingRoom": "Salon",
-        "diningRoom": "Salle à manger",
-        "basement": "Sous-sol"   
-      }
+      "exitFullscreen": "Quitter le plein écran"
     }
   },
   "weather": {

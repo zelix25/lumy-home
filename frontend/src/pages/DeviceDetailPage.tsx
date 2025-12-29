@@ -42,6 +42,7 @@ import MultiSensorChart from '../components/MultiSensorChart';
 import { SensorType } from '../services/sensor-history.service';
 import AdvancedExposesSettings from '../components/AdvancedExposesSettings';
 import { t } from 'i18next';
+import { translateRoomName } from '../utils/roomTranslations';
 
 const getDeviceTypeLabel = (type: string): string => {
   const labels: Record<string, string> = {
@@ -146,7 +147,13 @@ export default function DeviceDetailPage() {
       try {
         setLoadingRooms(true);
         const roomsData = await roomsService.getAllRooms();
-        setRooms(roomsData);
+        // Trier les pièces par ordre alphabétique (en utilisant le nom traduit pour le tri)
+        const sortedRooms = [...roomsData].sort((a, b) => {
+          const nameA = translateRoomName(a.name).toLowerCase();
+          const nameB = translateRoomName(b.name).toLowerCase();
+          return nameA.localeCompare(nameB);
+        });
+        setRooms(sortedRooms);
       } catch (error) {
         console.error('Erreur lors du chargement des pièces:', error);
       } finally {
@@ -249,8 +256,23 @@ export default function DeviceDetailPage() {
     try {
       const updated = await devicesService.updateRoom(ieeeAddress, room);
       setDevice(updated);
-    } catch (err) {
+      
+      // Notification de succès
+      addNotification({
+        type: 'success',
+        title: t('devices.roomUpdateSuccess'),
+        message: t('devices.roomUpdateSuccessMessage'),
+      });
+    } catch (err: any) {
       console.error('Erreur lors de la mise à jour de la pièce:', err);
+      const errorMessage = err.message || t('devices.roomUpdateError');
+      
+      // Notification d'erreur
+      addNotification({
+        type: 'error',
+        title: t('devices.roomUpdateError'),
+        message: errorMessage,
+      });
     }
   };
 
@@ -258,7 +280,15 @@ export default function DeviceDetailPage() {
     if (!newRoomName.trim()) return;
     try {
       const newRoom = await roomsService.createRoom(newRoomName.trim());
-      setRooms((prev) => [...prev, newRoom].sort((a, b) => a.name.localeCompare(b.name)));
+      setRooms((prev) => {
+        const updated = [...prev, newRoom];
+        // Trier par ordre alphabétique en utilisant le nom traduit
+        return updated.sort((a, b) => {
+          const nameA = translateRoomName(a.name).toLowerCase();
+          const nameB = translateRoomName(b.name).toLowerCase();
+          return nameA.localeCompare(nameB);
+        });
+      });
       setRoom(newRoom.name);
       setNewRoomDialogOpen(false);
       setNewRoomName('');
@@ -410,7 +440,7 @@ export default function DeviceDetailPage() {
                 <Box sx={{ mb: 2 }}>
                   <TextField
                     fullWidth
-                    label={t('devices.deviceName')}
+                    label={t('deviceDetail.deviceName')}
                     value={friendlyName}
                     onChange={(e) => {
                       setFriendlyName(e.target.value);
@@ -446,7 +476,7 @@ export default function DeviceDetailPage() {
                       </MenuItem>
                       {rooms.map((roomOption) => (
                         <MenuItem key={roomOption.id} value={roomOption.name}>
-                          {roomOption.name}
+                          {translateRoomName(roomOption.name)}
                         </MenuItem>
                       ))}
                     </Select>
@@ -995,7 +1025,7 @@ export default function DeviceDetailPage() {
           <TextField
             autoFocus
             margin="dense"
-            label={t('deviceDetail.roomName')}
+            label={t('deviceDetail.roomPlaceholder')}
             fullWidth
             variant="standard"
             value={newRoomName}

@@ -14,6 +14,7 @@ import Chart from 'react-apexcharts';
 import { sensorHistoryService, SensorType } from '../services/sensor-history.service';
 import { Device } from '../services/devices.service';
 import { ApexOptions } from 'apexcharts';
+import { translateRoomName } from '../utils/roomTranslations';
 
 interface RoomSensorChartModalProps {
   open: boolean;
@@ -267,7 +268,7 @@ export default function RoomSensorChartModal({
       <DialogTitle>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6" sx={{ fontWeight: 500 }}>
-            {sensorLabel} - {roomName}
+            {sensorLabel} - {translateRoomName(roomName)}
           </Typography>
           <IconButton
             aria-label="close"

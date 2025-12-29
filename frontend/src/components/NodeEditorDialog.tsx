@@ -93,6 +93,7 @@ import {
   getTriggerDescription,
 } from '../utils/deviceFilter';
 import { Info as InfoIcon } from '@mui/icons-material';
+import { translateRoomName } from '../utils/roomTranslations';
 
 // Fonction pour obtenir l'icône selon le type de déclencheur
 const getTriggerIcon = (triggerType: AutomationTriggerType) => {
@@ -1690,7 +1691,7 @@ export default function NodeEditorDialog({
                               {device.friendlyName || device.ieeeAddress}
                               {device.room && (
                                 <Typography variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
-                                  ({device.room})
+                                  ({translateRoomName(device.room)})
                                 </Typography>
                               )}
                             </MenuItem>
@@ -2039,7 +2040,7 @@ export default function NodeEditorDialog({
                               {device.friendlyName || device.ieeeAddress}
                               {device.room && (
                                 <Typography variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
-                                  ({device.room})
+                                  ({translateRoomName(device.room)})
                                 </Typography>
                               )}
                             </MenuItem>

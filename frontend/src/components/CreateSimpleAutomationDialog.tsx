@@ -45,6 +45,7 @@ import {
 } from '../services/simple-automations.service';
 import { useNotification } from '../hooks/useNotification';
 import { useEffect } from 'react';
+import { translateRoomName } from '../utils/roomTranslations';
 
 interface CreateSimpleAutomationDialogProps {
   open: boolean;
@@ -931,7 +932,7 @@ export default function CreateSimpleAutomationDialog({
                                 </Typography>
                                 {device.room && (
                                   <Chip 
-                                    label={device.room} 
+                                    label={translateRoomName(device.room)} 
                                     size="small" 
                                     variant="outlined"
                                     sx={{ height: 20, fontSize: '0.7rem' }}
@@ -1055,7 +1056,7 @@ export default function CreateSimpleAutomationDialog({
                                   </Typography>
                                   {device.room && (
                                     <Chip 
-                                      label={device.room} 
+                                      label={translateRoomName(device.room)} 
                                       size="small" 
                                       variant="outlined"
                                       sx={{ height: 20, fontSize: '0.7rem' }}

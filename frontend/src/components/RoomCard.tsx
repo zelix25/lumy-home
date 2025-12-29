@@ -32,6 +32,7 @@ import { SensorType } from '../services/sensor-history.service';
 import i18n from '@/i18n';
 import RoomSensorChartModal from './RoomSensorChartModal';
 import DeviceChartModal from './DeviceChartModal';
+import { translateRoomName } from '../utils/roomTranslations';
 
 interface RoomCardProps {
   roomName: string;
@@ -370,7 +371,7 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
                 {getRoomIcon(roomName)}
               </Typography>
               <Typography variant="h6" sx={{ fontWeight: 500, fontSize: '1.1rem' }}>
-            {roomName}
+            {translateRoomName(roomName)}
           </Typography>
         </Box>
 
