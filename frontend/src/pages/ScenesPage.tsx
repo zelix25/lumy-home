@@ -96,19 +96,19 @@ export default function ScenesPage() {
         </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
-            variant="outlined"
+            variant="contained"
             startIcon={<AccountTreeIcon />}
             onClick={() => setNodeEditorOpen(true)}
           >
-            {t('scenes.nodeMode')}
+            {t('scenes.createAutomation')}
           </Button>
-          <Button
+          {/*<Button
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => setCreateDialogOpen(true)}
           >
             {t('automations.createAutomation')}
-          </Button>
+          </Button>*/}
         </Box>
       </Box>
 
@@ -131,9 +131,9 @@ export default function ScenesPage() {
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}
-                onClick={() => setCreateDialogOpen(true)}
+                onClick={() => setNodeEditorOpen(true)}
               >
-                {t('automations.createAutomation')}
+                {t('scenes.createAutomation')}
               </Button>
             </Box>
           </CardContent>

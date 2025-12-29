@@ -4,22 +4,29 @@ import { Repository } from 'typeorm';
 import { Room } from './entities/room.entity';
 import { CreateRoomDto } from './dto/create-room.dto';
 
-// Les pièces par défaut sont triées par ordre alphabétique (à traduire avec i18n)
+// Les pièces par défaut sont triées par ordre alphabétique
+// Les traductions sont gérées côté frontend
 const DEFAULT_ROOMS = [
-  'Sous-Sol',
-  'Garage',
+  'Maison',
+  'Jardin',
+  'Piscine',
+  'Bain',
+  'Bureau',
   'Buanderie',
+  'Cuisine',
   'Entrée',
-  'Couloir',
-  'Chambre',
-  'Salle de Bain',
+  'Garage',
+  'Jardin',
+  'Maison',
+  'Piscine',
   'Salon',
   'Salle à manger',
-  'Cuisine',
-  'Toilette',
-  'Séjour',
-  'Veranda',
-  'Bureau'
+  'Salle de bain',
+  'Sous-sol',
+  'Terrasse',
+  'Toilettes',
+  'Chambre',
+  'Couloir',
 ];
 
 @Injectable()

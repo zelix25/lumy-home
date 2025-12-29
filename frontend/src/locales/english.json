@@ -140,7 +140,25 @@
     "normalView": "Normal view",
     "noPlanAvailable": "No plan available. Create a plan in the Plan page to display the plan view.",
     "unnamedRoom": "Unnamed room",
-    "noRoomsWithDevices": "No rooms with devices. Add devices and assign them to rooms."
+    "noRoomsWithDevices": "No rooms with devices. Add devices and assign them to rooms.",
+    "rooms": {
+      "house": "House",
+      "garden": "Garden",
+      "pool": "Pool",
+      "laundry": "Laundry room",
+      "bedroom": "Bedroom",
+      "kitchen": "Kitchen",
+      "toilet": "WC",
+      "garage": "Garage",
+      "office": "Office",
+      "terrace": "Terrace",
+      "hallway": "Hallway",
+      "corridor": "Corridor",
+      "bathroom": "Bathroom",
+      "livingRoom": "Living room",
+      "diningRoom": "Dining room",
+      "basement": "Basement"   
+    }
   },
   "scenes": {
     "title": "Scenes & Automations",
@@ -604,7 +622,7 @@
       "helpStep3": "3. Connect nodes by dragging from the blue point of the trigger to the purple point of the action",
       "helpStep4": "4. Click on each node to configure it: choose the type and device",
       "helpStep5": "5. Give a name to your automation and save",
-      "helpTip": "💡 Tip: Only devices compatible with the selected trigger type are displayed",
+      "helpTip": "Tip: Only devices compatible with the selected trigger type are displayed",
       "emptyState": "Start by adding a trigger by right-clicking on the workspace",
       "selectDeviceHelp": "Select the device that will trigger this automation",
       "selectActionDeviceHelp": "Select the device on which this action will be performed",

@@ -605,7 +605,7 @@
       "helpStep3": "3. Connectez les noeuds en glissant depuis le point bleu du déclencheur vers le point violet de l'action",
       "helpStep4": "4. Cliquez sur chaque noeud pour le configurer : choisissez le type et l'appareil",
       "helpStep5": "5. Donnez un nom à votre automatisation et sauvegardez",
-      "helpTip": "💡 Astuce : Seuls les appareils compatibles avec le type de déclencheur sélectionné sont affichés",
+      "helpTip": "Astuce : Seuls les appareils compatibles avec le type de déclencheur sélectionné sont affichés",
       "emptyState": "Commencez par ajouter un déclencheur en faisant un clic droit sur la zone de travail",
       "selectDeviceHelp": "Sélectionnez l'appareil qui déclenchera cette automatisation",
       "selectActionDeviceHelp": "Sélectionnez l'appareil sur lequel cette action sera effectuée",
@@ -613,7 +613,25 @@
       "zoomOut": "Dézoomer",
       "fitView": "Ajuster la vue",
       "fullscreen": "Plein écran",
-      "exitFullscreen": "Quitter le plein écran"
+      "exitFullscreen": "Quitter le plein écran",
+      "rooms": {
+        "house": "Maison",
+        "garden": "Jardin",
+        "pool": "Piscine",
+        "laundry": "Buanderie",
+        "bedroom": "Chambre",
+        "kitchen": "Cuisine",
+        "toilet": "Toilette",
+        "garage": "Garage",
+        "office": "Bureau",
+        "terrace": "Terrasse",
+        "hallway": "Hall entrée",
+        "corridor": "Couloir",
+        "bathroom": "Salle de Bain",
+        "livingRoom": "Salon",
+        "diningRoom": "Salle à manger",
+        "basement": "Sous-sol"   
+      }
     }
   },
   "weather": {
