@@ -396,7 +396,13 @@
   },
   "notifications": {
     "newDevice": "Nouvel appareil détecté",
-    "deviceUpdated": "Appareil mis à jour"
+    "deviceUpdated": "Appareil mis à jour",
+    "title": "Notifications",
+    "markAllAsRead": "Tout marquer comme lu",
+    "markAsResolved": "Marquer comme résolu",
+    "noNotifications": "Aucune notification",
+    "notification": "Notification",
+    "instructions": "Instructions"
   },
   "auth": {
     "login": "Connexion",

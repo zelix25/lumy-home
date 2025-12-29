@@ -20,6 +20,7 @@ import { RoomsModule } from './rooms/rooms.module';
 import { WeatherModule } from './weather/weather.module';
 import { StoreModule } from './store/store.module';
 import { PluginsModule } from './plugins/plugins.module';
+import { SystemHealthModule } from './system-health/system-health.module';
 import { configValidationSchema } from './config/config.validation';
 
 @Module({
@@ -75,6 +76,7 @@ import { configValidationSchema } from './config/config.validation';
     WeatherModule,
     StoreModule,
     PluginsModule,
+    SystemHealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -395,7 +395,13 @@
   },
   "notifications": {
     "newDevice": "New device detected",
-    "deviceUpdated": "Device updated"
+    "deviceUpdated": "Device updated",
+    "title": "Notifications",
+    "markAllAsRead": "Mark all as read",
+    "markAsResolved": "Mark as resolved",
+    "noNotifications": "No notifications",
+    "notification": "Notification",
+    "instructions": "Instructions"
   },
   "auth": {
     "login": "Login",

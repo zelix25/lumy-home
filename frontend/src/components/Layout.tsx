@@ -32,6 +32,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import StoreIcon from '@mui/icons-material/Store';
 import LanguageSelector from './LanguageSelector';
 import SystemModal from './SystemModal';
+import SystemNotifications from './SystemNotifications';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { usePluginMenuItems } from '../hooks/usePluginRoutes';
@@ -318,6 +319,7 @@ export default function Layout({ children }: LayoutProps) {
               </Menu>
             </Box>
           )}
+          <SystemNotifications />
           <LanguageSelector />
           <SystemModal
             open={systemModalOpen}
