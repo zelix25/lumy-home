@@ -142,7 +142,7 @@ export default function SimpleAutomationCard({
     conditionType: AutomationTriggerType,
     deviceName?: string,
     condition?: Record<string, any>,
-    triggerData?: { sunriseSunsetType?: 'sunrise' | 'sunset'; offsetMinutes?: number }
+    triggerData?: { sunriseSunsetType?: 'sunrise' | 'sunset'; offsetMinutes?: number; time?: string }
   ): string => {
     let baseText = '';
     switch (conditionType) {
@@ -338,7 +338,7 @@ export default function SimpleAutomationCard({
             <PlayArrowIcon sx={{ mr: 1 }} fontSize="small" />
             {t('automations.execute')}
           </MenuItem>
-          {onEdit && (
+          {/*onEdit && (
             <MenuItem
               onClick={() => {
                 onEdit(automation);
@@ -348,7 +348,7 @@ export default function SimpleAutomationCard({
               <EditIcon sx={{ mr: 1 }} fontSize="small" />
               {t('common.edit')}
             </MenuItem>
-          )}
+          )}*/}
           {onEditNode && (
             <MenuItem
               onClick={() => {

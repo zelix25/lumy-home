@@ -115,6 +115,7 @@ const getDeviceIcon = (type: string, device?: { state?: Record<string, any> | nu
 
 const getDeviceTypeLabel = (type: string): string => {
   const labels: Record<string, string> = {
+    energy: i18n.t('devices.energy'),
     light: i18n.t('devices.light'),
     switch: i18n.t('devices.switch'),
     sensor: i18n.t('devices.sensor'),
@@ -351,7 +352,7 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
                       color: (device.state.presence || device.state.occupancy) ? 'success.main' : 'text.secondary'
                     }}
                   >
-                    {(device.state.presence || device.state.occupancy) ? 'Détectée' : 'Aucune'}
+                    {(device.state.presence || device.state.occupancy) ? i18n.t('devices.detected') : i18n.t('devices.none')}
                   </Typography>
                 </Grid>
               )}
@@ -397,7 +398,7 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
                       color: device.state.contact ? 'success.main' : 'warning.main'
                     }}
                   >
-                    {device.state.contact ? 'Fermé' : 'Ouvert'}
+                    {device.state.contact ? i18n.t('devices.closed') : i18n.t('devices.open')}
                   </Typography>
                 </Grid>
               )}

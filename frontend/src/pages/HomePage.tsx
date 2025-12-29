@@ -167,7 +167,7 @@ export default function HomePage() {
             {i18n.t('home.subtitle')}
           </Typography>
         </Box>
-        <ToggleButtonGroup
+        {/*<ToggleButtonGroup
           value={viewMode}
           exclusive
           onChange={handleViewModeChange}
@@ -182,7 +182,7 @@ export default function HomePage() {
             <MapIcon sx={{ mr: 1, fontSize: 18 }} />
             {i18n.t('home.planView')}
           </ToggleButton>
-        </ToggleButtonGroup>
+        </ToggleButtonGroup>*/}
       </Box>
 
       {viewMode === 'plan' ? (
