@@ -19,7 +19,45 @@ env:
   PLATFORMS: linux/amd64,linux/arm64,linux/arm/v7
 
 jobs:
+  check-branch:
+    runs-on: ubuntu-latest
+    outputs:
+      allowed: ${{ steps.check.outputs.allowed }}
+    steps:
+      - name: Check if branch is master
+        id: check
+        run: |
+          # Pour les tags, on accepte (généralement créés depuis master)
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "allowed=true" >> $GITHUB_OUTPUT
+            echo "✅ Tag push detected, allowing build"
+            exit 0
+          fi
+          
+          # Pour workflow_dispatch, vérifier que la branche est master
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
+              echo "allowed=true" >> $GITHUB_OUTPUT
+              echo "✅ Workflow dispatch on master branch, allowing build"
+            else
+              echo "allowed=false" >> $GITHUB_OUTPUT
+              echo "❌ Workflow dispatch not on master branch (current: ${{ github.ref }}), blocking build"
+            fi
+            exit 0
+          fi
+          
+          # Pour les autres cas (push de branche), vérifier que c'est master
+          if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
+            echo "allowed=true" >> $GITHUB_OUTPUT
+            echo "✅ Push on master branch, allowing build"
+          else
+            echo "allowed=false" >> $GITHUB_OUTPUT
+            echo "❌ Push not on master branch (current: ${{ github.ref }}), blocking build"
+          fi
+
   determine-version:
+    needs: check-branch
+    if: needs.check-branch.outputs.allowed == 'true'
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.set-version-from-tag.outputs.version || steps.set-version-from-dispatch.outputs.version }}
@@ -79,7 +117,8 @@ jobs:
           echo "Full Tag: ${{ github.event.inputs.version }}"
 
   build-and-push-backend:
-    needs: determine-version
+    needs: [check-branch, determine-version]
+    if: needs.check-branch.outputs.allowed == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -142,7 +181,8 @@ jobs:
             BUILD_DATE=${{ github.event.head_commit.timestamp || github.run_started_at }}
 
   build-and-push-frontend:
-    needs: determine-version
+    needs: [check-branch, determine-version]
+    if: needs.check-branch.outputs.allowed == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -205,7 +245,8 @@ jobs:
             BUILD_DATE=${{ github.event.head_commit.timestamp || github.run_started_at }}
 
   summary:
-    needs: [determine-version, build-and-push-backend, build-and-push-frontend]
+    needs: [check-branch, determine-version, build-and-push-backend, build-and-push-frontend]
+    if: needs.check-branch.outputs.allowed == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Create summary

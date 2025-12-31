@@ -1,7 +1,15 @@
 FROM node:20-alpine AS builder
 
 WORKDIR /app
-RUN apk add --no-cache openssl
+
+# Installer les dépendances système nécessaires pour compiler sqlite3
+RUN apk add --no-cache \
+    openssl \
+    python3 \
+    make \
+    g++ \
+    sqlite-dev \
+    && ln -sf python3 /usr/bin/python
 
 # Copier les fichiers de dépendances
 COPY package*.json ./
@@ -27,14 +35,19 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# Installer les dépendances runtime pour sqlite3
+RUN apk add --no-cache sqlite-libs
+
 # Copier les fichiers nécessaires
 COPY package*.json ./
 COPY --from=builder /app/dist ./dist
 # Copier le fichier d'environnement de production et le renommer en .env
 COPY --from=builder /app/env.production ./.env
+# Copier node_modules compilés depuis le builder (inclut sqlite3 compilé)
+COPY --from=builder /app/node_modules ./node_modules
 
-# Installer uniquement les dépendances de production
-RUN npm ci --only=production
+# Installer uniquement les dépendances de production (sans rebuild, on utilise celles du builder)
+RUN npm ci --only=production --ignore-scripts
 
 # Créer les dossiers nécessaires
 RUN mkdir -p data logs

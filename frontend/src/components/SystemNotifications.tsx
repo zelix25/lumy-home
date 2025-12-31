@@ -19,14 +19,10 @@ import WarningIcon from '@mui/icons-material/Warning';
 import ErrorIcon from '@mui/icons-material/Error';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import { subscribeToNotifications, getNotifications, type Notification } from '../hooks/useNotification';
+import { subscribeToNotifications, getNotifications } from '../hooks/useNotification';
 import { systemHealthService, type SystemNotification as BackendSystemNotification } from '../services/system-health.service';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useTranslation } from 'react-i18next';
-
-interface LocalNotification extends Notification {
-  read: boolean;
-}
 
 interface CombinedNotification {
   id: string;
@@ -99,20 +95,21 @@ export default function SystemNotifications() {
   useEffect(() => {
     if (!isConnected || !socket) return;
 
-    const handleSystemNotification = (data: BackendSystemNotification) => {
+    const handleSystemNotification = (data: unknown) => {
+      const notification = data as BackendSystemNotification;
       setNotifications((prev) => {
-        const existing = prev.find((n) => n.id === data.id);
+        const existing = prev.find((n) => n.id === notification.id);
         if (existing && existing.isSystemNotification) {
           // Mettre à jour la notification existante
           return prev.map((n) =>
-            n.id === data.id
+            n.id === notification.id
               ? {
                   ...n,
-                  type: data.type,
-                  title: data.title,
-                  message: data.message,
-                  instructions: data.instructions,
-                  read: data.resolved,
+                  type: notification.type,
+                  title: notification.title,
+                  message: notification.message,
+                  instructions: notification.instructions,
+                  read: notification.resolved,
                 }
               : n
           );
@@ -120,15 +117,15 @@ export default function SystemNotifications() {
         // Ajouter la nouvelle notification
         return [
           {
-            id: data.id,
-            type: data.type,
-            title: data.title,
-            message: data.message,
-            instructions: data.instructions,
-            containerName: data.containerName,
-            read: data.resolved,
+            id: notification.id,
+            type: notification.type,
+            title: notification.title,
+            message: notification.message,
+            instructions: notification.instructions,
+            containerName: notification.containerName,
+            read: notification.resolved,
             isSystemNotification: true,
-            createdAt: data.createdAt,
+            createdAt: notification.createdAt,
           },
           ...prev,
         ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -183,10 +180,10 @@ export default function SystemNotifications() {
         );
 
         // Fusionner avec les notifications locales existantes
-        const existingLocal = prevNotifications
+        const existingLocal: [string, CombinedNotification][] = prevNotifications
           .filter((n) => !n.isSystemNotification)
           .map((n) => [n.id, n]);
-        const combinedLocal = new Map([...existingLocal, ...Array.from(localMap.entries())]);
+        const combinedLocal = new Map<string, CombinedNotification>([...existingLocal, ...Array.from(localMap.entries())]);
 
         return [...systemNotifications, ...Array.from(combinedLocal.values())].sort(
           (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
