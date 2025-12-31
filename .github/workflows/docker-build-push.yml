@@ -115,6 +115,16 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
+          flavor: |
+            latest=${{ needs.determine-version.outputs.is-beta == 'false' && 'true' || 'false' }}
+
+      - name: Verify tags for backend
+        run: |
+          if [ -z "${{ steps.meta-backend.outputs.tags }}" ]; then
+            echo "❌ Error: No tags generated for backend image"
+            exit 1
+          fi
+          echo "✅ Backend tags: ${{ steps.meta-backend.outputs.tags }}"
 
       - name: Build and push backend image
         uses: docker/build-push-action@v5
@@ -168,6 +178,16 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
+          flavor: |
+            latest=${{ needs.determine-version.outputs.is-beta == 'false' && 'true' || 'false' }}
+
+      - name: Verify tags for frontend
+        run: |
+          if [ -z "${{ steps.meta-frontend.outputs.tags }}" ]; then
+            echo "❌ Error: No tags generated for frontend image"
+            exit 1
+          fi
+          echo "✅ Frontend tags: ${{ steps.meta-frontend.outputs.tags }}"
 
       - name: Build and push frontend image
         uses: docker/build-push-action@v5
@@ -212,7 +232,13 @@ jobs:
           echo "- [Frontend Image](https://hub.docker.com/r/${{ env.DOCKER_HUB_USERNAME }}/lumy-home-frontend)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### All Tags" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.determine-version.outputs.is-beta }}" == "false" ]; then
+            echo "- \`latest\` (stable version)" >> $GITHUB_STEP_SUMMARY
+          fi
           echo "- \`${{ needs.determine-version.outputs.image-tag }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- \`${{ needs.determine-version.outputs.image-tag }}-${{ needs.determine-version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- \`${{ needs.determine-version.outputs.tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ needs.determine-version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`{{major}}.{{minor}}\` (semver)" >> $GITHUB_STEP_SUMMARY
+          echo "- \`{{major}}\` (semver)" >> $GITHUB_STEP_SUMMARY
 
