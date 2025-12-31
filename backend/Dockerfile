@@ -9,6 +9,8 @@ RUN apk add --no-cache \
     make \
     g++ \
     sqlite-dev \
+    libc-dev \
+    linux-headers \
     && ln -sf python3 /usr/bin/python
 
 # Copier les fichiers de dépendances
@@ -22,7 +24,11 @@ RUN JWT_SECRET=$(openssl rand -hex 32) && \
     sed -i "s/JWT_SECRET=lumy-home-secret-key-change-in-production/JWT_SECRET=${JWT_SECRET}/" ./env.production
 
 # Installer les dépendances
-RUN npm ci
+# Forcer la compilation de sqlite3 depuis les sources pour ARMv7
+ENV npm_config_build_from_source=true
+ENV npm_config_sqlite3_binary_host_mirror=""
+RUN npm ci || \
+    (npm install && npm rebuild sqlite3 --build-from-source)
 
 # Copier le code source
 COPY src ./src
@@ -44,10 +50,8 @@ COPY --from=builder /app/dist ./dist
 # Copier le fichier d'environnement de production et le renommer en .env
 COPY --from=builder /app/env.production ./.env
 # Copier node_modules compilés depuis le builder (inclut sqlite3 compilé)
+# Ne pas refaire npm ci car cela écraserait les modules compilés
 COPY --from=builder /app/node_modules ./node_modules
-
-# Installer uniquement les dépendances de production (sans rebuild, on utilise celles du builder)
-RUN npm ci --only=production --ignore-scripts
 
 # Créer les dossiers nécessaires
 RUN mkdir -p data logs
