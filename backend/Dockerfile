@@ -20,6 +20,7 @@ FROM builder-alpine AS builder
 WORKDIR /app
 
 # Installer les dépendances système pour Alpine (AMD64, ARM64)
+# Nécessaires pour compiler sqlite3 et bcrypt
 RUN if [ -f /etc/alpine-release ]; then \
         apk add --no-cache \
             openssl \
@@ -33,6 +34,7 @@ RUN if [ -f /etc/alpine-release ]; then \
     fi
 
 # Installer les dépendances système pour Debian (ARMv7)
+# Nécessaires pour compiler sqlite3 et bcrypt
 RUN if [ -f /etc/debian_version ]; then \
         apt-get update && apt-get install -y \
             openssl \
@@ -40,6 +42,7 @@ RUN if [ -f /etc/debian_version ]; then \
             make \
             g++ \
             libsqlite3-dev \
+            build-essential \
             && rm -rf /var/lib/apt/lists/*; \
     fi
 
@@ -54,11 +57,12 @@ RUN JWT_SECRET=$(openssl rand -hex 32) && \
     sed -i "s/JWT_SECRET=lumy-home-secret-key-change-in-production/JWT_SECRET=${JWT_SECRET}/" ./env.production
 
 # Installer les dépendances
-# Forcer la compilation de sqlite3 depuis les sources
+# Forcer la compilation de tous les modules natifs depuis les sources
 ENV npm_config_build_from_source=true
 ENV npm_config_sqlite3_binary_host_mirror=""
+ENV npm_config_bcrypt_build_from_source=true
 RUN npm ci || \
-    (npm install && npm rebuild sqlite3 --build-from-source)
+    (npm install && npm rebuild sqlite3 bcrypt --build-from-source)
 
 # Copier le code source
 COPY src ./src
