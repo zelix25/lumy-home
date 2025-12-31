@@ -2,7 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import Docker from 'dockerode';
+const Docker = require('dockerode');
 import {
   SystemNotification,
   SystemNotificationType,
@@ -21,7 +21,7 @@ interface ContainerStatus {
 export class SystemHealthService implements OnModuleInit {
   private readonly logger = new Logger(SystemHealthService.name);
   private readonly containersToCheck = ['zigbee2mqtt', 'mosquitto'];
-  private docker: Docker;
+  private docker: any;
 
   constructor(
     @InjectRepository(SystemNotification)
@@ -44,7 +44,7 @@ export class SystemHealthService implements OnModuleInit {
       .then(() => {
         this.logger.log('Connexion Docker établie avec succès');
       })
-      .catch((error) => {
+      .catch((error: any) => {
         this.logger.warn('Impossible de se connecter à Docker:', error.message);
         this.logger.warn('Les vérifications de santé Docker seront désactivées');
       });

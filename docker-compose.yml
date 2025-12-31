@@ -33,9 +33,10 @@ services:
         - /dev/ttyUSB0:/dev/ttyUSB0 # adapter selon ton coordinator Zigbee
 
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    #build:
+      #context: ./backend
+      #dockerfile: Dockerfile
+    image: zelix25/lumy-home-backend:latest
     container_name: lumy-backend
     # Port retiré - communication uniquement via réseau Docker privé
     # Pour le développement local, décommentez la ligne suivante :
@@ -54,13 +55,10 @@ services:
       - lumy-network
       - lumy-frontend-backend
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      # Plus besoin de VITE_API_URL et VITE_WS_URL - utilisation de chemins relatifs
-      # args:
-      #   - VITE_API_URL=${VITE_API_URL:-}
-      #   - VITE_WS_URL=${VITE_WS_URL:-}
+    #build:
+      #context: ./frontend
+      #dockerfile: Dockerfile
+    image: zelix25/lumy-home-frontend:latest
     container_name: lumy-frontend
     ports:
       - "80:80"
@@ -71,21 +69,21 @@ services:
       - lumy-network
       - lumy-frontend-backend
 
-  ollama:
-    image: ollama/ollama:latest
-    container_name: gemma3-local
-    restart: unless-stopped
-    ports:
-      - "11434:11434"
-    volumes:
-      - ./gemma3:/root/.ollama  # stockage des modèles
-    entrypoint: >
-      sh -c "
-        ollama serve &
-        sleep 5 &&
-        ollama pull gemma3 &&
-        wait
-      "
+  #ollama:
+  #  image: ollama/ollama:latest
+  #  container_name: gemma3-local
+  #  restart: unless-stopped
+  #  ports:
+  #    - "11434:11434"
+  #  volumes:
+  #    - ./gemma3:/root/.ollama  # stockage des modèles
+  #  entrypoint: >
+  #    sh -c "
+  #      ollama serve &
+  #      sleep 5 &&
+  #      ollama pull gemma3 &&
+  #      wait
+  #    "
 
 networks:
   lumy-network:
