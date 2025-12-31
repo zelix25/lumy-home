@@ -40,6 +40,7 @@ import { devicesService } from '../services/devices.service';
 import { planService } from '../services/plan.service';
 import { roomsService, Room as RoomEntity } from '../services/rooms.service';
 import { useNotification } from '../hooks/useNotification';
+import { translateRoomName } from '../utils/roomTranslations';
 
 interface Floor {
   id: string;
@@ -1945,7 +1946,7 @@ export default function PlanPage() {
                   </MenuItem>
                   {availableRooms.map((room) => (
                     <MenuItem key={room.id} value={room.name}>
-                      {room.name}
+                      {translateRoomName(room.name)}
                     </MenuItem>
                   ))}
                 </Select>

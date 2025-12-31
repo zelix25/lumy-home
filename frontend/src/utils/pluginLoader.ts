@@ -60,7 +60,7 @@ function transformImports(code: string): string {
   // Utiliser un pattern global qui capture tout entre "import" et "from" puis le nom du module
   transformed = transformed.replace(
     /import\s*\*\s*as\s+(\w+)\s+from\s*["']([^"']+)["'];?\s*/g,
-    (match, varName, moduleName) => {
+    (varName, moduleName) => {
       const globalModule = getGlobalModule(moduleName);
       return `const ${varName} = ${globalModule};\n`;
     }
@@ -71,7 +71,7 @@ function transformImports(code: string): string {
   // Note: Ce pattern est plus permissif et capture même sans espaces après "as"
   transformed = transformed.replace(
     /import\s*\*\s*as\s*(\w+)\s*from\s*["']([^"']+)["'];?\s*/g,
-    (match, varName, moduleName) => {
+    (varName, moduleName) => {
       // Vérifier si cette transformation n'a pas déjà été faite
       if (!transformed.includes(`const ${varName} =`)) {
         const globalModule = getGlobalModule(moduleName);
@@ -84,7 +84,7 @@ function transformImports(code: string): string {
   // Transformer import X from "module" (avec ou sans espaces)
   transformed = transformed.replace(
     /import\s+(\w+)\s+from\s*["']([^"']+)["'];?\s*/g,
-    (match, varName, moduleName) => {
+    (varName, moduleName) => {
       const globalModule = getGlobalModule(moduleName);
       return `const ${varName} = ${globalModule}.default || ${globalModule};\n`;
     }
@@ -94,7 +94,7 @@ function transformImports(code: string): string {
   // Pattern: import{...}from"module" ou import { ... } from "module"
   transformed = transformed.replace(
     /import\s*{([^}]+)}\s*from\s*["']([^"']+)["'];?\s*/g,
-    (match, imports, moduleName) => {
+    (imports, moduleName) => {
       const globalModule = getGlobalModule(moduleName);
       const importStatements: string[] = [];
       
@@ -121,7 +121,7 @@ function transformImports(code: string): string {
   // Transformer import X, { Y, Z } from "module" (avec ou sans espaces)
   transformed = transformed.replace(
     /import\s+(\w+)\s*,\s*{([^}]+)}\s+from\s*["']([^"']+)["'];?\s*/g,
-    (match, defaultImport, namedImports, moduleName) => {
+    (defaultImport, namedImports, moduleName) => {
       const globalModule = getGlobalModule(moduleName);
       const importStatements: string[] = [];
       
@@ -155,7 +155,7 @@ function transformImports(code: string): string {
  */
 async function loadPluginComponentCode(
   componentUrl: string,
-  extension: PluginUIExtension
+  //extension: PluginUIExtension
 ): Promise<ComponentType<any>> {
   // Récupérer le token d'authentification
   const token = localStorage.getItem('lumy_token');
@@ -348,7 +348,7 @@ async function loadWebpackBundle(code: string): Promise<any> {
   // Remplacer les imports ES6 natifs par des références aux modules globaux
   transformedCode = transformedCode.replace(
     /^import\s+\*\s+as\s+(__WEBPACK_EXTERNAL_MODULE__[a-zA-Z0-9_]+)\s+from\s+["']([^"']+)["'];?\s*$/gm,
-    (match, varName, moduleName) => {
+    (varName, moduleName) => {
       if (moduleName === 'react') {
         return `const ${varName} = window.React;`;
       }
@@ -563,7 +563,7 @@ async function loadES6Module(code: string): Promise<any> {
   // Transformer export { X, Y } ou export{X,Y} (avec ou sans espaces, minifié ou non)
   finalCode = finalCode.replace(
     /export\s*{\s*([^}]+)\s*};?/g,
-    (match, exportsList) => {
+    (exportsList) => {
       const exports = exportsList.split(',').map((exp: string) => {
         // Gérer les exports avec alias: X as Y (même minifié: X as Y)
         const parts = exp.trim().split(/\s+as\s+/);
@@ -720,7 +720,7 @@ function transformExports(code: string): string {
   // Transformer export { X, Y } ou export{X,Y}
   transformed = transformed.replace(
     /export\s*{\s*([^}]+)\s*};?/g,
-    (match, exportsList) => {
+    (exportsList) => {
       const exports = exportsList.split(',').map((exp: string) => {
         const parts = exp.trim().split(/\s+as\s+/);
         if (parts.length === 2) {
@@ -835,7 +835,7 @@ export function createPluginLoader(extension: PluginUIExtension): () => Promise<
       : `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
     try {
-      const Component = await loadPluginComponentCode(componentUrl, extension);
+      const Component = await loadPluginComponentCode(componentUrl);
       
       // Retourner le composant dans un format compatible avec React.lazy()
       return { default: Component };

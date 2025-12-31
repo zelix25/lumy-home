@@ -1,5 +1,5 @@
 import React, { Suspense, useMemo } from 'react';
-import { Box, CircularProgress, Typography, Alert } from '@mui/material';
+import { Box, CircularProgress, Alert } from '@mui/material';
 import { PluginUIExtension } from '../services/plugins.service';
 import { createPluginLoader } from '../utils/pluginLoader';
 

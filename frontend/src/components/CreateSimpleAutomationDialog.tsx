@@ -21,9 +21,6 @@ import {
   ListItemText,
   ListItemButton,
   Divider,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   Card,
   CardContent,
   FormControl,
@@ -31,7 +28,6 @@ import {
   Select,
   MenuItem,
 } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import LightbulbIcon from '@mui/icons-material/Lightbulb';
 import WindowIcon from '@mui/icons-material/Window';
 import ThermostatIcon from '@mui/icons-material/Thermostat';
@@ -49,6 +45,7 @@ import {
 } from '../services/simple-automations.service';
 import { useNotification } from '../hooks/useNotification';
 import { useEffect } from 'react';
+import { translateRoomName } from '../utils/roomTranslations';
 
 interface CreateSimpleAutomationDialogProps {
   open: boolean;
@@ -130,6 +127,7 @@ export default function CreateSimpleAutomationDialog({
   const initialTurnOnDuration = automation?.actions[0]?.params?.duration || 0;
   const initialSunriseSunsetType = automation?.trigger.sunriseSunsetType || 'sunrise';
   const initialOffsetMinutes = automation?.trigger.offsetMinutes || 0;
+  const initialTriggerTime = automation?.trigger.time || '08:00';
   
   // Déterminer l'étape active initiale
   const getInitialActiveStep = (auto?: Automation | null): number => {
@@ -172,6 +170,7 @@ export default function CreateSimpleAutomationDialog({
   const [turnOnDuration, setTurnOnDuration] = useState<number>(initialTurnOnDuration);
   const [sunriseSunsetType, setSunriseSunsetType] = useState<'sunrise' | 'sunset'>(initialSunriseSunsetType as 'sunrise' | 'sunset');
   const [offsetMinutes, setOffsetMinutes] = useState<number>(initialOffsetMinutes);
+  const [triggerTime, setTriggerTime] = useState<string>(initialTriggerTime);
 
   const handleReset = () => {
     setActiveStep(0);
@@ -190,6 +189,7 @@ export default function CreateSimpleAutomationDialog({
     setTurnOnDuration(0);
     setSunriseSunsetType('sunrise');
     setOffsetMinutes(0);
+    setTriggerTime('08:00');
     setError(null);
   };
 
@@ -204,6 +204,7 @@ export default function CreateSimpleAutomationDialog({
         AutomationTriggerType.MOTION,
         AutomationTriggerType.BUTTON,
         AutomationTriggerType.SUNRISE_SUNSET,
+        AutomationTriggerType.TIME,
         AutomationTriggerType.ILLUMINANCE,
       ],
       suggestedActions: [
@@ -221,6 +222,7 @@ export default function CreateSimpleAutomationDialog({
       description: t('automations.categoryShuttersDescription'),
       suggestedTriggers: [
         AutomationTriggerType.SUNRISE_SUNSET,
+        AutomationTriggerType.TIME,
         AutomationTriggerType.BUTTON,
         AutomationTriggerType.ILLUMINANCE,
       ],
@@ -241,6 +243,7 @@ export default function CreateSimpleAutomationDialog({
         AutomationTriggerType.TEMPERATURE,
         AutomationTriggerType.BUTTON,
         AutomationTriggerType.SUNRISE_SUNSET,
+        AutomationTriggerType.TIME,
       ],
       suggestedActions: [
         AutomationActionType.SET_THERMOSTAT,
@@ -296,6 +299,9 @@ export default function CreateSimpleAutomationDialog({
       setThermostatTemp(automation.actions[0]?.params?.temperature || 20);
       setNotificationMessage(automation.actions[0]?.params?.message || '');
       setTurnOnDuration(automation.actions[0]?.params?.duration || 0);
+      setSunriseSunsetType(automation.trigger.sunriseSunsetType || 'sunrise');
+      setOffsetMinutes(automation.trigger.offsetMinutes || 0);
+      setTriggerTime(automation.trigger.time || '08:00');
       
       // Déterminer et définir la catégorie à partir de l'automation
       const category = getCategoryFromAutomation(automation);
@@ -336,6 +342,8 @@ export default function CreateSimpleAutomationDialog({
         return devices.filter((d) => d.type === 'sensor');
       case AutomationTriggerType.SUNRISE_SUNSET:
         return []; // Pas besoin d'appareil pour le lever/coucher du soleil
+      case AutomationTriggerType.TIME:
+        return []; // Pas besoin d'appareil pour le trigger TIME
       default:
         return [];
     }
@@ -388,6 +396,16 @@ export default function CreateSimpleAutomationDialog({
       setActiveStep(3); // Passer directement à l'étape 3 (action)
       return;
     }
+    if (activeStep === 1 && triggerType === AutomationTriggerType.TIME) {
+      // Vérifier que l'heure est définie
+      if (!triggerTime || !triggerTime.match(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)) {
+        setError(t('automations.selectValidTime'));
+        return;
+      }
+      setError(null);
+      setActiveStep(3); // Passer directement à l'étape 3 (action)
+      return;
+    }
     // Étape 2 : Vérifier l'appareil déclencheur
     if (activeStep === 2 && !triggerDeviceId) {
       setError(t('automations.selectTriggerDevice'));
@@ -415,7 +433,7 @@ export default function CreateSimpleAutomationDialog({
     setError(null);
     // Si on revient en arrière depuis l'étape 3 (action) et que le déclencheur est SUNRISE_SUNSET,
     // on revient directement à l'étape 1 (déclencheur) car l'étape 2 (appareil déclencheur) est sautée
-    if (activeStep === 3 && triggerType === AutomationTriggerType.SUNRISE_SUNSET) {
+    if (activeStep === 3 && (triggerType === AutomationTriggerType.SUNRISE_SUNSET || triggerType === AutomationTriggerType.TIME)) {
       setActiveStep(1);
     } else {
       setActiveStep((prev) => prev - 1);
@@ -454,6 +472,9 @@ export default function CreateSimpleAutomationDialog({
             ...(triggerType === AutomationTriggerType.SUNRISE_SUNSET && {
               sunriseSunsetType,
               offsetMinutes,
+            }),
+            ...(triggerType === AutomationTriggerType.TIME && {
+              time: triggerTime,
             }),
           },
           actions: actionDevices.length > 0
@@ -514,6 +535,9 @@ export default function CreateSimpleAutomationDialog({
             ...(triggerType === AutomationTriggerType.SUNRISE_SUNSET && {
               sunriseSunsetType,
               offsetMinutes,
+            }),
+            ...(triggerType === AutomationTriggerType.TIME && {
+              time: triggerTime,
             }),
           },
           actions: actionDevices.length > 0
@@ -601,6 +625,8 @@ export default function CreateSimpleAutomationDialog({
         return t('automations.triggerGas');
       case AutomationTriggerType.SUNRISE_SUNSET:
         return t('automations.triggerSunriseSunset');
+      case AutomationTriggerType.TIME:
+        return t('automations.triggerTime');
       default:
         return type;
     }
@@ -826,6 +852,35 @@ export default function CreateSimpleAutomationDialog({
                   </Stack>
                 </>
               )}
+
+              {/* Options pour le déclencheur Heure */}
+              {triggerType === AutomationTriggerType.TIME && (
+                <>
+                  <Alert severity="info" sx={{ mt: 2, mb: 2 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
+                      {t('automations.timeInfoTitle')}
+                    </Typography>
+                    <Typography variant="body2">
+                      {t('automations.timeInfo')}
+                    </Typography>
+                  </Alert>
+                  <Stack spacing={2} sx={{ mb: 2 }}>
+                    <TextField
+                      label={t('automations.time')}
+                      type="time"
+                      value={triggerTime}
+                      onChange={(e) => setTriggerTime(e.target.value)}
+                      fullWidth
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                      inputProps={{
+                        step: 300, // 5 minutes
+                      }}
+                    />
+                  </Stack>
+                </>
+              )}
               
               <Box sx={{ mt: 2 }}>
                 {activeStep > 0 && (
@@ -846,7 +901,7 @@ export default function CreateSimpleAutomationDialog({
           )}
 
           {/* Étape 2: Choisir un appareil déclencheur */}
-          {automationCategory && triggerType && triggerType !== AutomationTriggerType.SUNRISE_SUNSET && (
+          {automationCategory && triggerType && triggerType !== AutomationTriggerType.SUNRISE_SUNSET && triggerType !== AutomationTriggerType.TIME && (
             <Step>
               <StepLabel 
                 onClick={() => setActiveStep(2)}
@@ -877,7 +932,7 @@ export default function CreateSimpleAutomationDialog({
                                 </Typography>
                                 {device.room && (
                                   <Chip 
-                                    label={device.room} 
+                                    label={translateRoomName(device.room)} 
                                     size="small" 
                                     variant="outlined"
                                     sx={{ height: 20, fontSize: '0.7rem' }}
@@ -1001,7 +1056,7 @@ export default function CreateSimpleAutomationDialog({
                                   </Typography>
                                   {device.room && (
                                     <Chip 
-                                      label={device.room} 
+                                      label={translateRoomName(device.room)} 
                                       size="small" 
                                       variant="outlined"
                                       sx={{ height: 20, fontSize: '0.7rem' }}

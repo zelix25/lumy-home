@@ -32,6 +32,7 @@ import { SensorType } from '../services/sensor-history.service';
 import i18n from '@/i18n';
 import RoomSensorChartModal from './RoomSensorChartModal';
 import DeviceChartModal from './DeviceChartModal';
+import { translateRoomName } from '../utils/roomTranslations';
 
 interface RoomCardProps {
   roomName: string;
@@ -370,7 +371,7 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
                 {getRoomIcon(roomName)}
               </Typography>
               <Typography variant="h6" sx={{ fontWeight: 500, fontSize: '1.1rem' }}>
-            {roomName}
+            {translateRoomName(roomName)}
           </Typography>
         </Box>
 
@@ -609,11 +610,22 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
 
                       {/* Contrôles pour les volets */}
                       {device.type === 'cover' && (
-                        <Box sx={{ mt: 1 }} onClick={(e) => e.stopPropagation()}>
+                        <Box 
+                          sx={{ mt: 1 }} 
+                          onClick={(e) => e.stopPropagation()}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onMouseUp={(e) => e.stopPropagation()}
+                        >
                           <Slider
                             value={coverPosition}
-                            onChange={(_, value) => handleCoverPositionChange(device, value as number)}
+                            onChange={(e, value) => {
+                              e.stopPropagation();
+                              handleCoverPositionChange(device, value as number);
+                            }}
+                            onChangeCommitted={(e) => e.stopPropagation()}
                             onClick={(e) => e.stopPropagation()}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onMouseUp={(e) => e.stopPropagation()}
                             disabled={device.status !== 'online'}
                             min={0}
                             max={100}

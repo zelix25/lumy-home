@@ -348,7 +348,7 @@ export default function MultiSensorChart({ deviceId, availableSensors }: MultiSe
         followCursor: true,
         offsetX: -50,
         offsetY: 10,
-        custom: ({ seriesIndex, dataPointIndex, w }) => {
+        custom: ({ seriesIndex, dataPointIndex }) => {
           const sensor = availableSensors.find((s) => visibleSensors.has(s.type) && 
             chartSeries.findIndex((cs) => cs.name === s.label) === seriesIndex);
           if (!sensor || !chartSeries[seriesIndex]) return '';
@@ -367,7 +367,7 @@ export default function MultiSensorChart({ deviceId, availableSensors }: MultiSe
           });
           
           // Calculer la position pour éviter que le tooltip soit coupé
-          let offsetX = 0;
+          /*let offsetX = 0;
           if (w && w.globals) {
             const chartWidth = w.globals.svgWidth || 0;
             const clientX = w.globals.clientX || 0;
@@ -379,7 +379,7 @@ export default function MultiSensorChart({ deviceId, availableSensors }: MultiSe
             } else {
               offsetX = -50;
             }
-          }
+          }*/
           
           return `
             <div style="padding: 8px 12px; background: white; border: 1px solid ${theme.palette.divider}; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">

@@ -8,7 +8,6 @@ import {
   Chip,
   Grid,
   Slider,
-  //IconButton,
   Tooltip,
 } from '@mui/material';
 import {
@@ -16,7 +15,6 @@ import {
   Power,
   Sensors,
   ElectricalServices,
-  //Door,
   Window,
   Thermostat,
   DirectionsRun,
@@ -32,6 +30,7 @@ import {
 } from '@mui/icons-material';
 import { Device } from '../services/devices.service';
 import i18n from '@/i18n';
+import { translateRoomName } from '../utils/roomTranslations';
 
 interface DeviceCardProps {
   device: Device;
@@ -39,7 +38,7 @@ interface DeviceCardProps {
   onCoverPositionChange?: (device: Device, position: number) => void;
 }
 
-const getDeviceIcon = (type: string, device?: { state?: Record<string, any> }) => {
+const getDeviceIcon = (type: string, device?: { state?: Record<string, any> | null }) => {
   // Pour les capteurs, déterminer l'icône en fonction des données disponibles
   if (type === 'sensor' || type === 'temperature') {
     if (device?.state) {
@@ -117,6 +116,7 @@ const getDeviceIcon = (type: string, device?: { state?: Record<string, any> }) =
 
 const getDeviceTypeLabel = (type: string): string => {
   const labels: Record<string, string> = {
+    energy: i18n.t('devices.energy'),
     light: i18n.t('devices.light'),
     switch: i18n.t('devices.switch'),
     sensor: i18n.t('devices.sensor'),
@@ -177,18 +177,16 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
 
   const handleToggle = (event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
     event.stopPropagation();
-    event.preventDefault();
     if (onToggle && (device.type === 'light' || device.type === 'switch' || device.type === 'plug')) {
       onToggle(device, checked);
     }
   };
 
-  const handleSwitchClick = (event: React.MouseEvent<HTMLDivElement>) => {
+  const handleSwitchClick = (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation();
-    event.preventDefault();
   };
 
-  const handleCoverPositionChange = (event: Event, newValue: number | number[]) => {
+  const handleCoverPositionChange = (event: Event | React.SyntheticEvent, newValue: number | number[]) => {
     event.stopPropagation();
     if (onCoverPositionChange && device.type === 'cover') {
       const position = typeof newValue === 'number' ? newValue : newValue[0];
@@ -240,7 +238,7 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
               </Typography>
               {device.room && (
                 <Chip
-                  label={device.room}
+                  label={translateRoomName(device.room)}
                   size="small"
                   sx={{ 
                     fontSize: '12px',
@@ -267,14 +265,14 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
               />
             {(device.type === 'light' || device.type === 'switch' || device.type === 'plug') && (
               <Tooltip title={isOn ? 'Éteindre' : 'Allumer'}>
-                <Box onClick={handleSwitchClick} onMouseDown={handleSwitchClick}>
+                <Box onClick={handleSwitchClick}>
                   <Switch
                     checked={isOn}
                     onChange={handleToggle}
+                    onClick={(e) => e.stopPropagation()}
                     disabled={!isOnline}
                     color="primary"
                     size="medium"
-                    onClick={handleSwitchClick}
                   />
                 </Box>
               </Tooltip>
@@ -355,7 +353,7 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
                       color: (device.state.presence || device.state.occupancy) ? 'success.main' : 'text.secondary'
                     }}
                   >
-                    {(device.state.presence || device.state.occupancy) ? 'Détectée' : 'Aucune'}
+                    {(device.state.presence || device.state.occupancy) ? i18n.t('devices.detected') : i18n.t('devices.none')}
                   </Typography>
                 </Grid>
               )}
@@ -401,7 +399,7 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
                       color: device.state.contact ? 'success.main' : 'warning.main'
                     }}
                   >
-                    {device.state.contact ? 'Fermé' : 'Ouvert'}
+                    {device.state.contact ? i18n.t('devices.closed') : i18n.t('devices.open')}
                   </Typography>
                 </Grid>
               )}
@@ -578,14 +576,28 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
               {/* Position du volet (cover) */}
               {device.type === 'cover' && (
                 <Grid item xs={12}>
-                  <Box sx={{ px: 1, py: 1 }}>
+                  <Box 
+                    sx={{ px: 1, py: 1 }}
+                    onClick={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onMouseUp={(e) => e.stopPropagation()}
+                  >
                     <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1, fontSize: '0.75rem' }}>
                       {i18n.t('devices.position')}
                     </Typography>
-                    <Box sx={{ position: 'relative', px: 1 }}>
+                    <Box 
+                      sx={{ position: 'relative', px: 1 }}
+                      onClick={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onMouseUp={(e) => e.stopPropagation()}
+                    >
                       <Slider
                         value={coverPosition}
                         onChange={handleCoverPositionChange}
+                        onChangeCommitted={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onMouseUp={(e) => e.stopPropagation()}
                         disabled={!isOnline}
                         min={0}
                         max={100}

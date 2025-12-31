@@ -49,6 +49,7 @@ export interface AutomationTrigger {
   logicOperator?: 'AND' | 'OR';
   sunriseSunsetType?: 'sunrise' | 'sunset';
   offsetMinutes?: number;
+  time?: string; // Format HH:MM (ex: "08:30")
 }
 
 export interface AutomationAction {
@@ -71,6 +72,7 @@ export interface Automation {
     success: boolean;
     message: string;
   }>;
+  executionCount?: number; // Nombre total d'exécutions depuis AutomationExecutionLog
   createdAt: string;
   updatedAt: string;
 }

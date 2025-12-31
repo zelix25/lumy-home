@@ -1,8 +1,5 @@
-import { Box, Typography, Grid, Card, CardContent, CircularProgress, ToggleButton, ToggleButtonGroup, Paper } from '@mui/material';
+import { Box, Typography, Grid, Card, CardContent, CircularProgress } from '@mui/material';
 import DevicesIcon from '@mui/icons-material/Devices';
-import SceneIcon from '@mui/icons-material/AutoAwesome';
-import ViewModuleIcon from '@mui/icons-material/ViewModule';
-import MapIcon from '@mui/icons-material/Map';
 import ThermostatIcon from '@mui/icons-material/Thermostat';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import PersonPinCircleIcon from '@mui/icons-material/PersonPinCircle';
@@ -10,7 +7,6 @@ import { useEffect, useState, useMemo } from 'react';
 import { devicesService, DeviceStats, Device } from '../services/devices.service';
 import { useDevices } from '../hooks/useDevices';
 import { usePluginWidgets } from '../hooks/usePluginWidgets';
-import PlanViewMode from '../components/PlanViewMode';
 import RoomCard from '../components/RoomCard';
 import WeatherCard from '../components/WeatherCard';
 import PluginWidgetLoader from '../components/PluginWidgetLoader';
@@ -20,7 +16,6 @@ export default function HomePage() {
   const [stats, setStats] = useState<DeviceStats | null>(null);
   const [loading, setLoading] = useState(true);
   const { devices } = useDevices();
-  const [viewMode, setViewMode] = useState<'normal' | 'plan'>('normal');
   const pluginWidgets = usePluginWidgets();
 
   useEffect(() => {
@@ -104,7 +99,7 @@ export default function HomePage() {
     ...(houseStats.humidity !== null
       ? [
           {
-            title: i18n.t('devices.humidity'),
+            title: i18n.t('home.humidity'),
             value: `${Math.round(houseStats.humidity)}%`,
             icon: <WaterDropIcon sx={{ fontSize: 28 }} />,
             color: '#86A6A0', // Vert-gris nordique
@@ -127,12 +122,6 @@ export default function HomePage() {
       isSmall: true,
     },
   ];
-
-  const handleViewModeChange = (_event: React.MouseEvent<HTMLElement>, newMode: 'normal' | 'plan' | null) => {
-    if (newMode !== null) {
-      setViewMode(newMode);
-    }
-  };
 
   // Grouper les appareils par pièce
   const devicesByRoom = useMemo(() => {
@@ -168,30 +157,8 @@ export default function HomePage() {
             {i18n.t('home.subtitle')}
           </Typography>
         </Box>
-        <ToggleButtonGroup
-          value={viewMode}
-          exclusive
-          onChange={handleViewModeChange}
-          aria-label="mode d'affichage"
-          size="small"
-        >
-          <ToggleButton value="normal" aria-label="vue normale">
-            <ViewModuleIcon sx={{ mr: 1, fontSize: 18 }} />
-            {i18n.t('home.normalView')}
-          </ToggleButton>
-          <ToggleButton value="plan" aria-label="vue plan">
-            <MapIcon sx={{ mr: 1, fontSize: 18 }} />
-            {i18n.t('home.planView')}
-          </ToggleButton>
-        </ToggleButtonGroup>
       </Box>
-
-      {viewMode === 'plan' ? (
-        <Paper sx={{ p: 3 }}>
-          <PlanViewMode devices={devices} />
-        </Paper>
-      ) : (
-        <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
           {loading ? (
             <Grid item xs={12} sx={{ textAlign: 'center', py: 4 }}>
               <CircularProgress />
@@ -303,8 +270,7 @@ export default function HomePage() {
             </>
           )}
         </Grid>
-      )}
-    </Box>
+  </Box>
   );
 }
 

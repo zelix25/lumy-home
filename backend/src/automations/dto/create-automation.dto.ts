@@ -52,6 +52,10 @@ export class TriggerDto {
   @IsOptional()
   @IsNumber()
   offsetMinutes?: number;
+
+  @IsOptional()
+  @IsString()
+  time?: string; // Format HH:MM (ex: "08:30")
 }
 
 export class ActionDto {

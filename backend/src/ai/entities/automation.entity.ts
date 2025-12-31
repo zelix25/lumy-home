@@ -70,6 +70,7 @@ export class Automation {
     logicOperator?: 'AND' | 'OR'; // Opérateur logique pour combiner les conditions (par défaut AND)
     sunriseSunsetType?: 'sunrise' | 'sunset'; // Pour SUNRISE_SUNSET : lever ou coucher
     offsetMinutes?: number; // Décalage en minutes par rapport au lever/coucher (peut être négatif)
+    time?: string; // Pour TIME : heure au format HH:MM (ex: "08:30")
   };
 
   @Column({ type: 'json' })

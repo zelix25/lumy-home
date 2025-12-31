@@ -20,7 +20,6 @@ import {
 import {
   MoreVert as MoreVertIcon,
   Delete as DeleteIcon,
-  Edit as EditIcon,
   AccountTree as AccountTreeIcon,
   PlayArrow as PlayArrowIcon,
 } from '@mui/icons-material';
@@ -44,7 +43,6 @@ interface SimpleAutomationCardProps {
 export default function SimpleAutomationCard({
   automation,
   onUpdate,
-  onEdit,
   onEditNode,
 }: SimpleAutomationCardProps) {
   const { t } = useTranslation();
@@ -142,7 +140,7 @@ export default function SimpleAutomationCard({
     conditionType: AutomationTriggerType,
     deviceName?: string,
     condition?: Record<string, any>,
-    triggerData?: { sunriseSunsetType?: 'sunrise' | 'sunset'; offsetMinutes?: number }
+    triggerData?: { sunriseSunsetType?: 'sunrise' | 'sunset'; offsetMinutes?: number; time?: string }
   ): string => {
     let baseText = '';
     switch (conditionType) {
@@ -195,6 +193,10 @@ export default function SimpleAutomationCard({
           ? `${t('automations.whenSunrise')}${offsetText}`
           : `${t('automations.whenSunset')}${offsetText}`;
         break;
+      case AutomationTriggerType.TIME:
+        const time = triggerData?.time || automation.trigger.time || '08:00';
+        baseText = t('automations.whenTime', { time });
+        break;
       default:
         baseText = `${conditionType}: ${deviceName || ''}`;
     }
@@ -210,6 +212,7 @@ export default function SimpleAutomationCard({
       {
         sunriseSunsetType: trigger.sunriseSunsetType,
         offsetMinutes: trigger.offsetMinutes,
+        time: trigger.time,
       }
     );
 
@@ -319,9 +322,9 @@ export default function SimpleAutomationCard({
             color={automation.status === AutomationStatus.ACTIVE ? 'success' : 'default'}
             size="small"
           />
-          {automation.executionLog && automation.executionLog.length > 0 && (
+          {(automation.executionCount !== undefined && automation.executionCount > 0) && (
             <Chip
-              label={t('automations.executions', { count: automation.executionLog.length })}
+              label={t('automations.executions', { count: automation.executionCount })}
               size="small"
               variant="outlined"
             />
@@ -333,7 +336,7 @@ export default function SimpleAutomationCard({
             <PlayArrowIcon sx={{ mr: 1 }} fontSize="small" />
             {t('automations.execute')}
           </MenuItem>
-          {onEdit && (
+          {/*onEdit && (
             <MenuItem
               onClick={() => {
                 onEdit(automation);
@@ -343,7 +346,7 @@ export default function SimpleAutomationCard({
               <EditIcon sx={{ mr: 1 }} fontSize="small" />
               {t('common.edit')}
             </MenuItem>
-          )}
+          )}*/}
           {onEditNode && (
             <MenuItem
               onClick={() => {

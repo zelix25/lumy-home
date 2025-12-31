@@ -75,8 +75,6 @@ const renderFeatureControl = (
   feature: ExposeFeature,
   currentValue: any,
   onValueChange: (property: string, value: any) => void,
-  deviceId: string,
-  friendlyName: string,
 ): JSX.Element | null => {
   const property = feature.property || feature.name;
   if (!property) return null;
@@ -239,7 +237,6 @@ const renderFeatureControl = (
 
 export default function AdvancedExposesSettings({
   deviceId,
-  friendlyName,
   exposes,
   currentState,
   onStateUpdate,
@@ -308,7 +305,7 @@ export default function AdvancedExposesSettings({
 
                 return (
                   <Box key={featureIndex} sx={{ mb: 2 }}>
-                    {renderFeatureControl(feature, currentValue, handleValueChange, deviceId, friendlyName)}
+                    {renderFeatureControl(feature, currentValue, handleValueChange)}
                   </Box>
                 );
               })}
@@ -343,7 +340,7 @@ export default function AdvancedExposesSettings({
 
     return (
       <Box key={index} sx={{ mb: 2 }}>
-        {renderFeatureControl(feature, currentValue, handleValueChange, deviceId, friendlyName)}
+        {renderFeatureControl(feature, currentValue, handleValueChange)}
       </Box>
     );
   };
