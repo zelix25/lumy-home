@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g., v1.0.0 or v1.0.0-beta)'
+        description: 'Version tag (e.g. v1.0.0 or v1.0.0-beta)'
         required: true
         type: string
 
@@ -16,7 +16,8 @@ env:
   DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
   DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
   DOCKER_REGISTRY: docker.io
-  PLATFORMS: linux/amd64,linux/arm64
+  # ✅ Ajout arm/v7 (Synology ARM 32-bit + Raspberry Pi armv7)
+  PLATFORMS: linux/amd64,linux/arm64,linux/arm/v7
 
 jobs:
   check-branch:
@@ -27,14 +28,12 @@ jobs:
       - name: Check if branch is master
         id: check
         run: |
-          # Pour les tags, on accepte (généralement créés depuis master)
           if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == refs/tags/* ]]; then
             echo "allowed=true" >> $GITHUB_OUTPUT
             echo "✅ Tag push detected, allowing build"
             exit 0
           fi
-          
-          # Pour workflow_dispatch, vérifier que la branche est master
+
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
               echo "allowed=true" >> $GITHUB_OUTPUT
@@ -45,8 +44,7 @@ jobs:
             fi
             exit 0
           fi
-          
-          # Pour les autres cas (push de branche), vérifier que c'est master
+
           if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
             echo "allowed=true" >> $GITHUB_OUTPUT
             echo "✅ Push on master branch, allowing build"
@@ -71,7 +69,7 @@ jobs:
         run: |
           TAG=${GITHUB_REF#refs/tags/}
           VERSION=${TAG#v}
-          
+
           if [[ "$TAG" == *"-beta"* ]] || [[ "$TAG" == *"-alpha"* ]] || [[ "$TAG" == *"-rc"* ]]; then
             IS_BETA="true"
             IMAGE_TAG="beta"
@@ -79,25 +77,19 @@ jobs:
             IS_BETA="false"
             IMAGE_TAG="stable"
           fi
-          
+
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "is-beta=$IS_BETA" >> $GITHUB_OUTPUT
           echo "image-tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
           echo "tag=$TAG" >> $GITHUB_OUTPUT
-          
-          echo "Version: $VERSION"
-          echo "Is Beta: $IS_BETA"
-          echo "Image Tag: $IMAGE_TAG"
-          echo "Full Tag: $TAG"
 
       - name: Set version from workflow_dispatch
         if: github.event_name == 'workflow_dispatch'
         id: set-version-from-dispatch
         run: |
           VERSION=${{ github.event.inputs.version }}
-          # Remove 'v' prefix if present
           VERSION=${VERSION#v}
-          
+
           if [[ "${{ github.event.inputs.version }}" == *"-beta"* ]] || [[ "${{ github.event.inputs.version }}" == *"-alpha"* ]] || [[ "${{ github.event.inputs.version }}" == *"-rc"* ]]; then
             IS_BETA="true"
             IMAGE_TAG="beta"
@@ -105,16 +97,11 @@ jobs:
             IS_BETA="false"
             IMAGE_TAG="stable"
           fi
-          
+
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "is-beta=$IS_BETA" >> $GITHUB_OUTPUT
           echo "image-tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
           echo "tag=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          
-          echo "Version: $VERSION"
-          echo "Is Beta: $IS_BETA"
-          echo "Image Tag: $IMAGE_TAG"
-          echo "Full Tag: ${{ github.event.inputs.version }}"
 
   build-and-push-backend:
     needs: [check-branch, determine-version]
@@ -124,10 +111,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # ✅ Important: émulation arm/v7 + arm64
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
-          platforms: arm64
+          platforms: all
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -151,9 +139,6 @@ jobs:
             type=raw,value=${{ needs.determine-version.outputs.image-tag }}
             type=raw,value=${{ needs.determine-version.outputs.image-tag }}-${{ needs.determine-version.outputs.version }}
             type=raw,value=${{ needs.determine-version.outputs.tag }}
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
           flavor: |
             latest=${{ needs.determine-version.outputs.is-beta == 'false' && 'true' || 'false' }}
 
@@ -191,7 +176,7 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
-          platforms: arm64
+          platforms: all
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -215,9 +200,6 @@ jobs:
             type=raw,value=${{ needs.determine-version.outputs.image-tag }}
             type=raw,value=${{ needs.determine-version.outputs.image-tag }}-${{ needs.determine-version.outputs.version }}
             type=raw,value=${{ needs.determine-version.outputs.tag }}
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
           flavor: |
             latest=${{ needs.determine-version.outputs.is-beta == 'false' && 'true' || 'false' }}
 
@@ -253,32 +235,6 @@ jobs:
         run: |
           echo "## 🐳 Docker Images Built and Pushed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Version Information" >> $GITHUB_STEP_SUMMARY
-          echo "- **Version**: ${{ needs.determine-version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Full Tag**: ${{ needs.determine-version.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Type**: ${{ needs.determine-version.outputs.is-beta == 'true' && 'Beta' || 'Stable' }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Image Tag**: ${{ needs.determine-version.outputs.image-tag }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Published Images" >> $GITHUB_STEP_SUMMARY
-          echo "- **Backend**: \`docker.io/${{ env.DOCKER_HUB_USERNAME }}/lumy-home-backend:${{ needs.determine-version.outputs.image-tag }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Frontend**: \`docker.io/${{ env.DOCKER_HUB_USERNAME }}/lumy-home-frontend:${{ needs.determine-version.outputs.image-tag }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Supported Architectures" >> $GITHUB_STEP_SUMMARY
-          echo "- **linux/amd64** (PC, serveurs x86_64, machines virtuelles)" >> $GITHUB_STEP_SUMMARY
-          echo "- **linux/arm64** (Raspberry Pi 4+, Synology ARM64, Apple Silicon)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Docker Hub Links" >> $GITHUB_STEP_SUMMARY
-          echo "- [Backend Image](https://hub.docker.com/r/${{ env.DOCKER_HUB_USERNAME }}/lumy-home-backend)" >> $GITHUB_STEP_SUMMARY
-          echo "- [Frontend Image](https://hub.docker.com/r/${{ env.DOCKER_HUB_USERNAME }}/lumy-home-frontend)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### All Tags" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ needs.determine-version.outputs.is-beta }}" == "false" ]; then
-            echo "- \`latest\` (stable version)" >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "- \`${{ needs.determine-version.outputs.image-tag }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- \`${{ needs.determine-version.outputs.image-tag }}-${{ needs.determine-version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- \`${{ needs.determine-version.outputs.tag }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- \`${{ needs.determine-version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- \`{{major}}.{{minor}}\` (semver)" >> $GITHUB_STEP_SUMMARY
-          echo "- \`{{major}}\` (semver)" >> $GITHUB_STEP_SUMMARY
-
+          echo "- Version: ${{ needs.determine-version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Tag: ${{ needs.determine-version.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Platforms: ${{ env.PLATFORMS }}" >> $GITHUB_STEP_SUMMARY
