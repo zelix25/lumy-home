@@ -23,6 +23,7 @@ jobs:
     outputs:
       version: ${{ steps.out.outputs.version }}
       image-tag: ${{ steps.out.outputs.image_tag }}
+      is-beta: ${{ steps.out.outputs.is_beta }}
     steps:
       - name: Determine version
         id: out
@@ -31,7 +32,7 @@ jobs:
           set -euo pipefail
 
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            VERSION="${{ inputs.version }}"
+            VERSION="${{ github.event.inputs.version }}"
           else
             VERSION="${GITHUB_REF_NAME}"
           fi
@@ -39,11 +40,20 @@ jobs:
           # Normalize (strip leading v)
           IMAGE_TAG="${VERSION#v}"
 
+          # Détecter si c'est une version beta/alpha/rc
+          if [[ "$VERSION" == *"-beta"* ]] || [[ "$VERSION" == *"-alpha"* ]] || [[ "$VERSION" == *"-rc"* ]]; then
+            IS_BETA="true"
+          else
+            IS_BETA="false"
+          fi
+
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "image_tag=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+          echo "is_beta=$IS_BETA" >> "$GITHUB_OUTPUT"
 
           echo "✅ VERSION=$VERSION"
           echo "✅ IMAGE_TAG=$IMAGE_TAG"
+          echo "✅ IS_BETA=$IS_BETA"
 
   build-and-push-backend:
     needs: determine-version
@@ -72,7 +82,6 @@ jobs:
           images: ${{ env.DOCKER_HUB_USERNAME }}/lumy-home-backend
           tags: |
             type=raw,value=${{ needs.determine-version.outputs.image-tag }}
-            type=raw,value=latest,enable={{is_default_branch}}
           labels: |
             org.opencontainers.image.title=lumy-home-backend
 
@@ -87,6 +96,11 @@ jobs:
           labels: ${{ steps.meta_backend.outputs.labels }}
           cache-from: type=registry,ref=${{ env.DOCKER_HUB_USERNAME }}/lumy-home-backend:buildcache
           cache-to: type=registry,ref=${{ env.DOCKER_HUB_USERNAME }}/lumy-home-backend:buildcache,mode=max
+
+      - name: Tag as latest (stable only)
+        if: needs.determine-version.outputs.is-beta != 'true'
+        run: |
+          docker buildx imagetools create -t ${{ env.DOCKER_HUB_USERNAME }}/lumy-home-backend:latest ${{ env.DOCKER_HUB_USERNAME }}/lumy-home-backend:${{ needs.determine-version.outputs.image-tag }}
 
   build-and-push-frontend:
     needs: determine-version
@@ -115,7 +129,6 @@ jobs:
           images: ${{ env.DOCKER_HUB_USERNAME }}/lumy-home-frontend
           tags: |
             type=raw,value=${{ needs.determine-version.outputs.image-tag }}
-            type=raw,value=latest,enable={{is_default_branch}}
           labels: |
             org.opencontainers.image.title=lumy-home-frontend
 
@@ -130,3 +143,8 @@ jobs:
           labels: ${{ steps.meta_frontend.outputs.labels }}
           cache-from: type=registry,ref=${{ env.DOCKER_HUB_USERNAME }}/lumy-home-frontend:buildcache
           cache-to: type=registry,ref=${{ env.DOCKER_HUB_USERNAME }}/lumy-home-frontend:buildcache,mode=max
+
+      - name: Tag as latest (stable only)
+        if: needs.determine-version.outputs.is-beta != 'true'
+        run: |
+          docker buildx imagetools create -t ${{ env.DOCKER_HUB_USERNAME }}/lumy-home-frontend:latest ${{ env.DOCKER_HUB_USERNAME }}/lumy-home-frontend:${{ needs.determine-version.outputs.image-tag }}

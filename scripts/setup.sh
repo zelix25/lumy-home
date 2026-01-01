@@ -30,19 +30,19 @@ success() {
 
 info "Démarrage de la configuration de Mosquitto et Zigbee2MQTT..."
 
-# Créer les dossiers système dans /opt/exohome
-info "Création des dossiers système dans /opt/exohome..."
-EXOHOME_DIR="/opt/exohome"
-EXOHOME_DATA_DIR="$EXOHOME_DIR/data"
+# Créer les dossiers système dans /opt/lumy
+info "Création des dossiers système dans /opt/lumy..."
+LUMYHOME_DIR="/opt/lumy"
+LUMYHOME_DIR_DATA_DIR="$LUMYHOME_DIR/data"
 
 # Déterminer le répertoire de base du projet
-Z2MQTT_DIR="$EXOHOME_DATA_DIR/zigbee2mqtt"
-MOSQUITTO_CONFIG_DIR="$EXOHOME_DATA_DIR/mosquitto/config"
+Z2MQTT_DIR="$LUMYHOME_DIR_DATA_DIR/zigbee2mqtt"
+MOSQUITTO_CONFIG_DIR="$LUMYHOME_DIR_DATA_DIR/mosquitto/config"
 Z2MQTT_DATA_DIR="$Z2MQTT_DIR/data"
 
 # Vérifier les permissions root pour créer dans /opt
 if [ "$EUID" -ne 0 ]; then
-    warn "Les permissions root sont nécessaires pour créer les dossiers dans /opt/exohome"
+    warn "Les permissions root sont nécessaires pour créer les dossiers dans /opt/lumy"
     warn "Le script va tenter de créer les dossiers avec sudo..."
     SUDO_CMD="sudo"
 else
@@ -50,15 +50,15 @@ else
 fi
 
 # Créer le dossier principal
-if [ ! -d "$EXOHOME_DIR" ]; then
-    $SUDO_CMD mkdir -p "$EXOHOME_DIR"
-    success "Dossier $EXOHOME_DIR créé"
+if [ ! -d "$LUMYHOME_DIR" ]; then
+    $SUDO_CMD mkdir -p "$LUMYHOME_DIR"
+    success "Dossier $LUMYHOME_DIR créé"
 else
-    info "Dossier $EXOHOME_DIR existe déjà"
+    info "Dossier $LUMYHOME_DIR existe déjà"
 fi
 
 # Créer les sous-dossiers
-for dir in "$EXOHOME_DATA_DIR" "$EXOHOME_CONFIG_DIR" "$EXOHOME_LOG_DIR"; do
+for dir in "$LUMYHOME_DIR_DATA_DIR" "$LUMYHOME_DIR_CONFIG_DIR" "$LUMYHOME_DIR_LOG_DIR"; do
     if [ ! -d "$dir" ]; then
         $SUDO_CMD mkdir -p "$dir"
         success "Dossier $dir créé"
@@ -69,9 +69,9 @@ done
 
 # Définir les permissions appropriées (si on est root)
 if [ "$EUID" -eq 0 ]; then
-    $SUDO_CMD chown -R "$USER:$USER" "$EXOHOME_DIR" 2>/dev/null || true
-    $SUDO_CMD chmod -R 755 "$EXOHOME_DIR"
-    success "Permissions définies pour $EXOHOME_DIR"
+    $SUDO_CMD chown -R "$USER:$USER" "$LUMYHOME_DIR" 2>/dev/null || true
+    $SUDO_CMD chmod -R 755 "$LUMYHOME_DIR"
+    success "Permissions définies pour $LUMYHOME_DIR"
 fi
 
 # Vérifier que Docker est installé et en cours d'exécution
@@ -221,6 +221,19 @@ if [ -z "$MQTT_PASSWORD" ]; then
     echo ""
 fi
 
+# Verifier si le port USB0 est disponible
+if [ ! -c "/dev/ttyUSB0" ]; then
+    error "Le port USB0 n'est pas disponible. Veuillez connecter un module Zigbee2MQTT à votre ordinateur."
+    PORT_ZIGBEE="/dev/ttyUSB0"
+
+elif [ ! -c "/dev/ttyAMA0" ]; then
+    error "Le port AMA0 n'est pas disponible. Veuillez connecter un module Zigbee2MQTT à votre ordinateur."
+    PORT_ZIGBEE="/dev/ttyAMA0"
+else
+    info "Veuillez coordinateur Zigbee2MQTT détecté sur le port /dev/ttyUSB0 ou /dev/ttyAMA0."
+    exit 1
+fi
+
 # Créer le fichier configuration.yaml
 info "Création du fichier configuration.yaml pour Zigbee2MQTT..."
 cat > "$Z2MQTT_DATA_DIR/configuration.yaml" << EOF
@@ -231,7 +244,7 @@ mqtt:
   user: $MQTT_USER
   password: $MQTT_PASSWORD
 serial:
-  port: /dev/ttyUSB0
+  port: $PORT_ZIGBEE
   adapter: zigate
   baudrate: 115200
   rtscts: false
@@ -256,8 +269,8 @@ success "Fichier configuration.yaml créé avec succès"
 # 3. Configuration Backend .env
 info "Configuration du fichier .env pour le backend..."
 
-# Créer le dossier backend dans /opt/exohome/data si nécessaire
-BACKEND_ENV_DIR="$EXOHOME_DATA_DIR/backend"
+# Créer le dossier backend dans /opt/lumy/data si nécessaire
+BACKEND_ENV_DIR="$LUMYHOME_DIR_DATA_DIR/backend"
 if [ ! -d "$BACKEND_ENV_DIR" ]; then
     $SUDO_CMD mkdir -p "$BACKEND_ENV_DIR"
     success "Dossier $BACKEND_ENV_DIR créé"
@@ -282,27 +295,21 @@ cat > "$BACKEND_ENV_FILE" << EOF
 
 NODE_ENV=production
 PORT=3000
-FRONTEND_URL=http://exohome-frontend:80
+FRONTEND_URL=http://lumy-frontend:80
 
 # Database
-DATABASE_PATH=data/exohome.db
+DATABASE_PATH=data/lumy.db
 
 # MQTT (Zigbee2MQTT)
 MQTT_BROKER_URL=mqtt://mosquitto:1883
-MQTT_USERNAME=exo
+MQTT_USERNAME=lumy
 MQTT_PASSWORD=$MQTT_PASSWORD
-MQTT_CLIENT_ID=exohome
+MQTT_CLIENT_ID=lumy
 MQTT_RECONNECT_PERIOD=5000
 
 # Logging
 # debug | info | warn | error
 LOG_LEVEL=info
-
-# AI (Gemma 3 via Ollama)
-# Pour Docker, utilisez l'URL interne : http://ollama:11434
-LLAMA_API_URL=http://localhost:11434
-LLAMA_MODEL=gemma3
-USE_LOCAL_LLAMA=true
 
 # Auth
 # Changez cette clé en production !
