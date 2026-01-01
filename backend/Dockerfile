@@ -19,8 +19,8 @@ COPY nest-cli.json ./
 COPY env.example.prod ./env.production
 
 # Generate JWT_SECRET and replace it in .env file
-RUN JWT_SECRET=$(openssl rand -hex 32) && \
-    sed -i "s/JWT_SECRET=lumy-home-secret-key-change-in-production/JWT_SECRET=${JWT_SECRET}/" ./env.production
+#
+#    sed -i "s/JWT_SECRET=lumy-home-secret-key-change-in-production/JWT_SECRET=${JWT_SECRET}/" ./env.production
 
 # Variables pour forcer compilation (multi-arch ok)
 ENV npm_config_build_from_source=true
@@ -54,7 +54,7 @@ RUN apk add --no-cache sqlite-libs
 # Copier artefacts build + deps prod
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/env.production ./.env
+#COPY --from=builder /app/env.production ./.env
 COPY --from=builder /app/package*.json ./
 
 # (Optionnel) Exemple: on copie un fichier env template, mais NE PAS inclure de secrets
