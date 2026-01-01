@@ -39,6 +39,7 @@ RUN if [ -f /etc/debian_version ]; then \
         apt-get update && apt-get install -y \
             openssl \
             python3 \
+            python3-setuptools \
             make \
             g++ \
             libsqlite3-dev \
@@ -61,8 +62,20 @@ RUN JWT_SECRET=$(openssl rand -hex 32) && \
 ENV npm_config_build_from_source=true
 ENV npm_config_sqlite3_binary_host_mirror=""
 ENV npm_config_bcrypt_build_from_source=true
-RUN npm ci || \
-    (npm install && npm rebuild sqlite3 bcrypt --build-from-source)
+
+# Installer node-gyp globalement pour une meilleure compatibilité
+RUN npm install -g node-gyp@latest
+
+# Installer les dépendances
+# D'abord installer sans les scripts natifs, puis compiler séparément
+RUN npm ci --ignore-scripts
+
+# Rebuild les modules natifs séparément avec gestion d'erreur
+RUN npm rebuild sqlite3 --build-from-source || \
+    (cd node_modules/sqlite3 && npm install --build-from-source)
+
+RUN npm rebuild bcrypt --build-from-source || \
+    (cd node_modules/bcrypt && npm install --build-from-source)
 
 # Copier le code source
 COPY src ./src
