@@ -1,10 +1,8 @@
 FROM node:20-alpine AS builder
-
 WORKDIR /app
 
-# Installer les dépendances système nécessaires pour compiler sqlite3 et bcrypt
+# Dépendances build pour modules natifs (sqlite3/bcrypt)
 RUN apk add --no-cache \
-    openssl \
     python3 \
     make \
     g++ \
@@ -13,63 +11,58 @@ RUN apk add --no-cache \
     linux-headers \
     && ln -sf python3 /usr/bin/python
 
-# Copier les fichiers de dépendances
+# Copier dépendances en premier (cache)
 COPY package*.json ./
 COPY tsconfig*.json ./
 COPY nest-cli.json ./
+
 COPY env.example.prod ./env.production
 
 # Generate JWT_SECRET and replace it in .env file
 RUN JWT_SECRET=$(openssl rand -hex 32) && \
     sed -i "s/JWT_SECRET=lumy-home-secret-key-change-in-production/JWT_SECRET=${JWT_SECRET}/" ./env.production
 
-# Installer les dépendances
-# Forcer la compilation de tous les modules natifs depuis les sources
+# Variables pour forcer compilation (multi-arch ok)
 ENV npm_config_build_from_source=true
 ENV npm_config_sqlite3_binary_host_mirror=""
 ENV npm_config_bcrypt_build_from_source=true
 
-# Installer node-gyp globalement pour une meilleure compatibilité
+# Installer node-gyp (utile sur armv7)
 RUN npm install -g node-gyp@latest
 
-# Installer les dépendances
-# D'abord installer sans les scripts natifs, puis compiler séparément
-RUN npm ci --ignore-scripts
-
-# Rebuild les modules natifs séparément avec gestion d'erreur
-RUN npm rebuild sqlite3 --build-from-source || \
-    (cd node_modules/sqlite3 && npm install --build-from-source)
-
-RUN npm rebuild bcrypt --build-from-source || \
-    (cd node_modules/bcrypt && npm install --build-from-source)
+# Install deps (incl. dev) nécessaires au build
+RUN npm ci --no-audit --no-fund
 
 # Copier le code source
 COPY src ./src
 
-# Builder l'application
+# Build NestJS
 RUN npm run build
 
-# Stage de production
-FROM node:20-alpine
+# Nettoyage: ne garder que deps prod dans node_modules
+RUN npm prune --omit=dev
 
+# ==========================
+# Stage production
+# ==========================
+FROM node:20-alpine
 WORKDIR /app
 
-# Installer les dépendances runtime pour sqlite3
+# Runtime deps pour sqlite3
 RUN apk add --no-cache sqlite-libs
 
-# Copier les fichiers nécessaires
-COPY package*.json ./
+# Copier artefacts build + deps prod
 COPY --from=builder /app/dist ./dist
-# Copier le fichier d'environnement de production et le renommer en .env
-COPY --from=builder /app/env.production ./.env
-# Copier node_modules compilés depuis le builder (inclut sqlite3 et bcrypt compilés)
 COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/env.production ./.env
+COPY --from=builder /app/package*.json ./
 
-# Créer les dossiers nécessaires
+# (Optionnel) Exemple: on copie un fichier env template, mais NE PAS inclure de secrets
+# COPY env.production ./.env
+
 RUN mkdir -p data logs
 
-# Exposer le port
+ENV NODE_ENV=production
 EXPOSE 3000
 
-# Commande de démarrage
 CMD ["node", "dist/main"]
