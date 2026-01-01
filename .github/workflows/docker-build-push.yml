@@ -3,115 +3,54 @@ name: Build and Push Docker Images
 on:
   push:
     tags:
-      - 'v*.*.*'
-      - 'v*.*.*-beta*'
+      - "v*.*.*"
+      - "v*.*.*-beta*"
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g. v1.0.0 or v1.0.0-beta)'
+        description: "Version tag (e.g. v1.0.0 or v1.0.0-beta)"
         required: true
         type: string
 
 env:
   DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
   DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
-  DOCKER_REGISTRY: docker.io
-  # ✅ Ajout arm/v7 (Synology ARM 32-bit + Raspberry Pi armv7)
   PLATFORMS: linux/amd64,linux/arm64,linux/arm/v7
 
 jobs:
-  check-branch:
+  determine-version:
     runs-on: ubuntu-latest
     outputs:
-      allowed: ${{ steps.check.outputs.allowed }}
+      version: ${{ steps.out.outputs.version }}
+      image-tag: ${{ steps.out.outputs.image_tag }}
     steps:
-      - name: Check if branch is master
-        id: check
+      - name: Determine version
+        id: out
+        shell: bash
         run: |
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == refs/tags/* ]]; then
-            echo "allowed=true" >> $GITHUB_OUTPUT
-            echo "✅ Tag push detected, allowing build"
-            exit 0
-          fi
+          set -euo pipefail
 
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
-              echo "allowed=true" >> $GITHUB_OUTPUT
-              echo "✅ Workflow dispatch on master branch, allowing build"
-            else
-              echo "allowed=false" >> $GITHUB_OUTPUT
-              echo "❌ Workflow dispatch not on master branch (current: ${{ github.ref }}), blocking build"
-            fi
-            exit 0
-          fi
-
-          if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
-            echo "allowed=true" >> $GITHUB_OUTPUT
-            echo "✅ Push on master branch, allowing build"
+            VERSION="${{ inputs.version }}"
           else
-            echo "allowed=false" >> $GITHUB_OUTPUT
-            echo "❌ Push not on master branch (current: ${{ github.ref }}), blocking build"
+            VERSION="${GITHUB_REF_NAME}"
           fi
 
-  determine-version:
-    needs: check-branch
-    if: needs.check-branch.outputs.allowed == 'true'
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.set-version-from-tag.outputs.version || steps.set-version-from-dispatch.outputs.version }}
-      is-beta: ${{ steps.set-version-from-tag.outputs.is-beta || steps.set-version-from-dispatch.outputs.is-beta }}
-      image-tag: ${{ steps.set-version-from-tag.outputs.image-tag || steps.set-version-from-dispatch.outputs.image-tag }}
-      tag: ${{ steps.set-version-from-tag.outputs.tag || steps.set-version-from-dispatch.outputs.tag }}
-    steps:
-      - name: Set version from tag
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-        id: set-version-from-tag
-        run: |
-          TAG=${GITHUB_REF#refs/tags/}
-          VERSION=${TAG#v}
+          # Normalize (strip leading v)
+          IMAGE_TAG="${VERSION#v}"
 
-          if [[ "$TAG" == *"-beta"* ]] || [[ "$TAG" == *"-alpha"* ]] || [[ "$TAG" == *"-rc"* ]]; then
-            IS_BETA="true"
-            IMAGE_TAG="beta"
-          else
-            IS_BETA="false"
-            IMAGE_TAG="stable"
-          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "image_tag=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
 
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "is-beta=$IS_BETA" >> $GITHUB_OUTPUT
-          echo "image-tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-
-      - name: Set version from workflow_dispatch
-        if: github.event_name == 'workflow_dispatch'
-        id: set-version-from-dispatch
-        run: |
-          VERSION=${{ github.event.inputs.version }}
-          VERSION=${VERSION#v}
-
-          if [[ "${{ github.event.inputs.version }}" == *"-beta"* ]] || [[ "${{ github.event.inputs.version }}" == *"-alpha"* ]] || [[ "${{ github.event.inputs.version }}" == *"-rc"* ]]; then
-            IS_BETA="true"
-            IMAGE_TAG="beta"
-          else
-            IS_BETA="false"
-            IMAGE_TAG="stable"
-          fi
-
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "is-beta=$IS_BETA" >> $GITHUB_OUTPUT
-          echo "image-tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
-          echo "tag=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          echo "✅ VERSION=$VERSION"
+          echo "✅ IMAGE_TAG=$IMAGE_TAG"
 
   build-and-push-backend:
-    needs: [check-branch, determine-version]
-    if: needs.check-branch.outputs.allowed == 'true'
+    needs: determine-version
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # ✅ Important: émulation arm/v7 + arm64
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
@@ -119,10 +58,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        with:
-          driver-opts: |
-            image=moby/buildkit:latest
-            network=host
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -130,48 +65,34 @@ jobs:
           username: ${{ env.DOCKER_HUB_USERNAME }}
           password: ${{ env.DOCKER_HUB_TOKEN }}
 
-      - name: Extract metadata for backend
-        id: meta-backend
+      - name: Extract metadata (backend)
+        id: meta_backend
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.DOCKER_HUB_USERNAME }}/lumy-home-backend
           tags: |
             type=raw,value=${{ needs.determine-version.outputs.image-tag }}
-            type=raw,value=${{ needs.determine-version.outputs.image-tag }}-${{ needs.determine-version.outputs.version }}
-            type=raw,value=${{ needs.determine-version.outputs.tag }}
-          flavor: |
-            latest=${{ needs.determine-version.outputs.is-beta == 'false' && 'true' || 'false' }}
+            type=raw,value=latest,enable={{is_default_branch}}
+          labels: |
+            org.opencontainers.image.title=lumy-home-backend
 
-      - name: Verify tags for backend
-        run: |
-          if [ -z "${{ steps.meta-backend.outputs.tags }}" ]; then
-            echo "❌ Error: No tags generated for backend image"
-            exit 1
-          fi
-          echo "✅ Backend tags: ${{ steps.meta-backend.outputs.tags }}"
-
-      - name: Build and push backend image
-        uses: docker/build-push-action@v5
+      - name: Build and push backend
+        uses: docker/build-push-action@v6
         with:
           context: ./backend
           file: ./backend/Dockerfile
           platforms: ${{ env.PLATFORMS }}
           push: true
-          tags: ${{ steps.meta-backend.outputs.tags }}
-          labels: ${{ steps.meta-backend.outputs.labels }}
+          tags: ${{ steps.meta_backend.outputs.tags }}
+          labels: ${{ steps.meta_backend.outputs.labels }}
           cache-from: type=registry,ref=${{ env.DOCKER_HUB_USERNAME }}/lumy-home-backend:buildcache
           cache-to: type=registry,ref=${{ env.DOCKER_HUB_USERNAME }}/lumy-home-backend:buildcache,mode=max
-          build-args: |
-            VERSION=${{ needs.determine-version.outputs.version }}
-            BUILD_DATE=${{ github.event.head_commit.timestamp || github.run_started_at }}
 
   build-and-push-frontend:
-    needs: [check-branch, determine-version]
-    if: needs.check-branch.outputs.allowed == 'true'
+    needs: determine-version
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -180,10 +101,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        with:
-          driver-opts: |
-            image=moby/buildkit:latest
-            network=host
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -191,50 +108,25 @@ jobs:
           username: ${{ env.DOCKER_HUB_USERNAME }}
           password: ${{ env.DOCKER_HUB_TOKEN }}
 
-      - name: Extract metadata for frontend
-        id: meta-frontend
+      - name: Extract metadata (frontend)
+        id: meta_frontend
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.DOCKER_HUB_USERNAME }}/lumy-home-frontend
           tags: |
             type=raw,value=${{ needs.determine-version.outputs.image-tag }}
-            type=raw,value=${{ needs.determine-version.outputs.image-tag }}-${{ needs.determine-version.outputs.version }}
-            type=raw,value=${{ needs.determine-version.outputs.tag }}
-          flavor: |
-            latest=${{ needs.determine-version.outputs.is-beta == 'false' && 'true' || 'false' }}
+            type=raw,value=latest,enable={{is_default_branch}}
+          labels: |
+            org.opencontainers.image.title=lumy-home-frontend
 
-      - name: Verify tags for frontend
-        run: |
-          if [ -z "${{ steps.meta-frontend.outputs.tags }}" ]; then
-            echo "❌ Error: No tags generated for frontend image"
-            exit 1
-          fi
-          echo "✅ Frontend tags: ${{ steps.meta-frontend.outputs.tags }}"
-
-      - name: Build and push frontend image
-        uses: docker/build-push-action@v5
+      - name: Build and push frontend
+        uses: docker/build-push-action@v6
         with:
           context: ./frontend
           file: ./frontend/Dockerfile
           platforms: ${{ env.PLATFORMS }}
           push: true
-          tags: ${{ steps.meta-frontend.outputs.tags }}
-          labels: ${{ steps.meta-frontend.outputs.labels }}
+          tags: ${{ steps.meta_frontend.outputs.tags }}
+          labels: ${{ steps.meta_frontend.outputs.labels }}
           cache-from: type=registry,ref=${{ env.DOCKER_HUB_USERNAME }}/lumy-home-frontend:buildcache
           cache-to: type=registry,ref=${{ env.DOCKER_HUB_USERNAME }}/lumy-home-frontend:buildcache,mode=max
-          build-args: |
-            VERSION=${{ needs.determine-version.outputs.version }}
-            BUILD_DATE=${{ github.event.head_commit.timestamp || github.run_started_at }}
-
-  summary:
-    needs: [check-branch, determine-version, build-and-push-backend, build-and-push-frontend]
-    if: needs.check-branch.outputs.allowed == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Create summary
-        run: |
-          echo "## 🐳 Docker Images Built and Pushed" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- Version: ${{ needs.determine-version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Tag: ${{ needs.determine-version.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Platforms: ${{ env.PLATFORMS }}" >> $GITHUB_STEP_SUMMARY
