@@ -16,7 +16,7 @@ env:
   DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
   DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
   DOCKER_REGISTRY: docker.io
-  PLATFORMS: linux/amd64,linux/arm64,linux/arm/v7
+  PLATFORMS: linux/amd64,linux/arm64
 
 jobs:
   check-branch:
@@ -127,7 +127,7 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
-          platforms: arm64,arm
+          platforms: arm64
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -191,7 +191,7 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
-          platforms: arm64,arm
+          platforms: arm64
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -266,7 +266,6 @@ jobs:
           echo "### Supported Architectures" >> $GITHUB_STEP_SUMMARY
           echo "- **linux/amd64** (PC, serveurs x86_64, machines virtuelles)" >> $GITHUB_STEP_SUMMARY
           echo "- **linux/arm64** (Raspberry Pi 4+, Synology ARM64, Apple Silicon)" >> $GITHUB_STEP_SUMMARY
-          echo "- **linux/arm/v7** (Raspberry Pi 3 et antérieurs, Synology ARM)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Docker Hub Links" >> $GITHUB_STEP_SUMMARY
           echo "- [Backend Image](https://hub.docker.com/r/${{ env.DOCKER_HUB_USERNAME }}/lumy-home-backend)" >> $GITHUB_STEP_SUMMARY
