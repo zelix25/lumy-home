@@ -444,6 +444,7 @@
     "stepAccount": "Account",
     "stepStore": "Store",
     "stepAI": "AI Assistant",
+    "stepWeather": "Weather",
     "stepDevices": "Devices",
     "stepComplete": "Complete",
     "checkingUpdates": "Checking for updates",
@@ -477,6 +478,16 @@
       "localDisabled": "Not available (RAM < 8GB or ARM CPU)",
       "checkingSystem": "Checking system information...",
       "systemInfo": "RAM: {{ram}} GB | CPU: {{cpuType}} ({{cpuArch}})"
+    },
+    "weather": {
+      "title": "Weather Configuration",
+      "description": "Enter your location to receive weather data for your city.",
+      "fillAllFields": "Please fill in all fields",
+      "save": "Save",
+      "skip": "Skip",
+      "success": "Location saved successfully. GPS coordinates have been automatically retrieved.",
+      "error": "Error saving location",
+      "countryPlaceholder": "Ex: France, United States, Germany..."
     }
   },
   "menu": {

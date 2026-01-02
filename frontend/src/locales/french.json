@@ -445,6 +445,7 @@
     "stepAccount": "Compte",
     "stepStore": "Store",
     "stepAI": "Assistant IA",
+    "stepWeather": "Météo",
     "stepDevices": "Équipements",
     "stepComplete": "Terminé",
     "checkingUpdates": "Vérification des mises à jour",
@@ -478,6 +479,16 @@
       "localDisabled": "Non disponible (RAM < 8Go ou CPU ARM)",
       "checkingSystem": "Vérification des informations système...",
       "systemInfo": "RAM: {{ram}} Go | CPU: {{cpuType}} ({{cpuArch}})"
+    },
+    "weather": {
+      "title": "Configuration de la Météo",
+      "description": "Renseignez votre localisation pour recevoir les données météo de votre ville.",
+      "fillAllFields": "Veuillez remplir tous les champs",
+      "save": "Enregistrer",
+      "skip": "Passer",
+      "success": "Localisation enregistrée avec succès. Les coordonnées GPS ont été récupérées automatiquement.",
+      "error": "Erreur lors de l'enregistrement de la localisation",
+      "countryPlaceholder": "Ex: France, United States, Germany..."
     }
   },
   "menu": {
