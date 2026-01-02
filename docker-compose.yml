@@ -38,7 +38,7 @@ services:
     #build:
       #context: ./backend
       #dockerfile: Dockerfile
-    image: zelix25/lumy-home-backend:latest
+    image: zelix25/lumy-home-backend
     container_name: lumy-backend
     # Port retiré - communication uniquement via réseau Docker privé
     # Pour le développement local, décommentez la ligne suivante :
@@ -60,7 +60,7 @@ services:
     #build:
       #context: ./frontend
       #dockerfile: Dockerfile
-    image: zelix25/lumy-home-frontend:latest
+    image: zelix25/lumy-home-frontend
     container_name: lumy-frontend
     ports:
       - "80:80"

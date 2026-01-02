@@ -30,7 +30,7 @@ import { storeService, ConnectStoreDto } from '../services/store.service';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 
-type SetupStep = 'update' | 'account' | 'store' | 'ai' | 'complete';
+type SetupStep = 'update' | 'account' | 'store' | 'ai' | 'weather' | 'complete';
 
 export default function SetupPage() {
   const { t } = useTranslation();
@@ -40,7 +40,7 @@ export default function SetupPage() {
   // Récupérer l'étape depuis localStorage ou utiliser 'update' par défaut
   const getInitialStep = (): SetupStep => {
     const savedStep = localStorage.getItem('setup_current_step');
-    if (savedStep && ['update', 'account', 'store', 'ai', 'complete'].includes(savedStep)) {
+    if (savedStep && ['update', 'account', 'store', 'ai', 'weather', 'complete'].includes(savedStep)) {
       return savedStep as SetupStep;
     }
     return 'update';
@@ -74,6 +74,14 @@ export default function SetupPage() {
   const [systemInfo, setSystemInfo] = useState<{ ram: number; cpuArch: string; cpuType: string } | null>(null);
   const [checkingSystemInfo, setCheckingSystemInfo] = useState(false);
   const [localAiDisabled, setLocalAiDisabled] = useState(false);
+
+  // Étape 5: Météo
+  const [city, setCity] = useState('');
+  const [zipCode, setZipCode] = useState('');
+  const [country, setCountry] = useState('');
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [weatherError, setWeatherError] = useState<string | null>(null);
+  const [weatherSuccess, setWeatherSuccess] = useState(false);
 
   const checkUpdateStatus = async () => {
     setUpdateStatus('checking');
@@ -302,6 +310,38 @@ export default function SetupPage() {
   };
 
   const handleContinueFromAI = () => {
+    setCurrentStep('weather');
+  };
+
+  const handleSaveWeather = async () => {
+    if (!city || !zipCode || !country) {
+      setWeatherError(t('setup.weather.fillAllFields'));
+      return;
+    }
+
+    setWeatherLoading(true);
+    setWeatherError(null);
+    setWeatherSuccess(false);
+
+    try {
+      await settingsService.updateSettings({
+        city,
+        zipCode,
+        country,
+      });
+      setWeatherSuccess(true);
+    } catch (err: any) {
+      setWeatherError(err.message || t('setup.weather.error'));
+    } finally {
+      setWeatherLoading(false);
+    }
+  };
+
+  const handleContinueFromWeather = () => {
+    setCurrentStep('complete');
+  };
+
+  const handleSkipWeather = () => {
     setCurrentStep('complete');
   };
 
@@ -326,6 +366,7 @@ export default function SetupPage() {
     t('setup.stepAccount'),
     t('setup.stepStore'),
     t('setup.stepAI'),
+    t('setup.stepWeather'),
     t('setup.stepComplete'),
   ];
 
@@ -339,8 +380,10 @@ export default function SetupPage() {
         return 2;
       case 'ai':
         return 3;
-      case 'complete':
+      case 'weather':
         return 4;
+      case 'complete':
+        return 5;
       default:
         return 0;
     }
@@ -679,6 +722,86 @@ export default function SetupPage() {
               >
                 {t('setup.continue')}
               </Button>
+            </Stack>
+          </Box>
+        );
+
+      case 'weather':
+        return (
+          <Box>
+            <Typography variant="h6" sx={{ mb: 3, fontWeight: 500 }}>
+              {t('setup.weather.title')}
+            </Typography>
+
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              {t('setup.weather.description')}
+            </Typography>
+
+            {weatherError && (
+              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setWeatherError(null)}>
+                {weatherError}
+              </Alert>
+            )}
+
+            {weatherSuccess && (
+              <Alert severity="success" icon={<CheckCircleIcon />} sx={{ mb: 3 }}>
+                {t('setup.weather.success')}
+              </Alert>
+            )}
+
+            <Stack spacing={2}>
+              <TextField
+                label={t('settings.city')}
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                fullWidth
+                required
+                disabled={weatherSuccess}
+              />
+
+              <TextField
+                label={t('settings.zipCode')}
+                value={zipCode}
+                onChange={(e) => setZipCode(e.target.value)}
+                fullWidth
+                required
+                disabled={weatherSuccess}
+              />
+
+              <TextField
+                label={t('settings.country')}
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                fullWidth
+                required
+                disabled={weatherSuccess}
+                placeholder={t('setup.weather.countryPlaceholder')}
+              />
+
+              {weatherSuccess ? (
+                <Button variant="contained" onClick={handleContinueFromWeather} fullWidth>
+                  {t('setup.continue')}
+                </Button>
+              ) : (
+                <Stack direction="row" spacing={2}>
+                  <Button
+                    variant="outlined"
+                    onClick={handleSkipWeather}
+                    fullWidth
+                    disabled={weatherLoading}
+                  >
+                    {t('setup.weather.skip')}
+                  </Button>
+                  <Button
+                    variant="contained"
+                    onClick={handleSaveWeather}
+                    disabled={weatherLoading || !city || !zipCode || !country}
+                    fullWidth
+                  >
+                    {weatherLoading ? t('common.loading') : t('setup.weather.save')}
+                  </Button>
+                </Stack>
+              )}
             </Stack>
           </Box>
         );

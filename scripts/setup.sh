@@ -40,7 +40,7 @@ LUMYHOME_DIR_LOG_DIR="$LUMYHOME_DIR/log"
 # Déterminer le répertoire de base du projet
 Z2MQTT_DIR="$LUMYHOME_DIR_DATA_DIR/zigbee2mqtt"
 MOSQUITTO_CONFIG_DIR="$LUMYHOME_DIR_DATA_DIR/mosquitto/config"
-Z2MQTT_DATA_DIR="$Z2MQTT_DIR/data"
+Z2MQTT_DATA_DIR="$Z2MQTT_DIR"
 
 # Vérifier les permissions root pour créer dans /opt
 if [ "$EUID" -ne 0 ]; then
@@ -224,15 +224,15 @@ if [ -z "$MQTT_PASSWORD" ]; then
 fi
 
 # Verifier si le port USB0 est disponible
-if [ ! -c "/dev/ttyUSB0" ]; then
-    error "Le port USB0 n'est pas disponible. Veuillez connecter un module Zigbee2MQTT à votre ordinateur."
+if [ -c "/dev/ttyUSB0" ]; then
+    info "Coordinateur Zigbee2MQTT connecté sur le port /dev/ttyUSB0."
     PORT_ZIGBEE="/dev/ttyUSB0"
 
-elif [ ! -c "/dev/ttyAMA0" ]; then
-    error "Le port AMA0 n'est pas disponible. Veuillez connecter un module Zigbee2MQTT à votre ordinateur."
+elif [ -c "/dev/ttyAMA0" ]; then
+    info "Coordinateur Zigbee2MQTT connecté sur le port /dev/ttyAMA0."
     PORT_ZIGBEE="/dev/ttyAMA0"
 else
-    info "Veuillez coordinateur Zigbee2MQTT détecté sur le port /dev/ttyUSB0 ou /dev/ttyAMA0."
+    error "Veuillez coordinateur Zigbee2MQTT détecté sur le port /dev/ttyUSB0 ou /dev/ttyAMA0."
     exit 1
 fi
 
@@ -259,7 +259,7 @@ $NETWORK_KEY_YAML
   ext_pan_id:
 $EXT_PAN_ID_YAML
 frontend:
-  enabled: true
+  enabled: fasle
   port: 8080
 homeassistant:
   enabled: false

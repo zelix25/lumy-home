@@ -5,6 +5,11 @@ export interface Settings {
   logout_delay: number;
   hostname: string;
   setup: boolean;
+  city?: string | null;
+  zipCode?: string | null;
+  country?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   createdAt: string;
   updatedAt: string;
 }
