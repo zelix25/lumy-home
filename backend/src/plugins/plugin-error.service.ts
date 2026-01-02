@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan } from 'typeorm';
+import { Repository, LessThan, DataSource, Table } from 'typeorm';
 import {
   PluginError,
   ErrorSeverity,
@@ -33,14 +33,57 @@ export class PluginErrorService implements OnModuleInit {
     @InjectRepository(Plugin)
     private pluginRepository: Repository<Plugin>,
     private loggerService: LoggerService,
+    private dataSource: DataSource,
   ) {
     this.logger = new Logger(PluginErrorService.name);
   }
 
   async onModuleInit() {
+    // Vérifier si la table existe, sinon la créer
+    await this.ensureTableExists();
     // Nettoyer les anciennes erreurs au démarrage
     await this.cleanupOldErrors();
     this.logger.log('Service de gestion d\'erreurs de plugins initialisé', 'PluginErrorService');
+  }
+
+  /**
+   * Vérifie si la table existe et la crée si nécessaire
+   */
+  private async ensureTableExists(): Promise<void> {
+    try {
+      const queryRunner = this.dataSource.createQueryRunner();
+      const tableExists = await queryRunner.hasTable('plugin_errors');
+      
+      if (!tableExists) {
+        this.logger.warn(
+          'La table plugin_errors n\'existe pas. Création en cours...',
+          'PluginErrorService',
+        );
+        // Créer la table en utilisant le schéma de l'entité
+        const metadata = this.dataSource.getMetadata(PluginError);
+        const table = Table.create(metadata, this.dataSource.driver);
+        await queryRunner.createTable(table);
+        this.logger.log(
+          'Table plugin_errors créée avec succès',
+          'PluginErrorService',
+        );
+      }
+      
+      await queryRunner.release();
+    } catch (error: any) {
+      // Si la table existe déjà ou si une autre erreur survient, on log mais on continue
+      if (error?.message?.includes('already exists')) {
+        this.logger.debug(
+          'La table plugin_errors existe déjà',
+          'PluginErrorService',
+        );
+      } else {
+        this.logger.error(
+          `Erreur lors de la vérification/création de la table plugin_errors: ${error?.message || error}`,
+          'PluginErrorService',
+        );
+      }
+    }
   }
 
   /**
@@ -243,27 +286,45 @@ export class PluginErrorService implements OnModuleInit {
    * Nettoie les anciennes erreurs résolues (plus de 30 jours)
    */
   async cleanupOldErrors(): Promise<number> {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    try {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const result = await this.errorRepository
-      .createQueryBuilder()
-      .delete()
-      .from(PluginError)
-      .where('status = :status', { status: ErrorStatus.RESOLVED })
-      .andWhere('resolvedAt < :date', { date: thirtyDaysAgo })
-      .execute();
+      const result = await this.errorRepository
+        .createQueryBuilder()
+        .delete()
+        .from(PluginError)
+        .where('status = :status', { status: ErrorStatus.RESOLVED })
+        .andWhere('resolvedAt < :date', { date: thirtyDaysAgo })
+        .execute();
 
-    const count = result.affected || 0;
+      const count = result.affected || 0;
 
-    if (count > 0) {
-      this.logger.log(
-        `${count} erreur(s) ancienne(s) supprimée(s)`,
+      if (count > 0) {
+        this.logger.log(
+          `${count} erreur(s) ancienne(s) supprimée(s)`,
+          'PluginErrorService',
+        );
+      }
+
+      return count;
+    } catch (error: any) {
+      // Si la table n'existe pas encore (en production avec synchronize=false),
+      // on ignore l'erreur et on retourne 0
+      if (error?.code === 'SQLITE_ERROR' && error?.message?.includes('no such table')) {
+        this.logger.warn(
+          'La table plugin_errors n\'existe pas encore. Ignoré.',
+          'PluginErrorService',
+        );
+        return 0;
+      }
+      // Pour les autres erreurs, on les log mais on ne fait pas planter l'application
+      this.logger.error(
+        `Erreur lors du nettoyage des anciennes erreurs: ${error?.message || error}`,
         'PluginErrorService',
       );
+      return 0;
     }
-
-    return count;
   }
 
   /**

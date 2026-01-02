@@ -34,6 +34,8 @@ info "Démarrage de la configuration de Mosquitto et Zigbee2MQTT..."
 info "Création des dossiers système dans /opt/lumy..."
 LUMYHOME_DIR="/opt/lumy"
 LUMYHOME_DIR_DATA_DIR="$LUMYHOME_DIR/data"
+LUMYHOME_DIR_CONFIG_DIR="$LUMYHOME_DIR/config"
+LUMYHOME_DIR_LOG_DIR="$LUMYHOME_DIR/log"
 
 # Déterminer le répertoire de base du projet
 Z2MQTT_DIR="$LUMYHOME_DIR_DATA_DIR/zigbee2mqtt"

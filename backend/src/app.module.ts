@@ -3,6 +3,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { existsSync } from 'fs';
+import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { LoggerModule } from './logger/logger.module';
@@ -44,12 +46,22 @@ import { configValidationSchema } from './config/config.validation';
       useFactory: (configService: ConfigService) => {
         const dbPath = configService.get<string>('DATABASE_PATH', 'data/lumy.db');
         const nodeEnv = configService.get<string>('NODE_ENV', 'development');
+        
+        // Résoudre le chemin absolu de la base de données
+        const absoluteDbPath = dbPath.startsWith('/') || dbPath.match(/^[A-Z]:/i)
+          ? dbPath
+          : join(process.cwd(), dbPath);
+        
+        // En production, synchroniser uniquement si la base de données n'existe pas encore
+        // Cela permet de créer toutes les tables lors de la première exécution
+        const shouldSynchronize = nodeEnv !== 'production' || !existsSync(absoluteDbPath);
+        
         return {
           type: 'sqlite',
           database: dbPath,
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
           migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
-          synchronize: nodeEnv !== 'production',
+          synchronize: shouldSynchronize,
           /* logging: nodeEnv === 'development',*/
           logging: false,
         };
