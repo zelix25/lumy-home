@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, LessThan } from 'typeorm';
+import { Repository, Between, LessThan, DataSource, Table } from 'typeorm';
 import {
   PluginAnalytics,
   AnalyticsEventType,
@@ -30,14 +30,57 @@ export class PluginAnalyticsService implements OnModuleInit {
     @InjectRepository(Plugin)
     private pluginRepository: Repository<Plugin>,
     private loggerService: LoggerService,
+    private dataSource: DataSource,
   ) {
     this.logger = new Logger(PluginAnalyticsService.name);
   }
 
   async onModuleInit() {
+    // Vérifier si la table existe, sinon la créer
+    await this.ensureTableExists();
     // Nettoyer les anciennes analytics au démarrage
     await this.cleanupOldAnalytics();
     this.logger.log('Service d\'analytics de plugins initialisé', 'PluginAnalyticsService');
+  }
+
+  /**
+   * Vérifie si la table existe et la crée si nécessaire
+   */
+  private async ensureTableExists(): Promise<void> {
+    try {
+      const queryRunner = this.dataSource.createQueryRunner();
+      const tableExists = await queryRunner.hasTable('plugin_analytics');
+      
+      if (!tableExists) {
+        this.logger.warn(
+          'La table plugin_analytics n\'existe pas. Création en cours...',
+          'PluginAnalyticsService',
+        );
+        // Créer la table en utilisant le schéma de l'entité
+        const metadata = this.dataSource.getMetadata(PluginAnalytics);
+        const table = Table.create(metadata, this.dataSource.driver);
+        await queryRunner.createTable(table);
+        this.logger.log(
+          'Table plugin_analytics créée avec succès',
+          'PluginAnalyticsService',
+        );
+      }
+      
+      await queryRunner.release();
+    } catch (error: any) {
+      // Si la table existe déjà ou si une autre erreur survient, on log mais on continue
+      if (error?.message?.includes('already exists')) {
+        this.logger.debug(
+          'La table plugin_analytics existe déjà',
+          'PluginAnalyticsService',
+        );
+      } else {
+        this.logger.error(
+          `Erreur lors de la vérification/création de la table plugin_analytics: ${error?.message || error}`,
+          'PluginAnalyticsService',
+        );
+      }
+    }
   }
 
   /**
@@ -333,26 +376,44 @@ export class PluginAnalyticsService implements OnModuleInit {
    * Nettoie les anciennes analytics (plus de 90 jours)
    */
   async cleanupOldAnalytics(): Promise<number> {
-    const ninetyDaysAgo = new Date();
-    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    try {
+      const ninetyDaysAgo = new Date();
+      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
-    const result = await this.analyticsRepository
-      .createQueryBuilder()
-      .delete()
-      .from(PluginAnalytics)
-      .where('timestamp < :date', { date: ninetyDaysAgo })
-      .execute();
+      const result = await this.analyticsRepository
+        .createQueryBuilder()
+        .delete()
+        .from(PluginAnalytics)
+        .where('timestamp < :date', { date: ninetyDaysAgo })
+        .execute();
 
-    const count = result.affected || 0;
+      const count = result.affected || 0;
 
-    if (count > 0) {
-      this.logger.log(
-        `${count} événement(s) d'analytics ancien(s) supprimé(s)`,
+      if (count > 0) {
+        this.logger.log(
+          `${count} événement(s) d'analytics ancien(s) supprimé(s)`,
+          'PluginAnalyticsService',
+        );
+      }
+
+      return count;
+    } catch (error: any) {
+      // Si la table n'existe pas encore (en production avec synchronize=false),
+      // on ignore l'erreur et on retourne 0
+      if (error?.code === 'SQLITE_ERROR' && error?.message?.includes('no such table')) {
+        this.logger.warn(
+          'La table plugin_analytics n\'existe pas encore. Ignoré.',
+          'PluginAnalyticsService',
+        );
+        return 0;
+      }
+      // Pour les autres erreurs, on les log mais on ne fait pas planter l'application
+      this.logger.error(
+        `Erreur lors du nettoyage des anciennes analytics: ${error?.message || error}`,
         'PluginAnalyticsService',
       );
+      return 0;
     }
-
-    return count;
   }
 
   /**

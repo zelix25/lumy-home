@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource, Table } from 'typeorm';
 import {
   PluginNotification,
   NotificationType,
@@ -43,14 +43,57 @@ export class PluginNotificationService implements OnModuleInit {
     private websocketGateway: WebsocketGateway,
     @Inject(forwardRef(() => PluginAnalyticsService))
     private analyticsService: PluginAnalyticsService,
+    private dataSource: DataSource,
   ) {
     this.logger = new Logger(PluginNotificationService.name);
   }
 
   async onModuleInit() {
+    // Vérifier si la table existe, sinon la créer
+    await this.ensureTableExists();
     // Nettoyer les notifications expirées au démarrage
     await this.cleanupExpiredNotifications();
     this.logger.log('Service de notifications de plugins initialisé', 'PluginNotificationService');
+  }
+
+  /**
+   * Vérifie si la table existe et la crée si nécessaire
+   */
+  private async ensureTableExists(): Promise<void> {
+    try {
+      const queryRunner = this.dataSource.createQueryRunner();
+      const tableExists = await queryRunner.hasTable('plugin_notifications');
+      
+      if (!tableExists) {
+        this.logger.warn(
+          'La table plugin_notifications n\'existe pas. Création en cours...',
+          'PluginNotificationService',
+        );
+        // Créer la table en utilisant le schéma de l'entité
+        const metadata = this.dataSource.getMetadata(PluginNotification);
+        const table = Table.create(metadata, this.dataSource.driver);
+        await queryRunner.createTable(table);
+        this.logger.log(
+          'Table plugin_notifications créée avec succès',
+          'PluginNotificationService',
+        );
+      }
+      
+      await queryRunner.release();
+    } catch (error: any) {
+      // Si la table existe déjà ou si une autre erreur survient, on log mais on continue
+      if (error?.message?.includes('already exists')) {
+        this.logger.debug(
+          'La table plugin_notifications existe déjà',
+          'PluginNotificationService',
+        );
+      } else {
+        this.logger.error(
+          `Erreur lors de la vérification/création de la table plugin_notifications: ${error?.message || error}`,
+          'PluginNotificationService',
+        );
+      }
+    }
   }
 
   /**
@@ -264,16 +307,34 @@ export class PluginNotificationService implements OnModuleInit {
    * Nettoie les notifications expirées
    */
   async cleanupExpiredNotifications(): Promise<number> {
-    const result = await this.notificationRepository
-      .createQueryBuilder()
-      .update(PluginNotification)
-      .set({ status: NotificationStatus.EXPIRED })
-      .where('expiresAt IS NOT NULL')
-      .andWhere('expiresAt < :now', { now: new Date() })
-      .andWhere('status != :expired', { expired: NotificationStatus.EXPIRED })
-      .execute();
+    try {
+      const result = await this.notificationRepository
+        .createQueryBuilder()
+        .update(PluginNotification)
+        .set({ status: NotificationStatus.EXPIRED })
+        .where('expiresAt IS NOT NULL')
+        .andWhere('expiresAt < :now', { now: new Date() })
+        .andWhere('status != :expired', { expired: NotificationStatus.EXPIRED })
+        .execute();
 
-    return result.affected || 0;
+      return result.affected || 0;
+    } catch (error: any) {
+      // Si la table n'existe pas encore (en production avec synchronize=false),
+      // on ignore l'erreur et on retourne 0
+      if (error?.code === 'SQLITE_ERROR' && error?.message?.includes('no such table')) {
+        this.logger.warn(
+          'La table plugin_notifications n\'existe pas encore. Ignoré.',
+          'PluginNotificationService',
+        );
+        return 0;
+      }
+      // Pour les autres erreurs, on les log mais on ne fait pas planter l'application
+      this.logger.error(
+        `Erreur lors du nettoyage des notifications expirées: ${error?.message || error}`,
+        'PluginNotificationService',
+      );
+      return 0;
+    }
   }
 
   /**

@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan } from 'typeorm';
+import { Repository, LessThan, DataSource, Table } from 'typeorm';
 import { PluginStorage } from './entities/plugin-storage.entity';
 import { Plugin, PluginStatus } from './entities/plugin.entity';
 import { LoggerService } from '../logger/logger.service';
@@ -28,14 +28,57 @@ export class PluginStorageService implements OnModuleInit {
     private loggerService: LoggerService,
     @Inject(forwardRef(() => PluginAnalyticsService))
     private analyticsService: PluginAnalyticsService,
+    private dataSource: DataSource,
   ) {
     this.logger = new Logger(PluginStorageService.name);
   }
 
   async onModuleInit() {
+    // Vérifier si la table existe, sinon la créer
+    await this.ensureTableExists();
     // Nettoyer les données expirées au démarrage
     await this.cleanupExpiredData();
     this.logger.log('Service de stockage de plugins initialisé', 'PluginStorageService');
+  }
+
+  /**
+   * Vérifie si la table existe et la crée si nécessaire
+   */
+  private async ensureTableExists(): Promise<void> {
+    try {
+      const queryRunner = this.dataSource.createQueryRunner();
+      const tableExists = await queryRunner.hasTable('plugin_storage');
+      
+      if (!tableExists) {
+        this.logger.warn(
+          'La table plugin_storage n\'existe pas. Création en cours...',
+          'PluginStorageService',
+        );
+        // Créer la table en utilisant le schéma de l'entité
+        const metadata = this.dataSource.getMetadata(PluginStorage);
+        const table = Table.create(metadata, this.dataSource.driver);
+        await queryRunner.createTable(table);
+        this.logger.log(
+          'Table plugin_storage créée avec succès',
+          'PluginStorageService',
+        );
+      }
+      
+      await queryRunner.release();
+    } catch (error: any) {
+      // Si la table existe déjà ou si une autre erreur survient, on log mais on continue
+      if (error?.message?.includes('already exists')) {
+        this.logger.debug(
+          'La table plugin_storage existe déjà',
+          'PluginStorageService',
+        );
+      } else {
+        this.logger.error(
+          `Erreur lors de la vérification/création de la table plugin_storage: ${error?.message || error}`,
+          'PluginStorageService',
+        );
+      }
+    }
   }
 
   /**
@@ -365,42 +408,72 @@ export class PluginStorageService implements OnModuleInit {
    * Nettoie les données expirées pour un plugin
    */
   async cleanupExpiredDataForPlugin(pluginId: string): Promise<number> {
-    const now = new Date();
-    const result = await this.storageRepository
-      .createQueryBuilder()
-      .delete()
-      .from(PluginStorage)
-      .where('pluginId = :pluginId', { pluginId })
-      .andWhere('expiresAt IS NOT NULL')
-      .andWhere('expiresAt < :now', { now })
-      .execute();
+    try {
+      const now = new Date();
+      const result = await this.storageRepository
+        .createQueryBuilder()
+        .delete()
+        .from(PluginStorage)
+        .where('pluginId = :pluginId', { pluginId })
+        .andWhere('expiresAt IS NOT NULL')
+        .andWhere('expiresAt < :now', { now })
+        .execute();
 
-    return result.affected || 0;
+      return result.affected || 0;
+    } catch (error: any) {
+      // Si la table n'existe pas encore, on ignore l'erreur
+      if (error?.code === 'SQLITE_ERROR' && error?.message?.includes('no such table')) {
+        return 0;
+      }
+      this.logger.error(
+        `Erreur lors du nettoyage des données expirées pour le plugin ${pluginId}: ${error?.message || error}`,
+        'PluginStorageService',
+      );
+      return 0;
+    }
   }
 
   /**
    * Nettoie toutes les données expirées
    */
   async cleanupExpiredData(): Promise<number> {
-    const now = new Date();
-    const result = await this.storageRepository
-      .createQueryBuilder()
-      .delete()
-      .from(PluginStorage)
-      .where('expiresAt IS NOT NULL')
-      .andWhere('expiresAt < :now', { now })
-      .execute();
+    try {
+      const now = new Date();
+      const result = await this.storageRepository
+        .createQueryBuilder()
+        .delete()
+        .from(PluginStorage)
+        .where('expiresAt IS NOT NULL')
+        .andWhere('expiresAt < :now', { now })
+        .execute();
 
-    const count = result.affected || 0;
+      const count = result.affected || 0;
 
-    if (count > 0) {
-      this.logger.log(
-        `${count} entrée(s) expirée(s) supprimée(s)`,
+      if (count > 0) {
+        this.logger.log(
+          `${count} entrée(s) expirée(s) supprimée(s)`,
+          'PluginStorageService',
+        );
+      }
+
+      return count;
+    } catch (error: any) {
+      // Si la table n'existe pas encore (en production avec synchronize=false),
+      // on ignore l'erreur et on retourne 0
+      if (error?.code === 'SQLITE_ERROR' && error?.message?.includes('no such table')) {
+        this.logger.warn(
+          'La table plugin_storage n\'existe pas encore. Ignoré.',
+          'PluginStorageService',
+        );
+        return 0;
+      }
+      // Pour les autres erreurs, on les log mais on ne fait pas planter l'application
+      this.logger.error(
+        `Erreur lors du nettoyage des données expirées: ${error?.message || error}`,
         'PluginStorageService',
       );
+      return 0;
     }
-
-    return count;
   }
 
   /**

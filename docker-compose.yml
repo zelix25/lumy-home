@@ -31,6 +31,8 @@ services:
         - TZ=Europe/Paris
       devices:
         - /dev/ttyUSB0:/dev/ttyUSB0 # adapter selon ton coordinator Zigbee
+      networks:
+        - lumy-network
 
   backend:
     #build:
@@ -87,8 +89,9 @@ services:
 
 networks:
   lumy-network:
-    external: true
+    name: lumy-network
     driver: bridge
   lumy-frontend-backend:
+    name: lumy-frontend-backend
     driver: bridge
     internal: true
