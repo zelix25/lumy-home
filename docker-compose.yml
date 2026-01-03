@@ -62,6 +62,7 @@ services:
       #dockerfile: Dockerfile
     image: zelix25/lumy-home-frontend
     container_name: lumy-frontend
+
     ports:
       - "80:80"
     depends_on:
