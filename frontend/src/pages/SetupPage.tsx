@@ -7,18 +7,11 @@ import {
   Typography,
   Button,
   TextField,
-  CircularProgress,
   Alert,
   Stack,
   Stepper,
   Step,
   StepLabel,
-  FormControlLabel,
-  Radio,
-  RadioGroup,
-  FormControl,
-  FormLabel,
-  Checkbox,
   Link,
   LinearProgress,
 } from '@mui/material';
@@ -28,22 +21,21 @@ import { authService } from '../services/auth.service';
 import { settingsService } from '../services/settings.service';
 import { storeService, ConnectStoreDto } from '../services/store.service';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ErrorIcon from '@mui/icons-material/Error';
 
-type SetupStep = 'update' | 'account' | 'store' | 'ai' | 'weather' | 'complete';
+type SetupStep = 'account' | 'store' | 'weather' | 'complete';
 
 export default function SetupPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { register } = useAuth();
   
-  // Récupérer l'étape depuis localStorage ou utiliser 'update' par défaut
+  // Récupérer l'étape depuis localStorage ou utiliser 'account' par défaut
   const getInitialStep = (): SetupStep => {
     const savedStep = localStorage.getItem('setup_current_step');
-    if (savedStep && ['update', 'account', 'store', 'ai', 'weather', 'complete'].includes(savedStep)) {
+    if (savedStep && ['account', 'store', 'weather', 'complete'].includes(savedStep)) {
       return savedStep as SetupStep;
     }
-    return 'update';
+    return 'account';
   };
   
   const [currentStep, setCurrentStep] = useState<SetupStep>(getInitialStep());
@@ -52,7 +44,6 @@ export default function SetupPage() {
   useEffect(() => {
     localStorage.setItem('setup_current_step', currentStep);
   }, [currentStep]);
-  const [updateStatus, setUpdateStatus] = useState<'checking' | 'updating' | 'updated' | 'error'>('checking');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -60,22 +51,15 @@ export default function SetupPage() {
   const [error, setError] = useState<string | null>(null);
   const [passwordStrength, setPasswordStrength] = useState<{ score: number; label: string; color: string }>({ score: 0, label: '', color: '' });
   
-  // Étape 3: Store
+  // Étape 2: Store
   const [storeEmail, setStoreEmail] = useState('');
   const [storePassword, setStorePassword] = useState('');
   const [storeConnected, setStoreConnected] = useState(false);
   const [storeLoading, setStoreLoading] = useState(false);
   const [storeError, setStoreError] = useState<string | null>(null);
   const [storeSuccess, setStoreSuccess] = useState<string | null>(null);
-  
-  // Étape 4: IA
-  const [aiEnabled, setAiEnabled] = useState(false);
-  const [aiType, setAiType] = useState<'cloud' | 'local'>('cloud');
-  const [systemInfo, setSystemInfo] = useState<{ ram: number; cpuArch: string; cpuType: string } | null>(null);
-  const [checkingSystemInfo, setCheckingSystemInfo] = useState(false);
-  const [localAiDisabled, setLocalAiDisabled] = useState(false);
 
-  // Étape 5: Météo
+  // Étape 3: Météo
   const [city, setCity] = useState('');
   const [zipCode, setZipCode] = useState('');
   const [country, setCountry] = useState('');
@@ -83,46 +67,6 @@ export default function SetupPage() {
   const [weatherError, setWeatherError] = useState<string | null>(null);
   const [weatherSuccess, setWeatherSuccess] = useState(false);
 
-  const checkUpdateStatus = async () => {
-    setUpdateStatus('checking');
-    try {
-      // Simuler la vérification de mise à jour
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      // Pour l'instant, on considère qu'il n'y a pas de mise à jour
-      setUpdateStatus('updated');
-    } catch (err) {
-      setUpdateStatus('error');
-    }
-  };
-
-  const checkSystemInfo = async () => {
-    setCheckingSystemInfo(true);
-    try {
-      const info = await settingsService.getSystemInfo();
-      setSystemInfo(info);
-      // Désactiver l'option Local si RAM < 8Go OU CPU ARM
-      const shouldDisableLocal = info.ram < 8 || info.cpuType === 'arm';
-      setLocalAiDisabled(shouldDisableLocal);
-      // Si Local est désactivé et que c'était sélectionné, passer à Cloud
-      if (shouldDisableLocal && aiType === 'local') {
-        setAiType('cloud');
-      }
-    } catch (err) {
-      console.error('Erreur lors de la vérification des informations système:', err);
-      // En cas d'erreur, désactiver Local par sécurité
-      setLocalAiDisabled(true);
-      if (aiType === 'local') {
-        setAiType('cloud');
-      }
-    } finally {
-      setCheckingSystemInfo(false);
-    }
-  };
-
-  useEffect(() => {
-    // Vérifier les mises à jour au chargement
-    checkUpdateStatus();
-  }, []);
 
   // Fonction pour calculer la force du mot de passe
   const calculatePasswordStrength = (pwd: string): { score: number; label: string; color: string } => {
@@ -165,25 +109,7 @@ export default function SetupPage() {
     setPasswordStrength(strength);
   }, [password, t]);
 
-  useEffect(() => {
-    // Vérifier les informations système quand on arrive à l'étape IA
-    if (currentStep === 'ai') {
-      checkSystemInfo();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStep]);
 
-  /*const handleUpdate = async () => {
-    setUpdateStatus('updating');
-    try {
-      // TODO: Implémenter la mise à jour réelle
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-      setUpdateStatus('updated');
-    } catch (err) {
-      setUpdateStatus('error');
-      setError(t('setup.updateError'));
-    }
-  };*/
 
   const handleCreateAccount = async () => {
     if (!email || !password) {
@@ -302,14 +228,10 @@ export default function SetupPage() {
   };
 
   const handleSkipStore = () => {
-    setCurrentStep('ai');
+    setCurrentStep('weather');
   };
 
   const handleContinueFromStore = () => {
-    setCurrentStep('ai');
-  };
-
-  const handleContinueFromAI = () => {
     setCurrentStep('weather');
   };
 
@@ -362,28 +284,22 @@ export default function SetupPage() {
   };
 
   const steps = [
-    t('setup.stepUpdate'),
     t('setup.stepAccount'),
     t('setup.stepStore'),
-    t('setup.stepAI'),
     t('setup.stepWeather'),
     t('setup.stepComplete'),
   ];
 
   const getActiveStep = () => {
     switch (currentStep) {
-      case 'update':
-        return 0;
       case 'account':
-        return 1;
+        return 0;
       case 'store':
-        return 2;
-      case 'ai':
-        return 3;
+        return 1;
       case 'weather':
-        return 4;
+        return 2;
       case 'complete':
-        return 5;
+        return 3;
       default:
         return 0;
     }
@@ -391,60 +307,6 @@ export default function SetupPage() {
 
   const renderStepContent = () => {
     switch (currentStep) {
-      case 'update':
-        return (
-          <Box>
-            <Typography variant="h6" sx={{ mb: 3, fontWeight: 500 }}>
-              {t('setup.checkingUpdates')}
-            </Typography>
-
-            {updateStatus === 'checking' && (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <CircularProgress sx={{ mb: 2 }} />
-                <Typography variant="body1" color="text.secondary">
-                  {t('setup.checkingUpdatesMessage')}
-                </Typography>
-              </Box>
-            )}
-
-            {updateStatus === 'updated' && (
-              <Box>
-                <Alert severity="success" icon={<CheckCircleIcon />} sx={{ mb: 3 }}>
-                  {t('setup.noUpdates')}
-                </Alert>
-                <Button variant="contained" onClick={() => setCurrentStep('account')} fullWidth>
-                  {t('setup.continue')}
-                </Button>
-              </Box>
-            )}
-
-            {updateStatus === 'updating' && (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <CircularProgress sx={{ mb: 2 }} />
-                <Typography variant="body1" color="text.secondary">
-                  {t('setup.updating')}
-                </Typography>
-              </Box>
-            )}
-
-            {updateStatus === 'error' && (
-              <Box>
-                <Alert severity="error" icon={<ErrorIcon />} sx={{ mb: 3 }}>
-                  {t('setup.updateError')}
-                </Alert>
-                <Stack direction="row" spacing={2}>
-                  <Button variant="outlined" onClick={checkUpdateStatus} fullWidth>
-                    {t('setup.retry')}
-                  </Button>
-                  <Button variant="contained" onClick={() => setCurrentStep('account')} fullWidth>
-                    {t('setup.skip')}
-                  </Button>
-                </Stack>
-              </Box>
-            )}
-          </Box>
-        );
-
       case 'account':
         return (
           <Box>
@@ -627,102 +489,6 @@ export default function SetupPage() {
                 </Button>
               </Box>
             )}
-          </Box>
-        );
-
-      case 'ai':
-        return (
-          <Box>
-            <Typography variant="h6" sx={{ mb: 3, fontWeight: 500 }}>
-              {t('setup.ai.title')}
-            </Typography>
-
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              {t('setup.ai.description')}
-            </Typography>
-
-            {checkingSystemInfo && (
-              <Box sx={{ textAlign: 'center', py: 2 }}>
-                <CircularProgress size={24} sx={{ mr: 2 }} />
-                <Typography variant="body2" color="text.secondary">
-                  {t('setup.ai.checkingSystem')}
-                </Typography>
-              </Box>
-            )}
-
-            {systemInfo && (
-              <Alert severity="info" sx={{ mb: 3 }}>
-                {t('setup.ai.systemInfo', { 
-                  ram: systemInfo.ram.toFixed(1), 
-                  cpuType: systemInfo.cpuType.toUpperCase(),
-                  cpuArch: systemInfo.cpuArch 
-                })}
-              </Alert>
-            )}
-
-            <Stack spacing={3}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={aiEnabled}
-                    onChange={(e) => setAiEnabled(e.target.checked)}
-                  />
-                }
-                label={t('setup.ai.enable')}
-              />
-
-              {aiEnabled && (
-                <FormControl component="fieldset">
-                  <FormLabel component="legend">{t('setup.ai.type')}</FormLabel>
-                  <RadioGroup
-                    value={aiType}
-                    onChange={(e) => setAiType(e.target.value as 'cloud' | 'local')}
-                  >
-                    <FormControlLabel
-                      value="cloud"
-                      control={<Radio />}
-                      label={
-                        <Box>
-                          <Typography variant="body1">{t('setup.ai.cloud')}</Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {t('setup.ai.cloudDescription')}
-                          </Typography>
-                        </Box>
-                      }
-                    />
-                    <FormControlLabel
-                      value="local"
-                      control={<Radio />}
-                      disabled={localAiDisabled}
-                      label={
-                        <Box>
-                          <Typography variant="body1">
-                            {t('setup.ai.local')}
-                            {localAiDisabled && (
-                              <Typography component="span" variant="caption" color="error" sx={{ ml: 1 }}>
-                                ({t('setup.ai.localDisabled')})
-                              </Typography>
-                            )}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {t('setup.ai.localDescription')}
-                          </Typography>
-                        </Box>
-                      }
-                    />
-                  </RadioGroup>
-                </FormControl>
-              )}
-
-              <Button
-                variant="contained"
-                onClick={handleContinueFromAI}
-                fullWidth
-                sx={{ mt: 2 }}
-              >
-                {t('setup.continue')}
-              </Button>
-            </Stack>
           </Box>
         );
 
