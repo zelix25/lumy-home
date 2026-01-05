@@ -38,7 +38,7 @@ services:
     #build:
       #context: ./backend
       #dockerfile: Dockerfile
-    image: zelix25/lumy-home-backend
+    image: zelix25/lumy-home-backend:latest
     container_name: lumy-backend
     # Port retiré - communication uniquement via réseau Docker privé
     # Pour le développement local, décommentez la ligne suivante :
@@ -60,7 +60,7 @@ services:
     #build:
       #context: ./frontend
       #dockerfile: Dockerfile
-    image: zelix25/lumy-home-frontend
+    image: zelix25/lumy-home-frontend:latest
     container_name: lumy-frontend
 
     ports:
@@ -71,22 +71,6 @@ services:
     networks:
       - lumy-network
       - lumy-frontend-backend
-
-  #ollama:
-  #  image: ollama/ollama:latest
-  #  container_name: gemma3-local
-  #  restart: unless-stopped
-  #  ports:
-  #    - "11434:11434"
-  #  volumes:
-  #    - ./gemma3:/root/.ollama  # stockage des modèles
-  #  entrypoint: >
-  #    sh -c "
-  #      ollama serve &
-  #      sleep 5 &&
-  #      ollama pull gemma3 &&
-  #      wait
-  #    "
 
 networks:
   lumy-network:

@@ -247,9 +247,9 @@ mqtt:
   password: $MQTT_PASSWORD
 serial:
   port: $PORT_ZIGBEE
-  adapter: zigate
+  adapter: ezsp
   baudrate: 115200
-  rtscts: false
+  rtscts: true
 advanced:
   log_level: info
   channel: 11
