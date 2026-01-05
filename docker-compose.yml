@@ -72,22 +72,6 @@ services:
       - lumy-network
       - lumy-frontend-backend
 
-  #ollama:
-  #  image: ollama/ollama:latest
-  #  container_name: gemma3-local
-  #  restart: unless-stopped
-  #  ports:
-  #    - "11434:11434"
-  #  volumes:
-  #    - ./gemma3:/root/.ollama  # stockage des modèles
-  #  entrypoint: >
-  #    sh -c "
-  #      ollama serve &
-  #      sleep 5 &&
-  #      ollama pull gemma3 &&
-  #      wait
-  #    "
-
 networks:
   lumy-network:
     name: lumy-network
