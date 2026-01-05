@@ -50,6 +50,7 @@ services:
       - ./data/backend/data:/app/data
       - ./data/backend/logs:/app/logs
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /dev/:/dev:ro
     depends_on:
       - mosquitto
     restart: unless-stopped
