@@ -6,30 +6,92 @@ import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import * as yaml from 'js-yaml';
 import { ConfigureZigbeeDto } from './dto/configure-zigbee.dto';
+const Docker = require('dockerode');
 
 const execAsync = promisify(exec);
 
 @Injectable()
 export class SetupService {
   private readonly logger = new Logger(SetupService.name);
+  private docker: any;
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) {
+    // Initialiser Docker avec le socket par défaut
+    const socketPath = process.platform === 'win32'
+      ? '//./pipe/docker_engine'
+      : '/var/run/docker.sock';
+    
+    try {
+      this.docker = new Docker({ socketPath });
+    } catch (error: any) {
+      this.logger.warn(`Impossible d'initialiser Docker: ${error.message}`);
+      this.docker = null;
+    }
+  }
 
   /**
    * Liste les périphériques USB disponibles
+   * Utilise Docker pour exécuter la commande dans un container avec accès à /dev
    */
   async getUsbDevices(): Promise<{ devices: string[] }> {
     try {
-      // Lister les périphériques /dev/ttyUSB* et /dev/ttyACM*
-      const { stdout } = await execAsync('ls -1 /dev/ttyUSB* /dev/ttyACM* 2>/dev/null || true');
-      const devices = stdout
-        .trim()
-        .split('\n')
-        .filter((line) => line.trim().length > 0)
-        .map((line) => line.trim());
+      // Si Docker est disponible, utiliser un container temporaire pour accéder à /dev de l'hôte
+      if (this.docker) {
+        try {
+          // Exécuter la commande dans un container temporaire avec accès à /dev
+          const container = await this.docker.createContainer({
+            Image: 'alpine:latest',
+            Cmd: ['sh', '-c', 'ls -1 /dev/ttyUSB* /dev/ttyACM* 2>/dev/null || true'],
+            HostConfig: {
+              Binds: ['/dev:/dev:ro'], // Monter /dev en lecture seule
+            },
+            AttachStdout: true,
+            AttachStderr: true,
+          });
 
-      // Si aucun périphérique n'est trouvé, retourner une liste vide
-      return { devices };
+          await container.start();
+          
+          // Attendre que le container se termine
+          await container.wait();
+          
+          // Récupérer les logs
+          const logs = await container.logs({
+            stdout: true,
+            stderr: true,
+          });
+          
+          // Supprimer le container
+          await container.remove();
+
+          const output = logs.toString('utf-8');
+          const devices = output
+            .trim()
+            .split('\n')
+            .filter((line) => line.trim().length > 0)
+            .map((line) => line.trim());
+
+          return { devices };
+        } catch (dockerError: any) {
+          this.logger.warn(`Erreur lors de l'exécution via Docker: ${dockerError.message}`);
+          // Fallback: essayer directement depuis le container
+        }
+      }
+
+      // Fallback: essayer directement depuis le container (si /dev est monté)
+      try {
+        const { stdout } = await execAsync('ls -1 /dev/ttyUSB* /dev/ttyACM* 2>/dev/null || true');
+        const devices = stdout
+          .trim()
+          .split('\n')
+          .filter((line) => line.trim().length > 0)
+          .map((line) => line.trim());
+
+        return { devices };
+      } catch (execError: any) {
+        this.logger.warn(`Erreur lors de l'exécution directe: ${execError.message}`);
+        // Retourner une liste vide si les deux méthodes échouent
+        return { devices: [] };
+      }
     } catch (error: any) {
       this.logger.error(`Erreur lors de la détection des périphériques USB: ${error.message}`);
       // En cas d'erreur, retourner une liste vide plutôt que de faire échouer la requête
