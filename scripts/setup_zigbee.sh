@@ -38,9 +38,9 @@ LUMYHOME_DIR_CONFIG_DIR="$LUMYHOME_DIR/config"
 LUMYHOME_DIR_LOG_DIR="$LUMYHOME_DIR/log"
 
 # Déterminer le répertoire de base du projet
-Z2MQTT_DIR="$LUMYHOME_DIR_DATA_DIR/zigbee2mqtt"
+Z2MQTT_DIR="$LUMYHOME_DIR/zigbee2mqtt"
 MOSQUITTO_CONFIG_DIR="$LUMYHOME_DIR_DATA_DIR/mosquitto/config"
-Z2MQTT_DATA_DIR="$Z2MQTT_DIR"
+Z2MQTT_CONFIG_FILE="$Z2MQTT_DIR/configuration.yml"
 
 # Vérifier les permissions root pour créer dans /opt
 if [ "$EUID" -ne 0 ]; then
@@ -60,7 +60,7 @@ else
 fi
 
 # Créer les sous-dossiers
-for dir in "$LUMYHOME_DIR_DATA_DIR" "$LUMYHOME_DIR_CONFIG_DIR" "$LUMYHOME_DIR_LOG_DIR"; do
+for dir in "$LUMYHOME_DIR_DATA_DIR" "$LUMYHOME_DIR_CONFIG_DIR" "$LUMYHOME_DIR_LOG_DIR" "$Z2MQTT_DIR"; do
     if [ ! -d "$dir" ]; then
         $SUDO_CMD mkdir -p "$dir"
         success "Dossier $dir créé"
@@ -92,9 +92,9 @@ info "Docker est disponible et en cours d'exécution"
 # Créer les répertoires si nécessaire
 info "Création des répertoires de configuration..."
 mkdir -p "$MOSQUITTO_CONFIG_DIR"
-mkdir -p "$Z2MQTT_DATA_DIR"
-mkdir -p "$Z2MQTT_DIR/mosquitto/data"
-mkdir -p "$Z2MQTT_DIR/mosquitto/log"
+mkdir -p "$Z2MQTT_DIR"
+mkdir -p "$LUMYHOME_DIR_DATA_DIR/mosquitto/data"
+mkdir -p "$LUMYHOME_DIR_DATA_DIR/mosquitto/log"
 
 # 1. Configuration Mosquitto
 info "Configuration de Mosquitto..."
@@ -225,20 +225,56 @@ fi
 
 # Verifier si le port USB0 est disponible
 if [ -c "/dev/ttyUSB0" ]; then
-    info "Coordinateur Zigbee2MQTT connecté sur le port /dev/ttyUSB0."
+    error "Module Zigbee2MQTT détecté sur le port USB0."
     PORT_ZIGBEE="/dev/ttyUSB0"
 
 elif [ -c "/dev/ttyAMA0" ]; then
-    info "Coordinateur Zigbee2MQTT connecté sur le port /dev/ttyAMA0."
+    error "Module Zigbee2MQTT détecté sur le port AMA0."
     PORT_ZIGBEE="/dev/ttyAMA0"
 else
-    error "Veuillez coordinateur Zigbee2MQTT détecté sur le port /dev/ttyUSB0 ou /dev/ttyAMA0."
+    error "Aucun module Zigbee2MQTT détecté sur le port /dev/ttyUSB0 ou /dev/ttyAMA0. Veuillez connecter un module Zigbee2MQTT à votre ordinateur."
     exit 1
 fi
 
-# Créer le fichier configuration.yaml
-info "Création du fichier configuration.yaml pour Zigbee2MQTT..."
-cat > "$Z2MQTT_DATA_DIR/configuration.yaml" << EOF
+# Sélectionner le type d'adapter Zigbee2MQTT
+info "Sélection du type de coordinateur Zigbee2MQTT..."
+echo ""
+echo "Options disponibles :"
+echo "  1) ember   - Ember (EZSP)"
+echo "  2) zstack  - Z-Stack"
+echo "  3) deconz  - deConz"
+echo "  4) zigate  - Zigate"
+echo ""
+warn "Veuillez sélectionner le type de coordinateur (1-4) :"
+read -r adapter_choice
+
+# Valider et convertir le choix en nom d'adapter
+case $adapter_choice in
+    1)
+        ADAPTER="ember"
+        info "Type de coordinateur sélectionné : Ember (EZSP)"
+        ;;
+    2)
+        ADAPTER="zstack"
+        info "Type de coordinateur sélectionné : Z-Stack"
+        ;;
+    3)
+        ADAPTER="deconz"
+        info "Type de coordinateur sélectionné : deConz"
+        ;;
+    4)
+        ADAPTER="zigate"
+        info "Type de coordinateur sélectionné : Zigate"
+        ;;
+    *)
+        warn "Choix invalide. Utilisation de Zigate par défaut."
+        ADAPTER="zigate"
+        ;;
+esac
+
+# Créer le fichier configuration.yml
+info "Création du fichier configuration.yml pour Zigbee2MQTT..."
+cat > "$Z2MQTT_CONFIG_FILE" << EOF
 version: 4
 mqtt:
   base_topic: zigbee2mqtt
@@ -247,7 +283,7 @@ mqtt:
   password: $MQTT_PASSWORD
 serial:
   port: $PORT_ZIGBEE
-  adapter: ezsp
+  adapter: $ADAPTER
   baudrate: 115200
   rtscts: true
 advanced:
@@ -259,14 +295,14 @@ $NETWORK_KEY_YAML
   ext_pan_id:
 $EXT_PAN_ID_YAML
 frontend:
-  enabled: fasle
+  enabled: false
   port: 8080
 homeassistant:
   enabled: false
 onboarding: false
 EOF
 
-success "Fichier configuration.yaml créé avec succès"
+success "Fichier configuration.yml créé avec succès"
 
 # 3. Configuration Backend .env
 info "Configuration du fichier .env pour le backend..."
@@ -332,7 +368,7 @@ echo "  - Fichier de mots de passe: $MOSQUITTO_CONFIG_DIR/passwd"
 echo "  - Utilisateur: $MQTT_USER"
 echo ""
 success "Zigbee2MQTT configuré:"
-echo "  - Fichier de configuration: $Z2MQTT_DATA_DIR/configuration.yaml"
+echo "  - Fichier de configuration: $Z2MQTT_CONFIG_FILE"
 echo "  - Canal Zigbee: 11"
 echo "  - PAN ID: $PAN_ID_DECIMAL (0x$PAN_ID_HEX)"
 echo "  - Utilisateur MQTT: $MQTT_USER"
