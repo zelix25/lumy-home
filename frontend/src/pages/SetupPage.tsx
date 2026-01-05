@@ -20,9 +20,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { authService } from '../services/auth.service';
 import { settingsService } from '../services/settings.service';
 import { storeService, ConnectStoreDto } from '../services/store.service';
+import { setupService } from '../services/setup.service';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import { MenuItem, Select, FormControl, InputLabel, CircularProgress } from '@mui/material';
 
-type SetupStep = 'account' | 'store' | 'weather' | 'complete';
+type SetupStep = 'account' | 'store' | 'weather' | 'zigbee' | 'complete';
 
 export default function SetupPage() {
   const { t } = useTranslation();
@@ -32,7 +34,7 @@ export default function SetupPage() {
   // Récupérer l'étape depuis localStorage ou utiliser 'account' par défaut
   const getInitialStep = (): SetupStep => {
     const savedStep = localStorage.getItem('setup_current_step');
-    if (savedStep && ['account', 'store', 'weather', 'complete'].includes(savedStep)) {
+    if (savedStep && ['account', 'store', 'weather', 'zigbee', 'complete'].includes(savedStep)) {
       return savedStep as SetupStep;
     }
     return 'account';
@@ -66,6 +68,15 @@ export default function SetupPage() {
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [weatherError, setWeatherError] = useState<string | null>(null);
   const [weatherSuccess, setWeatherSuccess] = useState(false);
+
+  // Étape 4: Zigbee
+  const [usbDevices, setUsbDevices] = useState<string[]>([]);
+  const [selectedPort, setSelectedPort] = useState('');
+  const [selectedAdapter, setSelectedAdapter] = useState('zigate');
+  const [zigbeeLoading, setZigbeeLoading] = useState(false);
+  const [zigbeeError, setZigbeeError] = useState<string | null>(null);
+  const [zigbeeSuccess, setZigbeeSuccess] = useState(false);
+  const [loadingDevices, setLoadingDevices] = useState(false);
 
 
   // Fonction pour calculer la force du mot de passe
@@ -260,10 +271,68 @@ export default function SetupPage() {
   };
 
   const handleContinueFromWeather = () => {
-    setCurrentStep('complete');
+    setCurrentStep('zigbee');
   };
 
   const handleSkipWeather = () => {
+    setCurrentStep('zigbee');
+  };
+
+  // Charger les périphériques USB au montage de l'étape zigbee
+  useEffect(() => {
+    if (currentStep === 'zigbee' && usbDevices.length === 0) {
+      loadUsbDevices();
+    }
+  }, [currentStep]);
+
+  const loadUsbDevices = async () => {
+    setLoadingDevices(true);
+    try {
+      const response = await setupService.getUsbDevices();
+      setUsbDevices(response.devices);
+      // Sélectionner automatiquement le premier périphérique s'il n'y en a qu'un
+      if (response.devices.length === 1) {
+        setSelectedPort(response.devices[0]);
+      }
+    } catch (err: any) {
+      setZigbeeError(err.message || t('setup.zigbee.errorLoadingDevices'));
+    } finally {
+      setLoadingDevices(false);
+    }
+  };
+
+  const handleSaveZigbee = async () => {
+    if (!selectedPort || !selectedAdapter) {
+      setZigbeeError(t('setup.zigbee.fillAllFields'));
+      return;
+    }
+
+    setZigbeeLoading(true);
+    setZigbeeError(null);
+    setZigbeeSuccess(false);
+
+    try {
+      const response = await setupService.configureZigbee({
+        port: selectedPort,
+        adapter: selectedAdapter,
+      });
+      if (response.success) {
+        setZigbeeSuccess(true);
+      } else {
+        setZigbeeError(response.message || t('setup.zigbee.error'));
+      }
+    } catch (err: any) {
+      setZigbeeError(err.message || t('setup.zigbee.error'));
+    } finally {
+      setZigbeeLoading(false);
+    }
+  };
+
+  const handleContinueFromZigbee = () => {
+    setCurrentStep('complete');
+  };
+
+  const handleSkipZigbee = () => {
     setCurrentStep('complete');
   };
 
@@ -287,6 +356,7 @@ export default function SetupPage() {
     t('setup.stepAccount'),
     t('setup.stepStore'),
     t('setup.stepWeather'),
+    t('setup.stepZigbee'),
     t('setup.stepComplete'),
   ];
 
@@ -298,8 +368,10 @@ export default function SetupPage() {
         return 1;
       case 'weather':
         return 2;
-      case 'complete':
+      case 'zigbee':
         return 3;
+      case 'complete':
+        return 4;
       default:
         return 0;
     }
@@ -565,6 +637,110 @@ export default function SetupPage() {
                     fullWidth
                   >
                     {weatherLoading ? t('common.loading') : t('setup.weather.save')}
+                  </Button>
+                </Stack>
+              )}
+            </Stack>
+          </Box>
+        );
+
+      case 'zigbee':
+        return (
+          <Box>
+            <Typography variant="h6" sx={{ mb: 3, fontWeight: 500 }}>
+              {t('setup.zigbee.title')}
+            </Typography>
+
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              {t('setup.zigbee.description')}
+            </Typography>
+
+            {zigbeeError && (
+              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setZigbeeError(null)}>
+                {zigbeeError}
+              </Alert>
+            )}
+
+            {zigbeeSuccess && (
+              <Alert severity="success" icon={<CheckCircleIcon />} sx={{ mb: 3 }}>
+                {t('setup.zigbee.success')}
+              </Alert>
+            )}
+
+            <Stack spacing={2}>
+              <FormControl fullWidth required disabled={zigbeeSuccess || loadingDevices}>
+                <InputLabel>{t('setup.zigbee.port')}</InputLabel>
+                <Select
+                  value={selectedPort}
+                  onChange={(e) => setSelectedPort(e.target.value)}
+                  label={t('setup.zigbee.port')}
+                  disabled={loadingDevices}
+                >
+                  {loadingDevices ? (
+                    <MenuItem disabled>
+                      <CircularProgress size={20} sx={{ mr: 1 }} />
+                      {t('setup.zigbee.loadingDevices')}
+                    </MenuItem>
+                  ) : usbDevices.length === 0 ? (
+                    <MenuItem disabled>{t('setup.zigbee.noDevices')}</MenuItem>
+                  ) : (
+                    usbDevices.map((device) => (
+                      <MenuItem key={device} value={device}>
+                        {device}
+                      </MenuItem>
+                    ))
+                  )}
+                </Select>
+              </FormControl>
+
+              {usbDevices.length === 0 && !loadingDevices && (
+                <Button
+                  variant="outlined"
+                  onClick={loadUsbDevices}
+                  disabled={loadingDevices}
+                  fullWidth
+                >
+                  {t('setup.zigbee.refreshDevices')}
+                </Button>
+              )}
+
+              <FormControl fullWidth required disabled={zigbeeSuccess}>
+                <InputLabel>{t('setup.zigbee.adapter')}</InputLabel>
+                <Select
+                  value={selectedAdapter}
+                  onChange={(e) => setSelectedAdapter(e.target.value)}
+                  label={t('setup.zigbee.adapter')}
+                >
+                  <MenuItem value="ember">{t('setup.zigbee.adapters.ember')}</MenuItem>
+                  <MenuItem value="zstack">{t('setup.zigbee.adapters.zstack')}</MenuItem>
+                  <MenuItem value="zigate">{t('setup.zigbee.adapters.zigate')}</MenuItem>
+                  <MenuItem value="deconz">{t('setup.zigbee.adapters.deconz')}</MenuItem>
+                  <MenuItem value="ezsp">{t('setup.zigbee.adapters.ezsp')}</MenuItem>
+                  <MenuItem value="zigatev3">{t('setup.zigbee.adapters.zigatev3')}</MenuItem>
+                </Select>
+              </FormControl>
+
+              {zigbeeSuccess ? (
+                <Button variant="contained" onClick={handleContinueFromZigbee} fullWidth>
+                  {t('setup.continue')}
+                </Button>
+              ) : (
+                <Stack direction="row" spacing={2}>
+                  <Button
+                    variant="outlined"
+                    onClick={handleSkipZigbee}
+                    fullWidth
+                    disabled={zigbeeLoading}
+                  >
+                    {t('setup.zigbee.skip')}
+                  </Button>
+                  <Button
+                    variant="contained"
+                    onClick={handleSaveZigbee}
+                    disabled={zigbeeLoading || !selectedPort || !selectedAdapter}
+                    fullWidth
+                  >
+                    {zigbeeLoading ? t('common.loading') : t('setup.zigbee.save')}
                   </Button>
                 </Stack>
               )}
