@@ -34,13 +34,12 @@ info "Démarrage de la configuration de Mosquitto et Zigbee2MQTT..."
 info "Création des dossiers système dans /opt/lumy..."
 LUMYHOME_DIR="/opt/lumy"
 LUMYHOME_DIR_DATA_DIR="$LUMYHOME_DIR/data"
-LUMYHOME_DIR_CONFIG_DIR="$LUMYHOME_DIR/config"
 LUMYHOME_DIR_LOG_DIR="$LUMYHOME_DIR/log"
 
 # Déterminer le répertoire de base du projet
-Z2MQTT_DIR="$LUMYHOME_DIR/zigbee2mqtt"
+Z2MQTT_DIR="$LUMYHOME_DIR_DATA_DIR/zigbee2mqtt"
 MOSQUITTO_CONFIG_DIR="$LUMYHOME_DIR_DATA_DIR/mosquitto/config"
-Z2MQTT_CONFIG_FILE="$Z2MQTT_DIR/configuration.yml"
+Z2MQTT_CONFIG_FILE="$Z2MQTT_DIR/configuration.yaml"
 
 # Vérifier les permissions root pour créer dans /opt
 if [ "$EUID" -ne 0 ]; then
@@ -60,7 +59,7 @@ else
 fi
 
 # Créer les sous-dossiers
-for dir in "$LUMYHOME_DIR_DATA_DIR" "$LUMYHOME_DIR_CONFIG_DIR" "$LUMYHOME_DIR_LOG_DIR" "$Z2MQTT_DIR"; do
+for dir in "$LUMYHOME_DIR_DATA_DIR" "$LUMYHOME_DIR_LOG_DIR" "$Z2MQTT_DIR"; do
     if [ ! -d "$dir" ]; then
         $SUDO_CMD mkdir -p "$dir"
         success "Dossier $dir créé"
@@ -225,11 +224,11 @@ fi
 
 # Verifier si le port USB0 est disponible
 if [ -c "/dev/ttyUSB0" ]; then
-    error "Module Zigbee2MQTT détecté sur le port USB0."
+    info "Module Zigbee2MQTT détecté sur le port USB0."
     PORT_ZIGBEE="/dev/ttyUSB0"
 
 elif [ -c "/dev/ttyAMA0" ]; then
-    error "Module Zigbee2MQTT détecté sur le port AMA0."
+    info "Module Zigbee2MQTT détecté sur le port AMA0."
     PORT_ZIGBEE="/dev/ttyAMA0"
 else
     error "Aucun module Zigbee2MQTT détecté sur le port /dev/ttyUSB0 ou /dev/ttyAMA0. Veuillez connecter un module Zigbee2MQTT à votre ordinateur."
