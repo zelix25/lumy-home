@@ -15,7 +15,7 @@ import { User } from './auth/entities/user.entity';
 config();
 
 const configService = new ConfigService();
-const dbPath = configService.get<string>('DATABASE_PATH', 'data/exohome.db');
+const dbPath = configService.get<string>('DATABASE_PATH', 'data/lumy.db');
 const nodeEnv = configService.get<string>('NODE_ENV', 'development');
 
 export const AppDataSource = new DataSource({

@@ -31,7 +31,7 @@ export class SettingsService {
       const defaultSettings = this.settingsRepository.create({
         logout_delay: 0,
         hostname: '',
-        setup: false,
+        setup: true,
         city: null,
         zipCode: null,
         country: null,
@@ -173,7 +173,7 @@ export class SettingsService {
     const newSettings = this.settingsRepository.create({
       logout_delay: dto.logout_delay ?? 0,
       hostname: dto.hostname ?? '',
-      setup: dto.setup ?? false,
+      setup: dto.setup ?? true,
       city: dto.city ?? null,
       zipCode: dto.zipCode ?? null,
       country: dto.country ?? null,

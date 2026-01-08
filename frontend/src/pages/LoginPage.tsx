@@ -8,7 +8,6 @@ import {
   Button,
   Typography,
   Alert,
-  Link,
   Stack,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
@@ -18,10 +17,9 @@ export default function LoginPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { login, register } = useAuth();
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -31,11 +29,6 @@ export default function LoginPage() {
 
     if (!email || !password) {
       setError(t('auth.fillAllFields'));
-      return;
-    }
-
-    if (!isLogin && password !== confirmPassword) {
-      setError(t('auth.passwordsDoNotMatch'));
       return;
     }
 
@@ -74,7 +67,7 @@ export default function LoginPage() {
       <Card sx={{ maxWidth: 400, width: '100%' }}>
         <CardContent sx={{ p: 4 }}>
           <Typography variant="h4" gutterBottom sx={{ fontWeight: 500, mb: 3, textAlign: 'center' }}>
-            {isLogin ? t('auth.login') : t('auth.register')}
+            {t('auth.login')}
           </Typography>
 
           {error && (
@@ -105,18 +98,6 @@ export default function LoginPage() {
                 autoComplete={isLogin ? 'current-password' : 'new-password'}
               />
 
-              {!isLogin && (
-                <TextField
-                  label={t('auth.confirmPassword')}
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  fullWidth
-                  required
-                  autoComplete="new-password"
-                />
-              )}
-
               <Button
                 type="submit"
                 variant="contained"
@@ -124,29 +105,10 @@ export default function LoginPage() {
                 disabled={loading}
                 sx={{ mt: 2 }}
               >
-                {loading ? t('common.loading') : isLogin ? t('auth.login') : t('auth.register')}
+                {loading ? t('common.loading') : t('auth.register')}
               </Button>
             </Stack>
           </form>
-
-          <Box sx={{ mt: 3, textAlign: 'center' }}>
-            <Link
-              component="button"
-              type="button"
-              variant="body2"
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setError(null);
-                setPassword('');
-                setConfirmPassword('');
-              }}
-              sx={{ cursor: 'pointer' }}
-            >
-              {isLogin
-                ? t('auth.noAccount')
-                : t('auth.alreadyHaveAccount')}
-            </Link>
-          </Box>
         </CardContent>
       </Card>
     </Box>

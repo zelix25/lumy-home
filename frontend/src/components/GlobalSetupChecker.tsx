@@ -11,22 +11,18 @@ export default function GlobalSetupChecker({ children }: { children: React.React
   useEffect(() => {
     const checkSetup = async () => {
       try {
-        // Si on est déjà sur /setup, ne pas vérifier le setup (laisser l'utilisateur continuer)
-        if (location.pathname === '/setup') {
-          setChecking(false);
+        // Utiliser la route publique pour vérifier le setup
+        const { setup } = await settingsService.getSetupStatus();
+        
+        // Si setup est false et qu'on est sur /setup, empêcher l'accès et rediriger
+        if (!setup && location.pathname === '/setup') {
+          navigate('/login', { replace: true });
           return;
         }
         
-        // Utiliser la route publique pour vérifier le setup
-        const { setup } = await settingsService.getSetupStatus();
         // Si setup est true, rediriger vers /setup (sauf si on est déjà sur /setup)
         if (setup && location.pathname !== '/setup') {
           navigate('/setup', { replace: true });
-          return;
-        }
-        // Si setup est false et qu'on est sur /setup, rediriger vers /login
-        if (!setup && location.pathname === '/setup') {
-          navigate('/login', { replace: true });
           return;
         }
       } catch (err) {
