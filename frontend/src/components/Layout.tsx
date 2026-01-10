@@ -53,11 +53,11 @@ const getNavItems = (t: (key: string) => string): NavItem[] => [
   { label: t('common.home'), path: '/', icon: <HomeIcon /> },
   { label: t('common.devices'), path: '/appareils', icon: <DevicesIcon /> },
   { label: t('common.scenes'), path: '/scenes', icon: <SceneIcon /> },
-  { label: t('common.assistant'), path: '/assistant', icon: <SmartToyIcon /> },
+  //{ label: t('common.assistant'), path: '/assistant', icon: <SmartToyIcon /> },
   { label: t('common.history'), path: '/historique', icon: <HistoryIcon /> },
   { label: t('common.plan'), path: '/plan', icon: <MapIcon /> },
   { label: t('menu.store'), path: '/store', icon: <StoreIcon /> },
-  { label: t('common.debug'), path: '/debug', icon: <BugReportIcon /> },
+  //{ label: t('common.debug'), path: '/debug', icon: <BugReportIcon /> },
 ];
 
 export default function Layout({ children }: LayoutProps) {
