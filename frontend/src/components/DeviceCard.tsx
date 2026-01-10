@@ -9,6 +9,7 @@ import {
   Grid,
   Slider,
   Tooltip,
+  IconButton,
 } from '@mui/material';
 import {
   Lightbulb,
@@ -27,8 +28,12 @@ import {
   LocalFireDepartment,
   Warning,
   BatteryFull,
+  Add,
+  Remove,
 } from '@mui/icons-material';
 import { Device } from '../services/devices.service';
+import { devicesService } from '../services/devices.service';
+import { useState } from 'react';
 import i18n from '@/i18n';
 import { translateRoomName } from '../utils/roomTranslations';
 
@@ -151,6 +156,7 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
   const navigate = useNavigate();
   const isOnline = device.status === 'online';
   const isOn = device.state?.state === 'ON' || device.state?.state === true;
+  const [heatingSetpoints, setHeatingSetpoints] = useState<Record<string, number>>({});
   
   // Pour les volets, récupérer la position (0-100, où 0 = fermé, 100 = ouvert)
   const coverPosition = device.type === 'cover' && device.state?.position !== undefined
@@ -191,6 +197,36 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
     if (onCoverPositionChange && device.type === 'cover') {
       const position = typeof newValue === 'number' ? newValue : newValue[0];
       onCoverPositionChange(device, position);
+    }
+  };
+
+  const handleSetpointChange = async (device: Device, delta: number) => {
+    try {
+      // Récupérer la valeur actuelle (optimiste ou depuis l'état)
+      const currentSetpoint = heatingSetpoints[device.ieeeAddress] !== undefined
+        ? heatingSetpoints[device.ieeeAddress]
+        : (typeof device.state?.occupied_heating_setpoint === 'number' 
+          ? device.state.occupied_heating_setpoint 
+          : typeof device.state?.current_heating_setpoint === 'number'
+          ? device.state.current_heating_setpoint
+          : parseFloat(device.state?.occupied_heating_setpoint) || parseFloat(device.state?.current_heating_setpoint) || 20);
+      const newSetpoint = Math.max(5, Math.min(35, currentSetpoint + delta));
+      
+      // Mise à jour optimiste immédiate
+      setHeatingSetpoints((prev) => ({ ...prev, [device.ieeeAddress]: newSetpoint }));
+      
+      // Envoi de la commande au serveur
+      const command = { occupied_heating_setpoint: newSetpoint };
+      await devicesService.sendCommand(device.ieeeAddress, command);
+    } catch (error) {
+      console.error('Erreur lors du changement de consigne:', error);
+      // En cas d'erreur, restaurer la valeur précédente
+      const originalSetpoint = typeof device.state?.occupied_heating_setpoint === 'number' 
+        ? device.state.occupied_heating_setpoint 
+        : typeof device.state?.current_heating_setpoint === 'number'
+        ? device.state.current_heating_setpoint
+        : parseFloat(device.state?.occupied_heating_setpoint) || parseFloat(device.state?.current_heating_setpoint) || 20;
+      setHeatingSetpoints((prev) => ({ ...prev, [device.ieeeAddress]: originalSetpoint }));
     }
   };
 
@@ -337,6 +373,81 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
                       ? `${Math.round(device.state.humidity)}%`
                       : `${device.state.humidity}%`}
                   </Typography>
+                </Grid>
+              )}
+              
+              {/* Consigne de chauffage avec contrôle +/- */}
+              {(device.state?.occupied_heating_setpoint !== undefined || device.state?.current_heating_setpoint !== undefined) && (
+                <Grid item xs={12}>
+                  <Box sx={{ mb: 1 }}>
+                    {/* Température locale */}
+                    {device.state?.local_temperature !== undefined && (
+                      <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5, fontSize: '0.7rem' }}>
+                        {i18n.t('devices.exposes.local_temperature')}: {typeof device.state.local_temperature === 'number' 
+                          ? `${device.state.local_temperature.toFixed(1)}°C`
+                          : `${device.state.local_temperature}°C`}
+                      </Typography>
+                    )}
+                    {/* Consigne avec boutons +/- */}
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      gap: 0.5,
+                      backgroundColor: '#F5F5F5',
+                      borderRadius: 1,
+                      p: 1,
+                    }} onClick={(e) => e.stopPropagation()}>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSetpointChange(device, -0.5);
+                        }}
+                        disabled={!isOnline}
+                        sx={{ 
+                          color: 'text.primary',
+                          padding: '4px',
+                          '&:hover': { backgroundColor: 'rgba(0,0,0,0.1)' },
+                        }}
+                      >
+                        <Remove sx={{ fontSize: 16 }} />
+                      </IconButton>
+                      <Box sx={{ minWidth: '50px', textAlign: 'center' }}>
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            fontWeight: 500,
+                            fontSize: '0.95rem',
+                            color: 'text.primary',
+                          }}
+                        >
+                          {(heatingSetpoints[device.ieeeAddress] !== undefined
+                            ? heatingSetpoints[device.ieeeAddress]
+                            : (typeof device.state?.occupied_heating_setpoint === 'number' 
+                              ? device.state.occupied_heating_setpoint 
+                              : typeof device.state?.current_heating_setpoint === 'number'
+                              ? device.state.current_heating_setpoint
+                              : parseFloat(device.state?.occupied_heating_setpoint) || parseFloat(device.state?.current_heating_setpoint) || 20)).toFixed(1)}°C
+                        </Typography>
+                      </Box>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSetpointChange(device, 0.5);
+                        }}
+                        disabled={!isOnline}
+                        sx={{ 
+                          color: 'text.primary',
+                          padding: '4px',
+                          '&:hover': { backgroundColor: 'rgba(0,0,0,0.1)' },
+                        }}
+                      >
+                        <Add sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    </Box>
+                  </Box>
                 </Grid>
               )}
               

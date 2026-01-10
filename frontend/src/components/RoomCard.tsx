@@ -8,6 +8,7 @@ import {
   Slider,
   Grid,
   Chip,
+  IconButton,
 } from '@mui/material';
 import {
   Thermostat,
@@ -25,6 +26,8 @@ import {
   Warning,
   LocalFireDepartment,
   BatteryFull,
+  Add,
+  Remove,
 } from '@mui/icons-material';
 import { Device } from '../services/devices.service';
 import { devicesService } from '../services/devices.service';
@@ -44,6 +47,7 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
   const [deviceStates, setDeviceStates] = useState<Record<string, boolean>>({});
   const [brightnessValues, setBrightnessValues] = useState<Record<string, number>>({});
   const [coverPositions, setCoverPositions] = useState<Record<string, number>>({});
+  const [heatingSetpoints, setHeatingSetpoints] = useState<Record<string, number>>({});
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSensor, setSelectedSensor] = useState<{
     type: SensorType;
@@ -98,6 +102,28 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
     setDeviceStates(states);
     setBrightnessValues(brightness);
     setCoverPositions(coverPos);
+    
+    // Synchroniser les consignes de chauffage
+    const setpoints: Record<string, number> = {};
+    validDevices.forEach((device) => {
+      if (device.state?.occupied_heating_setpoint !== undefined) {
+        const setpoint = typeof device.state.occupied_heating_setpoint === 'number' 
+          ? device.state.occupied_heating_setpoint 
+          : parseFloat(device.state.occupied_heating_setpoint) || 20;
+        setpoints[device.ieeeAddress] = setpoint;
+      }
+    });
+    setHeatingSetpoints((prev) => {
+      // Ne mettre à jour que les valeurs qui ont changé depuis le serveur
+      const updated = { ...prev };
+      Object.keys(setpoints).forEach((address) => {
+        // Ne mettre à jour que si la valeur n'est pas déjà optimiste ou si elle a changé
+        if (updated[address] === undefined || Math.abs(updated[address] - setpoints[address]) > 0.1) {
+          updated[address] = setpoints[address];
+        }
+      });
+      return updated;
+    });
   }, [validDevices]);
 
   const handleToggle = async (device: Device, checked: boolean) => {
@@ -137,6 +163,33 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
       onDeviceUpdate?.();
     } catch (error) {
       console.error('Erreur lors du changement de position du volet:', error);
+    }
+  };
+
+  const handleSetpointChange = async (device: Device, delta: number) => {
+    try {
+      // Récupérer la valeur actuelle (optimiste ou depuis l'état)
+      const currentSetpoint = heatingSetpoints[device.ieeeAddress] !== undefined
+        ? heatingSetpoints[device.ieeeAddress]
+        : (typeof device.state?.occupied_heating_setpoint === 'number' 
+          ? device.state.occupied_heating_setpoint 
+          : parseFloat(device.state?.occupied_heating_setpoint) || 20);
+      const newSetpoint = Math.max(5, Math.min(35, currentSetpoint + delta));
+      
+      // Mise à jour optimiste immédiate
+      setHeatingSetpoints((prev) => ({ ...prev, [device.ieeeAddress]: newSetpoint }));
+      
+      // Envoi de la commande au serveur
+      const command = { occupied_heating_setpoint: newSetpoint };
+      await devicesService.sendCommand(device.ieeeAddress, command);
+      onDeviceUpdate?.();
+    } catch (error) {
+      console.error('Erreur lors du changement de consigne:', error);
+      // En cas d'erreur, restaurer la valeur précédente
+      const originalSetpoint = typeof device.state?.occupied_heating_setpoint === 'number' 
+        ? device.state.occupied_heating_setpoint 
+        : parseFloat(device.state?.occupied_heating_setpoint) || 20;
+      setHeatingSetpoints((prev) => ({ ...prev, [device.ieeeAddress]: originalSetpoint }));
     }
   };
 
@@ -275,7 +328,13 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
     if (device.state?.contact !== undefined) {
       return device.state.contact ? i18n.t('devices.closed') : i18n.t('devices.open');
     }
-    return device.status === 'online' ? i18n.t('devices.online') : i18n.t('devices.offline');
+    if (device.state?.water_leak !== undefined) {
+      return device.state.water_leak ? i18n.t('devices.detected') : i18n.t('devices.notDetected');
+    }
+    if (device.state?.vibration !== undefined) {
+      return device.state.vibration ? i18n.t('devices.detected') : i18n.t('devices.notDetected');
+    }
+    return '';
   };
 
   // Générer des données de graphique simulées pour les capteurs de température
@@ -404,6 +463,15 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
               const coverPosition = coverPositions[device.ieeeAddress] ?? 0;
               const hasTemperature = device.state?.temperature !== undefined;
               const chartData = hasTemperature ? generateChartData(device) : [];
+              const hasHeatingSetpoint = device.state?.occupied_heating_setpoint !== undefined || device.state?.current_heating_setpoint !== undefined;
+              const localTemperature = typeof device.state?.local_temperature === 'number' 
+                ? device.state.local_temperature 
+                : parseFloat(device.state?.local_temperature) || null;
+              const heatingSetpoint = heatingSetpoints[device.ieeeAddress] !== undefined
+                ? heatingSetpoints[device.ieeeAddress]
+                : (typeof device.state?.occupied_heating_setpoint === 'number' || typeof device.state?.current_heating_setpoint === 'number'
+                  ? device.state.occupied_heating_setpoint 
+                  : parseFloat(device.state?.occupied_heating_setpoint) || parseFloat(device.state?.current_heating_setpoint) || 20);
 
                     return (
                 <Grid item xs={6} key={device.ieeeAddress}>
@@ -523,6 +591,93 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
                             </Typography>
                           )}
                         </Box>
+                      ) : hasHeatingSetpoint ? (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }} onClick={(e) => e.stopPropagation()}>
+                          {/* Température locale */}
+                          {localTemperature !== null && (
+                            <Typography 
+                              variant="body2" 
+                              sx={{ 
+                                fontWeight: 400,
+                                fontSize: '0.75rem',
+                                color: 'text.secondary',
+                              }}
+                            >
+                              {i18n.t('devices.exposes.local_temperature')}: {localTemperature.toFixed(1)}°C
+                            </Typography>
+                          )}
+                          {/* Consigne avec boutons +/- */}
+                          <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            gap: 1,
+                            backgroundColor: '#F5F5F5',
+                            borderRadius: 1,
+                            p: 1,
+                          }}>
+                            <IconButton
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSetpointChange(device, -0.5);
+                              }}
+                              sx={{ 
+                                color: 'text.primary',
+                                '&:hover': { backgroundColor: 'rgba(0,0,0,0.1)' },
+                              }}
+                            >
+                              <Remove sx={{ fontSize: 18 }} />
+                            </IconButton>
+                            <Typography 
+                              variant="h6" 
+                              sx={{ 
+                                fontWeight: 400,
+                                fontSize: '1rem',
+                                color: 'text.primary',
+                                minWidth: '60px',
+                                textAlign: 'center',
+                              }}
+                            >
+                              {heatingSetpoint.toFixed(1)}°C
+                            </Typography>
+                            <IconButton
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSetpointChange(device, 0.5);
+                              }}
+                              sx={{ 
+                                color: 'text.primary',
+                                '&:hover': { backgroundColor: 'rgba(0,0,0,0.1)' },
+                              }}
+                            >
+                              <Add sx={{ fontSize: 18 }} />
+                            </IconButton>
+                          </Box>
+                        </Box>
+                      ) : (device.type === 'switch' || device.type === 'plug') ? (
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }} onClick={(e) => e.stopPropagation()}>
+                          <Typography 
+                            variant="h6" 
+                            sx={{ 
+                              fontWeight: 400,
+                              fontSize: '1rem',
+                              color: 'text.primary',
+                            }}
+                          >
+                            {getDeviceValue(device)}
+                          </Typography>
+                          <Switch
+                            checked={isOn}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              handleToggle(device, e.target.checked);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            size="small"
+                          />
+                        </Box>
                       ) : (
                         <Typography 
                           variant="h6" 
@@ -592,21 +747,6 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
                         )}
               </Box>
             )}
-
-                      {/* Contrôles pour les switches/plugs */}
-                      {(device.type === 'switch' || device.type === 'plug') && (
-                        <Box sx={{ mt: 1, display: 'flex', justifyContent: 'flex-end' }} onClick={(e) => e.stopPropagation()}>
-                          <Switch
-                            checked={isOn}
-                            onChange={(e) => {
-                              e.stopPropagation();
-                              handleToggle(device, e.target.checked);
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                            size="small"
-                          />
-                        </Box>
-                      )}
 
                       {/* Contrôles pour les volets */}
                       {device.type === 'cover' && (

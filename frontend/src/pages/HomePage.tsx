@@ -1,20 +1,22 @@
-import { Box, Typography, Grid, Card, CardContent, CircularProgress } from '@mui/material';
+import { Box, Typography, Grid, Card, CircularProgress } from '@mui/material';
 import DevicesIcon from '@mui/icons-material/Devices';
 import ThermostatIcon from '@mui/icons-material/Thermostat';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import PersonPinCircleIcon from '@mui/icons-material/PersonPinCircle';
 import { useEffect, useState, useMemo } from 'react';
 import { devicesService, DeviceStats, Device } from '../services/devices.service';
+import { settingsService, Settings } from '../services/settings.service';
 import { useDevices } from '../hooks/useDevices';
 import { usePluginWidgets } from '../hooks/usePluginWidgets';
 import RoomCard from '../components/RoomCard';
-import WeatherCard from '../components/WeatherCard';
+import WeatherInline from '../components/WeatherInline';
 import PluginWidgetLoader from '../components/PluginWidgetLoader';
 import i18n from '@/i18n';
 
 export default function HomePage() {
   const [stats, setStats] = useState<DeviceStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [settings, setSettings] = useState<Settings | null>(null);
   const { devices } = useDevices();
   const pluginWidgets = usePluginWidgets();
 
@@ -30,7 +32,17 @@ export default function HomePage() {
       }
     };
 
+    const fetchSettings = async () => {
+      try {
+        const data = await settingsService.getSettings();
+        setSettings(data);
+      } catch (error) {
+        console.error('Erreur lors du chargement des settings:', error);
+      }
+    };
+
     fetchStats();
+    fetchSettings();
     const interval = setInterval(fetchStats, 30000); // Rafraîchir toutes les 30 secondes
 
     return () => clearInterval(interval);
@@ -84,44 +96,6 @@ export default function HomePage() {
     };
   }, [devices]);
 
-  const displayStats = [
-    ...(houseStats.temperature !== null
-      ? [
-          {
-            title: i18n.t('home.temperature'),
-            value: `${houseStats.temperature.toFixed(1)}°C`,
-            icon: <ThermostatIcon sx={{ fontSize: 28 }} />,
-            color: '#C4A5A5', // Rouge doux
-            isSmall: true,
-          },
-        ]
-      : []),
-    ...(houseStats.humidity !== null
-      ? [
-          {
-            title: i18n.t('home.humidity'),
-            value: `${Math.round(houseStats.humidity)}%`,
-            icon: <WaterDropIcon sx={{ fontSize: 28 }} />,
-            color: '#86A6A0', // Vert-gris nordique
-            isSmall: true,
-          },
-        ]
-      : []),
-    {
-      title: i18n.t('home.onlineDevices'),
-      value: stats?.online.toString() || '0',
-      icon: <DevicesIcon sx={{ fontSize: 28 }} />,
-      color: '#86A6A0', // Vert-gris nordique
-      isSmall: true,
-    },
-    {
-      title: i18n.t('devices.presence'),
-      value: houseStats.presence ? i18n.t('devices.detected') : i18n.t('devices.none'),
-      icon: <PersonPinCircleIcon sx={{ fontSize: 28 }} />,
-      color: houseStats.presence ? '#2e7d32' : '#9e9e9e', // Vert si présence, gris sinon
-      isSmall: true,
-    },
-  ];
 
   // Grouper les appareils par pièce
   const devicesByRoom = useMemo(() => {
@@ -158,6 +132,256 @@ export default function HomePage() {
           </Typography>
         </Box>
       </Box>
+
+      {/* Cartes séparées pour météo, température, humidité, présence et appareils en ligne */}
+      {loading ? (
+        <Box sx={{ textAlign: 'center', py: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <Grid container spacing={2} sx={{ mb: 4, alignItems: 'stretch' }}>
+          {/* Carte Météo */}
+          <Grid item xs={12} sm={6} md="auto" sx={{ display: 'flex' }}>
+            <Card
+              sx={{
+                backgroundColor: '#FFFFFF',
+                border: 'none',
+                borderRadius: 1,
+                boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+                p: 2,
+                minWidth: { xs: '100%', sm: '200px' },
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <Box sx={{ mb: 1 }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontWeight: 500,
+                    fontSize: '0.75rem',
+                    color: 'text.secondary',
+                  }}
+                >
+                  {settings?.city ? `Météo ${settings.city}` : 'Météo'}
+                </Typography>
+              </Box>
+              <WeatherInline />
+            </Card>
+          </Grid>
+
+          {/* Carte Température moyenne */}
+          {houseStats.temperature !== null && (
+            <Grid item xs={12} sm={6} md="auto" sx={{ display: 'flex' }}>
+              <Card
+                sx={{
+                  backgroundColor: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: 1,
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+                  p: 2,
+                  minWidth: { xs: '100%', sm: '150px' },
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box
+                    sx={{
+                      color: '#C4A5A5',
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <ThermostatIcon sx={{ fontSize: 20 }} />
+                  </Box>
+                  <Box>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        fontWeight: 500,
+                        color: '#C4A5A5',
+                        fontSize: '0.95rem',
+                      }}
+                    >
+                      {houseStats.temperature.toFixed(1)}°C
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: 'text.secondary',
+                        fontSize: '0.7rem',
+                      }}
+                    >
+                      {i18n.t('home.temperature')}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Card>
+            </Grid>
+          )}
+
+          {/* Carte Humidité moyenne */}
+          {houseStats.humidity !== null && (
+            <Grid item xs={12} sm={6} md="auto" sx={{ display: 'flex' }}>
+              <Card
+                sx={{
+                  backgroundColor: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: 1,
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+                  p: 2,
+                  minWidth: { xs: '100%', sm: '150px' },
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box
+                    sx={{
+                      color: '#86A6A0',
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <WaterDropIcon sx={{ fontSize: 20 }} />
+                  </Box>
+                  <Box>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        fontWeight: 500,
+                        color: '#86A6A0',
+                        fontSize: '0.95rem',
+                      }}
+                    >
+                      {Math.round(houseStats.humidity)}%
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: 'text.secondary',
+                        fontSize: '0.7rem',
+                      }}
+                    >
+                      {i18n.t('home.humidity')}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Card>
+            </Grid>
+          )}
+
+          {/* Carte Présence */}
+          <Grid item xs={12} sm={6} md="auto" sx={{ display: 'flex' }}>
+            <Card
+              sx={{
+                backgroundColor: '#FFFFFF',
+                border: 'none',
+                borderRadius: 1,
+                boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+                p: 2,
+                minWidth: { xs: '100%', sm: '150px' },
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box
+                  sx={{
+                    color: houseStats.presence ? '#2e7d32' : '#9e9e9e',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  <PersonPinCircleIcon sx={{ fontSize: 20 }} />
+                </Box>
+                <Box>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      fontWeight: 500,
+                      color: houseStats.presence ? '#2e7d32' : '#9e9e9e',
+                      fontSize: '0.95rem',
+                    }}
+                  >
+                    {houseStats.presence ? i18n.t('devices.detected') : i18n.t('devices.none')}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: 'text.secondary',
+                      fontSize: '0.7rem',
+                    }}
+                  >
+                    {i18n.t('devices.presence')}
+                  </Typography>
+                </Box>
+              </Box>
+            </Card>
+          </Grid>
+
+          {/* Carte Nombre d'appareils en ligne */}
+          <Grid item xs={12} sm={6} md="auto" sx={{ display: 'flex' }}>
+            <Card
+              sx={{
+                backgroundColor: '#FFFFFF',
+                border: 'none',
+                borderRadius: 1,
+                boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+                p: 2,
+                minWidth: { xs: '100%', sm: '150px' },
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box
+                  sx={{
+                    color: '#86A6A0',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  <DevicesIcon sx={{ fontSize: 20 }} />
+                </Box>
+                <Box>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      fontWeight: 500,
+                      color: '#86A6A0',
+                      fontSize: '0.95rem',
+                    }}
+                  >
+                    {stats?.online.toString() || '0'}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: 'text.secondary',
+                      fontSize: '0.7rem',
+                    }}
+                  >
+                    {i18n.t('home.onlineDevices')}
+                  </Typography>
+                </Box>
+              </Box>
+            </Card>
+          </Grid>
+        </Grid>
+      )}
+
       <Grid container spacing={3} sx={{ mb: 4 }}>
           {loading ? (
             <Grid item xs={12} sx={{ textAlign: 'center', py: 4 }}>
@@ -165,64 +389,6 @@ export default function HomePage() {
             </Grid>
           ) : (
             <>
-              {/* Statistiques globales */}
-              {displayStats.map((stat, index) => (
-                <Grid 
-                  item 
-                  xs={12} 
-                  sm={stat.isSmall ? 4 : 6} 
-                  md={stat.isSmall ? 3 : 4} 
-                  key={index}
-                >
-                  <Card
-                    sx={{
-                      height: '100%',
-                      backgroundColor: '#FFFFFF',
-                      border: 'none',
-                      borderRadius: 1,
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
-                      transition: 'all 0.15s ease-in-out',
-                      '&:hover': {
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                      },
-                    }}
-                  >
-                    <CardContent sx={{ p: stat.isSmall ? 1.5 : 2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: stat.isSmall ? 1 : 2 }}>
-                        <Box
-                          sx={{
-                            color: stat.color,
-                            mr: stat.isSmall ? 1.5 : 2,
-                            p: stat.isSmall ? 1 : 1.5,
-                            borderRadius: 1,
-                            backgroundColor: `${stat.color}15`,
-                          }}
-                        >
-                          {stat.icon}
-                        </Box>
-                        <Typography 
-                          variant={stat.isSmall ? "h4" : "h3"} 
-                          sx={{ fontWeight: 500, color: stat.color }}
-                        >
-                          {stat.value}
-                        </Typography>
-                      </Box>
-                      <Typography 
-                        variant={stat.isSmall ? "body2" : "h6"} 
-                        color="text.secondary" 
-                        sx={{ fontWeight: 400 }}
-                      >
-                        {stat.title}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-
-              {/* Cartes météo */}
-              <Grid item xs={12}>
-                <WeatherCard />
-              </Grid>
 
               {/* Widgets des plugins */}
               {pluginWidgets.map((widget) => (
