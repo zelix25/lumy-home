@@ -445,6 +445,7 @@
     "stepStore": "Store",
     "stepAI": "AI Assistant",
     "stepWeather": "Weather",
+    "stepZigbee": "Zigbee",
     "stepDevices": "Devices",
     "stepComplete": "Complete",
     "checkingUpdates": "Checking for updates",
@@ -488,6 +489,29 @@
       "success": "Location saved successfully. GPS coordinates have been automatically retrieved.",
       "error": "Error saving location",
       "countryPlaceholder": "Ex: France, United States, Germany..."
+    },
+    "zigbee": {
+      "title": "Zigbee Coordinator Configuration",
+      "description": "Select the USB port of your Zigbee coordinator and its type.",
+      "port": "USB Port",
+      "adapter": "Coordinator Type",
+      "fillAllFields": "Please select the USB port and coordinator type",
+      "save": "Save",
+      "skip": "Skip",
+      "success": "Zigbee configuration saved successfully",
+      "error": "Error saving Zigbee configuration",
+      "errorLoadingDevices": "Error loading USB devices",
+      "loadingDevices": "Loading USB devices...",
+      "noDevices": "No USB devices detected",
+      "refreshDevices": "Refresh list",
+      "adapters": {
+        "ember": "Ember (EZSP)",
+        "zstack": "Z-Stack",
+        "zigate": "ZiGate",
+        "deconz": "deCONZ",
+        "ezsp": "EZSP",
+        "zigatev3": "ZiGate v3"
+      }
     }
   },
   "menu": {
