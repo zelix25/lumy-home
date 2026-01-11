@@ -31,9 +31,13 @@ import StoreIcon from '@mui/icons-material/Store';
 import LanguageSelector from './LanguageSelector';
 import SystemModal from './SystemModal';
 import SystemNotifications from './SystemNotifications';
+import UpdateModal from './UpdateModal';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { usePluginMenuItems } from '../hooks/usePluginRoutes';
+import { websocketService } from '../services/websocket.service';
+import { useEffect } from 'react';
+import { ServiceUpdateInfo } from '../services/updater.service';
 
 const drawerWidth = 240; // Largeur sidebar selon guide scandinave
 
@@ -62,6 +66,9 @@ export default function Layout({ children }: LayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [systemModalOpen, setSystemModalOpen] = useState(false);
+  const [updateModalOpen, setUpdateModalOpen] = useState(false);
+  const [updateServices, setUpdateServices] = useState<ServiceUpdateInfo[]>([]);
+  const [updateMode, setUpdateMode] = useState<'beta' | 'stable'>('stable');
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
@@ -114,6 +121,32 @@ export default function Layout({ children }: LayoutProps) {
     setSystemModalOpen(true);
     handleMenuClose();
   };
+
+  // Écouter les notifications de mise à jour via WebSocket
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const handleUpdateAvailable = (data: unknown) => {
+      const updateData = data as {
+        hasUpdates: boolean;
+        services: ServiceUpdateInfo[];
+        mode?: 'beta' | 'stable';
+        message?: string;
+      };
+      
+      if (updateData.hasUpdates && updateData.services) {
+        setUpdateServices(updateData.services);
+        setUpdateMode(updateData.mode || 'stable');
+        setUpdateModalOpen(true);
+      }
+    };
+
+    websocketService.on('update:available', handleUpdateAvailable);
+
+    return () => {
+      websocketService.off('update:available', handleUpdateAvailable);
+    };
+  }, [isAuthenticated]);
 
   const handleRestart = () => {
     // TODO: Implémenter l'appel API pour redémarrer
@@ -324,6 +357,12 @@ export default function Layout({ children }: LayoutProps) {
             onClose={() => setSystemModalOpen(false)}
             onRestart={handleRestart}
             onShutdown={handleShutdown}
+          />
+          <UpdateModal
+            open={updateModalOpen}
+            onClose={() => setUpdateModalOpen(false)}
+            services={updateServices}
+            mode={updateMode}
           />
         </Toolbar>
       </AppBar>

@@ -788,6 +788,20 @@
       "settingsSaveSuccess": "Paramètres du plugin {{name}} sauvegardés avec succès !",
       "settingsSaveError": "Erreur lors de la sauvegarde des paramètres."
     }
+  },
+  "updater": {
+    "updateAvailable": "Mise à jour disponible",
+    "beta": "Beta",
+    "stable": "Stable",
+    "updateAvailableMessage": "Une mise à jour est disponible pour {{count}} service(s). Souhaitez-vous l'appliquer maintenant ?",
+    "affectedServices": "Services concernés",
+    "current": "Actuel",
+    "new": "Nouveau",
+    "updating": "Mise à jour en cours... Veuillez patienter.",
+    "update": "Mettre à jour",
+    "later": "Plus tard",
+    "updateAppliedSuccess": "Mise à jour appliquée avec succès",
+    "updateError": "Erreur lors de la mise à jour"
   }
 }
 
