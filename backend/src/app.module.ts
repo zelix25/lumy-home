@@ -23,7 +23,7 @@ import { WeatherModule } from './weather/weather.module';
 import { StoreModule } from './store/store.module';
 import { PluginsModule } from './plugins/plugins.module';
 import { SystemHealthModule } from './system-health/system-health.module';
-import { SetupModule } from './setup/setup.module';
+import { UpdaterModule } from './updater/updater.module';
 import { configValidationSchema } from './config/config.validation';
 
 @Module({
@@ -90,7 +90,7 @@ import { configValidationSchema } from './config/config.validation';
     StoreModule,
     PluginsModule,
     SystemHealthModule,
-    SetupModule,
+    UpdaterModule,
   ],
   controllers: [AppController],
   providers: [AppService],

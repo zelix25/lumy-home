@@ -35,5 +35,8 @@ export const configValidationSchema = Joi.object({
 
   // Plugins
   PLUGINS_DIRECTORY: Joi.string().default('plugins'),
+
+  // Updater
+  UPDATER_URL: Joi.string().uri().default('http://localhost:3411'),
 });
 

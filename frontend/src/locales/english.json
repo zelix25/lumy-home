@@ -811,6 +811,20 @@
       "settingsSaveSuccess": "Plugin {{name}} settings saved successfully!",
       "settingsSaveError": "Error saving settings."
     }
+  },
+  "updater": {
+    "updateAvailable": "Update available",
+    "beta": "Beta",
+    "stable": "Stable",
+    "updateAvailableMessage": "An update is available for {{count}} service(s). Would you like to apply it now?",
+    "affectedServices": "Affected services",
+    "current": "Current",
+    "new": "New",
+    "updating": "Update in progress... Please wait.",
+    "update": "Update",
+    "later": "Later",
+    "updateAppliedSuccess": "Update applied successfully",
+    "updateError": "Error during update"
   }
 }
 

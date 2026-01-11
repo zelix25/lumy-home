@@ -31,9 +31,11 @@ import StoreIcon from '@mui/icons-material/Store';
 import LanguageSelector from './LanguageSelector';
 import SystemModal from './SystemModal';
 import SystemNotifications from './SystemNotifications';
+//import UpdateModal from './UpdateModal';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { usePluginMenuItems } from '../hooks/usePluginRoutes';
+//import { ServiceUpdateInfo } from '../services/updater.service';
 
 const drawerWidth = 240; // Largeur sidebar selon guide scandinave
 

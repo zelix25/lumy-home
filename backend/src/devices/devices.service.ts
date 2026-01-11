@@ -154,14 +154,118 @@ export class DevicesService implements OnModuleInit {
     return device;
   }
 
+  /**
+   * Valide et normalise les valeurs de commande avant envoi
+   * @param command - Commande à valider
+   * @returns Commande validée et normalisée
+   */
+  private validateAndNormalizeCommand(command: Record<string, any>): Record<string, any> {
+    const validatedCommand = { ...command };
+
+    // Validation des consignes de chauffage (5-35°C)
+    if (validatedCommand.occupied_heating_setpoint !== undefined) {
+      const value = typeof validatedCommand.occupied_heating_setpoint === 'number'
+        ? validatedCommand.occupied_heating_setpoint
+        : parseFloat(validatedCommand.occupied_heating_setpoint);
+      
+      if (isNaN(value)) {
+        throw new Error('La valeur de occupied_heating_setpoint doit être un nombre');
+      }
+      
+      validatedCommand.occupied_heating_setpoint = Math.max(5, Math.min(35, value));
+      
+      if (value !== validatedCommand.occupied_heating_setpoint) {
+        this.logger.log(
+          `⚠️ Valeur de consigne ajustée: ${value}°C → ${validatedCommand.occupied_heating_setpoint}°C (plage: 5-35°C)`,
+          'DevicesService',
+        );
+      }
+    }
+
+    if (validatedCommand.current_heating_setpoint !== undefined) {
+      const value = typeof validatedCommand.current_heating_setpoint === 'number'
+        ? validatedCommand.current_heating_setpoint
+        : parseFloat(validatedCommand.current_heating_setpoint);
+      
+      if (isNaN(value)) {
+        throw new Error('La valeur de current_heating_setpoint doit être un nombre');
+      }
+      
+      validatedCommand.current_heating_setpoint = Math.max(5, Math.min(35, value));
+      
+      if (value !== validatedCommand.current_heating_setpoint) {
+        this.logger.log(
+          `⚠️ Valeur de consigne ajustée: ${value}°C → ${validatedCommand.current_heating_setpoint}°C (plage: 5-35°C)`,
+          'DevicesService',
+        );
+      }
+    }
+
+    // Validation de la position des volets (0-100)
+    if (validatedCommand.position !== undefined) {
+      const value = typeof validatedCommand.position === 'number'
+        ? validatedCommand.position
+        : parseFloat(validatedCommand.position);
+      
+      if (isNaN(value)) {
+        throw new Error('La valeur de position doit être un nombre');
+      }
+      
+      validatedCommand.position = Math.max(0, Math.min(100, value));
+    }
+
+    // Validation de la luminosité (0-254 pour Zigbee)
+    if (validatedCommand.brightness !== undefined) {
+      const value = typeof validatedCommand.brightness === 'number'
+        ? validatedCommand.brightness
+        : parseFloat(validatedCommand.brightness);
+      
+      if (isNaN(value)) {
+        throw new Error('La valeur de brightness doit être un nombre');
+      }
+      
+      validatedCommand.brightness = Math.max(0, Math.min(254, value));
+    }
+
+    return validatedCommand;
+  }
+
   async sendCommand(
     ieeeAddress: string,
     command: Record<string, any>,
   ): Promise<void> {
     const device = await this.findOne(ieeeAddress);
+    
+    // Valider et normaliser la commande avant envoi
+    const validatedCommand = this.validateAndNormalizeCommand(command);
+    
     // Utiliser mqttName pour les topics MQTT, avec fallback sur friendlyName si mqttName n'existe pas
     const mqttName = device.mqttName || this.generateMqttName(device.friendlyName);
-    await this.zigbee2MqttService.sendCommand(mqttName, command);
+    
+    // Envoyer la commande
+    await this.zigbee2MqttService.sendCommand(mqttName, validatedCommand);
+    
+    // Pour les consignes de chauffage, forcer une lecture de l'état après un court délai
+    // pour s'assurer que la mise à jour est bien appliquée et reflétée dans la base de données
+    if (validatedCommand.occupied_heating_setpoint !== undefined || 
+        validatedCommand.current_heating_setpoint !== undefined) {
+      // Attendre un court délai pour laisser le temps à Zigbee2MQTT de traiter la commande
+      setTimeout(async () => {
+        try {
+          await this.forceReadDeviceState(ieeeAddress);
+          this.logger.log(
+            `✅ Lecture forcée de l'état après changement de consigne pour ${device.friendlyName}`,
+            'DevicesService',
+          );
+        } catch (error) {
+          this.logger.error(
+            `Erreur lors de la lecture forcée après changement de consigne: ${error.message}`,
+            error.stack,
+            'DevicesService',
+          );
+        }
+      }, 500); // 500ms de délai
+    }
   }
 
   async getDeviceStats(): Promise<{
