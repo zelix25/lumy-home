@@ -18,6 +18,7 @@ import SettingsPage from './pages/SettingsPage';
 import StoreConnectPage from './pages/StoreConnectPage';
 import StorePage from './pages/StorePage';
 import NotificationSnackbar from './components/NotificationSnackbar';
+import UpdateNotification from './components/UpdateNotification';
 import { usePluginRoutes } from './hooks/usePluginRoutes';
 
 function App() {
@@ -63,6 +64,7 @@ function App() {
                   </Routes>
                 </Box>
                 <NotificationSnackbar />
+                <UpdateNotification />
               </Layout>
             </ProtectedRoute>
           }
