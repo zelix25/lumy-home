@@ -1329,32 +1329,34 @@ export class AutomationsService implements OnModuleInit {
 
         case AutomationActionType.OPEN_COVER:
           const openCoverDevice = await this.devicesService.findOne(deviceId);
+          // Utiliser la position définie dans params si disponible, sinon 100 (ouvert)
+          const openPosition = params?.position !== undefined ? params.position : 100;
           this.logger.log(
-            `[AUTOMATION ACTION] 🪟 Commande: Ouvrir le volet ${openCoverDevice.friendlyName} (${deviceId})`,
+            `[AUTOMATION ACTION] 🪟 Commande: Positionner le volet ${openCoverDevice.friendlyName} (${deviceId}) à ${openPosition}%`,
             'AutomationsService',
           );
-          // Pour Zigbee2MQTT, position 100 = ouvert
           await this.devicesService.sendCommand(deviceId, {
-            position: 100,
+            position: openPosition,
           });
           this.logger.log(
-            `[AUTOMATION ACTION] ✅ Commande d'ouverture (position: 100) envoyée avec succès au volet ${openCoverDevice.friendlyName} (${deviceId})`,
+            `[AUTOMATION ACTION] ✅ Commande de position (${openPosition}%) envoyée avec succès au volet ${openCoverDevice.friendlyName} (${deviceId})`,
             'AutomationsService',
           );
           break;
 
         case AutomationActionType.CLOSE_COVER:
           const closeCoverDevice = await this.devicesService.findOne(deviceId);
+          // Utiliser la position définie dans params si disponible, sinon 0 (fermé)
+          const closePosition = params?.position !== undefined ? params.position : 0;
           this.logger.log(
-            `[AUTOMATION ACTION] 🪟 Commande: Fermer le volet ${closeCoverDevice.friendlyName} (${deviceId})`,
+            `[AUTOMATION ACTION] 🪟 Commande: Positionner le volet ${closeCoverDevice.friendlyName} (${deviceId}) à ${closePosition}%`,
             'AutomationsService',
           );
-          // Pour Zigbee2MQTT, position 0 = fermé
           await this.devicesService.sendCommand(deviceId, {
-            position: 0,
+            position: closePosition,
           });
           this.logger.log(
-            `[AUTOMATION ACTION] ✅ Commande de fermeture (position: 0) envoyée avec succès au volet ${closeCoverDevice.friendlyName} (${deviceId})`,
+            `[AUTOMATION ACTION] ✅ Commande de position (${closePosition}%) envoyée avec succès au volet ${closeCoverDevice.friendlyName} (${deviceId})`,
             'AutomationsService',
           );
           break;

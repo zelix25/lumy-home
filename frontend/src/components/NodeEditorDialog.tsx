@@ -184,6 +184,7 @@ interface ActionNodeData {
   deviceName?: string;
   params?: Record<string, any>;
   duration?: number; // Durée en secondes pour l'action TURN_ON (0 = infini)
+  coverPosition?: number; // Position du volet (0-100) pour les actions OPEN_COVER et CLOSE_COVER
 }
 
 interface ConditionNodeData {
@@ -877,6 +878,7 @@ export default function NodeEditorDialog({
           deviceName: action.deviceName || '',
           params: action.params || {},
           duration: action.params?.duration,
+          coverPosition: action.params?.position !== undefined ? action.params.position : (action.type === AutomationActionType.OPEN_COVER ? 100 : action.type === AutomationActionType.CLOSE_COVER ? 0 : undefined),
         },
         sourcePosition: Position.Right,
         targetPosition: Position.Left,
@@ -1227,6 +1229,11 @@ export default function NodeEditorDialog({
       // Ajouter la durée pour l'action TURN_ON
       if (actionData.actionType === AutomationActionType.TURN_ON && actionData.duration !== undefined) {
         params.duration = actionData.duration;
+      }
+      
+      // Ajouter la position pour les actions OPEN_COVER et CLOSE_COVER
+      if ((actionData.actionType === AutomationActionType.OPEN_COVER || actionData.actionType === AutomationActionType.CLOSE_COVER) && actionData.coverPosition !== undefined) {
+        params.position = actionData.coverPosition;
       }
       
       return {
@@ -1921,6 +1928,10 @@ export default function NodeEditorDialog({
                                     deviceName: undefined,
                                     // Réinitialiser la durée si ce n'est plus TURN_ON
                                     duration: actionType === AutomationActionType.TURN_ON ? (node.data as ActionNodeData).duration : undefined,
+                                    // Réinitialiser la position du volet selon le type d'action
+                                    coverPosition: (actionType === AutomationActionType.OPEN_COVER || actionType === AutomationActionType.CLOSE_COVER)
+                                      ? (actionType === AutomationActionType.OPEN_COVER ? 100 : 0)
+                                      : undefined,
                                   },
                                 }
                               : node,
@@ -1992,6 +2003,55 @@ export default function NodeEditorDialog({
                             : t('automations.nodeEditor.durationSeconds', { seconds: actionSettings.actionData.duration })
                         }
                       />
+                    </Box>
+                  )}
+
+                  {/* Slider pour la position du volet pour les actions OPEN_COVER et CLOSE_COVER */}
+                  {(actionSettings.actionData.actionType === AutomationActionType.OPEN_COVER || 
+                    actionSettings.actionData.actionType === AutomationActionType.CLOSE_COVER) && (
+                    <Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <Typography variant="body2" color="text.secondary">
+                          {t('automations.coverPosition')}
+                        </Typography>
+                        <Tooltip title={t('automations.coverPositionDescription')} arrow>
+                          <HelpOutlineIcon sx={{ fontSize: 16, color: 'text.secondary', cursor: 'help' }} />
+                        </Tooltip>
+                      </Box>
+                      <Typography gutterBottom>
+                        {t('automations.coverPosition')}: {actionSettings.actionData.coverPosition ?? (actionSettings.actionData.actionType === AutomationActionType.OPEN_COVER ? 100 : 0)}%
+                      </Typography>
+                      <Slider
+                        value={actionSettings.actionData.coverPosition ?? (actionSettings.actionData.actionType === AutomationActionType.OPEN_COVER ? 100 : 0)}
+                        onChange={(_, value) => {
+                          setNodes((nds) =>
+                            nds.map((node) =>
+                              node.id === selectedNodeId
+                                ? {
+                                    ...node,
+                                    data: {
+                                      ...node.data,
+                                      coverPosition: value as number,
+                                    },
+                                  }
+                                : node,
+                            ),
+                          );
+                        }}
+                        min={0}
+                        max={100}
+                        step={1}
+                        marks={[
+                          { value: 0, label: '0%' },
+                          { value: 50, label: '50%' },
+                          { value: 100, label: '100%' },
+                        ]}
+                        valueLabelDisplay="auto"
+                        valueLabelFormat={(value) => `${value}%`}
+                      />
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                        {t('automations.coverPositionDescription')}
+                      </Typography>
                     </Box>
                   )}
 

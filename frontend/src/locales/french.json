@@ -590,6 +590,8 @@
     "actionSetThermostat": "Régler le thermostat",
     "actionOpenCover": "Ouvrir un volet",
     "actionCloseCover": "Fermer un volet",
+    "coverPosition": "Position du volet",
+    "coverPositionDescription": "Définissez le pourcentage d'ouverture du volet (0% = fermé, 100% = ouvert)",
     "duration": "Durée (secondes)",
     "durationInfinite": "0 = Infini (reste allumé)",
     "durationSeconds": "S'éteint après {{seconds}} seconde(s)",

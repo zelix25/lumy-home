@@ -125,6 +125,10 @@ export default function CreateSimpleAutomationDialog({
   const initialThermostatTemp = automation?.actions[0]?.params?.temperature || 20;
   const initialNotificationMessage = automation?.actions[0]?.params?.message || '';
   const initialTurnOnDuration = automation?.actions[0]?.params?.duration || 0;
+  // Pour les covers, utiliser la position si définie, sinon valeur par défaut selon l'action
+  const initialCoverPosition = automation?.actions[0]?.params?.position !== undefined 
+    ? automation.actions[0].params.position 
+    : (automation?.actions[0]?.type === AutomationActionType.OPEN_COVER ? 100 : 0);
   const initialSunriseSunsetType = automation?.trigger.sunriseSunsetType || 'sunrise';
   const initialOffsetMinutes = automation?.trigger.offsetMinutes || 0;
   const initialTriggerTime = automation?.trigger.time || '08:00';
@@ -168,6 +172,7 @@ export default function CreateSimpleAutomationDialog({
   const [thermostatTemp, setThermostatTemp] = useState(initialThermostatTemp);
   const [notificationMessage, setNotificationMessage] = useState(initialNotificationMessage);
   const [turnOnDuration, setTurnOnDuration] = useState<number>(initialTurnOnDuration);
+  const [coverPosition, setCoverPosition] = useState<number>(initialCoverPosition);
   const [sunriseSunsetType, setSunriseSunsetType] = useState<'sunrise' | 'sunset'>(initialSunriseSunsetType as 'sunrise' | 'sunset');
   const [offsetMinutes, setOffsetMinutes] = useState<number>(initialOffsetMinutes);
   const [triggerTime, setTriggerTime] = useState<string>(initialTriggerTime);
@@ -187,6 +192,7 @@ export default function CreateSimpleAutomationDialog({
     setThermostatTemp(20);
     setNotificationMessage('');
     setTurnOnDuration(0);
+    setCoverPosition(0);
     setSunriseSunsetType('sunrise');
     setOffsetMinutes(0);
     setTriggerTime('08:00');
@@ -299,6 +305,10 @@ export default function CreateSimpleAutomationDialog({
       setThermostatTemp(automation.actions[0]?.params?.temperature || 20);
       setNotificationMessage(automation.actions[0]?.params?.message || '');
       setTurnOnDuration(automation.actions[0]?.params?.duration || 0);
+      const coverPos = automation.actions[0]?.params?.position !== undefined 
+        ? automation.actions[0].params.position 
+        : (automation.actions[0]?.type === AutomationActionType.OPEN_COVER ? 100 : 0);
+      setCoverPosition(coverPos);
       setSunriseSunsetType(automation.trigger.sunriseSunsetType || 'sunrise');
       setOffsetMinutes(automation.trigger.offsetMinutes || 0);
       setTriggerTime(automation.trigger.time || '08:00');
@@ -491,6 +501,8 @@ export default function CreateSimpleAutomationDialog({
                     ? { color_temp: colorTemp }
                     : actionType === AutomationActionType.SET_THERMOSTAT
                     ? { temperature: thermostatTemp }
+                    : (actionType === AutomationActionType.OPEN_COVER || actionType === AutomationActionType.CLOSE_COVER)
+                    ? { position: coverPosition }
                     : actionType === AutomationActionType.NOTIFY
                     ? { message: notificationMessage || t('automations.defaultNotification') }
                     : undefined,
@@ -509,6 +521,8 @@ export default function CreateSimpleAutomationDialog({
                       ? { color_temp: colorTemp }
                       : actionType === AutomationActionType.SET_THERMOSTAT
                       ? { temperature: thermostatTemp }
+                      : (actionType === AutomationActionType.OPEN_COVER || actionType === AutomationActionType.CLOSE_COVER)
+                      ? { position: coverPosition }
                       : actionType === AutomationActionType.NOTIFY
                       ? { message: notificationMessage || t('automations.defaultNotification') }
                       : undefined,
@@ -554,6 +568,8 @@ export default function CreateSimpleAutomationDialog({
                     ? { color_temp: colorTemp }
                     : actionType === AutomationActionType.SET_THERMOSTAT
                     ? { temperature: thermostatTemp }
+                    : (actionType === AutomationActionType.OPEN_COVER || actionType === AutomationActionType.CLOSE_COVER)
+                    ? { position: coverPosition }
                     : actionType === AutomationActionType.NOTIFY
                     ? { message: notificationMessage || t('automations.defaultNotification') }
                     : undefined,
@@ -988,6 +1004,12 @@ export default function CreateSimpleAutomationDialog({
                         setActionType(type);
                         setActionDeviceId('');
                         setError(null);
+                        // Définir la position par défaut selon l'action
+                        if (type === AutomationActionType.OPEN_COVER) {
+                          setCoverPosition(100);
+                        } else if (type === AutomationActionType.CLOSE_COVER) {
+                          setCoverPosition(0);
+                        }
                       }}
                       color={actionType === type ? 'primary' : 'default'}
                       variant={actionType === type ? 'filled' : 'outlined'}
@@ -1135,6 +1157,31 @@ export default function CreateSimpleAutomationDialog({
                     sx={{ width: 200 }}
                     helperText={t('automations.thermostatTempDescription')}
                   />
+                </>
+              )}
+
+              {(actionType === AutomationActionType.OPEN_COVER || actionType === AutomationActionType.CLOSE_COVER) && (
+                <>
+                  <Divider sx={{ my: 2 }} />
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    {t('automations.coverPosition')}
+                  </Typography>
+                  <Slider
+                    value={coverPosition}
+                    onChange={(_, value) => setCoverPosition(value as number)}
+                    min={0}
+                    max={100}
+                    valueLabelDisplay="auto"
+                    valueLabelFormat={(value) => `${value}%`}
+                    marks={[
+                      { value: 0, label: t('automations.closed') },
+                      { value: 50, label: '50%' },
+                      { value: 100, label: t('automations.open') },
+                    ]}
+                  />
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                    {t('automations.coverPositionDescription')}
+                  </Typography>
                 </>
               )}
 
