@@ -613,6 +613,8 @@
     "actionSetThermostat": "Set thermostat",
     "actionOpenCover": "Open cover",
     "actionCloseCover": "Close cover",
+    "coverPosition": "Cover position",
+    "coverPositionDescription": "Set the opening percentage of the cover (0% = closed, 100% = open)",
     "duration": "Duration (seconds)",
     "durationInfinite": "0 = Infinite (stays on)",
     "durationSeconds": "Turns off after {{seconds}} second(s)",
