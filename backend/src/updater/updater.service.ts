@@ -3,7 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { LoggerService } from '../logger/logger.service';
 import { ConfigService } from '../config/config.service';
 import { WebsocketGateway } from '../websocket/websocket.gateway';
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, AxiosError } from 'axios';
 
 export interface UpdaterStatus {
   ok: boolean;
@@ -85,7 +85,7 @@ export class UpdaterService implements OnModuleInit {
   /**
    * Vérifie les mises à jour disponibles toutes les heures
    */
-  @Cron(CronExpression.EVERY_HOUR)
+  @Cron(CronExpression.EVERY_10_MINUTES)
   async checkForUpdatesScheduled() {
     this.logger.log('Vérification automatique des mises à jour...', 'UpdaterService');
     
@@ -115,12 +115,48 @@ export class UpdaterService implements OnModuleInit {
         this.logger.debug('Aucune mise à jour disponible', 'UpdaterService');
       }
     } catch (error: any) {
-      this.logger.error(
-        `Erreur lors de la vérification des mises à jour: ${error.message}`,
-        error.stack,
+      // Ne pas faire échouer le cron job si le service n'est pas disponible
+      // Logger l'erreur mais continuer l'exécution
+      const errorMessage = this.getErrorMessage(error);
+      this.logger.warn(
+        `Service de mise à jour non disponible: ${errorMessage}. La vérification sera réessayée à la prochaine heure.`,
         'UpdaterService',
       );
     }
+  }
+
+  /**
+   * Extrait un message d'erreur lisible depuis une erreur axios ou autre
+   */
+  private getErrorMessage(error: any): string {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      
+      // Erreurs de connexion réseau
+      if (axiosError.code === 'ECONNREFUSED') {
+        return 'Service non accessible (connexion refusée). Vérifiez que lumy-updater est démarré.';
+      }
+      if (axiosError.code === 'ETIMEDOUT' || axiosError.code === 'ECONNABORTED') {
+        return 'Timeout de connexion. Le service ne répond pas dans les délais.';
+      }
+      if (axiosError.code === 'ENOTFOUND' || axiosError.code === 'EAI_AGAIN') {
+        return `Service introuvable (DNS). Vérifiez l'URL configurée: ${this.config.get<string>('UPDATER_URL', 'http://lumy-updater:3411')}`;
+      }
+      if (axiosError.code === 'ECONNRESET') {
+        return 'Connexion réinitialisée par le serveur.';
+      }
+      
+      // Erreur HTTP
+      if (axiosError.response) {
+        return `Erreur HTTP ${axiosError.response.status}: ${axiosError.response.statusText}`;
+      }
+      
+      // Message d'erreur par défaut
+      return axiosError.message || 'Erreur de connexion inconnue';
+    }
+    
+    // Erreur non-Axios
+    return error?.message || 'Erreur inconnue';
   }
 
   /**
@@ -131,12 +167,13 @@ export class UpdaterService implements OnModuleInit {
       const response = await this.axiosInstance.get('/updater/status');
       return response.data;
     } catch (error: any) {
+      const errorMessage = this.getErrorMessage(error);
       this.logger.error(
-        `Erreur lors de la récupération du statut: ${error.message}`,
+        `Erreur lors de la récupération du statut: ${errorMessage}`,
         error.stack,
         'UpdaterService',
       );
-      throw new Error(`Impossible de contacter le service de mise à jour: ${error.message}`);
+      throw new Error(`Impossible de contacter le service de mise à jour: ${errorMessage}`);
     }
   }
 
@@ -150,12 +187,13 @@ export class UpdaterService implements OnModuleInit {
       this.lastCheckResult = result;
       return result;
     } catch (error: any) {
+      const errorMessage = this.getErrorMessage(error);
       this.logger.error(
-        `Erreur lors de la vérification des mises à jour: ${error.message}`,
+        `Erreur lors de la vérification des mises à jour: ${errorMessage}`,
         error.stack,
         'UpdaterService',
       );
-      throw new Error(`Impossible de vérifier les mises à jour: ${error.message}`);
+      throw new Error(`Impossible de vérifier les mises à jour: ${errorMessage}`);
     }
   }
 
@@ -207,8 +245,9 @@ export class UpdaterService implements OnModuleInit {
 
       return result;
     } catch (error: any) {
+      const errorMessage = this.getErrorMessage(error);
       this.logger.error(
-        `Erreur lors de l'application des mises à jour: ${error.message}`,
+        `Erreur lors de l'application des mises à jour: ${errorMessage}`,
         error.stack,
         'UpdaterService',
       );
@@ -216,11 +255,11 @@ export class UpdaterService implements OnModuleInit {
       // Notifier via WebSocket
       this.websocketGateway.broadcast('update:failed', {
         success: false,
-        error: error.message,
+        error: errorMessage,
         timestamp: new Date().toISOString(),
       });
 
-      throw new Error(`Impossible d'appliquer les mises à jour: ${error.message}`);
+      throw new Error(`Impossible d'appliquer les mises à jour: ${errorMessage}`);
     }
   }
 
