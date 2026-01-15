@@ -85,7 +85,7 @@ export class UpdaterService implements OnModuleInit {
   /**
    * Vérifie les mises à jour disponibles toutes les heures
    */
-  @Cron(CronExpression.EVERY_10_MINUTES)
+  @Cron(CronExpression.EVERY_HOUR)
   async checkForUpdatesScheduled() {
     this.logger.log('Vérification automatique des mises à jour...', 'UpdaterService');
     
