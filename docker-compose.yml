@@ -63,6 +63,8 @@ services:
       #dockerfile: Dockerfile
     image: zelix25/lumy-home-frontend:latest
     container_name: lumy-frontend
+    environment:
+      - VITE_STORE_URL=https://store.lumy-home.com
 
     ports:
       - "80:80"

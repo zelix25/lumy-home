@@ -46,6 +46,7 @@ export interface UpdateResult {
 @Injectable()
 export class UpdaterService implements OnModuleInit {
   private axiosInstance: AxiosInstance;
+  private axiosInstanceLongTimeout: AxiosInstance; // Pour les opérations longues (update)
   private lastCheckResult: CheckResult | null = null;
 
   constructor(
@@ -58,9 +59,17 @@ export class UpdaterService implements OnModuleInit {
       'http://lumy-updater:3411',
     );
     
+    // Instance avec timeout court pour les opérations rapides (status, check)
     this.axiosInstance = axios.create({
       baseURL: updaterUrl,
       timeout: 30000, // 30 secondes
+    });
+
+    // Instance avec timeout long pour les opérations longues (update)
+    // L'application de mises à jour peut prendre plusieurs minutes (pull d'images, redémarrage)
+    this.axiosInstanceLongTimeout = axios.create({
+      baseURL: updaterUrl,
+      timeout: 600000, // 10 minutes (600000 ms)
     });
   }
 
@@ -85,7 +94,7 @@ export class UpdaterService implements OnModuleInit {
   /**
    * Vérifie les mises à jour disponibles toutes les heures
    */
-  @Cron(CronExpression.EVERY_10_MINUTES)
+  @Cron(CronExpression.EVERY_HOUR)
   async checkForUpdatesScheduled() {
     this.logger.log('Vérification automatique des mises à jour...', 'UpdaterService');
     
@@ -199,15 +208,17 @@ export class UpdaterService implements OnModuleInit {
 
   /**
    * Applique les mises à jour
+   * Note: Cette opération peut prendre plusieurs minutes (pull d'images Docker, redémarrage de conteneurs)
    */
   async applyUpdate(services?: string[]): Promise<UpdateResult> {
     this.logger.log(
-      `Application des mises à jour${services ? ` pour: ${services.join(', ')}` : ''}`,
+      `Application des mises à jour${services ? ` pour: ${services.join(', ')}` : ''} (cette opération peut prendre plusieurs minutes)...`,
       'UpdaterService',
     );
 
     try {
-      const response = await this.axiosInstance.post('/updater/update', {
+      // Utiliser l'instance avec timeout long pour cette opération
+      const response = await this.axiosInstanceLongTimeout.post('/updater/update', {
         services,
       });
       const result = response.data as UpdateResult;

@@ -17,6 +17,7 @@ import AccountPage from './pages/AccountPage';
 import SettingsPage from './pages/SettingsPage';
 import StoreConnectPage from './pages/StoreConnectPage';
 import StorePage from './pages/StorePage';
+import SystemPage from './pages/SystemPage';
 import NotificationSnackbar from './components/NotificationSnackbar';
 import UpdateNotification from './components/UpdateNotification';
 import { usePluginRoutes } from './hooks/usePluginRoutes';
@@ -50,6 +51,7 @@ function App() {
                     <Route path="/debug" element={<DebugPage />} />
                     <Route path="/account" element={<AccountPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/system" element={<SystemPage />} />
                     <Route path="/store" element={<StorePage />} />
                     <Route path="/store/connect" element={<StoreConnectPage />} />
                     {/* Routes dynamiques des plugins */}

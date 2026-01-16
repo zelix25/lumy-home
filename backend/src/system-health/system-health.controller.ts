@@ -42,5 +42,13 @@ export class SystemHealthController {
       message: 'Vérification de santé effectuée',
     };
   }
+
+  /**
+   * Récupère le statut de tous les services Docker
+   */
+  @Get('services')
+  async getServicesStatus(): Promise<Array<{ name: string; status: string; image?: string }>> {
+    return this.systemHealthService.getAllServicesStatus();
+  }
 }
 

@@ -29,7 +29,6 @@ import ComputerIcon from '@mui/icons-material/Computer';
 import LogoutIcon from '@mui/icons-material/Logout';
 import StoreIcon from '@mui/icons-material/Store';
 import LanguageSelector from './LanguageSelector';
-import SystemModal from './SystemModal';
 import SystemNotifications from './SystemNotifications';
 //import UpdateModal from './UpdateModal';
 import { useTranslation } from 'react-i18next';
@@ -63,7 +62,6 @@ const getNavItems = (t: (key: string) => string): NavItem[] => [
 export default function Layout({ children }: LayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [systemModalOpen, setSystemModalOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
@@ -113,18 +111,8 @@ export default function Layout({ children }: LayoutProps) {
   };
 
   const handleSystem = () => {
-    setSystemModalOpen(true);
+    navigate('/system');
     handleMenuClose();
-  };
-
-  const handleRestart = () => {
-    // TODO: Implémenter l'appel API pour redémarrer
-    console.log('Redémarrer le système');
-  };
-
-  const handleShutdown = () => {
-    // TODO: Implémenter l'appel API pour arrêter
-    console.log('Arrêter le système');
   };
 
   const drawer = (
@@ -321,12 +309,6 @@ export default function Layout({ children }: LayoutProps) {
           )}
           <SystemNotifications />
           <LanguageSelector />
-          <SystemModal
-            open={systemModalOpen}
-            onClose={() => setSystemModalOpen(false)}
-            onRestart={handleRestart}
-            onShutdown={handleShutdown}
-          />
         </Toolbar>
       </AppBar>
       <Box

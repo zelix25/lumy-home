@@ -24,6 +24,7 @@ import { StoreModule } from './store/store.module';
 import { PluginsModule } from './plugins/plugins.module';
 import { SystemHealthModule } from './system-health/system-health.module';
 import { UpdaterModule } from './updater/updater.module';
+import { SystemModule } from './system/system.module';
 import { configValidationSchema } from './config/config.validation';
 
 @Module({
@@ -91,6 +92,7 @@ import { configValidationSchema } from './config/config.validation';
     PluginsModule,
     SystemHealthModule,
     UpdaterModule,
+    SystemModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -18,7 +18,44 @@ env:
   PLATFORMS: linux/amd64,linux/arm64,linux/arm/v7
 
 jobs:
+  check-tag-on-master:
+    runs-on: ubuntu-latest
+    outputs:
+      is-on-master: ${{ steps.check.outputs.is-on-master }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Récupérer tout l'historique pour vérifier les branches
+      
+      - name: Check if tag is on master branch
+        id: check
+        run: |
+          set -euo pipefail
+          
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            # Pour workflow_dispatch, on accepte (l'utilisateur doit s'assurer d'être sur master)
+            echo "is-on-master=true" >> "$GITHUB_OUTPUT"
+            echo "✅ Workflow dispatch - assuming master branch"
+          else
+            # Pour les tags, vérifier que le commit du tag est sur master
+            TAG_NAME="${{ github.ref_name }}"
+            TAG_COMMIT=$(git rev-list -n 1 "$TAG_NAME")
+            
+            # Vérifier si le commit est sur master
+            if git branch -r --contains "$TAG_COMMIT" | grep -q "origin/master"; then
+              echo "is-on-master=true" >> "$GITHUB_OUTPUT"
+              echo "✅ Tag $TAG_NAME points to a commit on master branch"
+            else
+              echo "is-on-master=false" >> "$GITHUB_OUTPUT"
+              echo "❌ Tag $TAG_NAME does not point to a commit on master branch"
+              echo "Available branches containing this commit:"
+              git branch -r --contains "$TAG_COMMIT" || echo "None"
+            fi
+          fi
+
   determine-version:
+    needs: check-tag-on-master
+    if: needs.check-tag-on-master.outputs.is-on-master == 'true'
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.out.outputs.version }}
@@ -57,9 +94,12 @@ jobs:
 
   build-and-push-backend:
     needs: determine-version
+    if: needs.determine-version.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}  # Utiliser le tag (vérifié qu'il pointe vers master)
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -104,9 +144,12 @@ jobs:
 
   build-and-push-frontend:
     needs: determine-version
+    if: needs.determine-version.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}  # Utiliser le tag (vérifié qu'il pointe vers master)
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3

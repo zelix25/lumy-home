@@ -126,6 +126,66 @@ export class SystemHealthService implements OnModuleInit {
   }
 
   /**
+   * Récupère le statut de tous les services Docker
+   */
+  async getAllServicesStatus(): Promise<Array<{ name: string; status: ContainerStatus['state']; image?: string }>> {
+    const services: Array<{ name: string; status: ContainerStatus['state']; image?: string }> = [];
+    
+    // Vérifier que Docker est disponible
+    try {
+      await this.docker.ping();
+    } catch (error) {
+      this.logger.warn('Docker n\'est pas disponible, impossible de récupérer le statut des services');
+      return services;
+    }
+
+    // Liste des services à vérifier (tous les services Lumy)
+    const allServices = ['lumy-backend', 'lumy-frontend', 'zigbee2mqtt', 'mosquitto', 'lumy-updater'];
+    
+    for (const serviceName of allServices) {
+      try {
+        const status = await this.getContainerStatus(serviceName);
+        let image: string | undefined;
+        
+        // Si le container existe, récupérer l'image
+        if (status.state !== 'not_found') {
+          try {
+            const container = this.docker.getContainer(serviceName);
+            const inspect = await container.inspect();
+            image = inspect?.Config?.Image || undefined;
+          } catch (inspectError: any) {
+            // Ignorer les erreurs d'inspection
+            this.logger.debug(`Impossible d'inspecter le container ${serviceName}:`, inspectError.message);
+          }
+        }
+        
+        services.push({
+          name: serviceName,
+          status: status.state,
+          image,
+        });
+      } catch (error: any) {
+        // Si le container n'existe pas, l'ajouter avec le statut not_found
+        if (error.statusCode === 404 || error.message?.includes('No such container')) {
+          services.push({
+            name: serviceName,
+            status: 'not_found',
+          });
+        } else {
+          this.logger.error(`Erreur lors de la récupération du statut de ${serviceName}:`, error);
+          // Ajouter quand même avec un statut d'erreur
+          services.push({
+            name: serviceName,
+            status: 'not_found',
+          });
+        }
+      }
+    }
+
+    return services;
+  }
+
+  /**
    * Récupère le statut d'un container Docker
    */
   private async getContainerStatus(containerName: string): Promise<ContainerStatus> {
