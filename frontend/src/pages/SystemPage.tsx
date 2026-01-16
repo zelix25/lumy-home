@@ -16,7 +16,6 @@ import {
   DialogContentText,
   DialogActions,
   Paper,
-  Divider,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
