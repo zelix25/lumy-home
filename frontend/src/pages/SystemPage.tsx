@@ -24,6 +24,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningIcon from '@mui/icons-material/Warning';
 import InfoIcon from '@mui/icons-material/Info';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { settingsService } from '../services/settings.service';
 import { systemHealthService, SystemNotification } from '../services/system-health.service';
 import { updaterService, UpdaterStatus } from '../services/updater.service';
@@ -51,6 +52,7 @@ export default function SystemPage() {
   const [restartDialogOpen, setRestartDialogOpen] = useState(false);
   const [shutdownDialogOpen, setShutdownDialogOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [checkingUpdates, setCheckingUpdates] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -133,6 +135,34 @@ export default function SystemPage() {
       setError(err.message || t('system.errorShutdown'));
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleCheckUpdates = async () => {
+    setCheckingUpdates(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const result = await updaterService.checkForUpdates();
+      
+      if (result.hasUpdates) {
+        const servicesWithUpdates = result.updates
+          ?.filter((u) => u.hasUpdate)
+          .map((u) => u.service) || [];
+        const servicesList = servicesWithUpdates.join(', ');
+        setSuccess(
+          `${t('system.updatesAvailable')} ${servicesList}`,
+        );
+      } else {
+        setSuccess(t('system.noUpdatesAvailable'));
+      }
+      
+      // Recharger les données système pour mettre à jour le statut
+      await loadSystemData();
+    } catch (err: any) {
+      setError(err.message || t('system.errorCheckUpdates'));
+    } finally {
+      setCheckingUpdates(false);
     }
   };
 
@@ -282,9 +312,27 @@ export default function SystemPage() {
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 500, mb: 2 }}>
-                {t('system.updaterStatus')}
-              </Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mb: 2,
+                }}
+              >
+                <Typography variant="h6" sx={{ fontWeight: 500 }}>
+                  {t('system.updaterStatus')}
+                </Typography>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={checkingUpdates ? <CircularProgress size={16} /> : <RefreshIcon />}
+                  onClick={handleCheckUpdates}
+                  disabled={checkingUpdates || !updaterStatus}
+                >
+                  {t('system.checkUpdates')}
+                </Button>
+              </Box>
               {updaterStatus ? (
                 <Stack spacing={2}>
                   <Box>
@@ -358,6 +406,15 @@ export default function SystemPage() {
                           label={getStatusLabel(service.status)}
                           color={getStatusColor(service.status) as any}
                           size="small"
+                          sx={{
+                            ...(service.status === 'running' && {
+                              backgroundColor: '#4caf50',
+                              color: '#ffffff',
+                              '& .MuiChip-label': {
+                                color: '#ffffff',
+                              },
+                            }),
+                          }}
                         />
                       </Paper>
                     </Grid>
