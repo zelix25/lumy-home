@@ -237,5 +237,29 @@ export class SettingsService {
       cpuType: isARM ? 'arm' : 'x86',
     };
   }
+
+  /**
+   * Récupère l'adresse IP principale de la machine
+   * Retourne la première adresse IPv4 non-localhost trouvée
+   */
+  getServerIp(): string {
+    const interfaces = os.networkInterfaces();
+    
+    // Parcourir toutes les interfaces réseau
+    for (const interfaceName in interfaces) {
+      const addresses = interfaces[interfaceName];
+      if (addresses) {
+        for (const address of addresses) {
+          // Ignorer les adresses IPv6 et localhost
+          if (address.family === 'IPv4' && !address.internal) {
+            return address.address;
+          }
+        }
+      }
+    }
+    
+    // Si aucune adresse n'est trouvée, retourner localhost
+    return '127.0.0.1';
+  }
 }
 

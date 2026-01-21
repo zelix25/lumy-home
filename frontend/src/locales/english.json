@@ -519,6 +519,7 @@
     "settings": "Settings",
     "store": "Lumy Store",
     "system": "System",
+    "qrCode": "Connect Lumy App",
     "logout": "Logout"
   },
   "account": {
@@ -860,6 +861,11 @@
     "later": "Later",
     "updateAppliedSuccess": "Update applied successfully",
     "updateError": "Error during update"
+  },
+  "qrCode": {
+    "title": "Connect Lumy App",
+    "description": "Scan this QR code with the Lumy App to connect to this server",
+    "error": "Error retrieving server IP address"
   }
 }
 
