@@ -202,8 +202,13 @@ async function loadPluginComponentCode(
     (code.trim().startsWith('(function') && code.includes('module.exports')) ||
     (code.includes('define.amd') && code.includes('module.exports'));
   
+  // Un bundle UMD qui contient __webpack_require__ doit être traité comme un bundle webpack
   const isWebpackBundle = 
-    (code.includes('__webpack_require__') || code.includes('/******/')) && !isUMDBundle;
+    (code.includes('__webpack_require__') || code.includes('/******/')) && 
+    !(isUMDBundle && !code.includes('__webpack_require__'));
+  
+  // Si c'est un UMD avec webpack, le traiter comme webpack
+  const isUMDWithWebpack = isUMDBundle && code.includes('__webpack_require__');
   
   // Détecter les modules ES6 (avec imports et/ou exports, même minifiés)
   // Utiliser le code original pour détecter les exports (car ils peuvent être transformés)
@@ -213,8 +218,14 @@ async function loadPluginComponentCode(
 
   let componentFactory: any;
 
-  if (isUMDBundle) {
-    // Pour les bundles UMD, créer un wrapper qui expose le composant
+  if (isUMDWithWebpack) {
+    // Pour les bundles UMD avec webpack, utiliser un loader spécialisé
+    componentFactory = await loadUMDWebpackBundle(code);
+  } else if (isWebpackBundle) {
+    // Pour les bundles webpack purs, utiliser le loader webpack
+    componentFactory = await loadWebpackBundle(code);
+  } else if (isUMDBundle) {
+    // Pour les bundles UMD purs, créer un wrapper qui expose le composant
     componentFactory = await loadUMDBundle(code);
   } else if (isWebpackBundle) {
     // Pour les bundles webpack, créer un wrapper qui expose le composant
@@ -257,12 +268,13 @@ async function loadUMDBundle(code: string): Promise<any> {
   
   // Simuler require pour les dépendances externes
   const require = function(name: string) {
-    if (name === 'react') return window.React;
-    if (name === 'react-dom') return window.ReactDOM;
-    if (name === '@mui/material') return window.MaterialUI;
-    if (name === '@mui/icons-material') return window.MaterialUIIcons;
-    if (name === '@emotion/react') return window.EmotionReact || {};
-    if (name === '@emotion/styled') return window.EmotionStyled || {};
+    const normalizedName = name.toLowerCase();
+    if (normalizedName === 'react' || name === 'React') return window.React;
+    if (normalizedName === 'react-dom' || name === 'ReactDOM') return window.ReactDOM;
+    if (normalizedName === '@mui/material' || name === 'MaterialUI') return window.MaterialUI;
+    if (normalizedName === '@mui/icons-material' || name === 'MaterialUIIcons') return window.MaterialUIIcons;
+    if (normalizedName === '@emotion/react' || name === 'EmotionReact') return window.EmotionReact || {};
+    if (normalizedName === '@emotion/styled' || name === 'EmotionStyled') return window.EmotionStyled || {};
     throw new Error('Module non disponible: ' + name);
   };
   
@@ -281,13 +293,20 @@ async function loadUMDBundle(code: string): Promise<any> {
   (define as any).amd = true;
   
   // Créer un objet root avec les dépendances pour le bundle UMD
+  // Inclure les variantes avec majuscules/minuscules pour compatibilité
   const rootObj: any = {
     react: window.React,
+    React: window.React,
     'react-dom': window.ReactDOM,
+    ReactDOM: window.ReactDOM,
     '@mui/material': window.MaterialUI,
+    MaterialUI: window.MaterialUI,
     '@mui/icons-material': window.MaterialUIIcons,
+    MaterialUIIcons: window.MaterialUIIcons,
     '@emotion/react': window.EmotionReact || {},
+    EmotionReact: window.EmotionReact || {},
     '@emotion/styled': window.EmotionStyled || {},
+    EmotionStyled: window.EmotionStyled || {},
   };
   
   // Exécuter le bundle UMD
@@ -336,6 +355,137 @@ async function loadUMDBundle(code: string): Promise<any> {
   }
   
   throw new Error('Impossible d\'extraire le composant du bundle UMD');
+}
+
+/**
+ * Charge un bundle UMD qui contient du code webpack
+ */
+async function loadUMDWebpackBundle(code: string): Promise<any> {
+  // Simuler require pour les dépendances externes (avec majuscules/minuscules)
+  const require = function(name: string) {
+    const normalizedName = name.toLowerCase();
+    if (normalizedName === 'react' || name === 'React') return window.React;
+    if (normalizedName === 'react-dom' || name === 'ReactDOM') return window.ReactDOM;
+    if (normalizedName === '@mui/material' || name === 'MaterialUI') return window.MaterialUI;
+    if (normalizedName === '@mui/icons-material' || name === 'MaterialUIIcons') return window.MaterialUIIcons;
+    if (normalizedName === '@emotion/react' || name === 'EmotionReact') return window.EmotionReact || {};
+    if (normalizedName === '@emotion/styled' || name === 'EmotionStyled') return window.EmotionStyled || {};
+    throw new Error('Module non disponible: ' + name);
+  };
+  
+  // Simuler define pour AMD
+  const define = function(deps: any, factory?: any) {
+    if (typeof deps === 'function') {
+      factory = deps;
+      deps = [];
+    }
+    const resolvedDeps = deps.map((dep: string) => require(dep));
+    const result = factory.apply(null, resolvedDeps);
+    if (result !== undefined) {
+      return result;
+    }
+  };
+  (define as any).amd = true;
+  
+  // Créer un objet root avec les dépendances (avec majuscules pour compatibilité)
+  const rootObj: any = {
+    React: window.React,
+    react: window.React,
+    ReactDOM: window.ReactDOM,
+    'react-dom': window.ReactDOM,
+    MaterialUI: window.MaterialUI,
+    '@mui/material': window.MaterialUI,
+    MaterialUIIcons: window.MaterialUIIcons,
+    '@mui/icons-material': window.MaterialUIIcons,
+    EmotionReact: window.EmotionReact || {},
+    '@emotion/react': window.EmotionReact || {},
+    EmotionStyled: window.EmotionStyled || {},
+    '@emotion/styled': window.EmotionStyled || {},
+  };
+  
+  const exports: any = {};
+  const module: any = { exports: exports };
+  
+  // Exécuter le code UMD directement
+  // Le wrapper UMD est une IIFE: (function(root, factory) { ... })(this, factory)
+  // Il détecte l'environnement et appelle la factory avec les dépendances
+  try {
+    // Créer un contexte d'exécution avec exports, module, require, define
+    const executionContext = `
+      (function() {
+        'use strict';
+        const exports = {};
+        const module = { exports: exports };
+        const require = ${require.toString()};
+        const define = ${define.toString()};
+        define.amd = true;
+        
+        // Exposer sur this pour que le wrapper UMD puisse les utiliser
+        this.exports = exports;
+        this.module = module;
+        this.require = require;
+        this.define = define;
+        
+        // Exposer les dépendances sur rootObj
+        const root = this;
+        root.React = window.React;
+        root.MaterialUI = window.MaterialUI;
+        root.MaterialUIIcons = window.MaterialUIIcons;
+        
+        // Exécuter le code UMD
+        ${code}
+        
+        // Retourner le résultat
+        return module.exports !== exports ? module.exports : exports;
+      })
+    `;
+    
+    // eslint-disable-next-line no-eval
+    const umdResult = eval(executionContext).call(rootObj);
+    
+    // Le résultat devrait être le code webpack exécuté qui retourne __webpack_exports__
+    // Extraire le composant du résultat
+    if (umdResult && typeof umdResult.default === 'function') {
+      return umdResult.default;
+    }
+    if (umdResult && typeof umdResult === 'function') {
+      return umdResult;
+    }
+    if (module.exports && typeof module.exports.default === 'function') {
+      return module.exports.default;
+    }
+    if (module.exports && typeof module.exports === 'function') {
+      return module.exports;
+    }
+    if (exports && typeof exports.default === 'function') {
+      return exports.default;
+    }
+    
+    // Chercher dans rootObj pour les exports globaux
+    const possibleExports = ['default', 'settings', 'Settings', 'TelegramSettings', 'widget', 'Widget'];
+    for (const key of possibleExports) {
+      if (rootObj[key] && typeof rootObj[key] === 'function') {
+        return rootObj[key];
+      }
+    }
+    
+    // Si le résultat est un objet, chercher une fonction dedans
+    if (umdResult && typeof umdResult === 'object') {
+      const funcKeys = Object.keys(umdResult).filter(
+        key => typeof umdResult[key] === 'function'
+      );
+      if (funcKeys.length > 0) {
+        return umdResult[funcKeys[0]];
+      }
+    }
+    
+    throw new Error('Impossible d\'extraire le composant du bundle UMD-Webpack');
+  } catch (error: any) {
+    console.error('Erreur lors du chargement du bundle UMD-Webpack:', error);
+    console.error('Code (premiers 500 caractères):', code.substring(0, 500));
+    // Essayer de charger comme un bundle webpack normal
+    return await loadWebpackBundle(code);
+  }
 }
 
 /**

@@ -14,7 +14,10 @@ import {
   Tab,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { apiService } from '../services/api.service';
+import { pluginsService, PluginUIExtension } from '../services/plugins.service';
+import PluginPageLoader from '../components/PluginPageLoader';
 
 interface Settings {
   logout_delay: number;
@@ -29,6 +32,8 @@ interface Settings {
 
 export default function SettingsPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [settings, setSettings] = useState<Settings>({
     logout_delay: 0,
     hostname: '',
@@ -42,10 +47,48 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState(0);
+  const [pluginPages, setPluginPages] = useState<PluginUIExtension[]>([]);
 
   useEffect(() => {
     loadSettings();
+    loadPluginPages();
   }, []);
+
+  // Synchroniser l'onglet actif avec l'URL au chargement et quand les pages de plugins sont chargées
+  useEffect(() => {
+    const path = location.pathname;
+    console.log('SettingsPage - Path:', path, 'Plugin pages:', pluginPages.length);
+    
+    if (path.startsWith('/settings/') && path !== '/settings') {
+      const pluginPage = pluginPages.find((p) => p.route === path);
+      if (pluginPage) {
+        const index = pluginPages.findIndex((p) => p.route === path);
+        const tabIndex = 2 + index; // 2 = General (0) + Location (1)
+        console.log('SettingsPage - Plugin page trouvée, onglet:', tabIndex);
+        setActiveTab(tabIndex);
+      } else if (pluginPages.length > 0) {
+        // Si la route n'est pas trouvée mais qu'on a des pages de plugins, rester sur General
+        console.log('SettingsPage - Route non trouvée, redirection vers /settings');
+        setActiveTab(0);
+        navigate('/settings', { replace: true });
+      }
+    } else if (path === '/settings') {
+      setActiveTab(0);
+    }
+  }, [location.pathname, pluginPages, navigate]);
+
+  const loadPluginPages = async () => {
+    try {
+      const pages = await pluginsService.getAvailablePages();
+      // Filtrer les pages qui commencent par /settings/
+      const settingsPages = pages.filter((page) => page.route?.startsWith('/settings/'));
+      const sortedPages = settingsPages.sort((a, b) => (a.menuOrder ?? 999) - (b.menuOrder ?? 999));
+      setPluginPages(sortedPages);
+      console.log('Pages de paramètres chargées:', sortedPages);
+    } catch (error) {
+      console.error('Erreur lors du chargement des pages de plugins:', error);
+    }
+  };
 
   const loadSettings = async () => {
     setLoading(true);
@@ -120,9 +163,28 @@ export default function SettingsPage() {
             <Typography>{t('common.loading')}</Typography>
           ) : (
             <>
-              <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)} sx={{ mb: 3 }}>
+              <Tabs 
+                value={activeTab} 
+                onChange={(_, newValue) => {
+                  setActiveTab(newValue);
+                  // Pour les onglets système (General et Location), naviguer vers /settings
+                  if (newValue === 0 || newValue === 1) {
+                    navigate('/settings', { replace: true });
+                  } else {
+                    // Pour les onglets de plugins, mettre à jour l'URL sans recharger la page
+                    const pluginPage = pluginPages[newValue - 2];
+                    if (pluginPage?.route) {
+                      navigate(pluginPage.route, { replace: true });
+                    }
+                  }
+                }} 
+                sx={{ mb: 3 }}
+              >
                 <Tab label={t('settings.tabGeneral')} />
                 <Tab label={t('settings.tabLocation')} />
+                {pluginPages.map((page) => (
+                  <Tab key={page.id} label={page.displayName} />
+                ))}
               </Tabs>
 
               {activeTab === 0 && (
@@ -213,15 +275,34 @@ export default function SettingsPage() {
                 </Stack>
               )}
 
-              <Box sx={{ mt: 3 }}>
-                <Button
-                  variant="contained"
-                  onClick={handleSave}
-                  disabled={saving}
-                >
-                  {saving ? t('common.loading') : t('common.save')}
-                </Button>
-              </Box>
+              {/* Onglets des plugins */}
+              {activeTab >= 2 && pluginPages[activeTab - 2] && (
+                <Box>
+                  <PluginPageLoader 
+                    extension={{
+                      ...pluginPages[activeTab - 2],
+                      props: {
+                        ...pluginPages[activeTab - 2].props,
+                        pluginId: pluginPages[activeTab - 2].pluginId,
+                        pluginName: pluginPages[activeTab - 2].displayName,
+                      },
+                    }} 
+                  />
+                </Box>
+              )}
+
+              {/* Bouton de sauvegarde uniquement pour les onglets système */}
+              {activeTab < 2 && (
+                <Box sx={{ mt: 3 }}>
+                  <Button
+                    variant="contained"
+                    onClick={handleSave}
+                    disabled={saving}
+                  >
+                    {saving ? t('common.loading') : t('common.save')}
+                  </Button>
+                </Box>
+              )}
             </>
           )}
         </CardContent>

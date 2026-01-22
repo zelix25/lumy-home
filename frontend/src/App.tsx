@@ -50,7 +50,7 @@ function App() {
                     <Route path="/plan" element={<PlanPage />} />
                     <Route path="/debug" element={<DebugPage />} />
                     <Route path="/account" element={<AccountPage />} />
-                    <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/settings/*" element={<SettingsPage />} />
                     <Route path="/system" element={<SystemPage />} />
                     <Route path="/store" element={<StorePage />} />
                     <Route path="/store/connect" element={<StoreConnectPage />} />

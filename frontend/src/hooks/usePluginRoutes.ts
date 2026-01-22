@@ -27,7 +27,9 @@ export function usePluginRoutes(): PluginRoute[] {
     const loadPluginRoutes = async () => {
       try {
         const pages = await pluginsService.getAvailablePages();
-        const pluginRoutes: PluginRoute[] = (pages || []).map((page) => ({
+        // Exclure les pages qui commencent par /settings/ car elles sont gérées par SettingsPage
+        const pagesToRoute = (pages || []).filter((page) => !page.route?.startsWith('/settings/'));
+        const pluginRoutes: PluginRoute[] = pagesToRoute.map((page) => ({
           path: page.route || `/plugins/${page.name}`,
           element: React.createElement(PluginPageLoader, { extension: page }),
         }));

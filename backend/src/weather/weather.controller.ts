@@ -33,8 +33,6 @@ export class WeatherController {
     todayWeatherExists: boolean;
     totalWeatherRecords: number;
     lastWeatherDate: string | null;
-    allDates: string[];
-    todayStr: string;
   }> {
     return await this.weatherService.getDebugInfo();
   }
