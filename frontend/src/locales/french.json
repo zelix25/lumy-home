@@ -535,6 +535,7 @@
     "title": "Paramètres",
     "tabGeneral": "Général",
     "tabLocation": "Localisation",
+    "tabTelegram": "Telegram",
     "hostname": "Nom d'hôte",
     "logoutDelay": "Délai de déconnexion (secondes)",
     "logoutDelayHelp": "Délai avant déconnexion automatique (0 = désactivé)",
@@ -547,7 +548,49 @@
     "coordinatesHelp": "Les coordonnées GPS sont calculées automatiquement lors de la sauvegarde",
     "saved": "Paramètres sauvegardés",
     "errorLoading": "Erreur lors du chargement des paramètres",
-    "errorSaving": "Erreur lors de la sauvegarde des paramètres"
+    "errorSaving": "Erreur lors de la sauvegarde des paramètres",
+    "telegram": {
+      "title": "Configuration Telegram",
+      "description": "Configurez les notifications et commandes Telegram pour votre instance Lumy Home.",
+      "step1": {
+        "title": "Étape 1 : Générer un identifiant unique",
+        "description": "Générez un identifiant unique (UUID) pour votre instance. Cet identifiant sera utilisé pour vous connecter au relais Telegram.",
+        "button": "Générer l'UUID",
+        "generating": "Génération en cours...",
+        "success": "UUID généré avec succès !",
+        "error": "Erreur lors de la génération de l'UUID"
+      },
+      "step2": {
+        "title": "Étape 2 : Enregistrer votre chat Telegram",
+        "description": "Entrez votre chatId Telegram et enregistrez-le sur le relais. Vous pouvez obtenir votre chatId en démarrant une conversation avec le bot Telegram @LumyHome_bot.",
+        "chatId": "Chat ID Telegram",
+        "chatIdHelp": "Votre chatId Telegram (vous pouvez l'obtenir en démarrant une conversation avec @LumyHome_bot)",
+        "chatType": "Type de chat (optionnel)",
+        "chatTitle": "Titre du chat (optionnel)",
+        "button": "Enregistrer le chat",
+        "registering": "Enregistrement en cours...",
+        "success": "Chat enregistré avec succès !",
+        "error": "Erreur lors de l'enregistrement du chat"
+      },
+      "status": {
+        "configured": "Telegram est configuré",
+        "notConfigured": "Telegram n'est pas configuré",
+        "uuid": "UUID",
+        "chatId": "Chat ID",
+        "reset": "Réinitialiser la configuration",
+        "resetConfirm": "Êtes-vous sûr de vouloir réinitialiser la configuration Telegram ? Cette action est irréversible.",
+        "resetting": "Réinitialisation en cours...",
+        "resetSuccess": "Configuration réinitialisée avec succès",
+        "resetError": "Erreur lors de la réinitialisation"
+      },
+      "info": {
+        "title": "Comment obtenir votre Chat ID ?",
+        "step1": "1. Ouvrez Telegram et recherchez @LumyHome_bot",
+        "step2": "2. Démarrer une conversation avec le bot",
+        "step3": "3. Envoyez la commande /start",
+        "step4": "4. Le bot vous enverra votre Chat ID"
+      }
+    }
   },
   "system": {
     "title": "Gestion du système",

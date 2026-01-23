@@ -534,6 +534,7 @@
     "title": "Settings",
     "tabGeneral": "General",
     "tabLocation": "Location",
+    "tabTelegram": "Telegram",
     "hostname": "Hostname",
     "logoutDelay": "Logout delay (seconds)",
     "logoutDelayHelp": "Delay before automatic logout (0 = disabled)",
@@ -546,7 +547,49 @@
     "coordinatesHelp": "GPS coordinates are automatically calculated when saving",
     "saved": "Settings saved",
     "errorLoading": "Error loading settings",
-    "errorSaving": "Error saving settings"
+    "errorSaving": "Error saving settings",
+    "telegram": {
+      "title": "Telegram Configuration",
+      "description": "Configure Telegram notifications and commands for your Lumy Home instance.",
+      "step1": {
+        "title": "Step 1: Generate a unique identifier",
+        "description": "Generate a unique identifier (UUID) for your instance. This identifier will be used to connect to the Telegram relay.",
+        "button": "Generate UUID",
+        "generating": "Generating...",
+        "success": "UUID generated successfully!",
+        "error": "Error generating UUID"
+      },
+      "step2": {
+        "title": "Step 2: Register your Telegram chat",
+        "description": "Enter your Telegram chatId and register it on the relay. You can get your chatId by starting a conversation with the Telegram bot @LumyHome_bot.",
+        "chatId": "Telegram Chat ID",
+        "chatIdHelp": "Your Telegram chatId (you can get it by starting a conversation with @LumyHome_bot)",
+        "chatType": "Chat type (optional)",
+        "chatTitle": "Chat title (optional)",
+        "button": "Register chat",
+        "registering": "Registering...",
+        "success": "Chat registered successfully!",
+        "error": "Error registering chat"
+      },
+      "status": {
+        "configured": "Telegram is configured",
+        "notConfigured": "Telegram is not configured",
+        "uuid": "UUID",
+        "chatId": "Chat ID",
+        "reset": "Reset configuration",
+        "resetConfirm": "Are you sure you want to reset the Telegram configuration? This action is irreversible.",
+        "resetting": "Resetting...",
+        "resetSuccess": "Configuration reset successfully",
+        "resetError": "Error resetting configuration"
+      },
+      "info": {
+        "title": "How to get your Chat ID?",
+        "step1": "1. Open Telegram and search for @LumyHome_bot",
+        "step2": "2. Start a conversation with the bot",
+        "step3": "3. Send the /start command",
+        "step4": "4. The bot will send you your Chat ID"
+      }
+    }
   },
   "system": {
     "title": "System management",
