@@ -48,6 +48,7 @@ export default function SettingsPage() {
     chatId: null,
     token_bot: null,
     isActive: false,
+    pin: null,
     createdAt: '',
     updatedAt: '',
   });

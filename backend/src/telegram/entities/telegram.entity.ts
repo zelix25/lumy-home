@@ -20,6 +20,9 @@ export class Telegram {
   @Column({ type: 'boolean', default: false })
   isActive: boolean;
 
+  @Column({ type: 'varchar', length: 6, nullable: true })
+  pin: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

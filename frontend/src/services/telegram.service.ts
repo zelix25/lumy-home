@@ -5,6 +5,7 @@ export interface TelegramConfig {
   chatId: string | null;
   token_bot: string | null;
   isActive: boolean;
+  pin: string | null;
   createdAt: string;
   updatedAt: string;
 }

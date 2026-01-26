@@ -1,5 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { LoggerService } from '../logger/logger.service';
 import { ConfigService } from '../config/config.service';
 import { WebsocketGateway } from '../websocket/websocket.gateway';
@@ -53,6 +54,7 @@ export class UpdaterService implements OnModuleInit {
     private readonly logger: LoggerService,
     private readonly config: ConfigService,
     private readonly websocketGateway: WebsocketGateway,
+    private readonly eventEmitter: EventEmitter2,
   ) {
     const updaterUrl = this.config.get<string>(
       'UPDATER_URL',
@@ -119,6 +121,15 @@ export class UpdaterService implements OnModuleInit {
           updates: result.updates,
           mode: result.mode,
           timestamp: new Date().toISOString(),
+        });
+
+        // Émettre l'événement pour les notifications Telegram
+        this.eventEmitter.emit('update.available', {
+          hasUpdates: true,
+          services: servicesWithUpdates,
+          updates: result.updates,
+          mode: result.mode,
+          timestamp: new Date(),
         });
       } else {
         this.logger.debug('Aucune mise à jour disponible', 'UpdaterService');
