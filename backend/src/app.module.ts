@@ -25,6 +25,7 @@ import { PluginsModule } from './plugins/plugins.module';
 import { SystemHealthModule } from './system-health/system-health.module';
 import { UpdaterModule } from './updater/updater.module';
 import { SystemModule } from './system/system.module';
+import { TelegramModule } from './telegram/telegram.module';
 import { configValidationSchema } from './config/config.validation';
 
 @Module({
@@ -93,6 +94,7 @@ import { configValidationSchema } from './config/config.validation';
     SystemHealthModule,
     UpdaterModule,
     SystemModule,
+    TelegramModule,
   ],
   controllers: [AppController],
   providers: [AppService],

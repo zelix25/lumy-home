@@ -10,6 +10,7 @@ import { Automation } from './ai/entities/automation.entity';
 import { AutomationExecutionLog } from './automations/entities/automation-execution-log.entity';
 import { Settings } from './settings/entities/settings.entity';
 import { User } from './auth/entities/user.entity';
+import { Telegram } from './telegram/entities/telegram.entity';
 
 // Charger les variables d'environnement
 config();
@@ -31,6 +32,7 @@ export const AppDataSource = new DataSource({
     AutomationExecutionLog,
     Settings,
     User,
+    Telegram,
   ],
   migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
   synchronize: nodeEnv !== 'production',
