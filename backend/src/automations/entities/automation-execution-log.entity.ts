@@ -32,7 +32,7 @@ export class AutomationExecutionLog {
   @Column({ type: 'json', nullable: true })
   actionResults?: Array<{
     actionType: string;
-    deviceId: string;
+    deviceId: string | null;
     success: boolean;
     message?: string;
   }>;

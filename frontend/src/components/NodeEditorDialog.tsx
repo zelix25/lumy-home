@@ -864,6 +864,26 @@ export default function NodeEditorDialog({
       }
     }
 
+    // Fonction pour obtenir le label d'une action
+    const getActionLabel = (actionType: AutomationActionType, deviceName?: string): string => {
+      if (deviceName) {
+        return deviceName;
+      }
+      const actionLabels: Record<AutomationActionType, string> = {
+        [AutomationActionType.TURN_ON]: t('automations.actionTurnOn'),
+        [AutomationActionType.TURN_OFF]: t('automations.actionTurnOff'),
+        [AutomationActionType.TOGGLE]: t('automations.actionToggle'),
+        [AutomationActionType.SET_BRIGHTNESS]: t('automations.actionSetBrightness'),
+        [AutomationActionType.SET_COLOR]: t('automations.actionSetColor'),
+        [AutomationActionType.SET_COLOR_TEMP]: t('automations.actionSetColorTemp'),
+        [AutomationActionType.SET_THERMOSTAT]: t('automations.actionSetThermostat'),
+        [AutomationActionType.OPEN_COVER]: t('automations.actionOpenCover'),
+        [AutomationActionType.CLOSE_COVER]: t('automations.actionCloseCover'),
+        [AutomationActionType.NOTIFY]: t('automations.actionNotify'),
+      };
+      return actionLabels[actionType] || actionType;
+    };
+
     // Créer les nodes actions
     const actionNodes: Node[] = [];
     automation.actions?.forEach((action: any, index: number) => {
@@ -872,7 +892,7 @@ export default function NodeEditorDialog({
         type: 'action',
         position: { x: xPosition, y: 100 + index * ySpacing },
         data: {
-          label: action.deviceName || t(`automations.actionTypes.${action.type}`),
+          label: getActionLabel(action.type, action.deviceName),
           actionType: action.type,
           deviceId: action.deviceId || '',
           deviceName: action.deviceName || '',

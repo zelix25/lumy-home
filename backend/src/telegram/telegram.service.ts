@@ -160,26 +160,6 @@ Utilisez ce code pour valider la connexion de votre instance Lumy Home avec Tele
    * Configure les listeners d'événements pour les notifications
    */
   private setupEventListeners(): void {
-    // Écouter les événements d'appareils hors ligne
-    this.eventEmitter.on('device.offline', async (data: { device: Device }) => {
-      await this.sendDeviceOfflineNotification(data.device);
-    });
-
-    // Écouter les événements d'appareils en ligne
-    this.eventEmitter.on('device.online', async (data: { device: Device }) => {
-      await this.sendDeviceOnlineNotification(data.device);
-    });
-
-    // Écouter les exécutions d'automatisations
-    this.eventEmitter.on('automation.executed', async (data: {
-      automationId: string;
-      automationName: string;
-      success: boolean;
-      timestamp: Date;
-    }) => {
-      await this.sendAutomationExecutedNotification(data);
-    });
-
     // Écouter les mises à jour disponibles
     this.eventEmitter.on('update.available', async (data: {
       hasUpdates: boolean;
@@ -878,65 +858,6 @@ ${statusEmoji} *${device.friendlyName}*
         'TelegramService',
       );
     }
-  }
-
-  /**
-   * Envoie une notification quand un appareil passe hors ligne
-   */
-  private async sendDeviceOfflineNotification(device: Device): Promise<void> {
-    const typeEmoji = this.getTypeEmoji(device.type);
-    const room = device.room && device.room !== 'Non défini' ? ` (${device.room})` : '';
-    
-    const message = `
-🔴 *Appareil hors ligne*
-
-${typeEmoji} *${device.friendlyName || device.ieeeAddress}*${room}
-
-L'appareil n'est plus accessible sur le réseau Zigbee.
-    `;
-
-    await this.sendNotification(message);
-  }
-
-  /**
-   * Envoie une notification quand un appareil revient en ligne
-   */
-  private async sendDeviceOnlineNotification(device: Device): Promise<void> {
-    const typeEmoji = this.getTypeEmoji(device.type);
-    const room = device.room && device.room !== 'Non défini' ? ` (${device.room})` : '';
-    
-    const message = `
-🟢 *Appareil en ligne*
-
-${typeEmoji} *${device.friendlyName || device.ieeeAddress}*${room}
-
-L'appareil est de nouveau accessible sur le réseau Zigbee.
-    `;
-
-    await this.sendNotification(message);
-  }
-
-  /**
-   * Envoie une notification quand une automatisation est exécutée
-   */
-  private async sendAutomationExecutedNotification(data: {
-    automationId: string;
-    automationName: string;
-    success: boolean;
-    timestamp: Date;
-  }): Promise<void> {
-    const emoji = data.success ? '✅' : '❌';
-    const status = data.success ? 'réussie' : 'échouée';
-    
-    const message = `
-🤖 *Automatisation ${status}*
-
-${emoji} *${data.automationName}*
-
-L'automatisation a été ${status} à ${new Date(data.timestamp).toLocaleTimeString('fr-FR')}.
-    `;
-
-    await this.sendNotification(message);
   }
 
   /**

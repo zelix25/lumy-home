@@ -1,4 +1,4 @@
-import { IsString, IsEnum, IsOptional, IsObject, IsArray, ValidateNested, IsNotEmpty, IsIn, IsNumber } from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsObject, IsArray, ValidateNested, IsNotEmpty, IsIn, IsNumber, ValidateIf } from 'class-validator';
 import { Type } from 'class-transformer';
 import { AutomationTriggerType, AutomationActionType } from '../../ai/entities/automation.entity';
 
@@ -62,9 +62,10 @@ export class ActionDto {
   @IsEnum(AutomationActionType)
   type: AutomationActionType;
 
+  @ValidateIf((o) => o.type !== AutomationActionType.NOTIFY)
   @IsString()
   @IsNotEmpty()
-  deviceId: string;
+  deviceId?: string;
 
   @IsOptional()
   @IsString()

@@ -25,6 +25,7 @@ import ErrorIcon from '@mui/icons-material/Error';
 import WarningIcon from '@mui/icons-material/Warning';
 import InfoIcon from '@mui/icons-material/Info';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import SystemUpdateIcon from '@mui/icons-material/SystemUpdate';
 import { settingsService } from '../services/settings.service';
 import { systemHealthService, SystemNotification } from '../services/system-health.service';
 import { updaterService, UpdaterStatus } from '../services/updater.service';
@@ -53,6 +54,9 @@ export default function SystemPage() {
   const [shutdownDialogOpen, setShutdownDialogOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [checkingUpdates, setCheckingUpdates] = useState(false);
+  const [applyingUpdates, setApplyingUpdates] = useState(false);
+  const [hasUpdates, setHasUpdates] = useState(false);
+  const [lastCheckResult, setLastCheckResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -79,6 +83,17 @@ export default function SystemPage() {
 
       if (status.status === 'fulfilled' && status.value) {
         setUpdaterStatus(status.value);
+      }
+
+      // Vérifier s'il y a des mises à jour disponibles
+      try {
+        const lastCheck = await updaterService.getLastCheck();
+        if (lastCheck && 'hasUpdates' in lastCheck) {
+          setHasUpdates(lastCheck.hasUpdates || false);
+          setLastCheckResult(lastCheck);
+        }
+      } catch {
+        // Ignorer les erreurs de récupération du dernier check
       }
 
       if (notifs.status === 'fulfilled') {
@@ -153,8 +168,12 @@ export default function SystemPage() {
         setSuccess(
           `${t('system.updatesAvailable')} ${servicesList}`,
         );
+        setHasUpdates(true);
+        setLastCheckResult(result);
       } else {
         setSuccess(t('system.noUpdatesAvailable'));
+        setHasUpdates(false);
+        setLastCheckResult(result);
       }
       
       // Recharger les données système pour mettre à jour le statut
@@ -163,6 +182,40 @@ export default function SystemPage() {
       setError(err.message || t('system.errorCheckUpdates'));
     } finally {
       setCheckingUpdates(false);
+    }
+  };
+
+  const handleApplyUpdates = async () => {
+    setApplyingUpdates(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      // Récupérer la liste des services à mettre à jour
+      const servicesToUpdate = lastCheckResult?.updates
+        ?.filter((u: any) => u.hasUpdate)
+        .map((u: any) => u.service) || [];
+
+      const result = await updaterService.applyUpdate(servicesToUpdate);
+      
+      if (result.ok) {
+        const updatedServices = result.updated.join(', ');
+        setSuccess(
+          `${t('system.updatesApplied')} ${updatedServices}`,
+        );
+        setHasUpdates(false);
+        setLastCheckResult(null);
+        
+        // Recharger les données système après la mise à jour
+        setTimeout(() => {
+          loadSystemData();
+        }, 2000);
+      } else {
+        setError(t('system.errorApplyUpdates'));
+      }
+    } catch (err: any) {
+      setError(err.message || t('system.errorApplyUpdates'));
+    } finally {
+      setApplyingUpdates(false);
     }
   };
 
@@ -323,15 +376,29 @@ export default function SystemPage() {
                 <Typography variant="h6" sx={{ fontWeight: 500 }}>
                   {t('system.updaterStatus')}
                 </Typography>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={checkingUpdates ? <CircularProgress size={16} /> : <RefreshIcon />}
-                  onClick={handleCheckUpdates}
-                  disabled={checkingUpdates || !updaterStatus}
-                >
-                  {t('system.checkUpdates')}
-                </Button>
+                <Stack direction="row" spacing={1}>
+                  {hasUpdates && (
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      size="small"
+                      startIcon={applyingUpdates ? <CircularProgress size={16} /> : <SystemUpdateIcon />}
+                      onClick={handleApplyUpdates}
+                      disabled={applyingUpdates || checkingUpdates}
+                    >
+                      {t('system.applyUpdates')}
+                    </Button>
+                  )}
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={checkingUpdates ? <CircularProgress size={16} /> : <RefreshIcon />}
+                    onClick={handleCheckUpdates}
+                    disabled={checkingUpdates || applyingUpdates || !updaterStatus}
+                  >
+                    {t('system.checkUpdates')}
+                  </Button>
+                </Stack>
               </Box>
               {updaterStatus ? (
                 <Stack spacing={2}>
