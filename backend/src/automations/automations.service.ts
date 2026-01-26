@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Automation, AutomationTriggerType, AutomationActionType, AutomationStatus } from '../ai/entities/automation.entity';
 import { AutomationExecutionLog } from './entities/automation-execution-log.entity';
@@ -42,6 +43,7 @@ export class AutomationsService implements OnModuleInit {
     private readonly weatherService: WeatherService,
     private readonly logger: LoggerService,
     private readonly websocketGateway: WebsocketGateway,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async onModuleInit() {
@@ -1105,6 +1107,14 @@ export class AutomationsService implements OnModuleInit {
 
       // Notifier via WebSocket
       this.websocketGateway.broadcast('automation_executed', {
+        automationId: automation.id,
+        automationName: automation.name,
+        success: log.success,
+        timestamp: new Date(),
+      });
+
+      // Émettre l'événement pour les notifications Telegram
+      this.eventEmitter.emit('automation.executed', {
         automationId: automation.id,
         automationName: automation.name,
         success: log.success,

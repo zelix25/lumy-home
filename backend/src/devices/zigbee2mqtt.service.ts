@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import * as fs from 'fs';
 import * as path from 'path';
 import { LoggerService } from '../logger/logger.service';
@@ -62,6 +63,7 @@ export class Zigbee2MqttService implements OnModuleInit {
     private readonly logger: LoggerService,
     private readonly mqttService: MqttService,
     private readonly websocketGateway: WebsocketGateway,
+    private readonly eventEmitter: EventEmitter2,
     @Inject(forwardRef(() => HistoryTimelineService))
     private readonly historyTimelineService?: HistoryTimelineService,
     @Inject(forwardRef(() => HistoryService))
@@ -1049,6 +1051,15 @@ export class Zigbee2MqttService implements OnModuleInit {
       }
     }
 
+    // Émettre les événements pour les notifications Telegram
+    if (oldStatus !== device.status) {
+      if (device.status === DeviceStatus.ONLINE) {
+        this.eventEmitter.emit('device.online', { device });
+      } else {
+        this.eventEmitter.emit('device.offline', { device });
+      }
+    }
+
     // Diffuser la mise à jour via WebSocket
     this.websocketGateway.broadcast('device:availability', {
       ieeeAddress: device.ieeeAddress,
@@ -1095,6 +1106,11 @@ export class Zigbee2MqttService implements OnModuleInit {
                 'Zigbee2MqttService',
               );
             }
+          }
+          
+          // Émettre l'événement pour les notifications Telegram
+          if (oldStatus !== DeviceStatus.OFFLINE) {
+            this.eventEmitter.emit('device.offline', { device });
           }
           
           this.websocketGateway.broadcast('device:offline', { device });

@@ -30,11 +30,13 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import StoreIcon from '@mui/icons-material/Store';
 import LanguageSelector from './LanguageSelector';
 import SystemNotifications from './SystemNotifications';
+import QrCodeModal from './QrCodeModal';
 //import UpdateModal from './UpdateModal';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { usePluginMenuItems } from '../hooks/usePluginRoutes';
 //import { ServiceUpdateInfo } from '../services/updater.service';
+import QrCodeIcon from '@mui/icons-material/QrCode';
 
 const drawerWidth = 240; // Largeur sidebar selon guide scandinave
 
@@ -62,6 +64,7 @@ const getNavItems = (t: (key: string) => string): NavItem[] => [
 export default function Layout({ children }: LayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [qrCodeModalOpen, setQrCodeModalOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
@@ -113,6 +116,14 @@ export default function Layout({ children }: LayoutProps) {
   const handleSystem = () => {
     navigate('/system');
     handleMenuClose();
+  };
+
+  const handleQrCode = () => {
+    handleMenuClose();
+    // Petit délai pour s'assurer que le menu est fermé avant d'ouvrir la modal
+    setTimeout(() => {
+      setQrCodeModalOpen(true);
+    }, 100);
   };
 
   const drawer = (
@@ -298,6 +309,12 @@ export default function Layout({ children }: LayoutProps) {
                   </ListItemIcon>
                   <ListItemText>{t('menu.system')}</ListItemText>
                 </MenuItem>
+                <MenuItem onClick={handleQrCode}>
+                  <ListItemIcon>
+                    <QrCodeIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>{t('menu.qrCode')}</ListItemText>
+                </MenuItem>
                 <MenuItem onClick={handleLogout}>
                   <ListItemIcon>
                     <LogoutIcon fontSize="small" />
@@ -311,6 +328,7 @@ export default function Layout({ children }: LayoutProps) {
           <LanguageSelector />
         </Toolbar>
       </AppBar>
+      <QrCodeModal open={qrCodeModalOpen} onClose={() => setQrCodeModalOpen(false)} />
       <Box
         component="nav"
         sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}

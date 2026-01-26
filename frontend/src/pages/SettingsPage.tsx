@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { apiService } from '../services/api.service';
+import { telegramService, TelegramConfig } from '../services/telegram.service';
 
 interface Settings {
   logout_delay: number;
@@ -42,9 +43,20 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState(0);
+  const [telegramConfig, setTelegramConfig] = useState<TelegramConfig>({
+    id: '',
+    chatId: null,
+    token_bot: null,
+    isActive: false,
+    pin: null,
+    createdAt: '',
+    updatedAt: '',
+  });
+  const [savingTelegram, setSavingTelegram] = useState(false);
 
   useEffect(() => {
     loadSettings();
+    loadTelegramConfig();
   }, []);
 
   const loadSettings = async () => {
@@ -67,6 +79,15 @@ export default function SettingsPage() {
       setError(err.message || t('settings.errorLoading'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadTelegramConfig = async () => {
+    try {
+      const data = await telegramService.getTelegramConfig();
+      setTelegramConfig(data);
+    } catch (err: any) {
+      console.error('Erreur lors du chargement de la configuration Telegram:', err);
     }
   };
 
@@ -93,6 +114,26 @@ export default function SettingsPage() {
       setError(err.message || t('settings.errorSaving'));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSaveTelegram = async () => {
+    setSavingTelegram(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const updated = await telegramService.updateTelegramConfig({
+        chatId: telegramConfig.chatId || undefined,
+        token_bot: telegramConfig.token_bot || undefined,
+        isActive: telegramConfig.isActive,
+      });
+      setTelegramConfig(updated);
+      setSuccess(t('settings.telegram.saved'));
+    } catch (err: any) {
+      setError(err.message || t('settings.telegram.errorSaving'));
+    } finally {
+      setSavingTelegram(false);
     }
   };
 
@@ -123,6 +164,7 @@ export default function SettingsPage() {
               <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)} sx={{ mb: 3 }}>
                 <Tab label={t('settings.tabGeneral')} />
                 <Tab label={t('settings.tabLocation')} />
+                <Tab label={t('settings.tabTelegram')} />
               </Tabs>
 
               {activeTab === 0 && (
@@ -213,13 +255,62 @@ export default function SettingsPage() {
                 </Stack>
               )}
 
+              {activeTab === 2 && (
+                <Stack spacing={3}>
+                  <Alert severity="info" sx={{ mb: 1 }}>
+                    <Typography variant="body2">
+                      {t('settings.telegram.info')}
+                    </Typography>
+                  </Alert>
+
+                  <TextField
+                    label={t('settings.telegram.tokenBot')}
+                    value={telegramConfig.token_bot || ''}
+                    onChange={(e) =>
+                      setTelegramConfig({ ...telegramConfig, token_bot: e.target.value })
+                    }
+                    fullWidth
+                    type="password"
+                    helperText={t('settings.telegram.tokenBotHelp')}
+                  />
+
+                  <TextField
+                    label={t('settings.telegram.chatId')}
+                    value={telegramConfig.chatId || ''}
+                    onChange={(e) =>
+                      setTelegramConfig({ ...telegramConfig, chatId: e.target.value })
+                    }
+                    fullWidth
+                    helperText={t('settings.telegram.chatIdHelp')}
+                  />
+
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={telegramConfig.isActive}
+                        onChange={(e) =>
+                          setTelegramConfig({ ...telegramConfig, isActive: e.target.checked })
+                        }
+                      />
+                    }
+                    label={t('settings.telegram.isActive')}
+                  />
+                </Stack>
+              )}
+
               <Box sx={{ mt: 3 }}>
                 <Button
                   variant="contained"
-                  onClick={handleSave}
-                  disabled={saving}
+                  onClick={activeTab === 2 ? handleSaveTelegram : handleSave}
+                  disabled={activeTab === 2 ? savingTelegram : saving}
                 >
-                  {saving ? t('common.loading') : t('common.save')}
+                  {activeTab === 2
+                    ? savingTelegram
+                      ? t('common.loading')
+                      : t('common.save')
+                    : saving
+                    ? t('common.loading')
+                    : t('common.save')}
                 </Button>
               </Box>
             </>

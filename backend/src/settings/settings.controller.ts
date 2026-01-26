@@ -36,6 +36,14 @@ export class SettingsController {
   }
 
   /**
+   * Récupère l'adresse IP du serveur
+   */
+  @Get('server-ip')
+  async getServerIp(): Promise<{ ip: string }> {
+    return { ip: this.settingsService.getServerIp() };
+  }
+
+  /**
    * Met à jour les paramètres
    */
   @Put()

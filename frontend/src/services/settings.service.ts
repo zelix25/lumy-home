@@ -33,6 +33,13 @@ class SettingsService {
     return apiService.get<{ ram: number; cpuArch: string; cpuType: string }>('/settings/system-info');
   }
 
+  /**
+   * Récupère l'adresse IP du serveur
+   */
+  async getServerIp(): Promise<{ ip: string }> {
+    return apiService.get<{ ip: string }>('/settings/server-ip');
+  }
+
   async updateSettings(settings: Partial<Settings>): Promise<Settings> {
     return apiService.put<Settings>('/settings', settings);
   }
