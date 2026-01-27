@@ -65,6 +65,9 @@ import { configValidationSchema } from './config/config.validation';
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
           migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
           synchronize: shouldSynchronize,
+          // En production, exécuter automatiquement les migrations au démarrage
+          // pour appliquer les évolutions de schéma (ex: table telegram)
+          migrationsRun: nodeEnv === 'production',
           /* logging: nodeEnv === 'development',*/
           logging: false,
         };
