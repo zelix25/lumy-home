@@ -1393,18 +1393,29 @@ export class AutomationsService implements OnModuleInit {
           );
           break;
 
-        case AutomationActionType.NOTIFY:
-          // Envoyer une notification Telegram
-          const notificationMessage = params?.message || `Automatisation "${automation.name}" déclenchée`;
-          
+        case AutomationActionType.NOTIFY: {
+          // Messages prédéfinis selon le type de notification
+          const predefinedMessages: Record<string, string> = {
+            automation_triggered: `Automatisation "${automation.name}" déclenchée`,
+            motion_detected: 'Mouvement détecté',
+            contact_open: 'Ouverture de porte ou fenêtre détectée',
+            temperature_alert: 'Alerte température',
+          };
+
+          const template = params?.notificationTemplate as string | undefined;
+          const customMessage = params?.message as string | undefined;
+          const notificationMessage =
+            template === 'custom' && customMessage
+              ? customMessage
+              : (template && predefinedMessages[template]) || customMessage || predefinedMessages.automation_triggered;
+
           this.logger.log(
             `[AUTOMATION ACTION] 📢 Notification Telegram: ${notificationMessage} pour l'automatisation "${automation.name}"`,
             'AutomationsService',
           );
-          
-          // Formater le message pour Telegram avec Markdown
+
           const telegramMessage = `🤖 *Automatisation déclenchée*\n\n*${automation.name}*\n\n${notificationMessage}`;
-          
+
           try {
             await this.telegramService.sendNotification(telegramMessage, 'Markdown');
             this.logger.log(
@@ -1417,9 +1428,9 @@ export class AutomationsService implements OnModuleInit {
               error.stack,
               'AutomationsService',
             );
-            // Ne pas faire échouer l'automatisation si Telegram échoue
           }
           break;
+        }
 
         default:
           throw new BadRequestException(`Type d'action non supporté: ${type}`);
