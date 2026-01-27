@@ -1404,10 +1404,24 @@ export class AutomationsService implements OnModuleInit {
 
           const template = params?.notificationTemplate as string | undefined;
           const customMessage = params?.message as string | undefined;
-          const notificationMessage =
+          let notificationMessage =
             template === 'custom' && customMessage
               ? customMessage
               : (template && predefinedMessages[template]) || customMessage || predefinedMessages.automation_triggered;
+
+          // Ajouter la pièce de l'appareil déclencheur si disponible
+          const triggerDeviceId = automation.trigger?.deviceId;
+          if (triggerDeviceId) {
+            try {
+              const triggerDevice = await this.devicesService.findOne(triggerDeviceId);
+              const room = triggerDevice?.room;
+              if (room && room !== 'Non défini') {
+                notificationMessage = `${notificationMessage} dans ${room}`;
+              }
+            } catch {
+              // ignorer si l'appareil n'existe plus
+            }
+          }
 
           this.logger.log(
             `[AUTOMATION ACTION] 📢 Notification Telegram: ${notificationMessage} pour l'automatisation "${automation.name}"`,
