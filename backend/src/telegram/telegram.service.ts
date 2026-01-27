@@ -7,6 +7,7 @@ import { UpdateTelegramDto } from './dto/update-telegram.dto';
 import { LoggerService } from '../logger/logger.service';
 import { DevicesService } from '../devices/devices.service';
 import { Device } from '../devices/entities/device.entity';
+import { UpdaterService, CheckResult } from '../updater/updater.service';
 import TelegramBot = require('node-telegram-bot-api');
 
 @Injectable()
@@ -19,8 +20,9 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     private readonly logger: LoggerService,
     @Inject(forwardRef(() => DevicesService))
     private readonly devicesService: DevicesService,
+    @Inject(forwardRef(() => UpdaterService))
+    private readonly updaterService: UpdaterService,
     private readonly eventEmitter: EventEmitter2,
-
   ) {}
 
   /**
@@ -242,6 +244,29 @@ Utilisez ce code pour valider la connexion de votre instance Lumy Home avec Tele
     }
   }
 
+  /** Libellés des boutons du menu (clavier en bas du chat) */
+  private static readonly MENU_BTN_DEVICES = '📱 Appareils';
+  private static readonly MENU_BTN_STATS = '📊 Stats';
+  private static readonly MENU_BTN_CHECK_UPDATES = '🔄 Vérifier MAJ';
+  private static readonly MENU_BTN_APPLY_UPDATE = '📦 Mettre à jour';
+  private static readonly MENU_BTN_HELP = '❓ Aide';
+  private static readonly MENU_BTN_MENU = '🏠 Menu';
+
+  /**
+   * Clavier principal (menu en bas du chat)
+   */
+  private getMainMenuKeyboard(): TelegramBot.ReplyKeyboardMarkup {
+    return {
+      keyboard: [
+        [{ text: TelegramService.MENU_BTN_DEVICES }, { text: TelegramService.MENU_BTN_STATS }],
+        [{ text: TelegramService.MENU_BTN_CHECK_UPDATES }, { text: TelegramService.MENU_BTN_APPLY_UPDATE }],
+        [{ text: TelegramService.MENU_BTN_HELP }, { text: TelegramService.MENU_BTN_MENU }],
+      ],
+      resize_keyboard: true,
+      one_time_keyboard: false,
+    };
+  }
+
   /**
    * Configure les handlers de commandes Telegram
    */
@@ -250,7 +275,7 @@ Utilisez ce code pour valider la connexion de votre instance Lumy Home avec Tele
       return;
     }
 
-    // Commande /start - Retourne le chatId de l'utilisateur
+    // Commande /start - Retourne le chatId + affiche le menu
     this.bot.onText(/\/start/, async (msg: TelegramBot.Message) => {
       const chatId = msg.chat.id;
       const welcomeMessage = `
@@ -270,14 +295,17 @@ Utilisez ce Chat ID dans les paramètres de votre instance Lumy Home pour active
 /on <nom> - Allumer un appareil
 /off <nom> - Éteindre un appareil
 /brightness <nom> <0-100> - Ajuster la luminosité
+/check-updates - Vérifier les mises à jour (admin)
+/update - Mettre à jour le système (admin)
       `;
 
       try {
         await this.bot!.sendMessage(chatId, welcomeMessage, {
           parse_mode: 'Markdown',
+          reply_markup: this.getMainMenuKeyboard(),
         });
         this.logger.log(`Chat ID ${chatId} envoyé à l'utilisateur`, 'TelegramService');
-      } catch (error) {
+      } catch (error: any) {
         this.logger.error(
           `Erreur lors de l'envoi du message: ${error.message}`,
           error.stack,
@@ -288,130 +316,51 @@ Utilisez ce Chat ID dans les paramètres de votre instance Lumy Home pour active
 
     // Commande /help
     this.bot.onText(/\/help/, async (msg: TelegramBot.Message) => {
-      const chatId = msg.chat.id;
-      const helpMessage = `
-📖 *Aide - Commandes Lumy Home Bot*
-
-*Liste des appareils:*
-\`/devices\` - Afficher tous les appareils disponibles
-
-*Contrôle des appareils:*
-\`/on <nom>\` - Allumer un appareil
-\`/off <nom>\` - Éteindre un appareil
-\`/brightness <nom> <0-100>\` - Ajuster la luminosité (0-100%)
-
-*Informations:*
-\`/status <nom>\` - Voir l'état détaillé d'un appareil
-\`/stats\` - Statistiques globales
-
-*Exemples:*
-\`/on Lumière Salon\`
-\`/off Lumière Salon\`
-\`/brightness Lumière Salon 50\`
-\`/status Lumière Salon\`
-      `;
-
       try {
-        await this.bot!.sendMessage(chatId, helpMessage, {
-          parse_mode: 'Markdown',
-        });
-      } catch (error) {
-        this.logger.error(
-          `Erreur lors de l'envoi de l'aide: ${error.message}`,
-          error.stack,
-          'TelegramService',
-        );
+        await this.runHelp(msg.chat.id);
+      } catch (error: any) {
+        this.logger.error(`Erreur /help: ${error.message}`, error.stack, 'TelegramService');
+        await this.bot!.sendMessage(msg.chat.id, `❌ Erreur: ${error.message}`).catch(() => {});
       }
     });
 
-    // Commande /devices - Lister tous les appareils
+    // Commande /check-updates
+    this.bot.onText(/\/check-updates/, async (msg: TelegramBot.Message) => {
+      try {
+        await this.runCheckUpdates(msg.chat.id);
+      } catch (error: any) {
+        this.logger.error(`Erreur /check-updates: ${error.message}`, error.stack, 'TelegramService');
+        await this.bot!.sendMessage(msg.chat.id, `❌ Impossible de vérifier les mises à jour: ${error.message}`).catch(() => {});
+      }
+    });
+
+    // Commande /update
+    this.bot.onText(/\/update/, async (msg: TelegramBot.Message) => {
+      try {
+        await this.runUpdate(msg.chat.id);
+      } catch (error: any) {
+        this.logger.error(`Erreur /update: ${error.message}`, error.stack, 'TelegramService');
+        await this.bot!.sendMessage(msg.chat.id, `❌ Erreur lors de la mise à jour: ${error.message}`).catch(() => {});
+      }
+    });
+
+    // Commande /devices
     this.bot.onText(/\/devices/, async (msg: TelegramBot.Message) => {
-      const chatId = msg.chat.id;
       try {
-        const devices = await this.devicesService.findAll();
-        
-        // Filtrer le coordinateur
-        const userDevices = devices.filter((device) => {
-          const typeStr = String(device.type).toLowerCase();
-          return typeStr !== 'coordinator';
-        });
-
-        if (userDevices.length === 0) {
-          await this.bot!.sendMessage(chatId, '❌ Aucun appareil trouvé.');
-          return;
-        }
-
-        let message = `📱 *Appareils disponibles (${userDevices.length}):*\n\n`;
-        
-        // Grouper par type
-        const devicesByType: Record<string, Device[]> = {};
-        userDevices.forEach((device) => {
-          const type = device.type || 'other';
-          if (!devicesByType[type]) {
-            devicesByType[type] = [];
-          }
-          devicesByType[type].push(device);
-        });
-
-        for (const [type, typeDevices] of Object.entries(devicesByType)) {
-          const typeEmoji = this.getTypeEmoji(type);
-          message += `${typeEmoji} *${this.getTypeLabel(type)}* (${typeDevices.length}):\n`;
-          
-          typeDevices.forEach((device) => {
-            const statusEmoji = device.status === 'online' ? '🟢' : '🔴';
-            const room = device.room && device.room !== 'Non défini' ? ` (${device.room})` : '';
-            message += `${statusEmoji} ${device.friendlyName || device.ieeeAddress}${room}\n`;
-          });
-          message += '\n';
-        }
-
-        // Ajouter des boutons inline pour les appareils contrôlables
-        const inlineKeyboard = this.createDevicesInlineKeyboard(userDevices.slice(0, 10)); // Limiter à 10 pour éviter les erreurs
-
-        await this.bot!.sendMessage(chatId, message, {
-          parse_mode: 'Markdown',
-          reply_markup: inlineKeyboard,
-        });
-      } catch (error) {
-        this.logger.error(
-          `Erreur lors de la récupération des appareils: ${error.message}`,
-          error.stack,
-          'TelegramService',
-        );
-        await this.bot!.sendMessage(chatId, '❌ Erreur lors de la récupération des appareils.');
+        await this.runDevices(msg.chat.id);
+      } catch (error: any) {
+        this.logger.error(`Erreur /devices: ${error.message}`, error.stack, 'TelegramService');
+        await this.bot!.sendMessage(msg.chat.id, '❌ Erreur lors de la récupération des appareils.').catch(() => {});
       }
     });
 
-    // Commande /stats - Statistiques
+    // Commande /stats
     this.bot.onText(/\/stats/, async (msg: TelegramBot.Message) => {
-      const chatId = msg.chat.id;
       try {
-        const stats = await this.devicesService.getDeviceStats();
-        const message = `
-📊 *Statistiques Lumy Home*
-
-*Total:* ${stats.total} appareils
-🟢 *En ligne:* ${stats.online}
-🔴 *Hors ligne:* ${stats.offline}
-✅ *Supportés:* ${stats.supported}
-⚠️ *Non supportés:* ${stats.unsupported}
-
-*Par type:*
-${Object.entries(stats.byType)
-  .map(([type, count]) => `${this.getTypeEmoji(type)} ${this.getTypeLabel(type)}: ${count}`)
-  .join('\n')}
-        `;
-
-        await this.bot!.sendMessage(chatId, message, {
-          parse_mode: 'Markdown',
-        });
-      } catch (error) {
-        this.logger.error(
-          `Erreur lors de la récupération des stats: ${error.message}`,
-          error.stack,
-          'TelegramService',
-        );
-        await this.bot!.sendMessage(chatId, '❌ Erreur lors de la récupération des statistiques.');
+        await this.runStats(msg.chat.id);
+      } catch (error: any) {
+        this.logger.error(`Erreur /stats: ${error.message}`, error.stack, 'TelegramService');
+        await this.bot!.sendMessage(msg.chat.id, '❌ Erreur lors de la récupération des statistiques.').catch(() => {});
       }
     });
 
@@ -581,6 +530,50 @@ ${statusEmoji} *${device.friendlyName}*
           'TelegramService',
         );
         await this.bot!.sendMessage(chatId, `❌ Erreur lors du réglage de la luminosité de "${deviceName}".`);
+      }
+    });
+
+    // Réponses aux boutons du menu (clavier en bas du chat)
+    this.bot.on('message', async (msg: TelegramBot.Message) => {
+      const text = msg.text?.trim();
+      if (!text || text.startsWith('/')) {
+        return;
+      }
+      const chatId = msg.chat.id;
+      try {
+        if (text === TelegramService.MENU_BTN_MENU) {
+          await this.bot!.sendMessage(chatId, '🏠 Utilisez les boutons ci-dessous pour accéder aux actions.', {
+            reply_markup: this.getMainMenuKeyboard(),
+          });
+          return;
+        }
+        if (text === TelegramService.MENU_BTN_HELP) {
+          await this.runHelp(chatId);
+          return;
+        }
+        if (text === TelegramService.MENU_BTN_DEVICES) {
+          await this.runDevices(chatId);
+          return;
+        }
+        if (text === TelegramService.MENU_BTN_STATS) {
+          await this.runStats(chatId);
+          return;
+        }
+        if (text === TelegramService.MENU_BTN_CHECK_UPDATES) {
+          await this.runCheckUpdates(chatId);
+          return;
+        }
+        if (text === TelegramService.MENU_BTN_APPLY_UPDATE) {
+          await this.runUpdate(chatId);
+          return;
+        }
+      } catch (error: any) {
+        this.logger.error(
+          `Erreur traitement bouton menu: ${error.message}`,
+          error.stack,
+          'TelegramService',
+        );
+        await this.bot!.sendMessage(chatId, `❌ Erreur: ${error.message}`).catch(() => {});
       }
     });
 
@@ -812,6 +805,155 @@ ${statusEmoji} *${device.friendlyName}*
       other: 'Autres',
     };
     return labelMap[type.toLowerCase()] || type;
+  }
+
+  /**
+   * Vérifie si le chatId est celui configuré (admin autorisé pour les commandes sensibles)
+   */
+  private async isAllowedChat(chatId: number): Promise<boolean> {
+    const config = await this.getTelegramConfig();
+    return config.chatId != null && String(chatId) === String(config.chatId);
+  }
+
+  /**
+   * Formate le résultat de vérification des mises à jour pour Telegram
+   */
+  private formatCheckUpdatesResult(result: CheckResult): string {
+    if (!result.ok) {
+      return '❌ Le service de mise à jour ne répond pas ou a renvoyé une erreur.';
+    }
+    const modeLabel = result.mode === 'beta' ? 'Beta' : 'Stable';
+    const hasUpdates = result.hasUpdates && result.updates?.some((u) => u.hasUpdate);
+    if (!hasUpdates) {
+      return `✅ *Aucune mise à jour disponible*\n\nMode: ${modeLabel}\nLe système est à jour.`;
+    }
+    const servicesWithUpdates = result.updates!.filter((u) => u.hasUpdate).map((u) => u.service);
+    let message = `🔄 *Mises à jour disponibles*\n\nMode: ${modeLabel}\n\n*Services concernés:*\n`;
+    for (const u of result.updates!.filter((u) => u.hasUpdate)) {
+      message += `• *${u.service}*\n  Actuel: \`${u.currentImage || 'N/A'}\`\n  Nouveau: \`${u.lastImage || 'N/A'}\`\n`;
+    }
+    message += '\nUtilisez le bouton "📦 Mettre à jour" ou /update pour appliquer les mises à jour.';
+    return message;
+  }
+
+  /** Envoie le message d'aide (réutilisé par /help et le bouton Aide) */
+  private async runHelp(chatId: number): Promise<void> {
+    const helpMessage = `
+📖 *Aide - Commandes Lumy Home Bot*
+
+*Liste des appareils:*
+\`/devices\` ou bouton *📱 Appareils* - Afficher tous les appareils
+
+*Contrôle des appareils:*
+\`/on <nom>\` - Allumer  |  \`/off <nom>\` - Éteindre
+\`/brightness <nom> <0-100>\` - Luminosité
+
+*Informations:*
+\`/status <nom>\` - État d'un appareil  |  \`/stats\` ou *📊 Stats* - Statistiques
+
+*Mises à jour (réservé au chat configuré):*
+\`/check-updates\` ou *🔄 Vérifier MAJ* - Vérifier les mises à jour
+\`/update\` ou *📦 Mettre à jour* - Appliquer les mises à jour
+    `;
+    await this.bot!.sendMessage(chatId, helpMessage, { parse_mode: 'Markdown' });
+  }
+
+  /** Liste les appareils (réutilisé par /devices et le bouton Appareils) */
+  private async runDevices(chatId: number): Promise<void> {
+    const devices = await this.devicesService.findAll();
+    const userDevices = devices.filter((d) => String(d.type).toLowerCase() !== 'coordinator');
+    if (userDevices.length === 0) {
+      await this.bot!.sendMessage(chatId, '❌ Aucun appareil trouvé.');
+      return;
+    }
+    let message = `📱 *Appareils disponibles (${userDevices.length}):*\n\n`;
+    const devicesByType: Record<string, Device[]> = {};
+    userDevices.forEach((d) => {
+      const t = d.type || 'other';
+      if (!devicesByType[t]) devicesByType[t] = [];
+      devicesByType[t].push(d);
+    });
+    for (const [type, list] of Object.entries(devicesByType)) {
+      message += `${this.getTypeEmoji(type)} *${this.getTypeLabel(type)}* (${list.length}):\n`;
+      list.forEach((d) => {
+        const emoji = d.status === 'online' ? '🟢' : '🔴';
+        const room = d.room && d.room !== 'Non défini' ? ` (${d.room})` : '';
+        message += `${emoji} ${d.friendlyName || d.ieeeAddress}${room}\n`;
+      });
+      message += '\n';
+    }
+    const inlineKeyboard = this.createDevicesInlineKeyboard(userDevices.slice(0, 10));
+    await this.bot!.sendMessage(chatId, message, { parse_mode: 'Markdown', reply_markup: inlineKeyboard });
+  }
+
+  /** Envoie les statistiques (réutilisé par /stats et le bouton Stats) */
+  private async runStats(chatId: number): Promise<void> {
+    const stats = await this.devicesService.getDeviceStats();
+    const message = `
+📊 *Statistiques Lumy Home*
+
+*Total:* ${stats.total} appareils
+🟢 *En ligne:* ${stats.online}  |  🔴 *Hors ligne:* ${stats.offline}
+✅ *Supportés:* ${stats.supported}  |  ⚠️ *Non supportés:* ${stats.unsupported}
+
+*Par type:*
+${Object.entries(stats.byType)
+  .map(([type, count]) => `${this.getTypeEmoji(type)} ${this.getTypeLabel(type)}: ${count}`)
+  .join('\n')}
+    `;
+    await this.bot!.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+  }
+
+  /** Vérifie les mises à jour (réutilisé par /check-updates et le bouton Vérifier MAJ) */
+  private async runCheckUpdates(chatId: number): Promise<void> {
+    if (!(await this.isAllowedChat(chatId))) {
+      await this.bot!.sendMessage(chatId, '⛔ Réservé à l\'administrateur configuré.');
+      return;
+    }
+    await this.bot!.sendMessage(chatId, '🔄 Vérification des mises à jour en cours...');
+    const result = await this.updaterService.checkForUpdates();
+    const message = this.formatCheckUpdatesResult(result);
+    await this.bot!.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+  }
+
+  /** Applique les mises à jour (réutilisé par /update et le bouton Mettre à jour) */
+  private async runUpdate(chatId: number): Promise<void> {
+    if (!(await this.isAllowedChat(chatId))) {
+      await this.bot!.sendMessage(chatId, '⛔ Réservé à l\'administrateur configuré.');
+      return;
+    }
+    let result: CheckResult;
+    const lastCheck = this.updaterService.getLastCheckResult();
+    if (lastCheck?.hasUpdates && lastCheck.updates?.length) {
+      result = lastCheck;
+    } else {
+      await this.bot!.sendMessage(chatId, '🔄 Vérification des mises à jour...');
+      result = await this.updaterService.checkForUpdates();
+    }
+    if (!result.hasUpdates || !result.updates?.some((u) => u.hasUpdate)) {
+      await this.bot!.sendMessage(chatId, '✅ Aucune mise à jour disponible. Le système est à jour.');
+      return;
+    }
+    const servicesToUpdate = result.updates!.filter((u) => u.hasUpdate).map((u) => u.service);
+    await this.bot!.sendMessage(
+      chatId,
+      `🔄 Application des mises à jour pour: ${servicesToUpdate.join(', ')}\n\n_Cela peut prendre plusieurs minutes..._`,
+      { parse_mode: 'Markdown' },
+    );
+    const updateResult = await this.updaterService.applyUpdate(servicesToUpdate);
+    if (updateResult.ok) {
+      await this.bot!.sendMessage(
+        chatId,
+        `✅ *Mises à jour appliquées*\n\nServices: ${updateResult.updated.join(', ')}`,
+        { parse_mode: 'Markdown' },
+      );
+    } else {
+      await this.bot!.sendMessage(
+        chatId,
+        `❌ *Échec*\n\n${updateResult.logs?.join('\n') || 'Voir les logs du serveur.'}`,
+        { parse_mode: 'Markdown' },
+      );
+    }
   }
 
   /**
