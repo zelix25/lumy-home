@@ -8,6 +8,7 @@ import { DevicesModule } from '../devices/devices.module';
 import { WebsocketModule } from '../websocket/websocket.module';
 import { LoggerModule } from '../logger/logger.module';
 import { WeatherModule } from '../weather/weather.module';
+import { TelegramModule } from '../telegram/telegram.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { WeatherModule } from '../weather/weather.module';
     forwardRef(() => DevicesModule),
     forwardRef(() => WebsocketModule),
     forwardRef(() => WeatherModule),
+    forwardRef(() => TelegramModule),
     LoggerModule,
   ],
   controllers: [AutomationsController],

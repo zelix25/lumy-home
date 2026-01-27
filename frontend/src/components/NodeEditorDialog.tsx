@@ -864,6 +864,26 @@ export default function NodeEditorDialog({
       }
     }
 
+    // Fonction pour obtenir le label d'une action
+    const getActionLabel = (actionType: AutomationActionType, deviceName?: string): string => {
+      if (deviceName) {
+        return deviceName;
+      }
+      const actionLabels: Record<AutomationActionType, string> = {
+        [AutomationActionType.TURN_ON]: t('automations.actionTurnOn'),
+        [AutomationActionType.TURN_OFF]: t('automations.actionTurnOff'),
+        [AutomationActionType.TOGGLE]: t('automations.actionToggle'),
+        [AutomationActionType.SET_BRIGHTNESS]: t('automations.actionSetBrightness'),
+        [AutomationActionType.SET_COLOR]: t('automations.actionSetColor'),
+        [AutomationActionType.SET_COLOR_TEMP]: t('automations.actionSetColorTemp'),
+        [AutomationActionType.SET_THERMOSTAT]: t('automations.actionSetThermostat'),
+        [AutomationActionType.OPEN_COVER]: t('automations.actionOpenCover'),
+        [AutomationActionType.CLOSE_COVER]: t('automations.actionCloseCover'),
+        [AutomationActionType.NOTIFY]: t('automations.actionNotify'),
+      };
+      return actionLabels[actionType] || actionType;
+    };
+
     // Créer les nodes actions
     const actionNodes: Node[] = [];
     automation.actions?.forEach((action: any, index: number) => {
@@ -872,11 +892,17 @@ export default function NodeEditorDialog({
         type: 'action',
         position: { x: xPosition, y: 100 + index * ySpacing },
         data: {
-          label: action.deviceName || t(`automations.actionTypes.${action.type}`),
+          label: getActionLabel(action.type, action.deviceName),
           actionType: action.type,
           deviceId: action.deviceId || '',
           deviceName: action.deviceName || '',
-          params: action.params || {},
+          params: (() => {
+            const p = action.params || {};
+            if (action.type === AutomationActionType.NOTIFY && p.message && !p.notificationTemplate) {
+              return { ...p, notificationTemplate: 'custom' };
+            }
+            return p;
+          })(),
           duration: action.params?.duration,
           coverPosition: action.params?.position !== undefined ? action.params.position : (action.type === AutomationActionType.OPEN_COVER ? 100 : action.type === AutomationActionType.CLOSE_COVER ? 0 : undefined),
         },
@@ -1235,6 +1261,7 @@ export default function NodeEditorDialog({
       if ((actionData.actionType === AutomationActionType.OPEN_COVER || actionData.actionType === AutomationActionType.CLOSE_COVER) && actionData.coverPosition !== undefined) {
         params.position = actionData.coverPosition;
       }
+      // Pour NOTIFY, params.notificationTemplate et params.message viennent déjà de actionData.params
       
       return {
         type: actionData.actionType,
@@ -1932,6 +1959,9 @@ export default function NodeEditorDialog({
                                     coverPosition: (actionType === AutomationActionType.OPEN_COVER || actionType === AutomationActionType.CLOSE_COVER)
                                       ? (actionType === AutomationActionType.OPEN_COVER ? 100 : 0)
                                       : undefined,
+                                    params: actionType === AutomationActionType.NOTIFY
+                                      ? { notificationTemplate: 'automation_triggered' }
+                                      : (node.data as ActionNodeData).params,
                                   },
                                 }
                               : node,
@@ -2052,6 +2082,75 @@ export default function NodeEditorDialog({
                       <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
                         {t('automations.coverPositionDescription')}
                       </Typography>
+                    </Box>
+                  )}
+
+                  {/* Sélecteur de type de notification Telegram pour l'action NOTIFY */}
+                  {actionSettings.actionData.actionType === AutomationActionType.NOTIFY && (
+                    <Box>
+                      <FormControl fullWidth sx={{ mb: 2 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                          {t('automations.notificationTemplate')}
+                        </Typography>
+                        <Select
+                          value={(actionSettings.actionData.params?.notificationTemplate as string) || 'automation_triggered'}
+                          onChange={(e) => {
+                            const notificationTemplate = e.target.value as string;
+                            setNodes((nds) =>
+                              nds.map((node) =>
+                                node.id === selectedNodeId
+                                  ? {
+                                      ...node,
+                                      data: {
+                                        ...node.data,
+                                        params: {
+                                          ...((node.data as ActionNodeData).params || {}),
+                                          notificationTemplate,
+                                          ...(notificationTemplate !== 'custom' ? { message: undefined } : {}),
+                                        },
+                                      },
+                                    }
+                                  : node,
+                              ),
+                            );
+                          }}
+                        >
+                          <MenuItem value="automation_triggered">{t('automations.notificationTypeAutomationTriggered')}</MenuItem>
+                          <MenuItem value="motion_detected">{t('automations.notificationTypeMotionDetected')}</MenuItem>
+                          <MenuItem value="contact_open">{t('automations.notificationTypeContactOpen')}</MenuItem>
+                          <MenuItem value="temperature_alert">{t('automations.notificationTypeTemperatureAlert')}</MenuItem>
+                          <MenuItem value="custom">{t('automations.notificationTypeCustom')}</MenuItem>
+                        </Select>
+                      </FormControl>
+                      {(actionSettings.actionData.params?.notificationTemplate as string) === 'custom' && (
+                        <TextField
+                          fullWidth
+                          multiline
+                          rows={4}
+                          size="small"
+                          label={t('automations.notificationCustomMessage')}
+                          placeholder={t('automations.notificationCustomPlaceholder')}
+                          value={(actionSettings.actionData.params?.message as string) || ''}
+                          onChange={(e) => {
+                            setNodes((nds) =>
+                              nds.map((node) =>
+                                node.id === selectedNodeId
+                                  ? {
+                                      ...node,
+                                      data: {
+                                        ...node.data,
+                                        params: {
+                                          ...((node.data as ActionNodeData).params || {}),
+                                          message: e.target.value,
+                                        },
+                                      },
+                                    }
+                                  : node,
+                              ),
+                            );
+                          }}
+                        />
+                      )}
                     </Box>
                   )}
 

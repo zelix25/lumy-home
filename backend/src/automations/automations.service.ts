@@ -19,6 +19,7 @@ import { DevicesService } from '../devices/devices.service';
 import { LoggerService } from '../logger/logger.service';
 import { WebsocketGateway } from '../websocket/websocket.gateway';
 import { WeatherService } from '../weather/weather.service';
+import { TelegramService } from '../telegram/telegram.service';
 
 @Injectable()
 export class AutomationsService implements OnModuleInit {
@@ -44,6 +45,8 @@ export class AutomationsService implements OnModuleInit {
     private readonly logger: LoggerService,
     private readonly websocketGateway: WebsocketGateway,
     private readonly eventEmitter: EventEmitter2,
+    @Inject(forwardRef(() => TelegramService))
+    private readonly telegramService: TelegramService,
   ) {}
 
   async onModuleInit() {
@@ -277,10 +280,13 @@ export class AutomationsService implements OnModuleInit {
     }
 
     for (const action of createDto.actions) {
-      try {
-        await this.devicesService.findOne(action.deviceId);
-      } catch (error) {
-        throw new BadRequestException(`Appareil cible ${action.deviceId} non trouvé`);
+      // L'action NOTIFY n'a pas besoin d'un deviceId
+      if (action.type !== AutomationActionType.NOTIFY && action.deviceId) {
+        try {
+          await this.devicesService.findOne(action.deviceId);
+        } catch (error) {
+          throw new BadRequestException(`Appareil cible ${action.deviceId} non trouvé`);
+        }
       }
     }
 
@@ -307,10 +313,13 @@ export class AutomationsService implements OnModuleInit {
 
     if (updateDto.actions) {
       for (const action of updateDto.actions) {
-        try {
-          await this.devicesService.findOne(action.deviceId);
-        } catch (error) {
-          throw new BadRequestException(`Appareil cible ${action.deviceId} non trouvé`);
+        // L'action NOTIFY n'a pas besoin d'un deviceId
+        if (action.type !== AutomationActionType.NOTIFY && action.deviceId) {
+          try {
+            await this.devicesService.findOne(action.deviceId);
+          } catch (error) {
+            throw new BadRequestException(`Appareil cible ${action.deviceId} non trouvé`);
+          }
         }
       }
     }
@@ -1045,35 +1054,45 @@ export class AutomationsService implements OnModuleInit {
     });
 
     try {
-      const actionResults = [];
+      const actionResults: Array<{
+        actionType: string;
+        deviceId: string | null;
+        success: boolean;
+        message?: string;
+      }> = [];
 
       for (let i = 0; i < automation.actions.length; i++) {
         const action = automation.actions[i];
+        const deviceInfo = action.deviceId 
+          ? `sur l'appareil ${action.deviceId} (${action.deviceName || 'nom non disponible'})`
+          : '(notification Telegram)';
         this.logger.log(
-          `[AUTOMATION EXECUTE] ⚙️ Action ${i + 1}/${automation.actions.length}: ${action.type} sur l'appareil ${action.deviceId} (${action.deviceName || 'nom non disponible'})`,
+          `[AUTOMATION EXECUTE] ⚙️ Action ${i + 1}/${automation.actions.length}: ${action.type} ${deviceInfo}`,
           'AutomationsService',
         );
 
         try {
           await this.executeAction(action, automation);
+          const successDeviceInfo = action.deviceId ? `sur ${action.deviceId}` : '';
           this.logger.log(
-            `[AUTOMATION EXECUTE] ✅ Action ${i + 1} réussie: ${action.type} sur ${action.deviceId}`,
+            `[AUTOMATION EXECUTE] ✅ Action ${i + 1} réussie: ${action.type} ${successDeviceInfo}`,
             'AutomationsService',
           );
           actionResults.push({
             actionType: action.type,
-            deviceId: action.deviceId,
+            deviceId: action.deviceId || null,
             success: true,
           });
-        } catch (error) {
+        } catch (error: any) {
+          const errorDeviceInfo = action.deviceId ? `sur ${action.deviceId}` : '';
           this.logger.error(
-            `[AUTOMATION EXECUTE] ❌ Erreur lors de l'exécution de l'action ${i + 1} (${action.type}) sur ${action.deviceId}: ${error.message}`,
+            `[AUTOMATION EXECUTE] ❌ Erreur lors de l'exécution de l'action ${i + 1} (${action.type}) ${errorDeviceInfo}: ${error.message}`,
             error.stack,
             'AutomationsService',
           );
           actionResults.push({
             actionType: action.type,
-            deviceId: action.deviceId,
+            deviceId: action.deviceId || null,
             success: false,
             message: error.message,
           });
@@ -1144,8 +1163,11 @@ export class AutomationsService implements OnModuleInit {
   private async executeAction(action: any, automation: Automation): Promise<void> {
     const { type, deviceId, params } = action;
 
+    const deviceInfo = deviceId 
+      ? `sur l'appareil ${deviceId} (${action.deviceName || 'nom non disponible'})`
+      : '(notification Telegram)';
     this.logger.log(
-      `[AUTOMATION ACTION] 🎯 Exécution de l'action "${type}" sur l'appareil ${deviceId} (${action.deviceName || 'nom non disponible'})`,
+      `[AUTOMATION ACTION] 🎯 Exécution de l'action "${type}" ${deviceInfo}`,
       'AutomationsService',
     );
 
@@ -1371,24 +1393,44 @@ export class AutomationsService implements OnModuleInit {
           );
           break;
 
-        case AutomationActionType.NOTIFY:
-          // Pour l'instant, on log juste la notification
-          // Plus tard, on pourra intégrer un système de notifications
+        case AutomationActionType.NOTIFY: {
+          // Messages prédéfinis selon le type de notification
+          const predefinedMessages: Record<string, string> = {
+            automation_triggered: `Automatisation "${automation.name}" déclenchée`,
+            motion_detected: 'Mouvement détecté',
+            contact_open: 'Ouverture de porte ou fenêtre détectée',
+            temperature_alert: 'Alerte température',
+          };
+
+          const template = params?.notificationTemplate as string | undefined;
+          const customMessage = params?.message as string | undefined;
+          const notificationMessage =
+            template === 'custom' && customMessage
+              ? customMessage
+              : (template && predefinedMessages[template]) || customMessage || predefinedMessages.automation_triggered;
+
           this.logger.log(
-            `[AUTOMATION ACTION] 📢 Notification: ${params?.message || 'Aucun message'} pour l'automatisation "${automation.name}"`,
+            `[AUTOMATION ACTION] 📢 Notification Telegram: ${notificationMessage} pour l'automatisation "${automation.name}"`,
             'AutomationsService',
           );
-          // Notifier via WebSocket
-          this.websocketGateway.broadcast('notification', {
-            message: params?.message || `Automatisation "${automation.name}" déclenchée`,
-            automationId: automation.id,
-            automationName: automation.name,
-          });
-          this.logger.log(
-            `[AUTOMATION ACTION] ✅ Notification envoyée avec succès`,
-            'AutomationsService',
-          );
+
+          const telegramMessage = `🤖 *Automatisation déclenchée*\n\n*${automation.name}*\n\n${notificationMessage}`;
+
+          try {
+            await this.telegramService.sendNotification(telegramMessage, 'Markdown');
+            this.logger.log(
+              `[AUTOMATION ACTION] ✅ Notification Telegram envoyée avec succès`,
+              'AutomationsService',
+            );
+          } catch (error: any) {
+            this.logger.error(
+              `[AUTOMATION ACTION] ❌ Erreur lors de l'envoi de la notification Telegram: ${error.message}`,
+              error.stack,
+              'AutomationsService',
+            );
+          }
           break;
+        }
 
         default:
           throw new BadRequestException(`Type d'action non supporté: ${type}`);

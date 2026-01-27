@@ -1,7 +1,7 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Telegram } from './entities/telegram.entity';
 import { UpdateTelegramDto } from './dto/update-telegram.dto';
 import { LoggerService } from '../logger/logger.service';
@@ -886,7 +886,6 @@ ${statusEmoji} *${device.friendlyName}*
   private async sendDeviceOfflineNotification(device: Device): Promise<void> {
     const typeEmoji = this.getTypeEmoji(device.type);
     const room = device.room && device.room !== 'Non défini' ? ` (${device.room})` : '';
-    
     const message = `
 🔴 *Appareil hors ligne*
 
@@ -894,7 +893,6 @@ ${typeEmoji} *${device.friendlyName || device.ieeeAddress}*${room}
 
 L'appareil n'est plus accessible sur le réseau Zigbee.
     `;
-
     await this.sendNotification(message);
   }
 
@@ -904,7 +902,6 @@ L'appareil n'est plus accessible sur le réseau Zigbee.
   private async sendDeviceOnlineNotification(device: Device): Promise<void> {
     const typeEmoji = this.getTypeEmoji(device.type);
     const room = device.room && device.room !== 'Non défini' ? ` (${device.room})` : '';
-    
     const message = `
 🟢 *Appareil en ligne*
 
@@ -912,7 +909,6 @@ ${typeEmoji} *${device.friendlyName || device.ieeeAddress}*${room}
 
 L'appareil est de nouveau accessible sur le réseau Zigbee.
     `;
-
     await this.sendNotification(message);
   }
 
@@ -927,7 +923,6 @@ L'appareil est de nouveau accessible sur le réseau Zigbee.
   }): Promise<void> {
     const emoji = data.success ? '✅' : '❌';
     const status = data.success ? 'réussie' : 'échouée';
-    
     const message = `
 🤖 *Automatisation ${status}*
 
@@ -935,7 +930,6 @@ ${emoji} *${data.automationName}*
 
 L'automatisation a été ${status} à ${new Date(data.timestamp).toLocaleTimeString('fr-FR')}.
     `;
-
     await this.sendNotification(message);
   }
 
