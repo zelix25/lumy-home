@@ -10,6 +10,14 @@ import { Device } from '../devices/entities/device.entity';
 import { UpdaterService, CheckResult } from '../updater/updater.service';
 import TelegramBot = require('node-telegram-bot-api');
 
+/** Intention extraite d'un message en langage naturel (action + pièce + optionnel pourcentage) */
+interface NaturalLanguageIntent {
+  action: 'turn_on' | 'turn_off' | 'open_cover' | 'close_cover' | 'set_brightness' | 'set_cover_position';
+  room: string;
+  percentage?: number;
+  deviceTypeHint?: 'light' | 'cover' | 'plug' | 'switch';
+}
+
 @Injectable()
 export class TelegramService implements OnModuleInit, OnModuleDestroy {
   private bot: TelegramBot | null = null;
@@ -286,17 +294,12 @@ Utilisez ce code pour valider la connexion de votre instance Lumy Home avec Tele
 
 Utilisez ce Chat ID dans les paramètres de votre instance Lumy Home pour activer les notifications Telegram.
 
-*Commandes disponibles:*
-/start - Afficher ce message
-/help - Afficher l'aide complète
-/devices - Lister tous les appareils
-/stats - Statistiques des appareils
-/status <nom> - État d'un appareil
-/on <nom> - Allumer un appareil
-/off <nom> - Éteindre un appareil
-/brightness <nom> <0-100> - Ajuster la luminosité
-/check-updates - Vérifier les mises à jour (admin)
-/update - Mettre à jour le système (admin)
+*Commandes:* /help pour l'aide complète.
+
+*Langage naturel:* vous pouvez écrire par exemple:
+• _Allume la lumière du salon_
+• _Ouvre le volet de la cuisine à 50%_
+• _Éteins la lumière de la chambre_
       `;
 
       try {
@@ -567,6 +570,12 @@ ${statusEmoji} *${device.friendlyName}*
           await this.runUpdate(chatId);
           return;
         }
+        // Langage naturel : "Allume la lumière du salon", "Ouvre le volet de la cuisine à 50%"
+        const intent = this.parseNaturalLanguageCommand(text);
+        if (intent) {
+          await this.executeNaturalLanguageCommand(chatId, intent);
+          return;
+        }
       } catch (error: any) {
         this.logger.error(
           `Erreur traitement bouton menu: ${error.message}`,
@@ -647,6 +656,208 @@ ${statusEmoji} *${device.friendlyName}*
         'TelegramService',
       );
     });
+  }
+
+  /**
+   * Parse un message en langage naturel : action + pièce + optionnel pourcentage.
+   * Ex. : "Allume la lumière du salon", "Ouvre le volet de la cuisine à 50%"
+   */
+  private parseNaturalLanguageCommand(text: string): NaturalLanguageIntent | null {
+    // On parse en version "normalisée" (sans accents) pour tolérer les variations :
+    // "lumière" / "lumiere" / "lumiére", "éteins" / "eteins", etc.
+    const raw = (text || '').trim();
+    const t = raw.toLowerCase();
+    const tNorm = raw
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+    const roomPrefix = '(?:du|de la|de l\'|dans le|dans la|dans l\'|de)\\s+';
+    const stripPercent = (s: string) => (s || '').replace(/\s*(?:a)\s*\d+\s*%?\s*$/, '').trim();
+    const extractRoom = (s: string) => stripPercent(s.replace(new RegExp(`^.*${roomPrefix}`, 'i'), ''));
+
+    // Allumer + pièce [à X%]
+    let m = tNorm.match(/allum(?:e|er|es)?\s+(?:la|les)?\s*(?:lumiere|lumieres|lampes?|prises?)?\s+(?:du|de la|de l'|dans le|dans la|dans l'|de)\s+(.+)/);
+    if (m) {
+      const room = stripPercent(m[1]);
+      const pct = tNorm.match(/(?:a)\s*(\d+)\s*%?/);
+      return { action: 'turn_on', room, percentage: pct ? Math.min(100, Math.max(0, parseInt(pct[1], 10))) : undefined, deviceTypeHint: 'light' };
+    }
+
+    // Éteindre + pièce
+    // Gère « éteins la lumière du salon » et « éteindre la lumière du salon »
+    m = tNorm.match(/(?:eteins?|eteindre)\s+(?:la|les)?\s*(?:lumiere|lumieres|lampes?|prises?)?\s+(?:du|de la|de l'|dans le|dans la|dans l'|de)\s+(.+)/);
+    if (m) return { action: 'turn_off', room: stripPercent(m[1]), deviceTypeHint: 'light' };
+
+    // Ouvrir volet + pièce [à X%]
+    m = tNorm.match(/ouvr(?:e|er)?\s+(?:le|les)?\s*volet(s)?\s+(?:du|de la|de l'|dans le|dans la|dans l'|de)\s+(.+)/);
+    if (m) {
+      const room = stripPercent(m[2]);
+      const pct = tNorm.match(/(?:a)\s*(\d+)\s*%?/);
+      return { action: 'open_cover', room, percentage: pct ? parseInt(pct[1], 10) : 100, deviceTypeHint: 'cover' };
+    }
+
+    // Fermer volet + pièce [à X%]
+    m = tNorm.match(/ferm(?:e|er)?\s+(?:le|les)?\s*volet(s)?\s+(?:du|de la|de l'|dans le|dans la|dans l'|de)\s+(.+)/);
+    if (m) {
+      const room = stripPercent(m[2]);
+      const pct = tNorm.match(/(?:a)\s*(\d+)\s*%?/);
+      return { action: 'close_cover', room, percentage: pct ? parseInt(pct[1], 10) : 0, deviceTypeHint: 'cover' };
+    }
+
+    // Luminosité (du/de la) pièce à X%
+    m = tNorm.match(/(?:mets?|regl?e?|luminosite)\s+(?:la|les)?\s*(?:lumiere|lumieres)?\s+(?:du|de la|de l'|dans)\s+(.+?)\s+(?:a)\s*(\d+)\s*%?/);
+    if (m) {
+      const room = m[1].trim();
+      const pct = parseInt(m[2], 10);
+      if (!isNaN(pct)) return { action: 'set_brightness', room, percentage: Math.min(100, Math.max(0, pct)), deviceTypeHint: 'light' };
+    }
+
+    // Court : "allume le salon", "éteins la cuisine", "éteindre la cuisine"
+    m = tNorm.match(/^(allume|(?:eteins?|eteindre))\s+(?:la|les)?\s*(?:lumiere|lumieres)?\s+(.+)/);
+    if (m) {
+      const room = stripPercent(m[2]);
+      if (room && room.length < 40) {
+        if (m[1].startsWith('allum')) return { action: 'turn_on', room, deviceTypeHint: 'light' };
+        return { action: 'turn_off', room, deviceTypeHint: 'light' };
+      }
+    }
+
+    // "ouvre le volet cuisine à 50"
+    m = tNorm.match(/^(ouvre|ferme)\s+(?:le|les)?\s*volet(s)?\s+(.+)/);
+    if (m) {
+      const rest = m[3].replace(/^(?:du|de la|de l'|dans le|dans la|dans l'|de)\s*/i, '').trim();
+      const pctMatch = rest.match(/(.+?)\s+(?:a)\s*(\d+)\s*%?$/);
+      const room = pctMatch ? pctMatch[1].trim() : stripPercent(rest);
+      const pct = pctMatch ? parseInt(pctMatch[2], 10) : (m[1].startsWith('ouvre') ? 100 : 0);
+      if (room && room.length < 40) {
+        if (m[1].startsWith('ouvre')) return { action: 'open_cover', room, percentage: pct, deviceTypeHint: 'cover' };
+        return { action: 'close_cover', room, percentage: pct, deviceTypeHint: 'cover' };
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Normalise le nom de pièce pour la comparaison (minuscules, sans accents optionnel)
+   */
+  private normalizeRoomName(room: string): string {
+    return (room || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+  }
+
+  /**
+   * Retourne les appareils dont la pièce correspond (insensible à la casse, accents)
+   */
+  private async findDevicesByRoom(room: string, typeHint?: string): Promise<Device[]> {
+    const devices = await this.devicesService.findAll();
+    const normalizedSearch = this.normalizeRoomName(room);
+    return devices.filter((d) => {
+      const deviceRoomNorm = this.normalizeRoomName(d.room || '');
+      const match = deviceRoomNorm && (deviceRoomNorm.includes(normalizedSearch) || normalizedSearch.includes(deviceRoomNorm));
+      if (!match) return false;
+      if (typeHint === 'light') return ['light', 'switch', 'plug'].includes(d.type?.toLowerCase() || '');
+      if (typeHint === 'cover') return (d.type?.toLowerCase() || '') === 'cover';
+      if (typeHint === 'plug') return ['plug', 'switch'].includes(d.type?.toLowerCase() || '');
+      return true;
+    });
+  }
+
+  /**
+   * Exécute une commande issue du langage naturel et envoie la réponse Telegram
+   */
+  private async executeNaturalLanguageCommand(chatId: number, intent: NaturalLanguageIntent): Promise<void> {
+    const devices = await this.findDevicesByRoom(intent.room, intent.deviceTypeHint);
+    const online = devices.filter((d) => d.status === 'online');
+    const controllable = online.filter((d) => this.isControllableDevice(d));
+
+    if (controllable.length === 0) {
+      if (online.length === 0 && devices.length === 0) {
+        await this.bot!.sendMessage(chatId, `❌ Aucun appareil trouvé dans la pièce "${intent.room}".`);
+        return;
+      }
+      if (online.length === 0) {
+        await this.bot!.sendMessage(chatId, `❌ Les appareils de "${intent.room}" sont hors ligne.`);
+        return;
+      }
+      await this.bot!.sendMessage(chatId, `❌ Aucun appareil contrôlable dans "${intent.room}".`);
+      return;
+    }
+
+    const results: string[] = [];
+    for (const device of controllable) {
+      try {
+        switch (intent.action) {
+          case 'turn_on':
+            // Demande utilisateur: quand on "allume", on fait un TOGGLE sur la lumière
+            // (Zigbee2MQTT supporte généralement state: 'TOGGLE').
+            if (device.type?.toLowerCase() === 'light' && intent.percentage == null) {
+              await this.devicesService.sendCommand(device.ieeeAddress, { state: 'TOGGLE' });
+            } else {
+              await this.devicesService.sendCommand(device.ieeeAddress, { state: 'ON' });
+            }
+            if (intent.percentage != null && device.type?.toLowerCase() === 'light') {
+              const zigbee = Math.round((intent.percentage / 100) * 254);
+              await this.devicesService.sendCommand(device.ieeeAddress, { state: 'ON', brightness: zigbee });
+            }
+            results.push(`✅ ${device.friendlyName || device.ieeeAddress}`);
+            break;
+          case 'turn_off':
+            await this.devicesService.sendCommand(device.ieeeAddress, { state: 'OFF' });
+            results.push(`✅ ${device.friendlyName || device.ieeeAddress} éteint`);
+            break;
+          case 'open_cover':
+          case 'set_cover_position': {
+            const position = intent.percentage ?? 100;
+            const zigbeePosition = Math.round((position / 100) * 254);
+            await this.devicesService.sendCommand(device.ieeeAddress, { position: zigbeePosition });
+            results.push(`✅ ${device.friendlyName || device.ieeeAddress} ouvert à ${position}%`);
+            break;
+          }
+          case 'close_cover': {
+            const position = intent.percentage ?? 0;
+            const zigbeePosition = Math.round((position / 100) * 254);
+            await this.devicesService.sendCommand(device.ieeeAddress, { position: zigbeePosition });
+            results.push(`✅ ${device.friendlyName || device.ieeeAddress} fermé à ${position}%`);
+            break;
+          }
+          case 'set_brightness':
+            if (device.type?.toLowerCase() === 'light') {
+              const pct = Math.min(100, Math.max(0, intent.percentage ?? 50));
+              const zigbee = Math.round((pct / 100) * 254);
+              await this.devicesService.sendCommand(device.ieeeAddress, { state: 'ON', brightness: zigbee });
+              results.push(`✅ ${device.friendlyName || device.ieeeAddress} à ${pct}%`);
+            }
+            break;
+          default:
+            break;
+        }
+      } catch (err: any) {
+        this.logger.error(`Erreur commande NL sur ${device.ieeeAddress}: ${err.message}`, err.stack, 'TelegramService');
+        results.push(`❌ ${device.friendlyName || device.ieeeAddress}: ${err.message}`);
+      }
+    }
+
+    // Réponses plus naturelles (au lieu de lister les devices)
+    if (results.length === 0) {
+      await this.bot!.sendMessage(chatId, `❌ Aucune action effectuée dans "${intent.room}".`);
+      return;
+    }
+
+    if (intent.action === 'turn_on' && intent.deviceTypeHint === 'light') {
+      await this.bot!.sendMessage(chatId, results.length > 1 ? 'Les lumières sont allumées.' : 'La lumière est allumée.');
+      return;
+    }
+    if (intent.action === 'turn_off' && intent.deviceTypeHint === 'light') {
+      await this.bot!.sendMessage(chatId, results.length > 1 ? 'Les lumières sont éteintes.' : 'La lumière est éteinte.');
+      return;
+    }
+
+    await this.bot!.sendMessage(chatId, results.join('\n'));
   }
 
   /**
@@ -841,10 +1052,19 @@ ${statusEmoji} *${device.friendlyName}*
     const helpMessage = `
 📖 *Aide - Commandes Lumy Home Bot*
 
+*Langage naturel (recommandé):*
+Écrivez une *action* + une *pièce*, et optionnellement un *pourcentage*.
+Exemples:
+• _Allume la lumière du salon_
+• _Éteins la lumière de la cuisine_
+• _Ouvre le volet de la chambre à 50%_
+• _Ferme le volet du salon_
+• _Luminosité salle de bain 80%_
+
 *Liste des appareils:*
 \`/devices\` ou bouton *📱 Appareils* - Afficher tous les appareils
 
-*Contrôle des appareils:*
+*Contrôle (commandes slash):*
 \`/on <nom>\` - Allumer  |  \`/off <nom>\` - Éteindre
 \`/brightness <nom> <0-100>\` - Luminosité
 
