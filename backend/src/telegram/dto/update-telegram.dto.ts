@@ -16,4 +16,9 @@ export class UpdateTelegramDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiPropertyOptional({ description: 'Code langue du bot (fr, en)' })
+  @IsOptional()
+  @IsString()
+  language?: string;
 }

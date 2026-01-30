@@ -8,6 +8,7 @@ import { LoggerService } from '../logger/logger.service';
 import { DevicesService } from '../devices/devices.service';
 import { Device } from '../devices/entities/device.entity';
 import { UpdaterService, CheckResult } from '../updater/updater.service';
+import { t, getDefaultLocale } from './telegram-i18n';
 import TelegramBot = require('node-telegram-bot-api');
 
 /** Intention extraite d'un message en langage naturel (action + pièce + optionnel pourcentage) */
@@ -87,6 +88,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
         token_bot: dto.token_bot ?? null,
         isActive: dto.isActive ?? false,
         pin: null,
+        language: dto.language ?? null,
       });
       isNewConfig = true;
     }
@@ -132,16 +134,17 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
+      const lang = await this.getLang();
       const pinMessage = `
-🔐 *Code de validation Telegram*
+${t(lang, 'pin.title')}
 
-Votre code PIN de validation est :
+${t(lang, 'pin.intro')}
 
 *${pin}*
 
-Utilisez ce code pour valider la connexion de votre instance Lumy Home avec Telegram.
+${t(lang, 'pin.useCode')}
 
-⚠️ *Important* : Ce code est valable uniquement pour cette configuration.
+${t(lang, 'pin.important')}
       `;
 
       await this.bot.sendMessage(chatId, pinMessage, {
@@ -252,23 +255,24 @@ Utilisez ce code pour valider la connexion de votre instance Lumy Home avec Tele
     }
   }
 
-  /** Libellés des boutons du menu (clavier en bas du chat) */
-  private static readonly MENU_BTN_DEVICES = '📱 Appareils';
-  private static readonly MENU_BTN_STATS = '📊 Stats';
-  private static readonly MENU_BTN_CHECK_UPDATES = '🔄 Vérifier MAJ';
-  private static readonly MENU_BTN_APPLY_UPDATE = '📦 Mettre à jour';
-  private static readonly MENU_BTN_HELP = '❓ Aide';
-  private static readonly MENU_BTN_MENU = '🏠 Menu';
+  /**
+   * Langue du bot (config ou défaut fr)
+   */
+  private async getLang(): Promise<string> {
+    const config = await this.getTelegramConfig();
+    return config.language && ['fr', 'en'].includes(config.language) ? config.language : getDefaultLocale();
+  }
 
   /**
-   * Clavier principal (menu en bas du chat)
+   * Clavier principal (menu en bas du chat), libellés selon la langue configurée
    */
-  private getMainMenuKeyboard(): TelegramBot.ReplyKeyboardMarkup {
+  private async getMainMenuKeyboard(): Promise<TelegramBot.ReplyKeyboardMarkup> {
+    const lang = await this.getLang();
     return {
       keyboard: [
-        [{ text: TelegramService.MENU_BTN_DEVICES }, { text: TelegramService.MENU_BTN_STATS }],
-        [{ text: TelegramService.MENU_BTN_CHECK_UPDATES }, { text: TelegramService.MENU_BTN_APPLY_UPDATE }],
-        [{ text: TelegramService.MENU_BTN_HELP }, { text: TelegramService.MENU_BTN_MENU }],
+        [{ text: t(lang, 'menu.devices') }, { text: t(lang, 'menu.stats') }],
+        [{ text: t(lang, 'menu.checkUpdates') }, { text: t(lang, 'menu.applyUpdate') }],
+        [{ text: t(lang, 'menu.help') }, { text: t(lang, 'menu.menu') }],
       ],
       resize_keyboard: true,
       one_time_keyboard: false,
@@ -286,26 +290,27 @@ Utilisez ce code pour valider la connexion de votre instance Lumy Home avec Tele
     // Commande /start - Retourne le chatId + affiche le menu
     this.bot.onText(/\/start/, async (msg: TelegramBot.Message) => {
       const chatId = msg.chat.id;
+      const lang = await this.getLang();
       const welcomeMessage = `
-🤖 *Bienvenue sur Lumy Home Bot*
+${t(lang, 'welcome.title')}
 
-*Votre Chat ID:*
+${t(lang, 'welcome.chatId')}
 \`${chatId}\`
 
-Utilisez ce Chat ID dans les paramètres de votre instance Lumy Home pour activer les notifications Telegram.
+${t(lang, 'welcome.useChatId')}
 
-*Commandes:* /help pour l'aide complète.
+${t(lang, 'welcome.commands')}
 
-*Langage naturel:* vous pouvez écrire par exemple:
-• _Allume la lumière du salon_
-• _Ouvre le volet de la cuisine à 50%_
-• _Éteins la lumière de la chambre_
+${t(lang, 'welcome.naturalLanguage')}
+${t(lang, 'welcome.example1')}
+${t(lang, 'welcome.example2')}
+${t(lang, 'welcome.example3')}
       `;
 
       try {
         await this.bot!.sendMessage(chatId, welcomeMessage, {
           parse_mode: 'Markdown',
-          reply_markup: this.getMainMenuKeyboard(),
+          reply_markup: await this.getMainMenuKeyboard(),
         });
         this.logger.log(`Chat ID ${chatId} envoyé à l'utilisateur`, 'TelegramService');
       } catch (error: any) {
@@ -323,7 +328,8 @@ Utilisez ce Chat ID dans les paramètres de votre instance Lumy Home pour active
         await this.runHelp(msg.chat.id);
       } catch (error: any) {
         this.logger.error(`Erreur /help: ${error.message}`, error.stack, 'TelegramService');
-        await this.bot!.sendMessage(msg.chat.id, `❌ Erreur: ${error.message}`).catch(() => {});
+        const lang = await this.getLang();
+        await this.bot!.sendMessage(msg.chat.id, t(lang, 'error.generic', { message: error.message })).catch(() => {});
       }
     });
 
@@ -333,7 +339,8 @@ Utilisez ce Chat ID dans les paramètres de votre instance Lumy Home pour active
         await this.runCheckUpdates(msg.chat.id);
       } catch (error: any) {
         this.logger.error(`Erreur /check-updates: ${error.message}`, error.stack, 'TelegramService');
-        await this.bot!.sendMessage(msg.chat.id, `❌ Impossible de vérifier les mises à jour: ${error.message}`).catch(() => {});
+        const lang = await this.getLang();
+        await this.bot!.sendMessage(msg.chat.id, t(lang, 'error.checkUpdates', { message: error.message })).catch(() => {});
       }
     });
 
@@ -343,7 +350,8 @@ Utilisez ce Chat ID dans les paramètres de votre instance Lumy Home pour active
         await this.runUpdate(msg.chat.id);
       } catch (error: any) {
         this.logger.error(`Erreur /update: ${error.message}`, error.stack, 'TelegramService');
-        await this.bot!.sendMessage(msg.chat.id, `❌ Erreur lors de la mise à jour: ${error.message}`).catch(() => {});
+        const lang = await this.getLang();
+        await this.bot!.sendMessage(msg.chat.id, t(lang, 'error.update', { message: error.message })).catch(() => {});
       }
     });
 
@@ -353,7 +361,8 @@ Utilisez ce Chat ID dans les paramètres de votre instance Lumy Home pour active
         await this.runDevices(msg.chat.id);
       } catch (error: any) {
         this.logger.error(`Erreur /devices: ${error.message}`, error.stack, 'TelegramService');
-        await this.bot!.sendMessage(msg.chat.id, '❌ Erreur lors de la récupération des appareils.').catch(() => {});
+        const lang = await this.getLang();
+        await this.bot!.sendMessage(msg.chat.id, t(lang, 'error.devices')).catch(() => {});
       }
     });
 
@@ -363,15 +372,17 @@ Utilisez ce Chat ID dans les paramètres de votre instance Lumy Home pour active
         await this.runStats(msg.chat.id);
       } catch (error: any) {
         this.logger.error(`Erreur /stats: ${error.message}`, error.stack, 'TelegramService');
-        await this.bot!.sendMessage(msg.chat.id, '❌ Erreur lors de la récupération des statistiques.').catch(() => {});
+        const lang = await this.getLang();
+        await this.bot!.sendMessage(msg.chat.id, t(lang, 'error.stats')).catch(() => {});
       }
     });
 
     // Commande /status <nom> - État d'un appareil
     this.bot.onText(/\/status (.+)/, async (msg: TelegramBot.Message, match: RegExpExecArray | null) => {
       const chatId = msg.chat.id;
+      const lang = await this.getLang();
       if (!match || !match[1]) {
-        await this.bot!.sendMessage(chatId, '❌ Usage: /status <nom de l\'appareil>');
+        await this.bot!.sendMessage(chatId, t(lang, 'error.statusUsage'));
         return;
       }
       const deviceName = match[1].trim();
@@ -379,34 +390,35 @@ Utilisez ce Chat ID dans les paramètres de votre instance Lumy Home pour active
       try {
         const device = await this.findDeviceByName(deviceName);
         if (!device) {
-          await this.bot!.sendMessage(chatId, `❌ Appareil "${deviceName}" non trouvé.`);
+          await this.bot!.sendMessage(chatId, t(lang, 'error.deviceNotFound', { name: deviceName }));
           return;
         }
 
         const statusEmoji = device.status === 'online' ? '🟢' : '🔴';
+        const statusLabel = device.status === 'online' ? t(lang, 'status.online') : t(lang, 'status.offline');
+        const roomLabel = device.room || t(lang, 'status.roomUndefined');
         let message = `
 ${statusEmoji} *${device.friendlyName}*
 
-*Type:* ${this.getTypeLabel(device.type)}
-*Statut:* ${device.status === 'online' ? 'En ligne' : 'Hors ligne'}
-*Pièce:* ${device.room || 'Non définie'}
-*Fabricant:* ${device.manufacturer || 'Inconnu'}
-*Modèle:* ${device.model || 'Inconnu'}
+*Type:* ${this.getTypeLabel(device.type, lang)}
+*Statut:* ${statusLabel}
+*Pièce:* ${roomLabel}
+*Fabricant:* ${device.manufacturer || t(lang, 'status.unknown')}
+*Modèle:* ${device.model || t(lang, 'status.unknown')}
         `;
 
         if (device.state) {
-          message += '\n*État actuel:*\n';
-          const stateEntries = Object.entries(device.state).slice(0, 10); // Limiter à 10 propriétés
+          message += `\n${t(lang, 'status.currentState')}\n`;
+          const stateEntries = Object.entries(device.state).slice(0, 10);
           stateEntries.forEach(([key, value]) => {
-            const formattedKey = this.formatStateKey(key);
+            const formattedKey = this.formatStateKey(key, lang);
             const formattedValue = this.formatStateValue(key, value);
             message += `• ${formattedKey}: ${formattedValue}\n`;
           });
         }
 
-        // Boutons de contrôle si l'appareil est en ligne et contrôlable
         if (device.status === 'online' && this.isControllableDevice(device)) {
-          const inlineKeyboard = this.createDeviceControlKeyboard(device);
+          const inlineKeyboard = await this.createDeviceControlKeyboard(device);
           await this.bot!.sendMessage(chatId, message, {
             parse_mode: 'Markdown',
             reply_markup: inlineKeyboard,
@@ -416,21 +428,22 @@ ${statusEmoji} *${device.friendlyName}*
             parse_mode: 'Markdown',
           });
         }
-      } catch (error) {
+      } catch (error: any) {
         this.logger.error(
           `Erreur lors de la récupération de l'état: ${error.message}`,
           error.stack,
           'TelegramService',
         );
-        await this.bot!.sendMessage(chatId, '❌ Erreur lors de la récupération de l\'état.');
+        await this.bot!.sendMessage(chatId, t(lang, 'error.stateFetch'));
       }
     });
 
     // Commande /on <nom> - Allumer un appareil
     this.bot.onText(/\/on (.+)/, async (msg: TelegramBot.Message, match: RegExpExecArray | null) => {
       const chatId = msg.chat.id;
+      const lang = await this.getLang();
       if (!match || !match[1]) {
-        await this.bot!.sendMessage(chatId, '❌ Usage: /on <nom de l\'appareil>');
+        await this.bot!.sendMessage(chatId, t(lang, 'error.onUsage'));
         return;
       }
       const deviceName = match[1].trim();
@@ -438,32 +451,33 @@ ${statusEmoji} *${device.friendlyName}*
       try {
         const device = await this.findDeviceByName(deviceName);
         if (!device) {
-          await this.bot!.sendMessage(chatId, `❌ Appareil "${deviceName}" non trouvé.`);
+          await this.bot!.sendMessage(chatId, t(lang, 'error.deviceNotFound', { name: deviceName }));
           return;
         }
 
         if (device.status !== 'online') {
-          await this.bot!.sendMessage(chatId, `❌ L'appareil "${device.friendlyName}" est hors ligne.`);
+          await this.bot!.sendMessage(chatId, t(lang, 'error.offline', { name: device.friendlyName || deviceName }));
           return;
         }
 
         await this.devicesService.sendCommand(device.ieeeAddress, { state: 'ON' });
-        await this.bot!.sendMessage(chatId, `✅ "${device.friendlyName}" allumé.`);
-      } catch (error) {
+        await this.bot!.sendMessage(chatId, t(lang, 'messages.deviceOn', { name: device.friendlyName || deviceName }));
+      } catch (error: any) {
         this.logger.error(
           `Erreur lors de l'allumage: ${error.message}`,
           error.stack,
           'TelegramService',
         );
-        await this.bot!.sendMessage(chatId, `❌ Erreur lors de l'allumage de "${deviceName}".`);
+        await this.bot!.sendMessage(chatId, t(lang, 'error.turnOn', { name: deviceName }));
       }
     });
 
     // Commande /off <nom> - Éteindre un appareil
     this.bot.onText(/\/off (.+)/, async (msg: TelegramBot.Message, match: RegExpExecArray | null) => {
       const chatId = msg.chat.id;
+      const lang = await this.getLang();
       if (!match || !match[1]) {
-        await this.bot!.sendMessage(chatId, '❌ Usage: /off <nom de l\'appareil>');
+        await this.bot!.sendMessage(chatId, t(lang, 'error.offUsage'));
         return;
       }
       const deviceName = match[1].trim();
@@ -471,68 +485,68 @@ ${statusEmoji} *${device.friendlyName}*
       try {
         const device = await this.findDeviceByName(deviceName);
         if (!device) {
-          await this.bot!.sendMessage(chatId, `❌ Appareil "${deviceName}" non trouvé.`);
+          await this.bot!.sendMessage(chatId, t(lang, 'error.deviceNotFound', { name: deviceName }));
           return;
         }
 
         if (device.status !== 'online') {
-          await this.bot!.sendMessage(chatId, `❌ L'appareil "${device.friendlyName}" est hors ligne.`);
+          await this.bot!.sendMessage(chatId, t(lang, 'error.offline', { name: device.friendlyName || deviceName }));
           return;
         }
 
         await this.devicesService.sendCommand(device.ieeeAddress, { state: 'OFF' });
-        await this.bot!.sendMessage(chatId, `✅ "${device.friendlyName}" éteint.`);
-      } catch (error) {
+        await this.bot!.sendMessage(chatId, t(lang, 'messages.deviceOff', { name: device.friendlyName || deviceName }));
+      } catch (error: any) {
         this.logger.error(
           `Erreur lors de l'extinction: ${error.message}`,
           error.stack,
           'TelegramService',
         );
-        await this.bot!.sendMessage(chatId, `❌ Erreur lors de l'extinction de "${deviceName}".`);
+        await this.bot!.sendMessage(chatId, t(lang, 'error.turnOff', { name: deviceName }));
       }
     });
 
     // Commande /brightness <nom> <valeur> - Ajuster la luminosité
     this.bot.onText(/\/brightness (.+) (\d+)/, async (msg: TelegramBot.Message, match: RegExpExecArray | null) => {
       const chatId = msg.chat.id;
+      const lang = await this.getLang();
       if (!match || !match[1] || !match[2]) {
-        await this.bot!.sendMessage(chatId, '❌ Usage: /brightness <nom de l\'appareil> <0-100>');
+        await this.bot!.sendMessage(chatId, t(lang, 'error.brightnessUsage'));
         return;
       }
       const deviceName = match[1].trim();
       const brightness = parseInt(match[2], 10);
       
       if (brightness < 0 || brightness > 100) {
-        await this.bot!.sendMessage(chatId, '❌ La luminosité doit être entre 0 et 100.');
+        await this.bot!.sendMessage(chatId, t(lang, 'error.brightnessRange'));
         return;
       }
 
       try {
         const device = await this.findDeviceByName(deviceName);
         if (!device) {
-          await this.bot!.sendMessage(chatId, `❌ Appareil "${deviceName}" non trouvé.`);
+          await this.bot!.sendMessage(chatId, t(lang, 'error.deviceNotFound', { name: deviceName }));
           return;
         }
 
         if (device.status !== 'online') {
-          await this.bot!.sendMessage(chatId, `❌ L'appareil "${device.friendlyName}" est hors ligne.`);
+          await this.bot!.sendMessage(chatId, t(lang, 'error.offline', { name: device.friendlyName || deviceName }));
           return;
         }
 
-        // Convertir 0-100 en 0-254 pour Zigbee
         const zigbeeBrightness = Math.round((brightness / 100) * 254);
         await this.devicesService.sendCommand(device.ieeeAddress, { 
           state: 'ON',
           brightness: zigbeeBrightness,
         });
-        await this.bot!.sendMessage(chatId, `✅ Luminosité de "${device.friendlyName}" réglée à ${brightness}%.`);
-      } catch (error) {
+        await this.bot!.sendMessage(chatId, t(lang, 'messages.brightnessOf', { name: device.friendlyName || deviceName, pct: brightness }));
+      } catch (error: any) {
         this.logger.error(
           `Erreur lors du réglage de la luminosité: ${error.message}`,
           error.stack,
           'TelegramService',
         );
-        await this.bot!.sendMessage(chatId, `❌ Erreur lors du réglage de la luminosité de "${deviceName}".`);
+        await this.bot!.sendMessage(chatId, t(lang, 'error.brightnessSet', { name: deviceName }));
       }
     });
 
@@ -543,34 +557,34 @@ ${statusEmoji} *${device.friendlyName}*
         return;
       }
       const chatId = msg.chat.id;
+      const lang = await this.getLang();
       try {
-        if (text === TelegramService.MENU_BTN_MENU) {
-          await this.bot!.sendMessage(chatId, '🏠 Utilisez les boutons ci-dessous pour accéder aux actions.', {
-            reply_markup: this.getMainMenuKeyboard(),
+        if (text === t(lang, 'menu.menu')) {
+          await this.bot!.sendMessage(chatId, t(lang, 'messages.menuHint'), {
+            reply_markup: await this.getMainMenuKeyboard(),
           });
           return;
         }
-        if (text === TelegramService.MENU_BTN_HELP) {
+        if (text === t(lang, 'menu.help')) {
           await this.runHelp(chatId);
           return;
         }
-        if (text === TelegramService.MENU_BTN_DEVICES) {
+        if (text === t(lang, 'menu.devices')) {
           await this.runDevices(chatId);
           return;
         }
-        if (text === TelegramService.MENU_BTN_STATS) {
+        if (text === t(lang, 'menu.stats')) {
           await this.runStats(chatId);
           return;
         }
-        if (text === TelegramService.MENU_BTN_CHECK_UPDATES) {
+        if (text === t(lang, 'menu.checkUpdates')) {
           await this.runCheckUpdates(chatId);
           return;
         }
-        if (text === TelegramService.MENU_BTN_APPLY_UPDATE) {
+        if (text === t(lang, 'menu.applyUpdate')) {
           await this.runUpdate(chatId);
           return;
         }
-        // Langage naturel : "Allume la lumière du salon", "Ouvre le volet de la cuisine à 50%"
         const intent = this.parseNaturalLanguageCommand(text);
         if (intent) {
           await this.executeNaturalLanguageCommand(chatId, intent);
@@ -582,7 +596,7 @@ ${statusEmoji} *${device.friendlyName}*
           error.stack,
           'TelegramService',
         );
-        await this.bot!.sendMessage(chatId, `❌ Erreur: ${error.message}`).catch(() => {});
+        await this.bot!.sendMessage(chatId, t(lang, 'error.generic', { message: error.message })).catch(() => {});
       }
     });
 
@@ -599,20 +613,21 @@ ${statusEmoji} *${device.friendlyName}*
         // Format: action:ieeeAddress ou action:ieeeAddress:value
         const [action, ieeeAddress, value] = data.split(':');
 
+        const lang = await this.getLang();
         if (action === 'device_on') {
           const device = await this.devicesService.findOne(ieeeAddress);
           await this.devicesService.sendCommand(ieeeAddress, { state: 'ON' });
-          await this.bot!.answerCallbackQuery(query.id, { text: '✅ Appareil allumé' });
+          await this.bot!.answerCallbackQuery(query.id, { text: t(lang, 'messages.deviceTurnedOn') });
           await this.bot!.editMessageReplyMarkup(
-            { inline_keyboard: this.createDeviceControlKeyboardButtons(ieeeAddress, device.type, true) },
+            { inline_keyboard: await this.createDeviceControlKeyboardButtons(ieeeAddress, device.type, true, lang) },
             { chat_id: chatId, message_id: query.message?.message_id },
           );
         } else if (action === 'device_off') {
           const device = await this.devicesService.findOne(ieeeAddress);
           await this.devicesService.sendCommand(ieeeAddress, { state: 'OFF' });
-          await this.bot!.answerCallbackQuery(query.id, { text: '✅ Appareil éteint' });
+          await this.bot!.answerCallbackQuery(query.id, { text: t(lang, 'messages.deviceTurnedOff') });
           await this.bot!.editMessageReplyMarkup(
-            { inline_keyboard: this.createDeviceControlKeyboardButtons(ieeeAddress, device.type, false) },
+            { inline_keyboard: await this.createDeviceControlKeyboardButtons(ieeeAddress, device.type, false, lang) },
             { chat_id: chatId, message_id: query.message?.message_id },
           );
         } else if (action === 'device_brightness') {
@@ -622,29 +637,30 @@ ${statusEmoji} *${device.friendlyName}*
             state: 'ON',
             brightness: zigbeeBrightness,
           });
-          await this.bot!.answerCallbackQuery(query.id, { text: `✅ Luminosité réglée à ${brightness}%` });
+          await this.bot!.answerCallbackQuery(query.id, { text: t(lang, 'messages.brightnessSetPct', { pct: brightness }) });
         } else if (action === 'device_status') {
           const device = await this.devicesService.findOne(ieeeAddress);
           const statusEmoji = device.status === 'online' ? '🟢' : '🔴';
           let statusMessage = `${statusEmoji} *${device.friendlyName}*\n\n`;
           if (device.state) {
             const state = device.state;
-            if (state.state) statusMessage += `État: ${state.state}\n`;
+            if (state.state) statusMessage += `${t(lang, 'stateKeys.state')}: ${state.state}\n`;
             if (state.brightness) {
               const brightnessPercent = Math.round((state.brightness / 254) * 100);
-              statusMessage += `Luminosité: ${brightnessPercent}%\n`;
+              statusMessage += `${t(lang, 'stateKeys.brightness')}: ${brightnessPercent}%\n`;
             }
-            if (state.temperature) statusMessage += `Température: ${state.temperature}°C\n`;
+            if (state.temperature) statusMessage += `${t(lang, 'stateKeys.temperature')}: ${state.temperature}°C\n`;
           }
           await this.bot!.answerCallbackQuery(query.id, { text: statusMessage, show_alert: true });
         }
-      } catch (error) {
+      } catch (error: any) {
         this.logger.error(
           `Erreur lors du traitement du callback: ${error.message}`,
           error.stack,
           'TelegramService',
         );
-        await this.bot!.answerCallbackQuery(query.id, { text: '❌ Erreur lors de l\'exécution' });
+        const lang = await this.getLang();
+        await this.bot!.answerCallbackQuery(query.id, { text: t(lang, 'error.callback') });
       }
     });
 
@@ -771,30 +787,30 @@ ${statusEmoji} *${device.friendlyName}*
    * Exécute une commande issue du langage naturel et envoie la réponse Telegram
    */
   private async executeNaturalLanguageCommand(chatId: number, intent: NaturalLanguageIntent): Promise<void> {
+    const lang = await this.getLang();
     const devices = await this.findDevicesByRoom(intent.room, intent.deviceTypeHint);
     const online = devices.filter((d) => d.status === 'online');
     const controllable = online.filter((d) => this.isControllableDevice(d));
 
     if (controllable.length === 0) {
       if (online.length === 0 && devices.length === 0) {
-        await this.bot!.sendMessage(chatId, `❌ Aucun appareil trouvé dans la pièce "${intent.room}".`);
+        await this.bot!.sendMessage(chatId, t(lang, 'nl.noDeviceInRoom', { room: intent.room }));
         return;
       }
       if (online.length === 0) {
-        await this.bot!.sendMessage(chatId, `❌ Les appareils de "${intent.room}" sont hors ligne.`);
+        await this.bot!.sendMessage(chatId, t(lang, 'nl.devicesOffline', { room: intent.room }));
         return;
       }
-      await this.bot!.sendMessage(chatId, `❌ Aucun appareil contrôlable dans "${intent.room}".`);
+      await this.bot!.sendMessage(chatId, t(lang, 'nl.noControllable', { room: intent.room }));
       return;
     }
 
     const results: string[] = [];
     for (const device of controllable) {
+      const name = device.friendlyName || device.ieeeAddress;
       try {
         switch (intent.action) {
           case 'turn_on':
-            // Demande utilisateur: quand on "allume", on fait un TOGGLE sur la lumière
-            // (Zigbee2MQTT supporte généralement state: 'TOGGLE').
             if (device.type?.toLowerCase() === 'light' && intent.percentage == null) {
               await this.devicesService.sendCommand(device.ieeeAddress, { state: 'TOGGLE' });
             } else {
@@ -804,25 +820,25 @@ ${statusEmoji} *${device.friendlyName}*
               const zigbee = Math.round((intent.percentage / 100) * 254);
               await this.devicesService.sendCommand(device.ieeeAddress, { state: 'ON', brightness: zigbee });
             }
-            results.push(`✅ ${device.friendlyName || device.ieeeAddress}`);
+            results.push(`✅ ${name}`);
             break;
           case 'turn_off':
             await this.devicesService.sendCommand(device.ieeeAddress, { state: 'OFF' });
-            results.push(`✅ ${device.friendlyName || device.ieeeAddress} éteint`);
+            results.push(t(lang, 'nl.deviceOff', { name }));
             break;
           case 'open_cover':
           case 'set_cover_position': {
             const position = intent.percentage ?? 100;
             const zigbeePosition = Math.round((position / 100) * 254);
             await this.devicesService.sendCommand(device.ieeeAddress, { position: zigbeePosition });
-            results.push(`✅ ${device.friendlyName || device.ieeeAddress} ouvert à ${position}%`);
+            results.push(t(lang, 'nl.coverOpen', { name, pct: position }));
             break;
           }
           case 'close_cover': {
             const position = intent.percentage ?? 0;
             const zigbeePosition = Math.round((position / 100) * 254);
             await this.devicesService.sendCommand(device.ieeeAddress, { position: zigbeePosition });
-            results.push(`✅ ${device.friendlyName || device.ieeeAddress} fermé à ${position}%`);
+            results.push(t(lang, 'nl.coverClose', { name, pct: position }));
             break;
           }
           case 'set_brightness':
@@ -830,7 +846,7 @@ ${statusEmoji} *${device.friendlyName}*
               const pct = Math.min(100, Math.max(0, intent.percentage ?? 50));
               const zigbee = Math.round((pct / 100) * 254);
               await this.devicesService.sendCommand(device.ieeeAddress, { state: 'ON', brightness: zigbee });
-              results.push(`✅ ${device.friendlyName || device.ieeeAddress} à ${pct}%`);
+              results.push(t(lang, 'nl.brightnessSet', { name, pct }));
             }
             break;
           default:
@@ -838,22 +854,21 @@ ${statusEmoji} *${device.friendlyName}*
         }
       } catch (err: any) {
         this.logger.error(`Erreur commande NL sur ${device.ieeeAddress}: ${err.message}`, err.stack, 'TelegramService');
-        results.push(`❌ ${device.friendlyName || device.ieeeAddress}: ${err.message}`);
+        results.push(t(lang, 'error.generic', { message: err.message }));
       }
     }
 
-    // Réponses plus naturelles (au lieu de lister les devices)
     if (results.length === 0) {
-      await this.bot!.sendMessage(chatId, `❌ Aucune action effectuée dans "${intent.room}".`);
+      await this.bot!.sendMessage(chatId, t(lang, 'nl.noAction', { room: intent.room }));
       return;
     }
 
     if (intent.action === 'turn_on' && intent.deviceTypeHint === 'light') {
-      await this.bot!.sendMessage(chatId, results.length > 1 ? 'Les lumières sont allumées.' : 'La lumière est allumée.');
+      await this.bot!.sendMessage(chatId, results.length > 1 ? t(lang, 'nl.lightsOn') : t(lang, 'nl.lightOn'));
       return;
     }
     if (intent.action === 'turn_off' && intent.deviceTypeHint === 'light') {
-      await this.bot!.sendMessage(chatId, results.length > 1 ? 'Les lumières sont éteintes.' : 'La lumière est éteinte.');
+      await this.bot!.sendMessage(chatId, results.length > 1 ? t(lang, 'nl.lightsOff') : t(lang, 'nl.lightOff'));
       return;
     }
 
@@ -932,12 +947,14 @@ ${statusEmoji} *${device.friendlyName}*
   /**
    * Crée un clavier de contrôle pour un appareil
    */
-  private createDeviceControlKeyboard(device: Device): TelegramBot.InlineKeyboardMarkup {
+  private async createDeviceControlKeyboard(device: Device): Promise<TelegramBot.InlineKeyboardMarkup> {
+    const lang = await this.getLang();
     return {
-      inline_keyboard: this.createDeviceControlKeyboardButtons(
+      inline_keyboard: await this.createDeviceControlKeyboardButtons(
         device.ieeeAddress,
         device.type,
         device.state?.state === 'ON',
+        lang,
       ),
     };
   }
@@ -945,15 +962,16 @@ ${statusEmoji} *${device.friendlyName}*
   /**
    * Crée les boutons de contrôle pour un appareil
    */
-  private createDeviceControlKeyboardButtons(
+  private async createDeviceControlKeyboardButtons(
     ieeeAddress: string,
     deviceType: string,
     isOn: boolean,
-  ): TelegramBot.InlineKeyboardButton[][] {
+    lang: string,
+  ): Promise<TelegramBot.InlineKeyboardButton[][]> {
     const buttons: TelegramBot.InlineKeyboardButton[][] = [
       [
         {
-          text: isOn ? '🔴 Éteindre' : '🟢 Allumer',
+          text: isOn ? t(lang, 'buttons.turnOff') : t(lang, 'buttons.turnOn'),
           callback_data: isOn ? `device_off:${ieeeAddress}` : `device_on:${ieeeAddress}`,
         },
       ],
@@ -996,26 +1014,12 @@ ${statusEmoji} *${device.friendlyName}*
   }
 
   /**
-   * Obtient le label pour un type d'appareil
+   * Obtient le label pour un type d'appareil (traduit)
    */
-  private getTypeLabel(type: string): string {
-    const labelMap: Record<string, string> = {
-      light: 'Lumières',
-      switch: 'Interrupteurs',
-      sensor: 'Capteurs',
-      plug: 'Prises',
-      door: 'Portes',
-      window: 'Fenêtres',
-      temperature: 'Température',
-      humidity: 'Humidité',
-      cover: 'Volets',
-      motion: 'Mouvement',
-      button: 'Boutons',
-      energy: 'Énergie',
-      unknown: 'Inconnu',
-      other: 'Autres',
-    };
-    return labelMap[type.toLowerCase()] || type;
+  private getTypeLabel(type: string, lang: string): string {
+    const key = `deviceTypes.${type?.toLowerCase() || 'other'}`;
+    const translated = t(lang, key);
+    return translated !== key ? translated : type;
   }
 
   /**
@@ -1029,72 +1033,69 @@ ${statusEmoji} *${device.friendlyName}*
   /**
    * Formate le résultat de vérification des mises à jour pour Telegram
    */
-  private formatCheckUpdatesResult(result: CheckResult): string {
+  private async formatCheckUpdatesResult(result: CheckResult, lang: string): Promise<string> {
     if (!result.ok) {
-      return '❌ Le service de mise à jour ne répond pas ou a renvoyé une erreur.';
+      return t(lang, 'updates.updateServiceError');
     }
     const modeLabel = result.mode === 'beta' ? 'Beta' : 'Stable';
     const hasUpdates = result.hasUpdates && result.updates?.some((u) => u.hasUpdate);
     if (!hasUpdates) {
-      return `✅ *Aucune mise à jour disponible*\n\nMode: ${modeLabel}\nLe système est à jour.`;
+      return t(lang, 'updates.noUpdateAvailable', { mode: modeLabel });
     }
-    const servicesWithUpdates = result.updates!.filter((u) => u.hasUpdate).map((u) => u.service);
-    let message = `🔄 *Mises à jour disponibles*\n\nMode: ${modeLabel}\n\n*Services concernés:*\n`;
+    let message = t(lang, 'updates.updatesAvailable', { mode: modeLabel }) + '\n';
     for (const u of result.updates!.filter((u) => u.hasUpdate)) {
-      message += `• *${u.service}*\n  Actuel: \`${u.currentImage || 'N/A'}\`\n  Nouveau: \`${u.lastImage || 'N/A'}\`\n`;
+      message += `• *${u.service}*\n  ${t(lang, 'updates.currentImage')} \`${u.currentImage || 'N/A'}\`\n  ${t(lang, 'updates.newImage')} \`${u.lastImage || 'N/A'}\`\n`;
     }
-    message += '\nUtilisez le bouton "📦 Mettre à jour" ou /update pour appliquer les mises à jour.';
+    message += '\n' + t(lang, 'updates.useButtonUpdate');
     return message;
   }
 
   /** Envoie le message d'aide (réutilisé par /help et le bouton Aide) */
   private async runHelp(chatId: number): Promise<void> {
+    const lang = await this.getLang();
     const helpMessage = `
-📖 *Aide - Commandes Lumy Home Bot*
+${t(lang, 'help.title')}
 
-*Langage naturel (recommandé):*
-Écrivez une *action* + une *pièce*, et optionnellement un *pourcentage*.
-Exemples:
-• _Allume la lumière du salon_
-• _Éteins la lumière de la cuisine_
-• _Ouvre le volet de la chambre à 50%_
-• _Ferme le volet du salon_
-• _Luminosité salle de bain 80%_
+${t(lang, 'help.naturalIntro')}
+${t(lang, 'help.example1')}
+${t(lang, 'help.example2')}
+${t(lang, 'help.example3')}
+${t(lang, 'help.example4')}
+${t(lang, 'help.example5')}
 
-*Liste des appareils:*
-\`/devices\` ou bouton *📱 Appareils* - Afficher tous les appareils
+${t(lang, 'help.devicesSection')}
+${t(lang, 'help.devicesCmd')}
 
-*Contrôle (commandes slash):*
-\`/on <nom>\` - Allumer  |  \`/off <nom>\` - Éteindre
-\`/brightness <nom> <0-100>\` - Luminosité
+${t(lang, 'help.controlSection')}
+${t(lang, 'help.controlCmd')}
 
-*Informations:*
-\`/status <nom>\` - État d'un appareil  |  \`/stats\` ou *📊 Stats* - Statistiques
+${t(lang, 'help.infoSection')}
+${t(lang, 'help.infoCmd')}
 
-*Mises à jour (réservé au chat configuré):*
-\`/check-updates\` ou *🔄 Vérifier MAJ* - Vérifier les mises à jour
-\`/update\` ou *📦 Mettre à jour* - Appliquer les mises à jour
+${t(lang, 'help.updatesSection')}
+${t(lang, 'help.updatesCmd')}
     `;
     await this.bot!.sendMessage(chatId, helpMessage, { parse_mode: 'Markdown' });
   }
 
   /** Liste les appareils (réutilisé par /devices et le bouton Appareils) */
   private async runDevices(chatId: number): Promise<void> {
+    const lang = await this.getLang();
     const devices = await this.devicesService.findAll();
     const userDevices = devices.filter((d) => String(d.type).toLowerCase() !== 'coordinator');
     if (userDevices.length === 0) {
-      await this.bot!.sendMessage(chatId, '❌ Aucun appareil trouvé.');
+      await this.bot!.sendMessage(chatId, t(lang, 'devices.none'));
       return;
     }
-    let message = `📱 *Appareils disponibles (${userDevices.length}):*\n\n`;
+    let message = `${t(lang, 'devices.available', { count: userDevices.length })}\n\n`;
     const devicesByType: Record<string, Device[]> = {};
     userDevices.forEach((d) => {
-      const t = d.type || 'other';
-      if (!devicesByType[t]) devicesByType[t] = [];
-      devicesByType[t].push(d);
+      const typ = d.type || 'other';
+      if (!devicesByType[typ]) devicesByType[typ] = [];
+      devicesByType[typ].push(d);
     });
     for (const [type, list] of Object.entries(devicesByType)) {
-      message += `${this.getTypeEmoji(type)} *${this.getTypeLabel(type)}* (${list.length}):\n`;
+      message += `${this.getTypeEmoji(type)} *${this.getTypeLabel(type, lang)}* (${list.length}):\n`;
       list.forEach((d) => {
         const emoji = d.status === 'online' ? '🟢' : '🔴';
         const room = d.room && d.room !== 'Non défini' ? ` (${d.room})` : '';
@@ -1108,17 +1109,18 @@ Exemples:
 
   /** Envoie les statistiques (réutilisé par /stats et le bouton Stats) */
   private async runStats(chatId: number): Promise<void> {
+    const lang = await this.getLang();
     const stats = await this.devicesService.getDeviceStats();
     const message = `
-📊 *Statistiques Lumy Home*
+${t(lang, 'stats.title')}
 
-*Total:* ${stats.total} appareils
-🟢 *En ligne:* ${stats.online}  |  🔴 *Hors ligne:* ${stats.offline}
-✅ *Supportés:* ${stats.supported}  |  ⚠️ *Non supportés:* ${stats.unsupported}
+${t(lang, 'stats.total', { count: stats.total })}
+${t(lang, 'stats.online')} ${stats.online}  |  ${t(lang, 'stats.offline')} ${stats.offline}
+${t(lang, 'stats.supported')} ${stats.supported}  |  ${t(lang, 'stats.unsupported')} ${stats.unsupported}
 
-*Par type:*
+${t(lang, 'stats.byType')}
 ${Object.entries(stats.byType)
-  .map(([type, count]) => `${this.getTypeEmoji(type)} ${this.getTypeLabel(type)}: ${count}`)
+  .map(([type, count]) => `${this.getTypeEmoji(type)} ${this.getTypeLabel(type, lang)}: ${count}`)
   .join('\n')}
     `;
     await this.bot!.sendMessage(chatId, message, { parse_mode: 'Markdown' });
@@ -1126,20 +1128,22 @@ ${Object.entries(stats.byType)
 
   /** Vérifie les mises à jour (réutilisé par /check-updates et le bouton Vérifier MAJ) */
   private async runCheckUpdates(chatId: number): Promise<void> {
+    const lang = await this.getLang();
     if (!(await this.isAllowedChat(chatId))) {
-      await this.bot!.sendMessage(chatId, '⛔ Réservé à l\'administrateur configuré.');
+      await this.bot!.sendMessage(chatId, t(lang, 'updates.reserved'));
       return;
     }
-    await this.bot!.sendMessage(chatId, '🔄 Vérification des mises à jour en cours...');
+    await this.bot!.sendMessage(chatId, t(lang, 'updates.checking'));
     const result = await this.updaterService.checkForUpdates();
-    const message = this.formatCheckUpdatesResult(result);
+    const message = await this.formatCheckUpdatesResult(result, lang);
     await this.bot!.sendMessage(chatId, message, { parse_mode: 'Markdown' });
   }
 
   /** Applique les mises à jour (réutilisé par /update et le bouton Mettre à jour) */
   private async runUpdate(chatId: number): Promise<void> {
+    const lang = await this.getLang();
     if (!(await this.isAllowedChat(chatId))) {
-      await this.bot!.sendMessage(chatId, '⛔ Réservé à l\'administrateur configuré.');
+      await this.bot!.sendMessage(chatId, t(lang, 'updates.reserved'));
       return;
     }
     let result: CheckResult;
@@ -1147,53 +1151,42 @@ ${Object.entries(stats.byType)
     if (lastCheck?.hasUpdates && lastCheck.updates?.length) {
       result = lastCheck;
     } else {
-      await this.bot!.sendMessage(chatId, '🔄 Vérification des mises à jour...');
+      await this.bot!.sendMessage(chatId, t(lang, 'updates.checkingShort'));
       result = await this.updaterService.checkForUpdates();
     }
     if (!result.hasUpdates || !result.updates?.some((u) => u.hasUpdate)) {
-      await this.bot!.sendMessage(chatId, '✅ Aucune mise à jour disponible. Le système est à jour.');
+      await this.bot!.sendMessage(chatId, t(lang, 'updates.noneAvailable'));
       return;
     }
     const servicesToUpdate = result.updates!.filter((u) => u.hasUpdate).map((u) => u.service);
     await this.bot!.sendMessage(
       chatId,
-      `🔄 Application des mises à jour pour: ${servicesToUpdate.join(', ')}\n\n_Cela peut prendre plusieurs minutes..._`,
+      t(lang, 'updates.applyConfirm', { services: servicesToUpdate.join(', ') }),
       { parse_mode: 'Markdown' },
     );
     const updateResult = await this.updaterService.applyUpdate(servicesToUpdate);
     if (updateResult.ok) {
       await this.bot!.sendMessage(
         chatId,
-        `✅ *Mises à jour appliquées*\n\nServices: ${updateResult.updated.join(', ')}`,
+        t(lang, 'updates.applied', { list: updateResult.updated.join(', ') }),
         { parse_mode: 'Markdown' },
       );
     } else {
       await this.bot!.sendMessage(
         chatId,
-        `❌ *Échec*\n\n${updateResult.logs?.join('\n') || 'Voir les logs du serveur.'}`,
+        t(lang, 'updates.failed', { logs: updateResult.logs?.join('\n') || t(lang, 'updates.seeServerLogs') }),
         { parse_mode: 'Markdown' },
       );
     }
   }
 
   /**
-   * Formate une clé d'état pour l'affichage
+   * Formate une clé d'état pour l'affichage (traduit)
    */
-  private formatStateKey(key: string): string {
-    const keyMap: Record<string, string> = {
-      state: 'État',
-      brightness: 'Luminosité',
-      temperature: 'Température',
-      humidity: 'Humidité',
-      battery: 'Batterie',
-      contact: 'Contact',
-      occupancy: 'Occupation',
-      voltage: 'Tension',
-      power: 'Puissance',
-      energy: 'Énergie',
-      position: 'Position',
-    };
-    return keyMap[key.toLowerCase()] || key;
+  private formatStateKey(key: string, lang: string): string {
+    const tKey = `stateKeys.${key?.toLowerCase() || ''}`;
+    const translated = t(lang, tKey);
+    return translated !== tKey ? translated : key;
   }
 
   /**
@@ -1246,14 +1239,15 @@ ${Object.entries(stats.byType)
    * Envoie une notification quand un appareil passe hors ligne
    */
   private async sendDeviceOfflineNotification(device: Device): Promise<void> {
+    const lang = await this.getLang();
     const typeEmoji = this.getTypeEmoji(device.type);
     const room = device.room && device.room !== 'Non défini' ? ` (${device.room})` : '';
     const message = `
-🔴 *Appareil hors ligne*
+${t(lang, 'notify.deviceOfflineTitle')}
 
 ${typeEmoji} *${device.friendlyName || device.ieeeAddress}*${room}
 
-L'appareil n'est plus accessible sur le réseau Zigbee.
+${t(lang, 'notify.deviceOfflineDesc')}
     `;
     await this.sendNotification(message);
   }
@@ -1262,14 +1256,15 @@ L'appareil n'est plus accessible sur le réseau Zigbee.
    * Envoie une notification quand un appareil revient en ligne
    */
   private async sendDeviceOnlineNotification(device: Device): Promise<void> {
+    const lang = await this.getLang();
     const typeEmoji = this.getTypeEmoji(device.type);
     const room = device.room && device.room !== 'Non défini' ? ` (${device.room})` : '';
     const message = `
-🟢 *Appareil en ligne*
+${t(lang, 'notify.deviceOnlineTitle')}
 
 ${typeEmoji} *${device.friendlyName || device.ieeeAddress}*${room}
 
-L'appareil est de nouveau accessible sur le réseau Zigbee.
+${t(lang, 'notify.deviceOnlineDesc')}
     `;
     await this.sendNotification(message);
   }
@@ -1283,14 +1278,16 @@ L'appareil est de nouveau accessible sur le réseau Zigbee.
     success: boolean;
     timestamp: Date;
   }): Promise<void> {
+    const lang = await this.getLang();
     const emoji = data.success ? '✅' : '❌';
-    const status = data.success ? 'réussie' : 'échouée';
+    const status = data.success ? t(lang, 'notify.automationSuccess') : t(lang, 'notify.automationFailed');
+    const locale = lang === 'en' ? 'en-GB' : 'fr-FR';
     const message = `
-🤖 *Automatisation ${status}*
+${t(lang, 'notify.automationTitle', { status })}
 
 ${emoji} *${data.automationName}*
 
-L'automatisation a été ${status} à ${new Date(data.timestamp).toLocaleTimeString('fr-FR')}.
+${t(lang, 'notify.automationAt', { status, time: new Date(data.timestamp).toLocaleTimeString(locale) })}
     `;
     await this.sendNotification(message);
   }
@@ -1309,37 +1306,37 @@ L'automatisation a été ${status} à ${new Date(data.timestamp).toLocaleTimeStr
       return;
     }
 
+    const lang = await this.getLang();
     const modeLabel = data.mode === 'beta' ? 'Beta' : 'Stable';
     const servicesList = data.services.join(', ');
     
     let message = `
-🔄 *Mise à jour disponible*
+${t(lang, 'notify.updateAvailableTitle')}
 
-Des mises à jour sont disponibles pour les services suivants :
+${t(lang, 'notify.updateAvailableDesc')}
 
 *${servicesList}*
 
-Mode: ${modeLabel}
+${t(lang, 'notify.updateMode')} ${modeLabel}
     `;
 
-    // Ajouter des détails si disponibles
     if (data.updates && data.updates.length > 0) {
       const updateDetails = data.updates
         .filter((u) => u.hasUpdate)
         .map((u) => {
-          const serviceName = u.service || 'Service inconnu';
+          const serviceName = u.service || t(lang, 'notify.serviceUnknown');
           const currentImage = u.currentImage || 'N/A';
           const lastImage = u.lastImage || 'N/A';
-          return `• *${serviceName}*\n  Actuel: \`${currentImage}\`\n  Nouveau: \`${lastImage}\``;
+          return `• *${serviceName}*\n  ${t(lang, 'updates.currentImage')} \`${currentImage}\`\n  ${t(lang, 'updates.newImage')} \`${lastImage}\``;
         })
         .join('\n\n');
 
       if (updateDetails) {
-        message += `\n\n*Détails:*\n${updateDetails}`;
+        message += `\n\n${t(lang, 'notify.updateDetails')}\n${updateDetails}`;
       }
     }
 
-    message += `\n\nVous pouvez appliquer les mises à jour depuis l'interface Lumy Home.`;
+    message += `\n\n${t(lang, 'notify.updateApplyFromUI')}`;
 
     await this.sendNotification(message);
   }
