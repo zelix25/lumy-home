@@ -13,6 +13,7 @@ RUN apk add --no-cache \
     sqlite-dev \
     libc-dev \
     linux-headers \
+    tzdata \
   && ln -sf python3 /usr/bin/python
 
 # Copier les manifests en premier (cache docker)
@@ -54,7 +55,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Dépendances runtime uniquement
-RUN apk add --no-cache sqlite-libs
+RUN apk add --no-cache sqlite-libs tzdata
 
 COPY package*.json ./
 COPY --from=builder /app/dist ./dist
