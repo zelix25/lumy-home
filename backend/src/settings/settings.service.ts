@@ -152,18 +152,16 @@ export class SettingsService {
       const saved = await this.settingsRepository.save(existingSettings);
       this.logger.log('Paramètres mis à jour', 'SettingsService');
 
-      // Si le fuseau horaire a été modifié, l'appliquer sur l'hôte Debian
+      // Si le fuseau horaire a été modifié, tenter de l'appliquer sur l'hôte (optionnel en Docker)
       if (dto.timezone !== undefined && saved.timezone) {
         try {
           await this.setHostTimezone(saved.timezone);
-          this.logger.log(`Fuseau horaire appliqué: ${saved.timezone}`, 'SettingsService');
+          this.logger.log(`Fuseau horaire appliqué sur l'hôte: ${saved.timezone}`, 'SettingsService');
         } catch (err: any) {
-          this.logger.error(
-            `Impossible d'appliquer le fuseau horaire sur l'hôte: ${err.message}`,
-            err.stack,
+          this.logger.warn(
+            `Fuseau horaire enregistré mais non appliqué sur l'hôte (normal en Docker): ${err.message}`,
             'SettingsService',
           );
-          throw new Error(`Fuseau horaire enregistré mais impossible de l'appliquer sur l'hôte: ${err.message}`);
         }
       }
 
@@ -203,18 +201,16 @@ export class SettingsService {
     const saved = await this.settingsRepository.save(newSettings);
     this.logger.log('Paramètres créés', 'SettingsService');
 
-    // Si le fuseau horaire est défini, l'appliquer sur l'hôte
+    // Si le fuseau horaire est défini, tenter de l'appliquer sur l'hôte (optionnel en Docker)
     if (saved.timezone) {
       try {
         await this.setHostTimezone(saved.timezone);
-        this.logger.log(`Fuseau horaire appliqué: ${saved.timezone}`, 'SettingsService');
+        this.logger.log(`Fuseau horaire appliqué sur l'hôte: ${saved.timezone}`, 'SettingsService');
       } catch (err: any) {
-        this.logger.error(
-          `Impossible d'appliquer le fuseau horaire sur l'hôte: ${err.message}`,
-          err.stack,
+        this.logger.warn(
+          `Fuseau horaire enregistré mais non appliqué sur l'hôte (normal en Docker): ${err.message}`,
           'SettingsService',
         );
-        throw new Error(`Fuseau horaire enregistré mais impossible de l'appliquer sur l'hôte: ${err.message}`);
       }
     }
 
@@ -243,9 +239,9 @@ export class SettingsService {
    * Applique le fuseau horaire sur l'hôte Debian.
    * Utilise timedatectl si disponible (systemd), sinon crée le symlink /etc/localtime.
    * Nécessite les droits root ou sudo configuré.
+   * En Docker, /usr/share/zoneinfo peut être incomplet : on tente timedatectl d'abord (sans vérifier le fichier).
    */
   async setHostTimezone(timezone: string): Promise<void> {
-    // Validation : éviter les injections de chemin et shell (format IANA: Continent/City ou Region/City)
     const trimmed = timezone.trim();
     if (!trimmed || trimmed.includes('..') || trimmed.startsWith('/') || trimmed.includes('\0')) {
       throw new Error('Fuseau horaire invalide');
@@ -254,27 +250,27 @@ export class SettingsService {
       throw new Error('Fuseau horaire invalide');
     }
 
-    const zoneInfoPath = path.join('/usr/share/zoneinfo', trimmed);
-    if (!fs.existsSync(zoneInfoPath) || !fs.statSync(zoneInfoPath).isFile()) {
-      throw new Error(`Fuseau horaire inconnu: ${trimmed}`);
-    }
-
     try {
-      // Méthode 1 : timedatectl (Debian avec systemd)
+      // Méthode 1 : timedatectl (valide les fuseaux IANA sans dépendre de /usr/share/zoneinfo)
       execSync(`timedatectl set-timezone ${trimmed}`, {
         stdio: 'pipe',
         timeout: 5000,
       });
+      return;
     } catch {
+      // Méthode 2 : symlink (nécessite que le fichier existe dans le conteneur)
+      const zoneInfoPath = path.join('/usr/share/zoneinfo', trimmed);
+      if (!fs.existsSync(zoneInfoPath) || !fs.statSync(zoneInfoPath).isFile()) {
+        throw new Error(`Fuseau horaire inconnu ou tzdata incomplet: ${trimmed}`);
+      }
       try {
-        // Méthode 2 : symlink classique (fallback)
         execSync(`ln -sf ${zoneInfoPath} /etc/localtime`, {
           stdio: 'pipe',
           timeout: 5000,
         });
       } catch (err: any) {
         throw new Error(
-          `Impossible de modifier le fuseau horaire. Vérifiez que l'application s'exécute avec les droits root. Détail: ${err.message}`,
+          `Impossible de modifier le fuseau horaire. Vérifiez les droits root. Détail: ${err.message}`,
         );
       }
     }
