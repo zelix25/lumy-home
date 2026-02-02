@@ -14,6 +14,7 @@ import {
   StepLabel,
   Link,
   LinearProgress,
+  Autocomplete,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
@@ -25,6 +26,34 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { MenuItem, Select, FormControl, InputLabel, CircularProgress } from '@mui/material';
 
 type SetupStep = 'account' | 'store' | 'weather' | 'zigbee' | 'complete';
+
+const COMMON_TIMEZONES = [
+  'Europe/Paris',
+  'Europe/London',
+  'Europe/Berlin',
+  'Europe/Madrid',
+  'Europe/Rome',
+  'Europe/Amsterdam',
+  'Europe/Brussels',
+  'Europe/Zurich',
+  'America/New_York',
+  'America/Chicago',
+  'America/Los_Angeles',
+  'Asia/Tokyo',
+  'Asia/Shanghai',
+  'Australia/Sydney',
+];
+
+function getTimezoneOptions(): string[] {
+  if (typeof Intl !== 'undefined' && 'supportedValuesOf' in Intl) {
+    try {
+      return (Intl as any).supportedValuesOf('timeZone') as string[];
+    } catch {
+      return COMMON_TIMEZONES;
+    }
+  }
+  return COMMON_TIMEZONES;
+}
 
 export default function SetupPage() {
   const { t } = useTranslation();
@@ -62,6 +91,7 @@ export default function SetupPage() {
   const [storeSuccess, setStoreSuccess] = useState<string | null>(null);
 
   // Étape 3: Météo
+  const [timezone, setTimezone] = useState('Europe/Paris');
   const [city, setCity] = useState('');
   const [zipCode, setZipCode] = useState('');
   const [country, setCountry] = useState('');
@@ -261,6 +291,7 @@ export default function SetupPage() {
         city,
         zipCode,
         country,
+        timezone,
       });
       setWeatherSuccess(true);
     } catch (err: any) {
@@ -588,6 +619,26 @@ export default function SetupPage() {
             )}
 
             <Stack spacing={2}>
+              <Autocomplete
+                options={getTimezoneOptions()}
+                value={timezone || null}
+                onChange={(_, newValue) =>
+                  setTimezone(newValue || 'Europe/Paris')
+                }
+                onInputChange={(_, newInputValue) =>
+                  setTimezone(newInputValue || 'Europe/Paris')
+                }
+                freeSolo
+                disabled={weatherSuccess}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label={t('settings.timezone')}
+                    helperText={t('settings.timezoneHelp')}
+                  />
+                )}
+              />
+
               <TextField
                 label={t('settings.city')}
                 value={city}

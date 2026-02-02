@@ -23,6 +23,10 @@ export class Telegram {
   @Column({ type: 'varchar', length: 6, nullable: true })
   pin: string | null;
 
+  /** Code langue du bot (fr, en). Null = fr par défaut. */
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  language: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

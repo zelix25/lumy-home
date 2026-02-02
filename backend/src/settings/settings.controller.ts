@@ -44,6 +44,14 @@ export class SettingsController {
   }
 
   /**
+   * Récupère le fuseau horaire actuel de l'hôte
+   */
+  @Get('host-timezone')
+  async getHostTimezone(): Promise<{ timezone: string }> {
+    return { timezone: this.settingsService.getHostTimezone() };
+  }
+
+  /**
    * Met à jour les paramètres
    */
   @Put()
