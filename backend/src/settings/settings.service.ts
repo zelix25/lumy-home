@@ -258,10 +258,11 @@ export class SettingsService {
       });
       return;
     } catch {
-      // Méthode 2 : symlink (nécessite que le fichier existe dans le conteneur)
+      // Méthode 2 : symlink (nécessite que le fichier existe - souvent absent en Docker)
       const zoneInfoPath = path.join('/usr/share/zoneinfo', trimmed);
       if (!fs.existsSync(zoneInfoPath) || !fs.statSync(zoneInfoPath).isFile()) {
-        throw new Error(`Fuseau horaire inconnu ou tzdata incomplet: ${trimmed}`);
+        // tzdata incomplet (Docker minimal) : ne pas lever d'erreur, le fuseau est enregistré en base
+        return;
       }
       try {
         execSync(`ln -sf ${zoneInfoPath} /etc/localtime`, {
