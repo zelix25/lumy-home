@@ -35,6 +35,10 @@ export class Settings {
   @Column({ type: 'decimal', precision: 11, scale: 8, nullable: true })
   longitude: number | null;
 
+  /** Fuseau horaire IANA (ex: Europe/Paris) - appliqué sur l'hôte Debian */
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  timezone: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

@@ -2,6 +2,9 @@ import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as os from 'os';
+import * as fs from 'fs';
+import * as path from 'path';
+import { execSync } from 'child_process';
 import { Settings } from './entities/settings.entity';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
 import { LoggerService } from '../logger/logger.service';
@@ -37,6 +40,7 @@ export class SettingsService {
         country: null,
         latitude: null,
         longitude: null,
+        timezone: 'Europe/Paris',
       } as Partial<Settings>);
       const saved = await this.settingsRepository.save(defaultSettings);
       this.logger.log('Paramètres par défaut créés', 'SettingsService');
@@ -148,6 +152,21 @@ export class SettingsService {
       const saved = await this.settingsRepository.save(existingSettings);
       this.logger.log('Paramètres mis à jour', 'SettingsService');
 
+      // Si le fuseau horaire a été modifié, l'appliquer sur l'hôte Debian
+      if (dto.timezone !== undefined && saved.timezone) {
+        try {
+          await this.setHostTimezone(saved.timezone);
+          this.logger.log(`Fuseau horaire appliqué: ${saved.timezone}`, 'SettingsService');
+        } catch (err: any) {
+          this.logger.error(
+            `Impossible d'appliquer le fuseau horaire sur l'hôte: ${err.message}`,
+            err.stack,
+            'SettingsService',
+          );
+          throw new Error(`Fuseau horaire enregistré mais impossible de l'appliquer sur l'hôte: ${err.message}`);
+        }
+      }
+
       // Si la localisation a été modifiée et que les coordonnées sont disponibles, mettre à jour la météo
       if (locationChanged && saved.latitude && saved.longitude) {
         this.logger.log(
@@ -179,9 +198,25 @@ export class SettingsService {
       country: dto.country ?? null,
       latitude: dto.latitude ?? null,
       longitude: dto.longitude ?? null,
+      timezone: dto.timezone ?? null,
     } as Partial<Settings>);
     const saved = await this.settingsRepository.save(newSettings);
     this.logger.log('Paramètres créés', 'SettingsService');
+
+    // Si le fuseau horaire est défini, l'appliquer sur l'hôte
+    if (saved.timezone) {
+      try {
+        await this.setHostTimezone(saved.timezone);
+        this.logger.log(`Fuseau horaire appliqué: ${saved.timezone}`, 'SettingsService');
+      } catch (err: any) {
+        this.logger.error(
+          `Impossible d'appliquer le fuseau horaire sur l'hôte: ${err.message}`,
+          err.stack,
+          'SettingsService',
+        );
+        throw new Error(`Fuseau horaire enregistré mais impossible de l'appliquer sur l'hôte: ${err.message}`);
+      }
+    }
 
     // Si les coordonnées sont disponibles, mettre à jour la météo
     if (saved.latitude && saved.longitude) {
@@ -202,6 +237,62 @@ export class SettingsService {
     }
 
     return saved;
+  }
+
+  /**
+   * Applique le fuseau horaire sur l'hôte Debian.
+   * Utilise timedatectl si disponible (systemd), sinon crée le symlink /etc/localtime.
+   * Nécessite les droits root ou sudo configuré.
+   */
+  async setHostTimezone(timezone: string): Promise<void> {
+    // Validation : éviter les injections de chemin et shell (format IANA: Continent/City ou Region/City)
+    const trimmed = timezone.trim();
+    if (!trimmed || trimmed.includes('..') || trimmed.startsWith('/') || trimmed.includes('\0')) {
+      throw new Error('Fuseau horaire invalide');
+    }
+    if (!/^[a-zA-Z0-9_/+-]+$/.test(trimmed)) {
+      throw new Error('Fuseau horaire invalide');
+    }
+
+    const zoneInfoPath = path.join('/usr/share/zoneinfo', trimmed);
+    if (!fs.existsSync(zoneInfoPath) || !fs.statSync(zoneInfoPath).isFile()) {
+      throw new Error(`Fuseau horaire inconnu: ${trimmed}`);
+    }
+
+    try {
+      // Méthode 1 : timedatectl (Debian avec systemd)
+      execSync(`timedatectl set-timezone ${trimmed}`, {
+        stdio: 'pipe',
+        timeout: 5000,
+      });
+    } catch {
+      try {
+        // Méthode 2 : symlink classique (fallback)
+        execSync(`ln -sf ${zoneInfoPath} /etc/localtime`, {
+          stdio: 'pipe',
+          timeout: 5000,
+        });
+      } catch (err: any) {
+        throw new Error(
+          `Impossible de modifier le fuseau horaire. Vérifiez que l'application s'exécute avec les droits root. Détail: ${err.message}`,
+        );
+      }
+    }
+  }
+
+  /**
+   * Récupère le fuseau horaire actuel de l'hôte
+   */
+  getHostTimezone(): string {
+    try {
+      const result = execSync('timedatectl show -p Timezone --value', {
+        encoding: 'utf-8',
+        timeout: 2000,
+      });
+      return result.trim() || Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    }
   }
 
   /**

@@ -12,6 +12,7 @@ import {
   FormControlLabel,
   Tabs,
   Tab,
+  Autocomplete,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { apiService } from '../services/api.service';
@@ -26,6 +27,47 @@ interface Settings {
   country?: string;
   latitude?: number;
   longitude?: number;
+  timezone?: string;
+}
+
+// Liste des fuseaux horaires IANA courants (fallback si Intl.supportedValuesOf non disponible)
+const COMMON_TIMEZONES = [
+  'Europe/Paris',
+  'Europe/London',
+  'Europe/Berlin',
+  'Europe/Madrid',
+  'Europe/Rome',
+  'Europe/Amsterdam',
+  'Europe/Brussels',
+  'Europe/Zurich',
+  'Europe/Vienna',
+  'Europe/Warsaw',
+  'Europe/Prague',
+  'America/New_York',
+  'America/Chicago',
+  'America/Denver',
+  'America/Los_Angeles',
+  'America/Toronto',
+  'America/Montreal',
+  'Asia/Tokyo',
+  'Asia/Shanghai',
+  'Asia/Hong_Kong',
+  'Australia/Sydney',
+  'Australia/Melbourne',
+  'Africa/Cairo',
+  'Africa/Johannesburg',
+  'Pacific/Auckland',
+];
+
+function getTimezoneOptions(): string[] {
+  if (typeof Intl !== 'undefined' && 'supportedValuesOf' in Intl) {
+    try {
+      return (Intl as any).supportedValuesOf('timeZone') as string[];
+    } catch {
+      return COMMON_TIMEZONES;
+    }
+  }
+  return COMMON_TIMEZONES;
 }
 
 export default function SettingsPage() {
@@ -37,6 +79,7 @@ export default function SettingsPage() {
     city: '',
     zipCode: '',
     country: '',
+    timezone: 'Europe/Paris',
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -74,6 +117,7 @@ export default function SettingsPage() {
         country: data.country ?? '',
         latitude: data.latitude ?? undefined,
         longitude: data.longitude ?? undefined,
+        timezone: data.timezone ?? 'Europe/Paris',
       });
     } catch (err: any) {
       setError(err.message || t('settings.errorLoading'));
@@ -106,6 +150,7 @@ export default function SettingsPage() {
         city: settings.city || undefined,
         zipCode: settings.zipCode || undefined,
         country: settings.country || undefined,
+        timezone: settings.timezone || undefined,
       };
       const updated = await apiService.put<Settings>('/settings', payload);
       setSettings(updated);
@@ -214,6 +259,25 @@ export default function SettingsPage() {
                       {t('settings.locationInfo')}
                     </Typography>
                   </Alert>
+
+                  <Autocomplete
+                    options={getTimezoneOptions()}
+                    value={settings.timezone || null}
+                    onChange={(_, newValue) =>
+                      setSettings({ ...settings, timezone: newValue || '' })
+                    }
+                    onInputChange={(_, newInputValue) =>
+                      setSettings({ ...settings, timezone: newInputValue })
+                    }
+                    freeSolo
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label={t('settings.timezone')}
+                        helperText={t('settings.timezoneHelp')}
+                      />
+                    )}
+                  />
 
                   <TextField
                     label={t('settings.city')}

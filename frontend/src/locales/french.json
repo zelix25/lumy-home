@@ -543,6 +543,8 @@
     "city": "Ville",
     "zipCode": "Code postal",
     "country": "Pays",
+    "timezone": "Fuseau horaire",
+    "timezoneHelp": "Fuseau horaire IANA (ex: Europe/Paris). Appliqué sur l'hôte Debian lors de la sauvegarde.",
     "locationInfo": "Les données de localisation sont utilisées uniquement pour récupérer les données météo de votre ville.",
     "coordinates": "Coordonnées GPS",
     "coordinatesHelp": "Les coordonnées GPS sont calculées automatiquement lors de la sauvegarde",

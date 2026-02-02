@@ -541,6 +541,8 @@
     "city": "City",
     "zipCode": "Zip code",
     "country": "Country",
+    "timezone": "Timezone",
+    "timezoneHelp": "IANA timezone (e.g. Europe/Paris). Applied to the Debian host when saving.",
     "locationInfo": "Location data is used only to retrieve weather data of your city.",
     "coordinates": "GPS Coordinates",
     "coordinatesHelp": "GPS coordinates are automatically calculated when saving",

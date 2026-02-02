@@ -44,5 +44,9 @@ export class UpdateSettingsDto {
   @IsNumber()
   @IsLongitude()
   longitude?: number;
+
+  @IsOptional()
+  @IsString()
+  timezone?: string;
 }
 
