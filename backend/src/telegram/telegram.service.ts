@@ -174,7 +174,7 @@ ${t(lang, 'pin.important')}
    */
   private setupEventListeners(): void {
     // Écouter les événements d'appareils hors ligne
-    this.eventEmitter.on('device.offline', async (data: { device: Device }) => {
+    /*this.eventEmitter.on('device.offline', async (data: { device: Device }) => {
       await this.sendDeviceOfflineNotification(data.device);
     });
 
@@ -191,7 +191,7 @@ ${t(lang, 'pin.important')}
       timestamp: Date;
     }) => {
       await this.sendAutomationExecutedNotification(data);
-    });
+    });*/
 
     // Écouter les mises à jour disponibles
     this.eventEmitter.on('update.available', async (data: {
@@ -1272,7 +1272,7 @@ ${t(lang, 'notify.deviceOnlineDesc')}
   /**
    * Envoie une notification quand une automatisation est exécutée
    */
-  private async sendAutomationExecutedNotification(data: {
+  /*private async sendAutomationExecutedNotification(data: {
     automationId: string;
     automationName: string;
     success: boolean;
@@ -1291,7 +1291,7 @@ ${t(lang, 'notify.automationAt', { status, time: new Date(data.timestamp).toLoca
     `;
     await this.sendNotification(message);
   }
-
+*/
   /**
    * Envoie une notification quand une mise à jour est disponible
    */
