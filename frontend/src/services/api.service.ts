@@ -1,3 +1,5 @@
+import { getAppPathname, getTunnelLoginHref } from '../utils/appPathname';
+
 // Utiliser un chemin relatif pour passer par le proxy nginx
 // En développement local, utilise VITE_API_URL si défini, sinon utilise /api
 // En production Docker, nginx fait le proxy de /api vers backend:3000
@@ -23,7 +25,7 @@ class ApiService {
       headers['Authorization'] = `Bearer ${token}`;
     } else {
       // Log pour debug si le token est manquant
-      if (window.location.pathname === '/setup') {
+      if (getAppPathname() === '/setup') {
         console.warn('Token JWT manquant lors de la requête API');
       }
     }
@@ -45,8 +47,8 @@ class ApiService {
       localStorage.removeItem('lumy_token');
       localStorage.removeItem('lumy_user');
       // Ne rediriger que si on n'est pas déjà sur la page de login ou de setup
-      if (window.location.pathname !== '/login' && window.location.pathname !== '/setup') {
-        window.location.href = '/login';
+      if (getAppPathname() !== '/login' && getAppPathname() !== '/setup') {
+        window.location.href = getTunnelLoginHref();
       }
       throw new Error('Non autorisé');
     }
@@ -93,12 +95,12 @@ class ApiService {
     
     if (response.status === 401) {
       // Ne pas supprimer le token si on est sur la page de setup (l'utilisateur vient peut-être de créer son compte)
-      if (window.location.pathname !== '/setup') {
+      if (getAppPathname() !== '/setup') {
         localStorage.removeItem('lumy_token');
         localStorage.removeItem('lumy_user');
         // Ne rediriger que si on n'est pas déjà sur la page de login
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
+        if (getAppPathname() !== '/login') {
+          window.location.href = getTunnelLoginHref();
         }
       }
       throw new Error('Non autorisé');
@@ -123,12 +125,12 @@ class ApiService {
     
     if (response.status === 401) {
       // Ne pas supprimer le token si on est sur la page de setup (l'utilisateur vient peut-être de créer son compte)
-      if (window.location.pathname !== '/setup') {
+      if (getAppPathname() !== '/setup') {
         localStorage.removeItem('lumy_token');
         localStorage.removeItem('lumy_user');
         // Ne rediriger que si on n'est pas déjà sur la page de login
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
+        if (getAppPathname() !== '/login') {
+          window.location.href = getTunnelLoginHref();
         }
       }
       throw new Error('Non autorisé');
@@ -152,12 +154,12 @@ class ApiService {
     
     if (response.status === 401) {
       // Ne pas supprimer le token si on est sur la page de setup (l'utilisateur vient peut-être de créer son compte)
-      if (window.location.pathname !== '/setup') {
+      if (getAppPathname() !== '/setup') {
         localStorage.removeItem('lumy_token');
         localStorage.removeItem('lumy_user');
         // Ne rediriger que si on n'est pas déjà sur la page de login
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
+        if (getAppPathname() !== '/login') {
+          window.location.href = getTunnelLoginHref();
         }
       }
       throw new Error('Non autorisé');
@@ -181,12 +183,12 @@ class ApiService {
     
     if (response.status === 401) {
       // Ne pas supprimer le token si on est sur la page de setup (l'utilisateur vient peut-être de créer son compte)
-      if (window.location.pathname !== '/setup') {
+      if (getAppPathname() !== '/setup') {
         localStorage.removeItem('lumy_token');
         localStorage.removeItem('lumy_user');
         // Ne rediriger que si on n'est pas déjà sur la page de login
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
+        if (getAppPathname() !== '/login') {
+          window.location.href = getTunnelLoginHref();
         }
       }
       throw new Error('Non autorisé');
