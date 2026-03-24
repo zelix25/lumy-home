@@ -23,7 +23,7 @@ jobs:
     outputs:
       is-on-master: ${{ steps.check.outputs.is-on-master }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0  # Récupérer tout l'historique pour vérifier les branches
       
@@ -97,7 +97,7 @@ jobs:
     if: needs.determine-version.result == 'success'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ github.ref }}  # Utiliser le tag (vérifié qu'il pointe vers master)
 
@@ -147,7 +147,7 @@ jobs:
     if: needs.determine-version.result == 'success'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ github.ref }}  # Utiliser le tag (vérifié qu'il pointe vers master)
 
