@@ -37,9 +37,21 @@ window.MaterialUIIcons = MaterialUIIcons;
 window.EmotionReact = EmotionReact;
 window.EmotionStyled = EmotionStyled;
 
+/** Tunnel my-lumy : le broker injecte `window.__LUMY_TUNNEL_BASENAME__` (ex. `/tunnel/http/<jwt>`). */
+function getRouterBasename(): string | undefined {
+  if (typeof window !== 'undefined' && window.__LUMY_TUNNEL_BASENAME__) {
+    const b = window.__LUMY_TUNNEL_BASENAME__.replace(/\/$/, '');
+    return b || undefined;
+  }
+  const viteBase = import.meta.env.BASE_URL ?? '/';
+  if (viteBase === '/' || viteBase === '') return undefined;
+  const b = String(viteBase).replace(/\/$/, '');
+  return b || undefined;
+}
+
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename={getRouterBasename()}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <AuthProvider>
