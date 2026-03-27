@@ -146,7 +146,7 @@ export class SystemHealthService implements OnModuleInit {
       'zigbee2mqtt',
       'mosquitto',
       'lumy-updater',
-      'agent-lumy',
+      'lumy-agent',
     ];
     
     for (const serviceName of allServices) {

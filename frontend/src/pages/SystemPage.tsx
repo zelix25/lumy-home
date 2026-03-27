@@ -343,7 +343,7 @@ export default function SystemPage() {
 
       <Grid container spacing={3}>
         {/* Informations système */}
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={3}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom sx={{ fontWeight: 500, mb: 2 }}>
@@ -384,7 +384,7 @@ export default function SystemPage() {
         </Grid>
 
         {/* Identifiant de box */}
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom sx={{ fontWeight: 500, mb: 2 }}>
@@ -415,7 +415,7 @@ export default function SystemPage() {
         </Grid>
 
         {/* Statut de l'updater */}
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md>
           <Card>
             <CardContent>
               <Box
