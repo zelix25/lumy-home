@@ -1,8 +1,9 @@
-import { Controller, Get, Put, Body } from '@nestjs/common';
+import { Controller, Get, Put, Body, UnauthorizedException } from '@nestjs/common';
 import { SettingsService } from './settings.service';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
 import { Settings } from './entities/settings.entity';
 import { Public } from '../auth/decorators/public.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('settings')
 export class SettingsController {
@@ -49,6 +50,16 @@ export class SettingsController {
   @Get('host-timezone')
   async getHostTimezone(): Promise<{ timezone: string }> {
     return { timezone: this.settingsService.getHostTimezone() };
+  }
+
+  @Get('box-id')
+  async getBoxId(@CurrentUser() user: { email?: string } | undefined): Promise<{ boxId: string }> {
+    if (!user?.email) {
+      throw new UnauthorizedException('Utilisateur non authentifié');
+    }
+
+    const boxId = await this.settingsService.getOrCreateBoxId(user.email);
+    return { boxId };
   }
 
   /**

@@ -11,6 +11,7 @@ export interface Settings {
   latitude?: number | null;
   longitude?: number | null;
   timezone?: string | null;
+  boxId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -39,6 +40,10 @@ class SettingsService {
    */
   async getServerIp(): Promise<{ ip: string }> {
     return apiService.get<{ ip: string }>('/settings/server-ip');
+  }
+
+  async getBoxId(): Promise<{ boxId: string }> {
+    return apiService.get<{ boxId: string }>('/settings/box-id');
   }
 
   async updateSettings(settings: Partial<Settings>): Promise<Settings> {

@@ -39,6 +39,9 @@ export class Settings {
   @Column({ type: 'varchar', length: 64, nullable: true })
   timezone: string | null;
 
+  @Column({ type: 'varchar', length: 12, nullable: true })
+  boxId: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

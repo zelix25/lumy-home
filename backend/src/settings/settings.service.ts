@@ -41,6 +41,7 @@ export class SettingsService {
         latitude: null,
         longitude: null,
         timezone: 'Europe/Paris',
+        boxId: null,
       } as Partial<Settings>);
       const saved = await this.settingsRepository.save(defaultSettings);
       this.logger.log('Paramètres par défaut créés', 'SettingsService');
@@ -197,6 +198,7 @@ export class SettingsService {
       latitude: dto.latitude ?? null,
       longitude: dto.longitude ?? null,
       timezone: dto.timezone ?? null,
+      boxId: null,
     } as Partial<Settings>);
     const saved = await this.settingsRepository.save(newSettings);
     this.logger.log('Paramètres créés', 'SettingsService');
@@ -348,6 +350,34 @@ export class SettingsService {
     
     // Si aucune adresse n'est trouvée, retourner localhost
     return '127.0.0.1';
+  }
+
+  private generateBoxId(email: string, timestamp: string): string {
+    const source = `${email.toLowerCase().trim()}-${timestamp}`;
+    let hash = 0;
+
+    for (let i = 0; i < source.length; i += 1) {
+      hash = (hash << 5) - hash + source.charCodeAt(i);
+      hash |= 0;
+    }
+
+    const positiveHash = Math.abs(hash);
+    const timestampPart = Number.parseInt(timestamp, 10).toString(36).toUpperCase();
+    const hashPart = positiveHash.toString(36).toUpperCase();
+    return `${timestampPart}${hashPart}`.padEnd(12, '0').slice(0, 12);
+  }
+
+  async getOrCreateBoxId(userEmail: string): Promise<string> {
+    const settings = await this.getSettings();
+    if (settings.boxId) {
+      return settings.boxId;
+    }
+
+    const boxId = this.generateBoxId(userEmail, Date.now().toString());
+    settings.boxId = boxId;
+    await this.settingsRepository.save(settings);
+    this.logger.log(`Box ID généré et sauvegardé: ${boxId}`, 'SettingsService');
+    return boxId;
   }
 }
 
