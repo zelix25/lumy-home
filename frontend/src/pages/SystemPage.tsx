@@ -16,6 +16,8 @@ import {
   DialogContentText,
   DialogActions,
   Paper,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
@@ -26,6 +28,7 @@ import WarningIcon from '@mui/icons-material/Warning';
 import InfoIcon from '@mui/icons-material/Info';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SystemUpdateIcon from '@mui/icons-material/SystemUpdate';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { settingsService } from '../services/settings.service';
 import { systemHealthService, SystemNotification } from '../services/system-health.service';
 import { updaterService, UpdaterStatus } from '../services/updater.service';
@@ -59,6 +62,7 @@ export default function SystemPage() {
   const [lastCheckResult, setLastCheckResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [boxId, setBoxId] = useState<string | null>(null);
 
   useEffect(() => {
     loadSystemData();
@@ -70,11 +74,12 @@ export default function SystemPage() {
   const loadSystemData = async () => {
     try {
       setError(null);
-      const [info, status, notifs, servicesData] = await Promise.allSettled([
+      const [info, status, notifs, servicesData, boxIdData] = await Promise.allSettled([
         settingsService.getSystemInfo(),
         updaterService.getStatus().catch(() => null),
         systemHealthService.getNotifications(),
         getServicesStatus(),
+        settingsService.getBoxId().catch(() => null),
       ]);
 
       if (info.status === 'fulfilled') {
@@ -102,6 +107,10 @@ export default function SystemPage() {
 
       if (servicesData.status === 'fulfilled') {
         setServices(servicesData.value);
+      }
+
+      if (boxIdData.status === 'fulfilled' && boxIdData.value?.boxId) {
+        setBoxId(boxIdData.value.boxId);
       }
     } catch (err: any) {
       setError(err.message || t('system.errorLoading'));
@@ -219,6 +228,19 @@ export default function SystemPage() {
     }
   };
 
+  const handleCopyBoxId = async () => {
+    if (!boxId) return;
+
+    try {
+      await navigator.clipboard.writeText(boxId);
+      setSuccess(t('system.boxIdCopied'));
+      setError(null);
+    } catch {
+      setError(t('system.boxIdCopyError'));
+      setSuccess(null);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'running':
@@ -321,7 +343,7 @@ export default function SystemPage() {
 
       <Grid container spacing={3}>
         {/* Informations système */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} md={4}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom sx={{ fontWeight: 500, mb: 2 }}>
@@ -361,8 +383,39 @@ export default function SystemPage() {
           </Card>
         </Grid>
 
+        {/* Identifiant de box */}
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 500, mb: 2 }}>
+                {t('system.boxIdTitle')}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {t('system.boxIdDescription')}
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1 }}>
+                <Typography variant="body1" sx={{ fontWeight: 700, letterSpacing: 1 }}>
+                  {boxId ?? t('system.boxIdUnavailable')}
+                </Typography>
+                <Tooltip title={t('system.copyBoxId')}>
+                  <span>
+                    <IconButton
+                      size="small"
+                      onClick={handleCopyBoxId}
+                      disabled={!boxId}
+                      aria-label={t('system.copyBoxId')}
+                    >
+                      <ContentCopyIcon fontSize="small" />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
         {/* Statut de l'updater */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} md={4}>
           <Card>
             <CardContent>
               <Box

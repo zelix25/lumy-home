@@ -140,7 +140,14 @@ export class SystemHealthService implements OnModuleInit {
     }
 
     // Liste des services à vérifier (tous les services Lumy)
-    const allServices = ['lumy-backend', 'lumy-frontend', 'zigbee2mqtt', 'mosquitto', 'lumy-updater'];
+    const allServices = [
+      'lumy-backend',
+      'lumy-frontend',
+      'zigbee2mqtt',
+      'mosquitto',
+      'lumy-updater',
+      'agent-lumy',
+    ];
     
     for (const serviceName of allServices) {
       try {
