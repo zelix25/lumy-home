@@ -35,6 +35,7 @@ info "Création des dossiers système dans /opt/lumy..."
 LUMYHOME_DIR="/opt/lumy"
 LUMYHOME_DIR_DATA_DIR="$LUMYHOME_DIR/data"
 LUMYHOME_DIR_LOG_DIR="$LUMYHOME_DIR/log"
+LUMYHOME_DIR_AGENT_DIR="$LUMYHOME_DIR/agent"
 
 # Déterminer le répertoire de base du projet
 Z2MQTT_DIR="$LUMYHOME_DIR_DATA_DIR/zigbee2mqtt"
@@ -59,7 +60,7 @@ else
 fi
 
 # Créer les sous-dossiers
-for dir in "$LUMYHOME_DIR_DATA_DIR" "$LUMYHOME_DIR_LOG_DIR" "$Z2MQTT_DIR"; do
+for dir in "$LUMYHOME_DIR_DATA_DIR" "$LUMYHOME_DIR_LOG_DIR" "$Z2MQTT_DIR" "$LUMYHOME_DIR_AGENT_DIR"; do
     if [ ! -d "$dir" ]; then
         $SUDO_CMD mkdir -p "$dir"
         success "Dossier $dir créé"
@@ -357,6 +358,34 @@ EOF
 
 chmod 600 "$BACKEND_ENV_FILE"
 success "Fichier .env créé pour le backend avec succès"
+
+# 4. Configuration Agent .env
+info "Configuration du fichier .env pour l'agent..."
+
+# Créer le dossier agent dans /opt/lumy/data si nécessaire
+AGENT_ENV_DIR="$LUMYHOME_DIR_DATA_DIR/agent"
+if [ ! -d "$AGENT_ENV_DIR" ]; then
+    $SUDO_CMD mkdir -p "$AGENT_ENV_DIR"
+    success "Dossier $AGENT_ENV_DIR créé"
+fi
+
+AGENT_ENV_FILE="$AGENT_ENV_DIR/.env"
+
+# Créer le fichier .env pour l'agent
+info "Création du fichier .env pour l'agent dans $AGENT_ENV_FILE..."
+cat > "$AGENT_ENV_FILE" << EOF
+# Application
+# Renomer en .env
+
+NODE_ENV=production
+PORT=3000
+FRONTEND_URL=http://lumy-frontend:80
+
+# Database
+DATABASE_PATH=data/lumy.db
+
+EOF 
+
 
 # Afficher un résumé
 echo ""
