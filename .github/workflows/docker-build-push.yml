@@ -122,6 +122,7 @@ jobs:
           images: ${{ env.DOCKER_HUB_USERNAME }}/lumy-home-backend
           tags: |
             type=raw,value=${{ needs.determine-version.outputs.image-tag }}
+            type=raw,value=latest,enable=${{ needs.determine-version.outputs.is-beta != 'true' }}
           labels: |
             org.opencontainers.image.title=lumy-home-backend
 
@@ -136,11 +137,6 @@ jobs:
           labels: ${{ steps.meta_backend.outputs.labels }}
           cache-from: type=registry,ref=${{ env.DOCKER_HUB_USERNAME }}/lumy-home-backend:buildcache
           cache-to: type=registry,ref=${{ env.DOCKER_HUB_USERNAME }}/lumy-home-backend:buildcache,mode=max
-
-      - name: Tag as latest (stable only)
-        if: needs.determine-version.outputs.is-beta != 'true'
-        run: |
-          docker buildx imagetools create -t ${{ env.DOCKER_HUB_USERNAME }}/lumy-home-backend:latest ${{ env.DOCKER_HUB_USERNAME }}/lumy-home-backend:${{ needs.determine-version.outputs.image-tag }}
 
   build-and-push-frontend:
     needs: determine-version
@@ -172,6 +168,7 @@ jobs:
           images: ${{ env.DOCKER_HUB_USERNAME }}/lumy-home-frontend
           tags: |
             type=raw,value=${{ needs.determine-version.outputs.image-tag }}
+            type=raw,value=latest,enable=${{ needs.determine-version.outputs.is-beta != 'true' }}
           labels: |
             org.opencontainers.image.title=lumy-home-frontend
 
@@ -186,8 +183,3 @@ jobs:
           labels: ${{ steps.meta_frontend.outputs.labels }}
           cache-from: type=registry,ref=${{ env.DOCKER_HUB_USERNAME }}/lumy-home-frontend:buildcache
           cache-to: type=registry,ref=${{ env.DOCKER_HUB_USERNAME }}/lumy-home-frontend:buildcache,mode=max
-
-      - name: Tag as latest (stable only)
-        if: needs.determine-version.outputs.is-beta != 'true'
-        run: |
-          docker buildx imagetools create -t ${{ env.DOCKER_HUB_USERNAME }}/lumy-home-frontend:latest ${{ env.DOCKER_HUB_USERNAME }}/lumy-home-frontend:${{ needs.determine-version.outputs.image-tag }}

@@ -105,7 +105,7 @@ export default function LoginPage() {
                 disabled={loading}
                 sx={{ mt: 2 }}
               >
-                {loading ? t('common.loading') : t('auth.register')}
+                {loading ? t('common.loading') : t('auth.login')}
               </Button>
             </Stack>
           </form>

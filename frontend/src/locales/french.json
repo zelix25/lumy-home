@@ -29,6 +29,7 @@
     "title": "Appareils",
     "subtitle": "Gérez tous vos appareils Zigbee connectés à votre maison.",
     "search": "Rechercher un appareil ou une pièce...",
+    "deviceTypeFilter": "Type d'appareil",
     "all": "Tous",
     "lights": "Ampoules",
     "switches": "Interrupteurs",

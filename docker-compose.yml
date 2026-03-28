@@ -75,17 +75,20 @@ services:
       - lumy-network
       - lumy-frontend-backend
 
-  lumy-agent:
-    image: zelix25/lumy-agent:latest
+  agent:
+    image: zelix25/lumy-home-agent:latest
+    container_name: lumy-home-agent
     env_file: ./data/agent/.env
+    volumes:
+      - ./data/agent:/app/data
     restart: unless-stopped
-    networks:
-      - shared
     read_only: true
     tmpfs:
       - /tmp
     security_opt:
       - no-new-privileges:true
+    networks:
+      - lumy-network
 
 networks:
   lumy-network:
