@@ -11,6 +11,10 @@ import {
   Alert,
   Button,
   Snackbar,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
@@ -188,7 +192,16 @@ export default function DevicesPage() {
 
   return (
     <Box>
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <Box
+        sx={{
+          mb: 4,
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'stretch', md: 'flex-start' },
+          gap: { xs: 2, md: 0 },
+        }}
+      >
         <Box>
           <Typography variant="h4" gutterBottom sx={{ fontWeight: 500, mb: 1 }}>
             {i18n.t('devices.title')}
@@ -197,7 +210,19 @@ export default function DevicesPage() {
             {i18n.t('devices.subtitle')}
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 2,
+            flexWrap: 'wrap',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignSelf: { md: 'auto' },
+            '& .MuiButton-root': {
+              minWidth: { xs: 0, md: undefined },
+              width: { xs: '100%', sm: 'auto', md: 'auto' },
+            },
+          }}
+        >
           {discoveryActive ? (
             <>
               <Button
@@ -205,14 +230,14 @@ export default function DevicesPage() {
                 startIcon={<StopIcon />}
                 onClick={handleStopDiscovery}
                 color="error"
-                sx={{ minWidth: 180 }}
+                sx={{ minWidth: { md: 180 } }}
               >
                 {i18n.t('devices.stopDiscovery')}
               </Button>
               <Button
                 variant="contained"
                 disabled
-                sx={{ minWidth: 180 }}
+                sx={{ minWidth: { md: 180 } }}
               >
                 {i18n.t('devices.discoveryActive')} ({formatTime(timeRemaining)})
               </Button>
@@ -222,7 +247,7 @@ export default function DevicesPage() {
               variant="contained"
               startIcon={<AddIcon />}
               onClick={handleStartDiscovery}
-              sx={{ minWidth: 200 }}
+              sx={{ minWidth: { md: 200 } }}
             >
               {i18n.t('devices.startDiscovery')}
             </Button>
@@ -246,17 +271,41 @@ export default function DevicesPage() {
           sx={{ mb: 2 }}
         />
 
-        <Tabs
-          value={selectedType}
-          onChange={(_, newValue) => setSelectedType(newValue)}
-          variant="scrollable"
-          scrollButtons="auto"
-          sx={{ borderBottom: 1, borderColor: 'divider' }}
+        <FormControl
+          fullWidth
+          sx={{
+            display: { xs: 'flex', md: 'none' },
+            mb: 2,
+          }}
         >
-          {deviceTypes.map((type) => (
-            <Tab key={type.value} label={type.label} value={type.value} />
-          ))}
-        </Tabs>
+          <InputLabel id="devices-type-filter-label">{i18n.t('devices.deviceTypeFilter')}</InputLabel>
+          <Select
+            labelId="devices-type-filter-label"
+            value={selectedType}
+            label={i18n.t('devices.deviceTypeFilter')}
+            onChange={(e) => setSelectedType(e.target.value)}
+          >
+            {deviceTypes.map((type) => (
+              <MenuItem key={type.value} value={type.value}>
+                {type.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+          <Tabs
+            value={selectedType}
+            onChange={(_, newValue) => setSelectedType(newValue)}
+            variant="scrollable"
+            scrollButtons="auto"
+            sx={{ borderBottom: 1, borderColor: 'divider' }}
+          >
+            {deviceTypes.map((type) => (
+              <Tab key={type.value} label={type.label} value={type.value} />
+            ))}
+          </Tabs>
+        </Box>
       </Box>
 
       {filteredDevices.length === 0 ? (

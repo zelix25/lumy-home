@@ -85,7 +85,16 @@ export default function ScenesPage() {
 
   return (
     <Box>
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <Box
+        sx={{
+          mb: 4,
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'stretch', md: 'flex-start' },
+          gap: { xs: 2, md: 0 },
+        }}
+      >
         <Box>
           <Typography variant="h4" gutterBottom sx={{ fontWeight: 500, mb: 1 }}>
             {t('scenes.title')}
@@ -94,11 +103,12 @@ export default function ScenesPage() {
             {t('scenes.subtitle')}
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
           <Button
             variant="contained"
             startIcon={<AccountTreeIcon />}
             onClick={() => setNodeEditorOpen(true)}
+            sx={{ width: { xs: '100%', md: 'auto' } }}
           >
             {t('scenes.createAutomation')}
           </Button>

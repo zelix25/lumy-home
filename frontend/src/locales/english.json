@@ -28,6 +28,7 @@
     "title": "Devices",
     "subtitle": "Manage all your Zigbee devices connected to your home.",
     "search": "Search for a device or room...",
+    "deviceTypeFilter": "Device type",
     "all": "All",
     "lights": "Lights",
     "switches": "Switches",
