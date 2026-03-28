@@ -3,7 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { existsSync } from 'fs';
+import { existsSync, statSync } from 'fs';
 import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -54,20 +54,40 @@ import { configValidationSchema } from './config/config.validation';
         const absoluteDbPath = dbPath.startsWith('/') || dbPath.match(/^[A-Z]:/i)
           ? dbPath
           : join(process.cwd(), dbPath);
-        
-        // En production, synchroniser uniquement si la base de données n'existe pas encore
-        // Cela permet de créer toutes les tables lors de la première exécution
-        const shouldSynchronize = nodeEnv !== 'production' || !existsSync(absoluteDbPath);
-        
+
+        /**
+         * Première initialisation : fichier absent ou vide (ex. créé par `touch`).
+         * Dans ce cas on crée tout le schéma via synchronize (entités).
+         *
+         * Important : TypeORM exécute les migrations AVANT synchronize. Les migrations
+         * du dépôt supposent des tables déjà présentes (ex. ALTER sur `settings`).
+         * Si on lance les migrations sur une base vierge, elles échouent et le schéma
+         * reste incomplet. D'où : migrations uniquement quand la base existe déjà.
+         */
+        const isFreshDatabase = (() => {
+          if (!existsSync(absoluteDbPath)) {
+            return true;
+          }
+          try {
+            return statSync(absoluteDbPath).size === 0;
+          } catch {
+            return true;
+          }
+        })();
+
+        const shouldSynchronize =
+          nodeEnv !== 'production' || isFreshDatabase;
+
+        const shouldRunMigrations =
+          nodeEnv === 'production' && !isFreshDatabase;
+
         return {
           type: 'sqlite',
           database: dbPath,
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
           migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
           synchronize: shouldSynchronize,
-          // En production, exécuter automatiquement les migrations au démarrage
-          // pour appliquer les évolutions de schéma (ex: table telegram)
-          migrationsRun: nodeEnv === 'production',
+          migrationsRun: shouldRunMigrations,
           /* logging: nodeEnv === 'development',*/
           logging: false,
         };
