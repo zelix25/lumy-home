@@ -374,18 +374,47 @@ AGENT_ENV_FILE="$AGENT_ENV_DIR/.env"
 # Créer le fichier .env pour l'agent
 info "Création du fichier .env pour l'agent dans $AGENT_ENV_FILE..."
 cat > "$AGENT_ENV_FILE" << EOF
-# Application
-# Renomer en .env
-
 NODE_ENV=production
-PORT=3000
-FRONTEND_URL=http://lumy-frontend:80
 
-# Database
-DATABASE_PATH=data/lumy.db
+# WebSocket broker (inclure le chemin /tunnel/agent)
+BROKER_WSS_URL=ws://localhost:3000/tunnel/agent
 
-EOF 
+# Même secret et issuer que le broker (signature JWT device côté agent)
+BROKER_JWT_SECRET=0123456789abcdef0123456789abcdef
+BROKER_JWT_ISSUER=lumy-broker
 
+# Identifiant stable de la box (claim box_id)
+#BOX_ID=132132131546546
+LUMY_HOME_DB_PATH=/opt/lumy/data/backend/data/lumy.db
+
+# UI Lumy Home via service Docker frontend
+LOCAL_UI_URL=http://lumy-frontend:80
+
+LOG_LEVEL=info
+HEARTBEAT_INTERVAL_MS=30000
+RECONNECT_MAX_MS=60000
+EOF
+
+# Télécharger l'updater
+docker pull zelix25/lumy-updater
+
+success "Lumy Updater téléchargé avec succès"
+
+# Télécharger le fichier docker-compose.yml lumy Home
+wget https://raw.githubusercontent.com/zelix25/lumy-home/master/docker-compose.yml -O "$LUMYHOME_DIR/docker-compose.yml"
+success "Fichier docker-compose.yml téléchargé avec succès"
+sudo chmod 644 "$LUMYHOME_DIR/docker-compose.yml"
+
+cd "$LUMYHOME_DIR"
+docker compose up -d
+success "Lumy Home démarré avec succès"
+
+# Récupérer l'IP de la box
+IP_BOX=$(hostname -I | awk '{print $1}')
+if [ -z "$IP_BOX" ]; then
+    error "Impossible de récupérer l'IP de la box"
+    exit 1
+fi
 
 # Afficher un résumé
 echo ""
@@ -405,9 +434,14 @@ success "Backend configuré:"
 echo "  - Fichier .env: $BACKEND_ENV_FILE"
 echo "  - JWT Secret généré automatiquement"
 echo ""
+success "Agent configuré:"
+echo "  - Fichier .env: $AGENT_ENV_FILE"
+echo "  - JWT Secret généré automatiquement"
+echo ""
 warn "⚠️  Note: Les clés réseau ont été générées aléatoirement."
 warn "⚠️  Si vous avez déjà un réseau Zigbee, vous devrez utiliser les mêmes clés."
 warn "⚠️  Le fichier .env contient des informations sensibles. Ne le partagez pas !"
 echo ""
+success "Lumy Home est disponible à l'adresse http://lumy-home.local" ou "http://$IP_BOX"
 success "Configuration terminée avec succès !"
 

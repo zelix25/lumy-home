@@ -138,7 +138,7 @@ install_docker() {
     groupadd -f docker | tee -a "$LOGS_DIR/install.log"
     chown root:docker /var/run/docker.sock | tee -a "$LOGS_DIR/install.log"
     usermod -a -G docker "$(whoami)" | tee -a "$LOGS_DIR/install.log"
-    #newgrp docker | tee -a "$LOGS_DIR/install.log"
+    newgrp docker | tee -a "$LOGS_DIR/install.log"
 
     # Vérifier si l'utilisateur est créé avant d'exécuter les late-commands
     # Démarrer et activer Docker
@@ -228,7 +228,7 @@ start_prerequisites_installation() {
     info "  ✓ OS mis à jour et upgradé"
     info "  ✓ xz installé"
     info "  ✓ Docker CE installé: $(docker --version)"
-    info "  ✓ Docker Compose installé: $(docker-compose --version)"
+    info "  ✓ Docker Compose installé: $(docker compose --version)"
     info "  ✓ Hostname configuré: $(hostname)"
     info "  ✓ Prérequis pour Lumy Home installés"
 }
