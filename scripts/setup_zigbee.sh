@@ -440,3 +440,5 @@ echo ""
 success "Lumy Home est disponible à l'adresse http://lumy-home.local" ou "http://$IP_BOX"
 success "Configuration terminée avec succès !"
 
+reboot
+
