@@ -122,7 +122,7 @@ jobs:
           images: ${{ env.DOCKER_HUB_USERNAME }}/lumy-home-backend
           tags: |
             type=raw,value=${{ needs.determine-version.outputs.image-tag }}
-            type=raw,value=latest,enable=${{ needs.determine-version.outputs.is-beta != 'true' }}
+            type=raw,value=latest
           labels: |
             org.opencontainers.image.title=lumy-home-backend
 
@@ -168,7 +168,7 @@ jobs:
           images: ${{ env.DOCKER_HUB_USERNAME }}/lumy-home-frontend
           tags: |
             type=raw,value=${{ needs.determine-version.outputs.image-tag }}
-            type=raw,value=latest,enable=${{ needs.determine-version.outputs.is-beta != 'true' }}
+            type=raw,value=latest
           labels: |
             org.opencontainers.image.title=lumy-home-frontend
 

@@ -329,7 +329,6 @@ JWT_SECRET=$(openssl rand -base64 64 | tr -d "=+/" | cut -c1-64)
 info "Création du fichier .env pour le backend dans $BACKEND_ENV_FILE..."
 cat > "$BACKEND_ENV_FILE" << EOF
 # Application
-# Renomer en .env
 
 NODE_ENV=production
 PORT=3000
@@ -395,10 +394,6 @@ HEARTBEAT_INTERVAL_MS=30000
 RECONNECT_MAX_MS=60000
 EOF
 
-# Télécharger l'updater
-docker pull zelix25/lumy-updater
-
-success "Lumy Updater téléchargé avec succès"
 
 # Télécharger le fichier docker-compose.yml lumy Home
 wget https://raw.githubusercontent.com/zelix25/lumy-home/master/docker-compose.yml -O "$LUMYHOME_DIR/docker-compose.yml"
