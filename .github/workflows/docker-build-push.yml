@@ -136,7 +136,7 @@ jobs:
           tags: ${{ steps.meta_backend.outputs.tags }}
           labels: ${{ steps.meta_backend.outputs.labels }}
           cache-from: type=registry,ref=${{ env.DOCKER_HUB_USERNAME }}/lumy-home-backend:latest
-          cache-to: type=registry,ref=${{ env.DOCKER_HUB_USERNAME }}/lumy-home-backend:latest,mode=max
+          cache-to: type=registry,ref=${{ env.DOCKER_HUB_USERNAME }}/lumy-home-backend:latest
 
   build-and-push-frontend:
     needs: determine-version
@@ -182,4 +182,4 @@ jobs:
           tags: ${{ steps.meta_frontend.outputs.tags }}
           labels: ${{ steps.meta_frontend.outputs.labels }}
           cache-from: type=registry,ref=${{ env.DOCKER_HUB_USERNAME }}/lumy-home-frontend:latest
-          cache-to: type=registry,ref=${{ env.DOCKER_HUB_USERNAME }}/lumy-home-frontend:latest,mode=max
+          cache-to: type=registry,ref=${{ env.DOCKER_HUB_USERNAME }}/lumy-home-frontend:latest

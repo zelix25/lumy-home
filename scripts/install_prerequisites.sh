@@ -126,27 +126,35 @@ add_docker_repo() {
 
 
 install_docker() {
-    # 4. Installation de Docker Compose officiel (standalone)
-    info "Installation de Docker Compose officiel (standalone)..."
+    info "Installation de Docker..."
 
-    apt-get update -y
-    apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin | tee -a "$LOGS_DIR/install.log"
+    apt-get install -y \
+        docker-ce \
+        docker-ce-cli \
+        containerd.io \
+        docker-buildx-plugin \
+        docker-compose-plugin \
+        | tee -a "$LOGS_DIR/install.log"
 
     # Vérifier si xz est installé
-    [ -f "/usr/bin/xz" ] || (apt-get install -y xz-utils)
+    if [ ! -f "/usr/bin/xz" ]; then
+        apt-get install -y xz-utils | tee -a "$LOGS_DIR/install.log"
+    fi
 
+    # créer groupe docker si absent
     groupadd -f docker | tee -a "$LOGS_DIR/install.log"
-    chown root:docker /var/run/docker.sock | tee -a "$LOGS_DIR/install.log"
-    usermod -a -G docker "$(whoami)" | tee -a "$LOGS_DIR/install.log"
-    newgrp docker | tee -a "$LOGS_DIR/install.log"
 
-    # Vérifier si l'utilisateur est créé avant d'exécuter les late-commands
-    # Démarrer et activer Docker
-    systemctl enable docker
-    systemctl start docker
+    # ajouter lumy au groupe docker
+    usermod -aG docker lumy | tee -a "$LOGS_DIR/install.log"
+
+    # démarrer docker
+    systemctl enable docker | tee -a "$LOGS_DIR/install.log"
+    systemctl start docker | tee -a "$LOGS_DIR/install.log"
 
     DOCKER_INSTALLED="true"
+    info "Docker installé. Reconnexion nécessaire pour que l'utilisateur lumy utilise docker sans sudo."
 }
+
 
 
 hostname_configuration() {
@@ -163,50 +171,6 @@ hostname_configuration() {
         info "Le hostname est déjà configuré sur 'lumy-home'"
     fi
 }
-
-# 7. Télécharger et extraire Lumy Home-core.tar.gz
-#info "Téléchargement de lumy-home-core..."
-# Déterminer la version du package
-#LUMY_HOME_VERSION=$(curl -s https://api.github.com/repos/your-repo/Lumy Home/releases/latest | grep -o '"tag_name": "[^"]*"' | cut -d'"' -f4)
-
-# URL du package (à adapter selon votre source)
-#LUMY_HOME_PACKAGE_URL="${LUMY_HOME_PACKAGE_URL:-https://github.com/your-repo/Lumy Home/releases/latest/download/Lumy Home-core.tar.gz}"
-#PACKAGE_NAME="lumy-home-core-v${LUMY_HOME_VERSION}.tar.gz"
-#TEMP_DIR=$(mktemp -d)
-
-# Télécharger le package
-#if curl -L -f -o "${TEMP_DIR}/${PACKAGE_NAME}" "${LUMY_HOME_PACKAGE_URL}"; then
-#    info "Package téléchargé avec succès"
-#else
-#    error "Échec du téléchargement du package depuis ${LUMY_HOME_PACKAGE_URL}"
-#    error "Vous pouvez définir LUMY_HOME_PACKAGE_URL pour spécifier une URL personnalisée"
-#    error "Exemple: LUMY_HOME_PACKAGE_URL=https://example.com/Lumy Home-core.tar.gz ./install.sh"
-#    rm -rf "${TEMP_DIR}"
-#    exit 1
-#fi
-
-# Vérifier que le fichier est un archive tar.xz valide
-#if ! tar -tzf "${TEMP_DIR}/${PACKAGE_NAME}" >/dev/null 2>&1; then
-    #    error "Le fichier téléchargé n'est pas une archive tar.gz valide"
-#    rm -rf "${TEMP_DIR}"
-#    exit 1
-#fi
-
-# Extraire le package dans /etc/lumy
-#info "Extraction du package dans /etc/${LUMY_DIR}..."
-#tar -xzf "${TEMP_DIR}/${PACKAGE_NAME}" -C /etc/${LUMY_DIR} --strip-components=1
-
-# Nettoyer le fichier temporaire
-#rm -rf "${TEMP_DIR}"
-
-# Vérifier que l'extraction a réussi
-#if [ -d "/etc/${LUMY_DIR}" ] && [ "$(ls -A /etc/${LUMY_DIR})" ]; then
-#    info "Package extrait avec succès dans /etc/${LUMY_DIR}"
-#    ls -la /etc/${LUMY_DIR}
-#else
-#    error "L'extraction du package a échoué"
-#    exit 1
-#fi
 
 start_prerequisites_installation() {
 
