@@ -57,6 +57,7 @@ services:
     networks:
       - lumy-network
       - lumy-frontend-backend
+
   frontend:
     #build:
       #context: ./frontend
@@ -91,13 +92,6 @@ services:
       - lumy-network
 
   lumy-updater:
-    #build:
-      #context: ./
-      #dockerfile: Dockerfile
-      # Si le GID du groupe docker sur votre système est différent de 999,
-      # décommentez et modifiez la ligne suivante :
-      # args:
-      #   DOCKER_GID: 999
     image: zelix25/lumy-updater:latest
     container_name: lumy-updater
     ports:
@@ -107,9 +101,6 @@ services:
       - TARGET_PROJECT_NAME=lumy-home
       - COMPOSE_FILE=/opt/lumy/docker-compose.yml
       - SERVICES=lumy-backend,lumy-frontend,mosquitto,zigbee2mqtt,lumy-agent
-      # Mode du système: 'beta' ou 'stable' (défaut: 'stable')
-      # En mode 'beta', les images lumy-home-backend et lumy-home-frontend utiliseront le tag 'beta'
-      # En mode 'stable', elles utiliseront le tag 'latest'
       - UPDATE_MODE=beta
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
