@@ -78,7 +78,7 @@ services:
 
   agent:
     image: zelix25/lumy-home-agent:latest
-    container_name: lumy-home-agent
+    container_name: lumy-agent
     env_file: ./data/agent/.env
     volumes:
       - ./data/agent:/app/data

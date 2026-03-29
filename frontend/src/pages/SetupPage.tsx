@@ -27,6 +27,9 @@ import { MenuItem, Select, FormControl, InputLabel, CircularProgress } from '@mu
 
 type SetupStep = 'account' | 'store' | 'weather' | 'zigbee' | 'complete';
 
+/** À mettre à true pour réafficher l'étape configuration Zigbee (USB / adaptateur). */
+const SHOW_ZIGBEE_STEP = false;
+
 const COMMON_TIMEZONES = [
   'Europe/Paris',
   'Europe/London',
@@ -64,6 +67,9 @@ export default function SetupPage() {
   const getInitialStep = (): SetupStep => {
     const savedStep = localStorage.getItem('setup_current_step');
     if (savedStep && ['account', 'store', 'weather', 'zigbee', 'complete'].includes(savedStep)) {
+      if (!SHOW_ZIGBEE_STEP && savedStep === 'zigbee') {
+        return 'complete';
+      }
       return savedStep as SetupStep;
     }
     return 'account';
@@ -74,6 +80,12 @@ export default function SetupPage() {
   // Sauvegarder l'étape dans localStorage à chaque changement
   useEffect(() => {
     localStorage.setItem('setup_current_step', currentStep);
+  }, [currentStep]);
+
+  useEffect(() => {
+    if (!SHOW_ZIGBEE_STEP && currentStep === 'zigbee') {
+      setCurrentStep('complete');
+    }
   }, [currentStep]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -302,16 +314,16 @@ export default function SetupPage() {
   };
 
   const handleContinueFromWeather = () => {
-    setCurrentStep('zigbee');
+    setCurrentStep(SHOW_ZIGBEE_STEP ? 'zigbee' : 'complete');
   };
 
   const handleSkipWeather = () => {
-    setCurrentStep('zigbee');
+    setCurrentStep(SHOW_ZIGBEE_STEP ? 'zigbee' : 'complete');
   };
 
   // Charger les périphériques USB au montage de l'étape zigbee
   useEffect(() => {
-    if (currentStep === 'zigbee' && usbDevices.length === 0) {
+    if (SHOW_ZIGBEE_STEP && currentStep === 'zigbee' && usbDevices.length === 0) {
       loadUsbDevices();
     }
   }, [currentStep]);
@@ -383,15 +395,38 @@ export default function SetupPage() {
     }
   };
 
-  const steps = [
-    t('setup.stepAccount'),
-    t('setup.stepStore'),
-    t('setup.stepWeather'),
-    t('setup.stepZigbee'),
-    t('setup.stepComplete'),
-  ];
+  const steps = SHOW_ZIGBEE_STEP
+    ? [
+        t('setup.stepAccount'),
+        t('setup.stepStore'),
+        t('setup.stepWeather'),
+        t('setup.stepZigbee'),
+        t('setup.stepComplete'),
+      ]
+    : [
+        t('setup.stepAccount'),
+        t('setup.stepStore'),
+        t('setup.stepWeather'),
+        t('setup.stepComplete'),
+      ];
 
   const getActiveStep = () => {
+    if (SHOW_ZIGBEE_STEP) {
+      switch (currentStep) {
+        case 'account':
+          return 0;
+        case 'store':
+          return 1;
+        case 'weather':
+          return 2;
+        case 'zigbee':
+          return 3;
+        case 'complete':
+          return 4;
+        default:
+          return 0;
+      }
+    }
     switch (currentStep) {
       case 'account':
         return 0;
@@ -399,10 +434,10 @@ export default function SetupPage() {
         return 1;
       case 'weather':
         return 2;
+      case 'complete':
+        return 3;
       case 'zigbee':
         return 3;
-      case 'complete':
-        return 4;
       default:
         return 0;
     }
@@ -696,6 +731,9 @@ export default function SetupPage() {
         );
 
       case 'zigbee':
+        if (!SHOW_ZIGBEE_STEP) {
+          return null;
+        }
         return (
           <Box>
             <Typography variant="h6" sx={{ mb: 3, fontWeight: 500 }}>

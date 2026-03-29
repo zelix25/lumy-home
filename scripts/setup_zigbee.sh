@@ -309,7 +309,7 @@ version: 4
 mqtt:
   base_topic: zigbee2mqtt
   server: mqtt://mosquitto:1883
-  user: $MQTT_USER
+  user: mqtt
   password: $MQTT_PASSWORD
 serial:
   port: $PORT_ZIGBEE
@@ -369,7 +369,7 @@ DATABASE_PATH=data/lumy.db
 
 # MQTT (Zigbee2MQTT)
 MQTT_BROKER_URL=mqtt://mosquitto:1883
-MQTT_USERNAME=lumy
+MQTT_USERNAME=mqtt
 MQTT_PASSWORD=$MQTT_PASSWORD
 MQTT_CLIENT_ID=lumy
 MQTT_RECONNECT_PERIOD=5000
@@ -406,7 +406,7 @@ cat > "$AGENT_ENV_FILE" << EOF
 NODE_ENV=production
 
 # WebSocket broker (inclure le chemin /tunnel/agent)
-BROKER_WSS_URL=ws://localhost:3000/tunnel/agent
+BROKER_WSS_URL=wss://broker.lumy-home.com/tunnel/agent
 
 # Même secret et issuer que le broker (signature JWT device côté agent)
 BROKER_JWT_SECRET=0123456789abcdef0123456789abcdef
@@ -440,6 +440,12 @@ if [ -z "$IP_BOX" ]; then
     error "Impossible de récupérer l'IP de la box"
     exit 1
 fi
+
+# Redémarre lumy-backend
+info "Redémarrage de lumy-backend..."
+docker compose down backend
+docker compose up -d backend
+success "lumy-backend redémarré avec succès"
 
 # Afficher un résumé
 echo ""
