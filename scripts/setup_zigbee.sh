@@ -28,14 +28,45 @@ success() {
     echo -e "${BLUE}✅ $1${NC}"
 }
 
+# Génère une ligne passwd Mosquitto 2.x ($7$ = PBKDF2-HMAC-SHA512) :
+# sel aléatoire 12 octets, itérations 101 (défaut mosquitto 2.0.x), sel et hash en base64.
+write_mosquitto_passwd_entry() {
+    local user="$1"
+    local password="$2"
+    local passwd_file="$3"
+    MQTT_USER="$user" MQTT_PASSWORD="$password" PASSWD_FILE="$passwd_file" python3 <<'PY'
+import base64
+import hashlib
+import os
+import secrets
+
+user = os.environ["MQTT_USER"]
+password = os.environ["MQTT_PASSWORD"].encode("utf-8")
+path = os.environ["PASSWD_FILE"]
+
+salt = secrets.token_bytes(12)
+iterations = 101
+dk = hashlib.pbkdf2_hmac("sha512", password, salt, iterations, dklen=64)
+salt_b64 = base64.b64encode(salt).decode("ascii")
+hash_b64 = base64.b64encode(dk).decode("ascii")
+line = "%s:$7$%d$%s$%s\n" % (user, iterations, salt_b64, hash_b64)
+
+fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+try:
+    os.write(fd, line.encode("utf-8"))
+finally:
+    os.close(fd)
+PY
+}
+
 info "Démarrage de la configuration de Mosquitto et Zigbee2MQTT..."
 
 # Créer les dossiers système dans /opt/lumy
 info "Création des dossiers système dans /opt/lumy..."
 LUMYHOME_DIR="/opt/lumy"
 LUMYHOME_DIR_DATA_DIR="$LUMYHOME_DIR/data"
-LUMYHOME_DIR_LOG_DIR="$LUMYHOME_DIR/log"
-LUMYHOME_DIR_AGENT_DIR="$LUMYHOME_DIR/agent"
+LUMYHOME_DIR_LOG_DIR="$LUMYHOME_DIR/logs"
+LUMYHOME_DIR_AGENT_DIR="$LUMYHOME_DIR_DATA_DIR/agent"
 
 # Déterminer le répertoire de base du projet
 Z2MQTT_DIR="$LUMYHOME_DIR_DATA_DIR/zigbee2mqtt"
@@ -113,15 +144,14 @@ if [ -f "$MOSQUITTO_CONFIG_DIR/passwd" ]; then
 fi
 
 if [ ! -f "$MOSQUITTO_CONFIG_DIR/passwd" ]; then
-    info "Génération du mot de passe pour l'utilisateur $MQTT_USER via Docker..."
+    if ! command -v python3 &> /dev/null; then
+        error "python3 est requis pour générer le fichier passwd (PBKDF2-SHA512, format Mosquitto \$7\$)."
+        exit 1
+    fi
+    info "Génération du mot de passe pour l'utilisateur $MQTT_USER (PBKDF2-SHA512)..."
     MQTT_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-25)
-    
-    # Créer le fichier passwd avec mosquitto_passwd via Docker
-    # Utiliser un conteneur temporaire pour générer le fichier passwd
-    docker run --rm \
-        -v "$MOSQUITTO_CONFIG_DIR:/mosquitto/config" \
-        eclipse-mosquitto:2 \
-        mosquitto_passwd -c -b /mosquitto/config/passwd "$MQTT_USER" "$MQTT_PASSWORD"
+
+    write_mosquitto_passwd_entry "$MQTT_USER" "$MQTT_PASSWORD" "$MOSQUITTO_CONFIG_DIR/passwd"
     
     # Vérifier que le fichier a été créé
     if [ ! -f "$MOSQUITTO_CONFIG_DIR/passwd" ]; then

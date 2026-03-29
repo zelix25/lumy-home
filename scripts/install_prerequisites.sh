@@ -45,9 +45,9 @@ create_lumy_home_directory() {
     info "Création du dossier /opt/${LUMY_DIR_WORKING}..."
     mkdir -p ${LUMY_DIR_WORKING}
     chmod 755 ${LUMY_DIR_WORKING}
-    mkdir -p ${LUMY_DIR_WORKING}/logs
-    chmod 755 ${LUMY_DIR_WORKING}/logs
-    chown -R $(whoami):$(whoami) ${LUMY_DIR_WORKING}
+    mkdir -p ${LOGS_DIR}
+    chmod 755 ${LOGS_DIR}
+    chown -R lumy:lumy ${LUMY_DIR_WORKING}
 }
 
 detect_architecture_type() {
@@ -192,7 +192,6 @@ start_prerequisites_installation() {
     info "  ✓ OS mis à jour et upgradé"
     info "  ✓ xz installé"
     info "  ✓ Docker CE installé: $(docker --version)"
-    info "  ✓ Docker Compose installé: $(docker compose --version)"
     info "  ✓ Hostname configuré: $(hostname)"
     info "  ✓ Prérequis pour Lumy Home installés"
 }
