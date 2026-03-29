@@ -25,6 +25,12 @@
     "selected": "Sélectionné",
     "close": "Fermer"
   },
+  "apiErrors": {
+    "serverUnreachable": "Le serveur d'application ne répond pas (service indisponible ou passerelle). Vérifiez que le backend est démarré et réessayez.",
+    "serverError": "Erreur interne du serveur. Réessayez plus tard.",
+    "requestFailed": "La requête a échoué (code {{status}}).",
+    "networkError": "Impossible de contacter le serveur. Vérifiez votre connexion réseau."
+  },
   "devices": {
     "title": "Appareils",
     "subtitle": "Gérez tous vos appareils Zigbee connectés à votre maison.",
@@ -570,6 +576,7 @@
     "shutdown": "Arrêter",
     "systemInfo": "Informations système",
     "ram": "Mémoire RAM",
+    "ramSizeGigabytes": "{{value}} Go",
     "cpuArch": "Architecture CPU",
     "cpuType": "Type de CPU",
     "updaterStatus": "Statut de mise à jour",

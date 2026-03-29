@@ -24,6 +24,12 @@
     "selected": "Selected",
     "close": "Close"
   },
+  "apiErrors": {
+    "serverUnreachable": "The application server is not responding (service or gateway unavailable). Make sure the backend is running and try again.",
+    "serverError": "Internal server error. Please try again later.",
+    "requestFailed": "The request failed (code {{status}}).",
+    "networkError": "Could not reach the server. Check your network connection."
+  },
   "devices": {
     "title": "Devices",
     "subtitle": "Manage all your Zigbee devices connected to your home.",
@@ -558,6 +564,7 @@
     "shutdown": "Shutdown",
     "systemInfo": "System information",
     "ram": "RAM memory",
+    "ramSizeGigabytes": "{{value}} GB",
     "cpuArch": "CPU architecture",
     "cpuType": "CPU type",
     "updaterStatus": "Updater status",
