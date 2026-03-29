@@ -1,9 +1,61 @@
 import { getAppPathname, getTunnelLoginHref } from '../utils/appPathname';
+import i18n from '../i18n';
 
 // Utiliser un chemin relatif pour passer par le proxy nginx
 // En développement local, utilise VITE_API_URL si défini, sinon utilise /api
 // En production Docker, nginx fait le proxy de /api vers backend:3000
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+
+function tryParseJsonErrorMessage(body: string): string | null {
+  const trimmed = body.trim();
+  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return null;
+  try {
+    const j = JSON.parse(trimmed) as {
+      message?: string | string[];
+      error?: string;
+    };
+    if (Array.isArray(j.message)) return j.message.join(', ');
+    if (typeof j.message === 'string') return j.message;
+    if (typeof j.error === 'string') return j.error;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function isLikelyHtmlErrorPage(body: string): boolean {
+  const s = body.trim().slice(0, 256).toLowerCase();
+  return (
+    s.startsWith('<!doctype') ||
+    s.startsWith('<html') ||
+    s.includes('<html') ||
+    s.includes('<head><title>')
+  );
+}
+
+/** Message lisible : pas de page HTML nginx / reverse-proxy affichée telle quelle. */
+function getUserFacingHttpError(status: number, bodyText: string): string {
+  const fromJson = tryParseJsonErrorMessage(bodyText);
+  if (fromJson) return fromJson;
+
+  const trimmed = bodyText.trim();
+  if (
+    trimmed &&
+    !isLikelyHtmlErrorPage(bodyText) &&
+    trimmed.length < 400 &&
+    !trimmed.includes('<')
+  ) {
+    return trimmed;
+  }
+
+  if (status === 502 || status === 503 || status === 504) {
+    return i18n.t('apiErrors.serverUnreachable');
+  }
+  if (status === 500) {
+    return i18n.t('apiErrors.serverError');
+  }
+  return i18n.t('apiErrors.requestFailed', { status });
+}
 
 class ApiService {
   private baseUrl: string;
@@ -33,12 +85,23 @@ class ApiService {
     return headers;
   }
 
+  private async safeFetch(input: string, init?: RequestInit): Promise<Response> {
+    try {
+      return await fetch(input, init);
+    } catch (err: unknown) {
+      if (err instanceof TypeError) {
+        throw new Error(i18n.t('apiErrors.networkError'));
+      }
+      throw err;
+    }
+  }
+
   async get<T>(endpoint: string): Promise<T> {
     // Si baseUrl est un chemin relatif, on doit s'assurer que endpoint commence par /
     const url = this.baseUrl.startsWith('http') 
       ? `${this.baseUrl}${endpoint}` 
       : `${this.baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
-    const response = await fetch(url, {
+    const response = await this.safeFetch(url, {
       headers: this.getHeaders(),
     });
     
@@ -54,7 +117,8 @@ class ApiService {
     }
     
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(getUserFacingHttpError(response.status, errorText));
     }
     
     // Si la réponse est 204 No Content, retourner null
@@ -87,7 +151,7 @@ class ApiService {
     const url = this.baseUrl.startsWith('http') 
       ? `${this.baseUrl}${endpoint}` 
       : `${this.baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
-    const response = await fetch(url, {
+    const response = await this.safeFetch(url, {
       method: 'POST',
       headers: this.getHeaders(),
       body: data ? JSON.stringify(data) : undefined,
@@ -108,7 +172,7 @@ class ApiService {
     
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(errorText || `HTTP error! status: ${response.status}`);
+      throw new Error(getUserFacingHttpError(response.status, errorText));
     }
     return response.json();
   }
@@ -117,7 +181,7 @@ class ApiService {
     const url = this.baseUrl.startsWith('http') 
       ? `${this.baseUrl}${endpoint}` 
       : `${this.baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
-    const response = await fetch(url, {
+    const response = await this.safeFetch(url, {
       method: 'PUT',
       headers: this.getHeaders(),
       body: data ? JSON.stringify(data) : undefined,
@@ -137,7 +201,8 @@ class ApiService {
     }
     
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(getUserFacingHttpError(response.status, errorText));
     }
     return response.json();
   }
@@ -146,7 +211,7 @@ class ApiService {
     const url = this.baseUrl.startsWith('http') 
       ? `${this.baseUrl}${endpoint}` 
       : `${this.baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
-    const response = await fetch(url, {
+    const response = await this.safeFetch(url, {
       method: 'PATCH',
       headers: this.getHeaders(),
       body: data ? JSON.stringify(data) : undefined,
@@ -167,7 +232,7 @@ class ApiService {
     
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(errorText || `HTTP error! status: ${response.status}`);
+      throw new Error(getUserFacingHttpError(response.status, errorText));
     }
     return response.json();
   }
@@ -176,7 +241,7 @@ class ApiService {
     const url = this.baseUrl.startsWith('http') 
       ? `${this.baseUrl}${endpoint}` 
       : `${this.baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
-    const response = await fetch(url, {
+    const response = await this.safeFetch(url, {
       method: 'DELETE',
       headers: this.getHeaders(),
     });
@@ -196,7 +261,7 @@ class ApiService {
     
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(errorText || `HTTP error! status: ${response.status}`);
+      throw new Error(getUserFacingHttpError(response.status, errorText));
     }
     
     // Si la réponse est 204 No Content, retourner undefined

@@ -277,13 +277,9 @@ export default function SystemPage() {
     }
   };
 
-  const formatBytes = (bytes: number) => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
-  };
+  /** RAM fournie par l'API en Go (backend), pas en octets — arrondi supérieur pour l'affichage. */
+  const formatRamGb = (gigabytes: number) =>
+    t('system.ramSizeGigabytes', { value: Math.ceil(Math.max(0, gigabytes)) });
 
   if (loading) {
     return (
@@ -357,7 +353,7 @@ export default function SystemPage() {
                         {t('system.ram')}
                       </Typography>
                       <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                        {formatBytes(systemInfo.ram)}
+                        {formatRamGb(systemInfo.ram)}
                       </Typography>
                     </Box>
                     <Box>

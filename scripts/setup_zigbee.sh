@@ -383,6 +383,13 @@ LOG_LEVEL=info
 JWT_SECRET=$JWT_SECRET
 JWT_EXPIRES_IN=7d
 ENABLE_LOCAL_MODE=true
+
+# Store
+STORE_BASE_URL=https://store.lumy-home.com
+
+# Updater
+UPDATER_URL=http://lumy-updater:3411
+
 EOF
 
 chmod 600 "$BACKEND_ENV_FILE"
