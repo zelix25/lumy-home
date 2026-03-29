@@ -270,6 +270,22 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
     }
   };
 
+  const formatPowerW = (device: Device): string | null => {
+    if (device.state?.power === undefined) return null;
+    return typeof device.state.power === 'number'
+      ? `${device.state.power.toFixed(1)} W`
+      : `${device.state.power} W`;
+  };
+
+  const powerChipSx = {
+    fontSize: '0.7rem',
+    fontWeight: 500,
+    height: '20px',
+    backgroundColor: '#FF9800',
+    color: '#FFFFFF',
+    '& .MuiChip-label': { px: 0.75 },
+  } as const;
+
   const getDeviceValue = (device: Device): string => {
     if (device.type === 'light') {
       const isOn = deviceStates[device.ieeeAddress] || false;
@@ -461,6 +477,7 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
                     const isOn = deviceStates[device.ieeeAddress] || false;
                     const brightness = brightnessValues[device.ieeeAddress] || 0;
               const coverPosition = coverPositions[device.ieeeAddress] ?? 0;
+              const powerLabel = formatPowerW(device);
               const hasTemperature = device.state?.temperature !== undefined;
               const chartData = hasTemperature ? generateChartData(device) : [];
               const hasHeatingSetpoint = device.state?.occupied_heating_setpoint !== undefined || device.state?.current_heating_setpoint !== undefined;
@@ -657,39 +674,48 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
                           </Box>
                         </Box>
                       ) : (device.type === 'switch' || device.type === 'plug') ? (
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }} onClick={(e) => e.stopPropagation()}>
-                          <Typography 
-                            variant="h6" 
-                            sx={{ 
+                        <Box
+                          sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'flex-start' }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, width: '100%' }}>
+                            <Typography
+                              variant="h6"
+                              sx={{
+                                fontWeight: 400,
+                                fontSize: '1rem',
+                                color: 'text.primary',
+                              }}
+                            >
+                              {getDeviceValue(device)}
+                            </Typography>
+                            <Switch
+                              checked={isOn}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                handleToggle(device, e.target.checked);
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              size="small"
+                            />
+                          </Box>
+                          {powerLabel && <Chip label={powerLabel} size="small" sx={powerChipSx} />}
+                        </Box>
+                      ) : (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'flex-start' }}>
+                          <Typography
+                            variant="h6"
+                            sx={{
                               fontWeight: 400,
                               fontSize: '1rem',
+                              mb: hasTemperature ? 0.5 : 0,
                               color: 'text.primary',
                             }}
                           >
                             {getDeviceValue(device)}
                           </Typography>
-                          <Switch
-                            checked={isOn}
-                            onChange={(e) => {
-                              e.stopPropagation();
-                              handleToggle(device, e.target.checked);
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                            size="small"
-                          />
+                          {powerLabel && <Chip label={powerLabel} size="small" sx={powerChipSx} />}
                         </Box>
-                      ) : (
-                        <Typography 
-                          variant="h6" 
-                          sx={{ 
-                            fontWeight: 400,
-                            fontSize: '1rem',
-                            mb: hasTemperature ? 0.5 : 0,
-                            color: 'text.primary',
-                          }}
-                        >
-                          {getDeviceValue(device)}
-                        </Typography>
                       )}
 
                       {/* Graphique pour température */}

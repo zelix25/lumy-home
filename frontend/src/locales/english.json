@@ -114,6 +114,7 @@
     "deviceTabs": "Device tabs",
     "cancel": "Cancel",
     "create": "Create",
+    "signalQuality": "Signal quality",
     "exposes": {
       "motion_detection_sensitivity": "Motion detection sensitivity",
       "temperature_calibration": "Temperature calibration",

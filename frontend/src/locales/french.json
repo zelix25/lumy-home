@@ -3,6 +3,7 @@
     "home": "Maison",
     "devices": "Appareils",
     "scenes": "Scènes",
+    "automations": "Automatisations",
     "assistant": "Assistant IA",
     "history": "Historique",
     "plan": "Plan",
@@ -115,6 +116,7 @@
     "deviceTabs": "Onglets de l'appareil",
     "cancel": "Annuler",
     "create": "Créer",
+    "signalQuality": "Qualité du signal",
     "exposes": {
       "motion_detection_sensitivity": "Sensibilité de détection de mouvement",
       "temperature_calibration": "Calibration de température",
