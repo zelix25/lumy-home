@@ -295,8 +295,10 @@ export default function SystemNotifications() {
         PaperProps={{
           sx: {
             width: 360,
+            maxWidth: 'min(360px, calc(100vw - 24px))',
             maxHeight: 500,
             mt: 1,
+            overflow: 'hidden',
           },
         }}
       >
@@ -315,7 +317,7 @@ export default function SystemNotifications() {
           )}
         </Box>
         <Divider />
-        <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
+        <Box sx={{ maxHeight: 400, overflowX: 'hidden', overflowY: 'auto' }}>
           {notifications.length === 0 ? (
             <Box sx={{ p: 3, textAlign: 'center' }}>
               <Typography variant="body2" color="text.secondary">
@@ -340,6 +342,7 @@ export default function SystemNotifications() {
                     sx={{
                       py: 1.5,
                       px: 2,
+                      whiteSpace: 'normal',
                       backgroundColor: notification.read ? 'transparent' : 'action.hover',
                       '&:hover': {
                         backgroundColor: 'action.selected',
@@ -348,8 +351,16 @@ export default function SystemNotifications() {
                       alignItems: 'flex-start',
                     }}
                   >
-                    <Box sx={{ display: 'flex', width: '100%', alignItems: 'center' }}>
-                      <ListItemIcon sx={{ minWidth: 40 }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        width: '100%',
+                        minWidth: 0,
+                        alignItems: 'flex-start',
+                        gap: 0.5,
+                      }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 40, mt: 0.25, flexShrink: 0 }}>
                         {getNotificationIcon(notification.type)}
                       </ListItemIcon>
                       <ListItemText
@@ -359,17 +370,31 @@ export default function SystemNotifications() {
                             sx={{
                               fontWeight: notification.read ? 400 : 500,
                               color: getNotificationColor(notification.type),
+                              whiteSpace: 'normal',
+                              wordBreak: 'break-word',
+                              overflowWrap: 'anywhere',
                             }}
                           >
                             {notification.title}
                           </Typography>
                         }
                         secondary={
-                          <Typography variant="caption" color="text.secondary">
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            component="span"
+                            sx={{
+                              display: 'block',
+                              whiteSpace: 'normal',
+                              wordBreak: 'break-word',
+                              overflowWrap: 'anywhere',
+                              mt: 0.5,
+                            }}
+                          >
                             {notification.message}
                           </Typography>
                         }
-                        sx={{ flex: 1 }}
+                        sx={{ flex: 1, minWidth: 0, my: 0 }}
                       />
                       {hasInstructions && (
                         <IconButton
@@ -378,7 +403,7 @@ export default function SystemNotifications() {
                             e.stopPropagation();
                             toggleExpand(notification.id);
                           }}
-                          sx={{ ml: 1 }}
+                          sx={{ ml: 0.5, flexShrink: 0, alignSelf: 'flex-start' }}
                         >
                           {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                         </IconButton>
@@ -390,19 +415,35 @@ export default function SystemNotifications() {
                             height: 8,
                             borderRadius: '50%',
                             backgroundColor: 'primary.main',
-                            ml: 1,
+                            ml: 0.5,
+                            flexShrink: 0,
+                            mt: 0.75,
                           }}
                         />
                       )}
                     </Box>
                     {hasInstructions && (
                       <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-                        <Box sx={{ mt: 2, width: '100%', pl: 6 }}>
-                          <Alert severity={notification.type === 'error' ? 'error' : notification.type === 'warning' ? 'warning' : 'info'} sx={{ mb: 1 }}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 500, mb: 1 }}>
+                        <Box sx={{ mt: 2, width: '100%', minWidth: 0, pl: { xs: 0, sm: 6 } }}>
+                          <Alert
+                            severity={notification.type === 'error' ? 'error' : notification.type === 'warning' ? 'warning' : 'info'}
+                            sx={{ mb: 1, overflow: 'hidden' }}
+                          >
+                            <Typography variant="subtitle2" sx={{ fontWeight: 500, mb: 1, wordBreak: 'break-word' }}>
                               {t('notifications.instructions', { defaultValue: 'Instructions' })}
                             </Typography>
-                            <Typography variant="body2" component="pre" sx={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                            <Typography
+                              variant="body2"
+                              component="pre"
+                              sx={{
+                                whiteSpace: 'pre-wrap',
+                                wordBreak: 'break-word',
+                                overflowWrap: 'anywhere',
+                                fontFamily: 'monospace',
+                                fontSize: '0.75rem',
+                                maxWidth: '100%',
+                              }}
+                            >
                               {notification.instructions}
                             </Typography>
                           </Alert>

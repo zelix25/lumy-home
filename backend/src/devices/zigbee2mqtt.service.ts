@@ -9,8 +9,6 @@ import { MqttService } from '../mqtt/mqtt.service';
 import { WebsocketGateway } from '../websocket/websocket.gateway';
 import { Device, DeviceType, DeviceStatus } from './entities/device.entity';
 import { HistoryService as HistoryTimelineService } from '../history_timeline/history_timeline.service';
-import { HistoryService } from '../history/history.service';
-import { SensorType } from '../history/entities/history.entity';
 import { AutomationsService } from '../automations/automations.service';
 
 interface ZigbeeDevice {
@@ -66,8 +64,6 @@ export class Zigbee2MqttService implements OnModuleInit {
     private readonly eventEmitter: EventEmitter2,
     @Inject(forwardRef(() => HistoryTimelineService))
     private readonly historyTimelineService?: HistoryTimelineService,
-    @Inject(forwardRef(() => HistoryService))
-    private readonly historyService?: HistoryService,
     @Inject(forwardRef(() => AutomationsService))
     private readonly automationsService?: AutomationsService,
   ) {
@@ -523,10 +519,12 @@ export class Zigbee2MqttService implements OnModuleInit {
       }
 
       // Notifier via WebSocket avec un message user-friendly
-      const notificationMessage = isSupported
+      /*const notificationMessage = isSupported
         ? `Un nouvel appareil a été détecté : ${zigbeeDevice.friendly_name}.`
         : `Un appareil a été détecté mais n'est pas encore entièrement supporté : ${zigbeeDevice.friendly_name}. ${unsupportedReason}`;
+      */
 
+      const notificationMessage = `Un nouvel appareil a été détecté : ${zigbeeDevice.friendly_name}.`;
       this.websocketGateway.broadcast('device:discovered', {
         device: newDevice,
         message: notificationMessage,
@@ -650,19 +648,6 @@ export class Zigbee2MqttService implements OnModuleInit {
       }
     }
 
-    // Enregistrer les données de capteurs dans l'historique
-    if (this.historyService) {
-      try {
-        await this.logSensorData(savedDevice.ieeeAddress, savedDevice.type, oldState, mergedState);
-      } catch (error) {
-        this.logger.error(
-          `Erreur lors de l'enregistrement des données capteurs: ${error.message}`,
-          error.stack,
-          'Zigbee2MqttService',
-        );
-      }
-    }
-    
     this.logger.log(
       `✅ État mis à jour [${savedDevice.friendlyName || ieeeAddress}]: ${Object.keys(mergedState).length} propriétés`,
       'Zigbee2MqttService',
@@ -1799,95 +1784,6 @@ export class Zigbee2MqttService implements OnModuleInit {
     };
   }
 
-  /**
-   * Enregistre les données de capteurs dans l'historique
-   */
-  private async logSensorData(
-    deviceId: string,
-    deviceType: string,
-    oldState: Record<string, any>,
-    newState: Record<string, any>,
-  ): Promise<void> {
-    if (!this.historyService) return;
-
-    const sensorValues: Array<{ sensorType: SensorType; value: number }> = [];
-    const isEnergyDevice = deviceType === 'energy';
-    const isSwitchDevice = deviceType === 'switch';
-
-    // Enregistrer la température si elle a changé
-    if (newState.temperature !== undefined && typeof newState.temperature === 'number') {
-      if (oldState.temperature === undefined || oldState.temperature !== newState.temperature) {
-        sensorValues.push({ sensorType: SensorType.TEMPERATURE, value: newState.temperature });
-      }
-    }
-
-    // Enregistrer l'humidité si elle a changé
-    if (newState.humidity !== undefined && typeof newState.humidity === 'number') {
-      if (oldState.humidity === undefined || oldState.humidity !== newState.humidity) {
-        sensorValues.push({ sensorType: SensorType.HUMIDITY, value: newState.humidity });
-      }
-    }
-
-    // Enregistrer la pression si elle a changé
-    if (newState.pressure !== undefined && typeof newState.pressure === 'number') {
-      if (oldState.pressure === undefined || oldState.pressure !== newState.pressure) {
-        sensorValues.push({ sensorType: SensorType.PRESSURE, value: newState.pressure });
-      }
-    }
-
-    // Enregistrer la luminosité si elle a changé
-    if (newState.illuminance !== undefined && typeof newState.illuminance === 'number') {
-      if (oldState.illuminance === undefined || oldState.illuminance !== newState.illuminance) {
-        sensorValues.push({ sensorType: SensorType.ILLUMINANCE, value: newState.illuminance });
-      }
-    }
-
-    // Enregistrer la batterie si elle a changé
-    if (newState.battery !== undefined && typeof newState.battery === 'number') {
-      if (oldState.battery === undefined || oldState.battery !== newState.battery) {
-        sensorValues.push({ sensorType: SensorType.BATTERY, value: newState.battery });
-      }
-    }
-
-    // Enregistrer la tension si elle a changé
-    if (newState.voltage !== undefined && typeof newState.voltage === 'number') {
-      if (oldState.voltage === undefined || oldState.voltage !== newState.voltage) {
-        // Pour les appareils "energy" et "switch", historiser la valeur réelle (déjà en volts)
-        // Pour les autres appareils, convertir mV en V
-        const voltageValue = isEnergyDevice || isSwitchDevice 
-          ? newState.voltage 
-          : newState.voltage / 1000;
-        sensorValues.push({ sensorType: SensorType.VOLTAGE, value: voltageValue });
-      }
-    }
-
-    // Enregistrer la puissance si elle a changé (uniquement pour les appareils "energy")
-    if (isEnergyDevice && newState.power !== undefined && typeof newState.power === 'number') {
-      if (oldState.power === undefined || oldState.power !== newState.power) {
-        sensorValues.push({ sensorType: SensorType.POWER, value: newState.power });
-      }
-    }
-
-    // Enregistrer l'intensité si elle a changé (uniquement pour les appareils "energy")
-    if (isEnergyDevice && newState.current !== undefined && typeof newState.current === 'number') {
-      if (oldState.current === undefined || oldState.current !== newState.current) {
-        sensorValues.push({ sensorType: SensorType.CURRENT, value: newState.current });
-      }
-    }
-
-    // Enregistrer la qualité de lien si elle a changé
-    if (newState.linkquality !== undefined && typeof newState.linkquality === 'number') {
-      if (oldState.linkquality === undefined || oldState.linkquality !== newState.linkquality) {
-        sensorValues.push({ sensorType: SensorType.LINKQUALITY, value: newState.linkquality });
-      }
-    }
-
-    // Enregistrer toutes les valeurs en une seule transaction
-    if (sensorValues.length > 0) {
-      await this.historyService.logSensorValues(deviceId, sensorValues);
-    }
-  }
-
   private async logSignificantEvents(
     device: Device,
     oldState: Record<string, any>,
@@ -1925,36 +1821,13 @@ export class Zigbee2MqttService implements OnModuleInit {
       );
     }
 
-    // Changement de température significatif (> 0.5°C)
-    if (
-      newState.temperature !== undefined &&
-      oldState.temperature !== undefined &&
-      Math.abs(newState.temperature - oldState.temperature) > 0.5
-    ) {
-        await this.historyTimelineService.logTemperatureChanged(
-        device.ieeeAddress,
-        device.friendlyName || device.ieeeAddress,
-        newState.temperature,
-        device.room,
-      );
-    }
-
-    // Changement d'état (ON/OFF, brightness, etc.)
+    // Changement d'état lampe / actionneur (ON/OFF, luminosité, température de couleur) — pas les mesures capteurs
     const stateChanged =
       oldState.state !== newState.state ||
       (oldState.brightness !== newState.brightness && newState.brightness !== undefined) ||
       (oldState.color_temp !== newState.color_temp && newState.color_temp !== undefined);
 
-    // Détecter les changements de capteurs (humidity, pressure, illuminance, battery, voltage)
-    const sensorChanged =
-      (oldState.humidity !== newState.humidity && newState.humidity !== undefined) ||
-      (oldState.pressure !== newState.pressure && newState.pressure !== undefined) ||
-      (oldState.illuminance !== newState.illuminance && newState.illuminance !== undefined) ||
-      (oldState.battery !== newState.battery && newState.battery !== undefined) ||
-      (oldState.voltage !== newState.voltage && newState.voltage !== undefined);
-
-    // Enregistrer un STATE_CHANGED si l'état ou un capteur a changé
-    if (stateChanged || sensorChanged) {
+    if (stateChanged) {
         await this.historyTimelineService.logStateChanged(
         device.ieeeAddress,
         device.friendlyName || device.ieeeAddress,

@@ -169,14 +169,6 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
     ? 0
     : 0;
   
-  // Debug: afficher les données de l'appareil
-  console.log(`📊 DeviceCard [${device.friendlyName}]:`, {
-    hasState: !!device.state,
-    stateType: typeof device.state,
-    stateKeys: device.state ? Object.keys(device.state) : [],
-    state: device.state,
-  });
-
   const handleCardClick = () => {
     navigate(`/appareils/${device.ieeeAddress}`);
   };
@@ -588,46 +580,43 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
                   </Typography>
                 </Grid>
               )}
-              {/* Données pour les appareils "energy" : tension, puissance, intensité */}
-              {device.type === 'energy' && (
-                <>
-                  {device.state.voltage !== undefined && (
-                    <Grid item xs={6}>
-                      <Typography variant="caption" color="text.secondary" display="block">
-                        {i18n.t('devices.voltage')}
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {typeof device.state.voltage === 'number'
-                          ? `${device.state.voltage.toFixed(2)} V`
-                          : `${device.state.voltage} V`}
-                      </Typography>
-                    </Grid>
-                  )}
-                  {device.state.power !== undefined && (
-                    <Grid item xs={6}>
-                      <Typography variant="caption" color="text.secondary" display="block">
-                        {i18n.t('devices.power')}
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {typeof device.state.power === 'number'
-                          ? `${device.state.power.toFixed(1)} W`
-                          : `${device.state.power} W`}
-                      </Typography>
-                    </Grid>
-                  )}
-                  {device.state.current !== undefined && (
-                    <Grid item xs={6}>
-                      <Typography variant="caption" color="text.secondary" display="block">
-                        {i18n.t('devices.current')}
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {typeof device.state.current === 'number'
-                          ? `${device.state.current.toFixed(2)} A`
-                          : `${device.state.current} A`}
-                      </Typography>
-                    </Grid>
-                  )}
-                </>
+              {/* Tension (format V direct) pour les appareils "energy" */}
+              {device.type === 'energy' && device.state.voltage !== undefined && (
+                <Grid item xs={6}>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    {i18n.t('devices.voltage')}
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {typeof device.state.voltage === 'number'
+                      ? `${device.state.voltage.toFixed(2)} V`
+                      : `${device.state.voltage} V`}
+                  </Typography>
+                </Grid>
+              )}
+              {/* Puissance / intensité : energy, prises avec mesure, etc. */}
+              {device.state.power !== undefined && (
+                <Grid item xs={6}>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    {i18n.t('devices.power')}
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {typeof device.state.power === 'number'
+                      ? `${device.state.power.toFixed(1)} W`
+                      : `${device.state.power} W`}
+                  </Typography>
+                </Grid>
+              )}
+              {device.state.current !== undefined && (
+                <Grid item xs={6}>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    {i18n.t('devices.current')}
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {typeof device.state.current === 'number'
+                      ? `${device.state.current.toFixed(2)} A`
+                      : `${device.state.current} A`}
+                  </Typography>
+                </Grid>
               )}
               
               {/* Tension pour les autres types d'appareils */}

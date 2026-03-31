@@ -28,6 +28,15 @@ success() {
     echo -e "${BLUE}✅ $1${NC}"
 }
 
+# Générer un UUID v7 aléatoire
+generate_uuid_v7() {
+    ts_hex=$(printf '%012x' $(date +%s%3N))
+    rand_hex=$(openssl rand -hex 10)
+    echo "${ts_hex:0:8}-${ts_hex:8:4}-7${rand_hex:1:3}-$(printf '%x' $(( (0x${rand_hex:4:2} & 0x3f) | 0x80 )) )${rand_hex:6:2}-${rand_hex:8:12}"
+}
+
+BOX_ID=$(generate_uuid_v7)
+
 # Génère une ligne passwd Mosquitto 2.x ($7$ = PBKDF2-HMAC-SHA512) :
 # sel aléatoire 12 octets, itérations 101 (défaut mosquitto 2.0.x), sel et hash en base64.
 write_mosquitto_passwd_entry() {
@@ -337,6 +346,8 @@ success "Fichier configuration.yml créé avec succès"
 # 3. Configuration Backend .env
 info "Configuration du fichier .env pour le backend..."
 
+
+
 # Créer le dossier backend dans /opt/lumy/data si nécessaire
 BACKEND_ENV_DIR="$LUMYHOME_DIR_DATA_DIR/backend"
 if [ ! -d "$BACKEND_ENV_DIR" ]; then
@@ -384,6 +395,9 @@ JWT_SECRET=$JWT_SECRET
 JWT_EXPIRES_IN=7d
 ENABLE_LOCAL_MODE=true
 
+# Box ID
+BOX_ID=$BOX_ID
+
 # Store
 STORE_BASE_URL=https://store.lumy-home.com
 
@@ -420,8 +434,7 @@ BROKER_JWT_SECRET=0123456789abcdef0123456789abcdef
 BROKER_JWT_ISSUER=lumy-broker
 
 # Identifiant stable de la box (claim box_id)
-#BOX_ID=132132131546546
-LUMY_HOME_DB_PATH=/opt/lumy/data/backend/data/lumy.db
+BOX_ID=$BOX_ID
 
 # UI Lumy Home via service Docker frontend
 LOCAL_UI_URL=http://lumy-frontend:80
