@@ -2,7 +2,7 @@
   "common": {
     "home": "Maison",
     "devices": "Appareils",
-    "scenes": "Scènes",
+    "scenes": "Automatisations",
     "automations": "Automatisations",
     "assistant": "Assistant IA",
     "history": "Historique",
@@ -200,7 +200,7 @@
     "totalDevices": "Appareils connectés",
     "onlineDevices": "En ligne",
     "offlineDevices": "Hors ligne",
-    "scenesActive": "Scènes actives",
+    "scenesActive": "Automatisations actives",
     "generalStatus": "État général",
     "temperature": "Température moyenne",
     "humidity": "Humidité moyenne",
@@ -237,8 +237,8 @@
     }
   },
   "scenes": {
-    "title": "Scènes & Automatisations",
-    "subtitle": "Créez des scènes et automatisations pour votre maison",
+    "title": "Automatisations",
+    "subtitle": "Créez des automatisations pour votre maison",
     "noScenesCreated": "Aucune scène créée",
     "noScenesCreatedHint": "Créez votre première scène ou automatisation pour commencer",
     "createScene": "Créer une scène",

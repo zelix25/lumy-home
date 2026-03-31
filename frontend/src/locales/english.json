@@ -2,7 +2,7 @@
   "common": {
     "home": "Home",
     "devices": "Devices",
-    "scenes": "Scenes",
+    "scenes": "Automations",
     "assistant": "AI Assistant",
     "history": "History",
     "plan": "Plan",
@@ -198,7 +198,7 @@
     "totalDevices": "Total devices",
     "onlineDevices": "Online",
     "offlineDevices": "Offline",
-    "scenesActive": "Scenes active",
+    "scenesActive": "Automations active",
     "generalStatus": "General status",
     "temperature": "Average temperature",
     "humidity": "Average humidity",
@@ -235,8 +235,8 @@
     }
   },
   "scenes": {
-    "title": "Scenes & Automations",
-    "subtitle": "Create scenes and automations for your home",
+    "title": "Automations",
+    "subtitle": "Create automations for your home",
     "noScenesCreated": "No scenes created",
     "noScenesCreatedHint": "Create your first scene or automation to get started",
     "createScene": "Create scene",
