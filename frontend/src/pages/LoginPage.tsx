@@ -13,6 +13,8 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 
+const LOGO_PATH = '/assets/logo.png';
+
 export default function LoginPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -66,6 +68,14 @@ export default function LoginPage() {
     >
       <Card sx={{ maxWidth: 400, width: '100%' }}>
         <CardContent sx={{ p: 4 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+            <Box
+              component="img"
+              src={LOGO_PATH}
+              alt="Lumy Home"
+              sx={{ height: 56, width: 'auto' }}
+            />
+          </Box>
           <Typography variant="h4" gutterBottom sx={{ fontWeight: 500, mb: 3, textAlign: 'center' }}>
             {t('auth.login')}
           </Typography>

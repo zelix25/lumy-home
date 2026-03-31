@@ -1,4 +1,5 @@
 import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as os from 'os';
@@ -15,6 +16,7 @@ export class SettingsService {
   constructor(
     @InjectRepository(Settings)
     private readonly settingsRepository: Repository<Settings>,
+    private readonly configService: ConfigService,
     private readonly logger: LoggerService,
     @Inject(forwardRef(() => WeatherService))
     private readonly weatherService: WeatherService,
@@ -45,10 +47,32 @@ export class SettingsService {
       } as Partial<Settings>);
       const saved = await this.settingsRepository.save(defaultSettings);
       this.logger.log('Paramètres par défaut créés', 'SettingsService');
-      return saved;
+      return this.syncBoxIdFromBackendEnv(saved);
     }
 
-    return settings;
+    return this.syncBoxIdFromBackendEnv(settings);
+  }
+
+  /**
+   * Synchronise `settings.boxId` depuis `BOX_ID` (fichier `.env` backend).
+   * Ne modifie la base que si `BOX_ID` est défini et différent de la valeur actuelle.
+   */
+  async syncBoxIdFromBackendEnv(settings?: Settings): Promise<Settings> {
+    const target = settings ?? (await this.getSettings());
+    const envBoxId = this.configService.get<string>('BOX_ID')?.trim();
+
+    if (!envBoxId) {
+      return target;
+    }
+
+    if (target.boxId === envBoxId) {
+      return target;
+    }
+
+    target.boxId = envBoxId;
+    const saved = await this.settingsRepository.save(target);
+    this.logger.log(`BOX_ID synchronisé depuis .env vers settings.boxId: ${envBoxId}`, 'SettingsService');
+    return saved;
   }
 
   /**

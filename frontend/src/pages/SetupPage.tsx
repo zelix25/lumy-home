@@ -29,6 +29,7 @@ type SetupStep = 'account' | 'store' | 'weather' | 'zigbee' | 'complete';
 
 /** À mettre à true pour réafficher l'étape configuration Zigbee (USB / adaptateur). */
 const SHOW_ZIGBEE_STEP = false;
+const LOGO_PATH = '/assets/logo.png';
 
 const COMMON_TIMEZONES = [
   'Europe/Paris',
@@ -873,6 +874,14 @@ export default function SetupPage() {
     >
       <Card sx={{ maxWidth: 700, width: '100%' }}>
         <CardContent sx={{ p: 4 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+            <Box
+              component="img"
+              src={LOGO_PATH}
+              alt="Lumy Home"
+              sx={{ height: 64, width: 'auto' }}
+            />
+          </Box>
           <Typography variant="h4" gutterBottom sx={{ fontWeight: 500, mb: 4, textAlign: 'center' }}>
             {t('setup.welcome')}
           </Typography>

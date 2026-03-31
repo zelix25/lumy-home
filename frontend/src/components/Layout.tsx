@@ -39,6 +39,7 @@ import { usePluginMenuItems } from '../hooks/usePluginRoutes';
 import QrCodeIcon from '@mui/icons-material/QrCode';
 
 const drawerWidth = 240; // Largeur sidebar selon guide scandinave
+const LOGO_PATH = '/assets/logo.png';
 
 interface LayoutProps {
   children: ReactNode;
@@ -136,9 +137,14 @@ export default function Layout({ children }: LayoutProps) {
           minHeight: '64px !important',
         }}
       >
-        <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 500 }}>
-          Lumy Home
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box
+            component="img"
+            src={LOGO_PATH}
+            alt="Lumy Home"
+            sx={{ height: 30, width: 'auto' }}
+          />
+        </Box>
       </Toolbar>
       <List sx={{ pt: 2 }}>
         {getNavItems(t).map((item) => (
