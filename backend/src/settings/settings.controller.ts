@@ -52,6 +52,14 @@ export class SettingsController {
     return { timezone: this.settingsService.getHostTimezone() };
   }
 
+  /**
+   * Heure actuelle de l'hôte (pour affichage dans les paramètres de localisation)
+   */
+  @Get('host-time')
+  async getHostTime(): Promise<{ iso: string; timezone: string }> {
+    return this.settingsService.getHostTime();
+  }
+
   @Get('box-id')
   async getBoxId(@CurrentUser() user: { email?: string } | undefined): Promise<{ boxId: string }> {
     if (!user?.email) {

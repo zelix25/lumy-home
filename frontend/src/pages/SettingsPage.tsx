@@ -69,7 +69,7 @@ function getTimezoneOptions(): string[] {
 }
 
 export default function SettingsPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [settings, setSettings] = useState<Settings>({
     logout_delay: 0,
     city: '',
@@ -92,11 +92,45 @@ export default function SettingsPage() {
     updatedAt: '',
   });
   const [savingTelegram, setSavingTelegram] = useState(false);
+  const [hostTimeLabel, setHostTimeLabel] = useState<string | null>(null);
 
   useEffect(() => {
     loadSettings();
     loadTelegramConfig();
   }, []);
+
+  useEffect(() => {
+    if (loading || activeTab !== 0) return;
+
+    const locale = i18n.language?.startsWith('fr') ? 'fr-FR' : 'en-GB';
+
+    const fetchHostTime = async () => {
+      try {
+        const { iso, timezone } = await apiService.get<{ iso: string; timezone: string }>(
+          '/settings/host-time',
+        );
+        const d = new Date(iso);
+        setHostTimeLabel(
+          new Intl.DateTimeFormat(locale, {
+            timeZone: timezone,
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+          }).format(d),
+        );
+      } catch {
+        setHostTimeLabel(null);
+      }
+    };
+
+    fetchHostTime();
+    const id = window.setInterval(fetchHostTime, 1000);
+    return () => window.clearInterval(id);
+  }, [loading, activeTab, i18n.language]);
 
   const loadSettings = async () => {
     setLoading(true);
@@ -210,6 +244,20 @@ export default function SettingsPage() {
                       {t('settings.locationInfo')}
                     </Typography>
                   </Alert>
+
+                  {hostTimeLabel !== null && (
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
+                        {t('settings.hostTime')}
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        {hostTimeLabel}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                        {t('settings.hostTimeHelp')}
+                      </Typography>
+                    </Box>
+                  )}
 
                   <Autocomplete
                     options={getTimezoneOptions()}

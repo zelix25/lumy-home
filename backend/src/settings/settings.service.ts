@@ -319,6 +319,17 @@ export class SettingsService {
   }
 
   /**
+   * Heure actuelle de l'hôte (instant UTC + fuseau IANA utilisé par le système).
+   */
+  getHostTime(): { iso: string; timezone: string } {
+    const now = new Date();
+    return {
+      iso: now.toISOString(),
+      timezone: this.getHostTimezone(),
+    };
+  }
+
+  /**
    * Récupère une valeur de paramètre spécifique
    */
   async getSettingValue<K extends keyof Settings>(
