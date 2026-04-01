@@ -593,6 +593,7 @@
     "services": "Services",
     "updaterNotAvailable": "Service de mise à jour non disponible",
     "servicesStatus": "État des services",
+    "updatePendingBadge": "Mise à jour",
     "noServices": "Aucun service trouvé",
     "notifications": "Notifications système",
     "confirmRestart": "Confirmer le redémarrage",

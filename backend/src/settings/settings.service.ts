@@ -1,4 +1,4 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Inject, forwardRef, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -12,7 +12,7 @@ import { LoggerService } from '../logger/logger.service';
 import { WeatherService } from '../weather/weather.service';
 
 @Injectable()
-export class SettingsService {
+export class SettingsService implements OnModuleInit {
   constructor(
     @InjectRepository(Settings)
     private readonly settingsRepository: Repository<Settings>,
@@ -21,6 +21,31 @@ export class SettingsService {
     @Inject(forwardRef(() => WeatherService))
     private readonly weatherService: WeatherService,
   ) {}
+
+  async onModuleInit(): Promise<void> {
+    try {
+      const tz = await this.getEffectiveTimezone();
+      this.applyProcessTimezone(tz);
+      if (tz) {
+        this.logger.log(`Fuseau horaire du processus (TZ) : ${tz}`, 'SettingsService');
+      }
+    } catch (e: any) {
+      this.logger.warn(
+        `Impossible d'initialiser le fuseau horaire : ${e?.message ?? e}`,
+        'SettingsService',
+      );
+    }
+  }
+
+  /**
+   * Applique TZ au process Node (logs, Date, enfants). Préfère le fuseau en base.
+   */
+  private applyProcessTimezone(tz: string | null | undefined): void {
+    const t = tz?.trim();
+    if (t) {
+      process.env.TZ = t;
+    }
+  }
 
   /**
    * Récupère les paramètres (crée les paramètres par défaut s'ils n'existent pas)
@@ -208,6 +233,7 @@ export class SettingsService {
         }
       }
 
+      this.applyProcessTimezone(saved.timezone);
       return saved;
     }
 
@@ -258,6 +284,7 @@ export class SettingsService {
       }
     }
 
+    this.applyProcessTimezone(saved.timezone);
     return saved;
   }
 
@@ -304,9 +331,9 @@ export class SettingsService {
   }
 
   /**
-   * Récupère le fuseau horaire actuel de l'hôte
+   * Détection fuseau sur l'OS (timedatectl / Intl). En conteneur Docker sans TZ, souvent UTC.
    */
-  getHostTimezone(): string {
+  private detectSystemTimezone(): string {
     try {
       const result = execSync('timedatectl show -p Timezone --value', {
         encoding: 'utf-8',
@@ -319,13 +346,35 @@ export class SettingsService {
   }
 
   /**
-   * Heure actuelle de l'hôte (instant UTC + fuseau IANA utilisé par le système).
+   * Fuseau effectif pour l'application : paramètre utilisateur (base) > variable TZ > OS.
+   * Permet d'afficher l'heure correcte en Docker alors que le conteneur est souvent en UTC.
    */
-  getHostTime(): { iso: string; timezone: string } {
+  async getEffectiveTimezone(): Promise<string> {
+    try {
+      const settings = await this.getSettings();
+      const fromDb = settings.timezone?.trim();
+      if (fromDb) {
+        return fromDb;
+      }
+    } catch {
+      /* ignore */
+    }
+    const fromEnv = process.env.TZ?.trim();
+    if (fromEnv) {
+      return fromEnv;
+    }
+    return this.detectSystemTimezone();
+  }
+
+  /**
+   * Heure actuelle (instant ISO) + fuseau IANA affiché (préférence utilisateur en Docker).
+   */
+  async getHostTime(): Promise<{ iso: string; timezone: string }> {
     const now = new Date();
+    const timezone = await this.getEffectiveTimezone();
     return {
       iso: now.toISOString(),
-      timezone: this.getHostTimezone(),
+      timezone,
     };
   }
 

@@ -49,7 +49,7 @@ export class SettingsController {
    */
   @Get('host-timezone')
   async getHostTimezone(): Promise<{ timezone: string }> {
-    return { timezone: this.settingsService.getHostTimezone() };
+    return { timezone: await this.settingsService.getEffectiveTimezone() };
   }
 
   /**

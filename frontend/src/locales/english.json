@@ -580,6 +580,7 @@
     "services": "Services",
     "updaterNotAvailable": "Updater service not available",
     "servicesStatus": "Services status",
+    "updatePendingBadge": "Update",
     "noServices": "No services found",
     "notifications": "System notifications",
     "confirmRestart": "Confirm restart",

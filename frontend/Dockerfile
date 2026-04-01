@@ -25,6 +25,9 @@ RUN npm ci
 # Copier le code source
 COPY src ./src
 
+# Fichiers statiques servis tels quels (/assets/...) — requis pour le logo, favicon, etc.
+COPY public ./public
+
 # Builder l'application
 # Les variables VITE_* dans ENV seront automatiquement disponibles pour Vite
 RUN npm run build
