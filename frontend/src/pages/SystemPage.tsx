@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Card,
@@ -44,6 +44,20 @@ interface ServiceStatus {
   name: string;
   status: 'running' | 'exited' | 'restarting' | 'paused' | 'dead' | 'not_found';
   image?: string;
+}
+
+/** Aligné sur lumy-updater `getComposeServiceKey` : clé compose → nom de conteneur affiché côté santé Docker. */
+function composeServiceKeyToContainerName(composeKey: string): string {
+  switch (composeKey) {
+    case 'backend':
+      return 'lumy-backend';
+    case 'frontend':
+      return 'lumy-frontend';
+    case 'agent':
+      return 'lumy-agent';
+    default:
+      return composeKey;
+  }
 }
 
 export default function SystemPage() {
@@ -281,6 +295,18 @@ export default function SystemPage() {
   const formatRamGb = (gigabytes: number) =>
     t('system.ramSizeGigabytes', { value: Math.ceil(Math.max(0, gigabytes)) });
 
+  const servicesWithPendingUpdates = useMemo(() => {
+    const updates = lastCheckResult?.updates;
+    if (!updates?.length) return new Set<string>();
+    const set = new Set<string>();
+    for (const u of updates) {
+      if (u.hasUpdate) {
+        set.add(composeServiceKeyToContainerName(u.service));
+      }
+    }
+    return set;
+  }, [lastCheckResult]);
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -508,12 +534,36 @@ export default function SystemPage() {
                           alignItems: 'center',
                         }}
                       >
-                        <Box>
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {service.name}
-                          </Typography>
+                        <Box sx={{ minWidth: 0, pr: 1 }}>
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                              flexWrap: 'wrap',
+                              mb: service.image ? 0.5 : 0,
+                            }}
+                          >
+                            <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                              {service.name}
+                            </Typography>
+                            {servicesWithPendingUpdates.has(service.name) && (
+                              <Chip
+                                label={t('system.updatePendingBadge')}
+                                size="small"
+                                sx={{
+                                  backgroundColor: '#FF9800',
+                                  color: '#fff',
+                                  fontWeight: 600,
+                                  fontSize: '0.7rem',
+                                  height: 22,
+                                  '& .MuiChip-label': { px: 1 },
+                                }}
+                              />
+                            )}
+                          </Box>
                           {service.image && (
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography variant="caption" color="text.secondary" display="block">
                               {service.image}
                             </Typography>
                           )}
