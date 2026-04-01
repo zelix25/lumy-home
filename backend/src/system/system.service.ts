@@ -4,6 +4,22 @@ import { promisify } from 'util';
 
 const execAsync = promisify(exec);
 
+/** true si le process Node tourne en root (typique du conteneur Docker → pas de sudo dans l'image). */
+function isUnixRoot(): boolean {
+  return typeof process.getuid === 'function' && process.getuid() === 0;
+}
+
+/**
+ * Commande shutdown Linux : avec sudo seulement si le process n'est pas root
+ * (les images Docker n'installent souvent pas sudo).
+ */
+function unixShutdownCommand(reboot: boolean): string {
+  const flag = reboot ? '-r' : '-h';
+  const msg = reboot ? 'Redémarrage du système Lumy Home' : 'Arrêt du système Lumy Home';
+  const inner = `shutdown ${flag} +1 '${msg.replace(/'/g, `'\\''`)}'`;
+  return isUnixRoot() ? inner : `sudo ${inner}`;
+}
+
 @Injectable()
 export class SystemService {
   private readonly logger = new Logger(SystemService.name);
@@ -21,8 +37,8 @@ export class SystemService {
         // Windows
         await execAsync('shutdown /r /t 60 /c "Redémarrage du système Lumy Home"');
       } else {
-        // Linux/Unix
-        await execAsync('sudo shutdown -r +1 "Redémarrage du système Lumy Home"');
+        // Linux/Unix (Docker root : sans sudo)
+        await execAsync(unixShutdownCommand(true));
       }
       
       return {
@@ -48,8 +64,8 @@ export class SystemService {
         // Windows
         await execAsync('shutdown /s /t 60 /c "Arrêt du système Lumy Home"');
       } else {
-        // Linux/Unix
-        await execAsync('sudo shutdown -h +1 "Arrêt du système Lumy Home"');
+        // Linux/Unix (Docker root : sans sudo)
+        await execAsync(unixShutdownCommand(false));
       }
       
       return {

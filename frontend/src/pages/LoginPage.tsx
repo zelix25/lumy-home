@@ -9,7 +9,11 @@ import {
   Typography,
   Alert,
   Stack,
+  InputAdornment,
+  IconButton,
 } from '@mui/material';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -22,6 +26,7 @@ export default function LoginPage() {
   const [isLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -100,12 +105,27 @@ export default function LoginPage() {
 
               <TextField
                 label={t('auth.password')}
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 fullWidth
                 required
                 autoComplete={isLogin ? 'current-password' : 'new-password'}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+                        onClick={() => setShowPassword((v) => !v)}
+                        onMouseDown={(e) => e.preventDefault()}
+                        edge="end"
+                        size="small"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
 
               <Button
