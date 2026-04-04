@@ -9,7 +9,38 @@ import { MqttService } from '../mqtt/mqtt.service';
 import { WebsocketGateway } from '../websocket/websocket.gateway';
 import { Device, DeviceType, DeviceStatus } from './entities/device.entity';
 import { HistoryService as HistoryTimelineService } from '../history_timeline/history_timeline.service';
+import { HistoryService as SensorHistoryService } from '../history/history.service';
+import { SensorType } from '../history/entities/history.entity';
 import { AutomationsService } from '../automations/automations.service';
+
+/** Clés MQTT Zigbee2MQTT → type stocké en table `history` (graphiques). */
+const SENSOR_HISTORY_DEFS: Array<{
+  sensorType: SensorType;
+  keys: string[];
+  epsilon: number;
+}> = [
+  {
+    sensorType: SensorType.TEMPERATURE,
+    keys: ['temperature', 'local_temperature', 'device_temperature'],
+    epsilon: 0.01,
+  },
+  { sensorType: SensorType.HUMIDITY, keys: ['humidity'], epsilon: 0.1 },
+  { sensorType: SensorType.PRESSURE, keys: ['pressure'], epsilon: 0.1 },
+  {
+    sensorType: SensorType.ILLUMINANCE,
+    keys: ['illuminance', 'illuminance_lux'],
+    epsilon: 0.5,
+  },
+  { sensorType: SensorType.BATTERY, keys: ['battery'], epsilon: 0 },
+  { sensorType: SensorType.VOLTAGE, keys: ['voltage'], epsilon: 0.01 },
+  {
+    sensorType: SensorType.POWER,
+    keys: ['power', 'instantaneous_power', 'power_w'],
+    epsilon: 0.01,
+  },
+  { sensorType: SensorType.CURRENT, keys: ['current'], epsilon: 0.001 },
+  { sensorType: SensorType.LINKQUALITY, keys: ['linkquality'], epsilon: 0 },
+];
 
 interface ZigbeeDevice {
   ieee_address: string;
@@ -62,6 +93,7 @@ export class Zigbee2MqttService implements OnModuleInit {
     private readonly mqttService: MqttService,
     private readonly websocketGateway: WebsocketGateway,
     private readonly eventEmitter: EventEmitter2,
+    private readonly sensorHistoryService: SensorHistoryService,
     @Inject(forwardRef(() => HistoryTimelineService))
     private readonly historyTimelineService?: HistoryTimelineService,
     @Inject(forwardRef(() => AutomationsService))
@@ -532,6 +564,71 @@ export class Zigbee2MqttService implements OnModuleInit {
     }
   }
 
+  private toFiniteNumber(v: unknown): number | null {
+    if (typeof v === 'number' && Number.isFinite(v)) return v;
+    if (typeof v === 'string' && v.trim() !== '') {
+      const n = parseFloat(v);
+      if (Number.isFinite(n)) return n;
+    }
+    return null;
+  }
+
+  private sensorValueChanged(
+    oldVal: unknown,
+    newVal: number,
+    epsilon: number,
+  ): boolean {
+    if (oldVal === undefined || oldVal === null) return true;
+    const oldNum = this.toFiniteNumber(oldVal);
+    if (oldNum === null) return true;
+    if (epsilon === 0) return oldNum !== newVal;
+    return Math.abs(oldNum - newVal) > epsilon;
+  }
+
+  /**
+   * Construit les points à écrire en table `history` à partir du message MQTT courant.
+   * Une entrée par type de capteur (enum), lorsque la clé est présente dans la charge utile et que la valeur a varié.
+   */
+  private collectSensorHistoryUpdates(
+    oldState: Record<string, unknown>,
+    mergedState: Record<string, unknown>,
+    incomingPayload: Record<string, unknown>,
+  ): Array<{ sensorType: SensorType; value: number }> {
+    const entries: Array<{ sensorType: SensorType; value: number }> = [];
+    for (const def of SENSOR_HISTORY_DEFS) {
+      let pickedKey: string | null = null;
+      for (const key of def.keys) {
+        const v = incomingPayload[key];
+        if (v !== undefined && v !== null) {
+          pickedKey = key;
+          break;
+        }
+      }
+      if (!pickedKey) continue;
+      const newVal = this.toFiniteNumber(mergedState[pickedKey]);
+      if (newVal === null) continue;
+      const oldVal = oldState[pickedKey];
+      if (!this.sensorValueChanged(oldVal, newVal, def.epsilon)) continue;
+      entries.push({ sensorType: def.sensorType, value: newVal });
+    }
+    return entries;
+  }
+
+  private async persistSensorHistoryForDevice(
+    deviceId: string,
+    oldState: Record<string, unknown>,
+    mergedState: Record<string, unknown>,
+    incomingPayload: Record<string, unknown>,
+  ): Promise<void> {
+    const updates = this.collectSensorHistoryUpdates(
+      oldState,
+      mergedState,
+      incomingPayload,
+    );
+    if (updates.length === 0) return;
+    await this.sensorHistoryService.logSensorValues(deviceId, updates);
+  }
+
   private async handleDeviceStateByIeeeAddress(ieeeAddress: string, state: any) {
     this.logger.debug(
       `🔍 Recherche appareil avec IEEE: ${ieeeAddress}`,
@@ -646,6 +743,21 @@ export class Zigbee2MqttService implements OnModuleInit {
           'Zigbee2MqttService',
         );
       }
+    }
+
+    try {
+      await this.persistSensorHistoryForDevice(
+        savedDevice.ieeeAddress,
+        oldState,
+        mergedState,
+        state as Record<string, unknown>,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Erreur lors de l'enregistrement de l'historique capteurs (table history): ${error.message}`,
+        error.stack,
+        'Zigbee2MqttService',
+      );
     }
 
     this.logger.log(
@@ -951,6 +1063,8 @@ export class Zigbee2MqttService implements OnModuleInit {
       return;
     }
 
+    const oldState = device.state ? JSON.parse(JSON.stringify(device.state)) : {};
+
     // Mettre à jour l'état avec toutes les données reçues
     // Fusionner intelligemment : garder les valeurs existantes si nouvelles valeurs sont undefined/null
     const mergedState = { ...(device.state || {}) };
@@ -965,6 +1079,21 @@ export class Zigbee2MqttService implements OnModuleInit {
     device.updatedAt = new Date();
 
     await this.deviceRepository.save(device);
+
+    try {
+      await this.persistSensorHistoryForDevice(
+        device.ieeeAddress,
+        oldState,
+        mergedState,
+        state as Record<string, unknown>,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Erreur lors de l'enregistrement de l'historique capteurs (table history): ${error.message}`,
+        error.stack,
+        'Zigbee2MqttService',
+      );
+    }
 
     this.logger.debug(
       `État mis à jour pour ${friendlyName}: ${JSON.stringify(state)}`,

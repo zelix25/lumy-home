@@ -97,7 +97,11 @@ const getAvailableSensorTypes = (device: Device | null): Array<{
     });
   }
 
-  if (device.state.power !== undefined) {
+  const powerReading =
+    device.state.power ??
+    device.state.instantaneous_power ??
+    device.state.power_w;
+  if (powerReading !== undefined && powerReading !== null) {
     sensors.push({
       type: SensorType.POWER,
       label: i18n.t('devices.power'),
