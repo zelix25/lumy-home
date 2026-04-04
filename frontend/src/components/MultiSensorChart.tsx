@@ -21,6 +21,8 @@ const SENSOR_COLORS: Record<string, string> = {
   illuminance: '#9BBEB7', // Vert-gris clair (primary light)
   battery: '#6B8A84', // Vert-gris foncé (primary dark)
   voltage: '#B8A896', // Bois foncé (secondary dark)
+  power: '#F44336', // Aligné DeviceChartModal (énergie)
+  current: '#2196F3',
   linkquality: '#5A5A5A', // Gris texte secondaire
 };
 

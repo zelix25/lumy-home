@@ -8,6 +8,7 @@ import { MqttModule } from '../mqtt/mqtt.module';
 import { WebsocketModule } from '../websocket/websocket.module';
 import { LoggerModule } from '../logger/logger.module';
 import { HistoryTimelineModule } from '../history_timeline/history_timeline.module';
+import { HistoryModule } from '../history/history.module';
 import { AutomationsModule } from '../automations/automations.module';
 
 @Module({
@@ -16,6 +17,7 @@ import { AutomationsModule } from '../automations/automations.module';
     LoggerModule,
     MqttModule,
     WebsocketModule,
+    HistoryModule,
     forwardRef(() => HistoryTimelineModule),
     forwardRef(() => AutomationsModule),
   ],

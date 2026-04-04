@@ -680,6 +680,29 @@ export default function DeviceDetailPage() {
                       unit: 'V',
                     });
                   }
+
+                  const powerReading =
+                    device.state.power ??
+                    device.state.instantaneous_power ??
+                    device.state.power_w;
+                  if (powerReading !== undefined && powerReading !== null) {
+                    availableSensors.push({
+                      type: SensorType.POWER,
+                      label: t('devices.power'),
+                      unit: 'W',
+                    });
+                  }
+
+                  if (
+                    device.state.current !== undefined &&
+                    device.state.current !== null
+                  ) {
+                    availableSensors.push({
+                      type: SensorType.CURRENT,
+                      label: t('devices.current'),
+                      unit: 'A',
+                    });
+                  }
                   
                   if (device.state.linkquality !== undefined) {
                     availableSensors.push({
