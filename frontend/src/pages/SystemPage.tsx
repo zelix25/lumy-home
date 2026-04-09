@@ -496,14 +496,14 @@ export default function SystemPage() {
                       {updaterStatus.imageTag}
                     </Typography>
                   </Box>
-                  <Box>
+                  {/*<Box>
                     <Typography variant="body2" color="text.secondary">
                       {t('system.services')}
                     </Typography>
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
                       {updaterStatus.services.join(', ')}
                     </Typography>
-                  </Box>
+                  </Box>*/}
                 </Stack>
               ) : (
                 <Typography variant="body2" color="text.secondary">

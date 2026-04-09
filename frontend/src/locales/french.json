@@ -170,6 +170,7 @@
     "deviceName": "Nom de l'appareil",
     "saveName": "Enregistrer le nom",
     "deviceNameCannotBeEmpty": "Le nom ne peut pas être vide",
+    "deviceNameAlreadyExists": "Un appareil avec le nom \"{{name}}\" existe déjà",
     "room": "Pièce",
     "noRoom": "Aucune pièce",
     "addRoom": "Ajouter une pièce",

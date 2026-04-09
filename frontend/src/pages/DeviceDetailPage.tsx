@@ -69,9 +69,18 @@ const getDeviceTypeLabel = (type: string): string => {
     state: t('devices.state'),
     brightness: t('devices.brightness'),
     color_temp: t('devices.colorTemp'),
+    power: t('devices.power'),
+    current: t('devices.current'),
   };
   return labels[type] || type;
 };
+
+function getDeviceSubTypes(meta: Record<string, unknown> | null | undefined): string[] {
+  if (!meta) return [];
+  const raw = meta.subTypes ?? meta.subType;
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((x): x is string => typeof x === 'string' && x.length > 0);
+}
 
 export default function DeviceDetailPage() {
   const { ieeeAddress } = useParams<{ ieeeAddress: string }>();
@@ -787,9 +796,15 @@ export default function DeviceDetailPage() {
                     color: device.status === 'online' ? 'white' : 'text.secondary',
                   }}
                 />
-                <Chip
-                  label={getDeviceTypeLabel(device.type)}
-                />
+                <Chip label={getDeviceTypeLabel(device.type)} />
+                {getDeviceSubTypes(device.meta).map((st) => (
+                  <Chip
+                    key={st}
+                    size="small"
+                    variant="outlined"
+                    label={getDeviceTypeLabel(st)}
+                  />
+                ))}
               </Box>
 
               {device.state && Object.keys(device.state).length > 0 && (
