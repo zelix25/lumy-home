@@ -25,6 +25,7 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       host: '0.0.0.0',
+      allowedHosts: true,
       proxy: {
         '/api': {
           // Utiliser la variable chargée depuis .env ou la valeur par défaut

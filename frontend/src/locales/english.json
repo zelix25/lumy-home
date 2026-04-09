@@ -168,6 +168,7 @@
     "deviceName": "Device name",
     "saveName": "Save name",
     "deviceNameCannotBeEmpty": "The name cannot be empty",
+    "deviceNameAlreadyExists": "A device with the name \"{{name}}\" already exists",
     "room": "Room",
     "noRoom": "No room",
     "addRoom": "Add room",

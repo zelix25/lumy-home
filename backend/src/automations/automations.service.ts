@@ -56,6 +56,16 @@ export class AutomationsService implements OnModuleInit {
   }
 
   /**
+   * Retourne la date locale au format YYYY-MM-DD (sans conversion UTC).
+   */
+  private getLocalDateString(date: Date): string {
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, '0');
+    const day = `${date.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  /**
    * Vérifie toutes les minutes si l'heure actuelle correspond à sunrise/sunset
    * et déclenche les événements correspondants
    */
@@ -70,7 +80,7 @@ export class AutomationsService implements OnModuleInit {
       }
 
       const now = new Date();
-      const todayStr = now.toISOString().split('T')[0];
+      const todayStr = this.getLocalDateString(now);
 
       // Réinitialiser les dates si on est un nouveau jour
       if (this.lastSunriseDate && this.lastSunriseDate !== todayStr) {
@@ -148,7 +158,7 @@ export class AutomationsService implements OnModuleInit {
   async checkTimeTriggers() {
     try {
       const now = new Date();
-      const todayStr = now.toISOString().split('T')[0];
+      const todayStr = this.getLocalDateString(now);
       const currentHour = now.getHours();
       const currentMinute = now.getMinutes();
 
@@ -169,9 +179,9 @@ export class AutomationsService implements OnModuleInit {
           continue;
         }
 
-        // Parser l'heure (format HH:MM)
+        // Parser l'heure (formats tolérés: HH:MM ou HH:MM:SS)
         const timeParts = triggerTime.split(':');
-        if (timeParts.length !== 2) {
+        if (timeParts.length < 2) {
           this.logger.warn(
             `Format d'heure invalide pour l'automation ${automation.id}: ${triggerTime}`,
             'AutomationsService',

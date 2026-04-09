@@ -72,6 +72,10 @@ interface DeviceTypeMappingEntry {
   model: string;
   vendor?: string;
   type: string;
+  /** Sous-types fonctionnels (ex. capteurs combinés : température + humidité) */
+  subTypes?: string[];
+  /** @deprecated — utiliser subTypes */
+  subType?: string[];
   comment?: string;
 }
 
@@ -427,7 +431,9 @@ export class Zigbee2MqttService implements OnModuleInit {
       'Zigbee2MqttService',
     );
     
-    const deviceType = this.normalizeDeviceType(zigbeeDevice);
+    const mappingEntry = this.findMappingEntry(zigbeeDevice);
+    const mappingSubTypes = this.getMappingSubTypesList(mappingEntry);
+    const deviceType = this.normalizeDeviceType(zigbeeDevice, mappingEntry);
     const isSupported = this.isDeviceSupported(zigbeeDevice);
     const unsupportedReason = isSupported
       ? null
@@ -460,6 +466,7 @@ export class Zigbee2MqttService implements OnModuleInit {
         exposes: zigbeeDevice.definition?.exposes || [],
         originalType: zigbeeDevice.type, // Stocker le type original de Zigbee2MQTT
         originalZigbeeName: mqttName, // Stocker le nom normalisé utilisé par Zigbee2MQTT dans les topics
+        ...(mappingSubTypes?.length ? { subTypes: mappingSubTypes } : {}),
       },
     };
 
@@ -478,6 +485,7 @@ export class Zigbee2MqttService implements OnModuleInit {
         originalType: existingMeta.originalType || zigbeeDevice.type, // Préserver ou ajouter le type original
         // Mettre à jour le nom normalisé utilisé par Zigbee2MQTT dans les topics
         originalZigbeeName: mqttName, // Toujours mettre à jour avec le nom normalisé actuel de Zigbee2MQTT
+        ...(mappingSubTypes?.length ? { subTypes: mappingSubTypes } : {}),
       };
       
       // Mettre à jour uniquement les champs techniques, pas le friendlyName utilisateur
@@ -1235,11 +1243,73 @@ export class Zigbee2MqttService implements OnModuleInit {
 
 
   /**
+   * Recherche l'entrée correspondante dans device-type-mapping.json (même logique que l'ancienne résolution inline).
+   */
+  private findMappingEntry(device: ZigbeeDevice): DeviceTypeMappingEntry | undefined {
+    if (this.deviceTypeMapping.length === 0) {
+      return undefined;
+    }
+    const model = device.definition?.model || '';
+    const modelLower = model.toLowerCase();
+    const vendor = device.definition?.vendor?.toLowerCase() || '';
+    const normalizedModel = model ? modelLower.trim().replace(/\s+/g, ' ') : '';
+    const normalizedVendor = vendor ? vendor.trim().toLowerCase() : '';
+
+    let mappingEntry: DeviceTypeMappingEntry | undefined = undefined;
+
+    if (normalizedModel) {
+      mappingEntry = this.deviceTypeMapping.find((entry) => {
+        const entryModel = entry.model?.toLowerCase().trim().replace(/\s+/g, ' ') || '';
+        return entryModel === normalizedModel;
+      });
+    }
+
+    if (!mappingEntry && normalizedModel) {
+      mappingEntry = this.deviceTypeMapping.find((entry) => {
+        const entryModel = entry.model?.toLowerCase().trim().replace(/\s+/g, ' ') || '';
+        return entryModel.includes(normalizedModel) || normalizedModel.includes(entryModel);
+      });
+    }
+
+    if (!mappingEntry && normalizedModel && normalizedVendor) {
+      mappingEntry = this.deviceTypeMapping.find((entry) => {
+        const entryModel = entry.model?.toLowerCase().trim().replace(/\s+/g, ' ') || '';
+        const entryVendor = entry.vendor?.toLowerCase().trim() || '';
+        return entryModel === normalizedModel && entryVendor === normalizedVendor;
+      });
+    }
+
+    if (!mappingEntry && normalizedVendor) {
+      mappingEntry = this.deviceTypeMapping.find((entry) => {
+        const entryVendor = entry.vendor?.toLowerCase().trim() || '';
+        return entryVendor === normalizedVendor;
+      });
+    }
+
+    return mappingEntry;
+  }
+
+  /** Liste fusionnée subTypes / subType (ancien nom) depuis le mapping JSON. */
+  private getMappingSubTypesList(
+    entry: DeviceTypeMappingEntry | undefined,
+  ): string[] | undefined {
+    if (!entry) return undefined;
+    const list = entry.subTypes?.length ? entry.subTypes : entry.subType;
+    if (Array.isArray(list) && list.length > 0) {
+      return list.filter((s) => typeof s === 'string' && s.length > 0);
+    }
+    return undefined;
+  }
+
+  /**
    * Détermine le type d'appareil en se basant sur :
-   * 1. Le fichier de mapping device-type-mapping.json (priorité)
+   * 1. Le fichier de mapping device-type-mapping.json (priorité) — entrée déjà résolue par {@link findMappingEntry}
    * 2. Les données Zigbee2MQTT (exposes, type, model, vendor) avec des regex et patterns améliorés
    */
-  private normalizeDeviceType(device: ZigbeeDevice): DeviceType {
+  private normalizeDeviceType(
+    device: ZigbeeDevice,
+    mappingEntry: DeviceTypeMappingEntry | undefined,
+  ): DeviceType {
     const friendlyName = device.friendly_name?.toLowerCase() || '';
     const type = device.type?.toLowerCase() || '';
     const exposes = device.definition?.exposes || [];
@@ -1248,85 +1318,39 @@ export class Zigbee2MqttService implements OnModuleInit {
     const modelLower = model.toLowerCase();
     const vendor = device.definition?.vendor?.toLowerCase() || '';
     const description = device.definition?.description?.toLowerCase() || '';
-    
-    // PRIORITÉ 0: Chercher dans le fichier de mapping par modèle (et vendor si disponible)
+
+    // PRIORITÉ 0: fichier de mapping
     if (this.deviceTypeMapping.length > 0) {
-      // Normaliser le modèle pour la recherche (trim, lowercase, supprimer espaces multiples)
-      const normalizedModel = model ? modelLower.trim().replace(/\s+/g, ' ') : '';
-      const normalizedVendor = vendor ? vendor.trim().toLowerCase() : '';
-      
-      let mappingEntry: DeviceTypeMappingEntry | undefined = undefined;
-      
-      // 1. Chercher une correspondance exacte par modèle (si disponible)
-      if (normalizedModel) {
-        mappingEntry = this.deviceTypeMapping.find(
-          (entry) => {
-            const entryModel = entry.model?.toLowerCase().trim().replace(/\s+/g, ' ') || '';
-            return entryModel === normalizedModel;
-          },
-        );
-      }
-
-      // 2. Si pas trouvé, essayer une correspondance partielle (le modèle du mapping contient le modèle de l'appareil ou vice versa)
-      if (!mappingEntry && normalizedModel) {
-        mappingEntry = this.deviceTypeMapping.find(
-          (entry) => {
-            const entryModel = entry.model?.toLowerCase().trim().replace(/\s+/g, ' ') || '';
-            return entryModel.includes(normalizedModel) || normalizedModel.includes(entryModel);
-          },
-        );
-      }
-
-      // 3. Si pas trouvé et qu'on a un vendor, chercher avec modèle + vendor
-      if (!mappingEntry && normalizedModel && normalizedVendor) {
-        mappingEntry = this.deviceTypeMapping.find(
-          (entry) => {
-            const entryModel = entry.model?.toLowerCase().trim().replace(/\s+/g, ' ') || '';
-            const entryVendor = entry.vendor?.toLowerCase().trim() || '';
-            return entryModel === normalizedModel && entryVendor === normalizedVendor;
-          },
-        );
-      }
-
-      // 4. Si toujours pas trouvé et qu'on a un vendor, chercher uniquement par vendor (si plusieurs entrées avec le même vendor, prendre la première)
-      if (!mappingEntry && normalizedVendor) {
-        mappingEntry = this.deviceTypeMapping.find(
-          (entry) => {
-            const entryVendor = entry.vendor?.toLowerCase().trim() || '';
-            return entryVendor === normalizedVendor;
-          },
-        );
-      }
-
-      // Si trouvé, utiliser le type du mapping
       if (mappingEntry) {
         const mappedType = this.mapJsonTypeToDeviceType(mappingEntry.type);
+        const subList = this.getMappingSubTypesList(mappingEntry);
+        const subInfo =
+          subList?.length ? `, subTypes: [${subList.join(', ')}]` : '';
         this.logger.log(
-          `✅ Type détecté par mapping JSON: ${mappedType} pour ${device.friendly_name} (modèle: ${model || 'N/A'}${vendor ? `, vendor: ${vendor}` : ''}, type mapping: ${mappingEntry.type})`,
+          `✅ Type détecté par mapping JSON: ${mappedType} pour ${device.friendly_name} (modèle: ${model || 'N/A'}${vendor ? `, vendor: ${vendor}` : ''}, type mapping: ${mappingEntry.type}${subInfo})`,
           'Zigbee2MqttService',
         );
         return mappedType;
-      } else {
-        // Log pour déboguer si le modèle n'est pas trouvé
-        if (normalizedModel) {
-          this.logger.debug(
-            `🔍 Modèle "${model}" non trouvé dans le mapping (${this.deviceTypeMapping.length} entrées disponibles)${vendor ? `, vendor: ${vendor}` : ''}`,
-            'Zigbee2MqttService',
-          );
-        } else {
-          this.logger.debug(
-            `⚠️ Pas de modèle disponible pour ${device.friendly_name}, impossible de chercher dans le mapping${vendor ? ` (vendor: ${vendor})` : ''}`,
-            'Zigbee2MqttService',
-          );
-        }
       }
-    } else if (this.deviceTypeMapping.length === 0) {
+      const normalizedModel = model ? modelLower.trim().replace(/\s+/g, ' ') : '';
+      if (normalizedModel) {
+        this.logger.debug(
+          `🔍 Modèle "${model}" non trouvé dans le mapping (${this.deviceTypeMapping.length} entrées disponibles)${vendor ? `, vendor: ${vendor}` : ''}`,
+          'Zigbee2MqttService',
+        );
+      } else {
+        this.logger.debug(
+          `⚠️ Pas de modèle disponible pour ${device.friendly_name}, impossible de chercher dans le mapping${vendor ? ` (vendor: ${vendor})` : ''}`,
+          'Zigbee2MqttService',
+        );
+      }
+    } else {
       this.logger.debug(
         `⚠️ Fichier de mapping non chargé ou vide, utilisation de la détection par exposes/type`,
         'Zigbee2MqttService',
       );
     }
-    
+
     // Créer une chaîne combinée pour les recherches regex
     const combinedStr = `${friendlyName} ${type} ${modelLower} ${vendor} ${description} ${exposesStr}`.toLowerCase();
 
