@@ -1,5 +1,13 @@
-import { Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { exec } from 'child_process';
+import Docker = require('dockerode');
+import { PassThrough } from 'stream';
 import { promisify } from 'util';
 
 const execAsync = promisify(exec);
@@ -24,14 +32,57 @@ function unixShutdownCommand(reboot: boolean): string {
 export class SystemService {
   private readonly logger = new Logger(SystemService.name);
   private static readonly CONTAINER_NAME_RE = /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/;
+  private readonly dockerClient: Docker;
   private dockerAvailabilityChecked = false;
   private dockerAvailable = false;
+  private readonly allowedContainers = new Set<string>(
+    (process.env.LOG_CONTAINER_WHITELIST ||
+      'lumy-backend,lumy-frontend,lumy-agent,lumy-updater')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+  );
 
-  private async ensureDockerCliAvailable(): Promise<void> {
+  constructor() {
+    const socketPath = process.env.DOCKER_SOCKET_PATH || '/var/run/docker.sock';
+    this.dockerClient = new Docker({ socketPath });
+  }
+
+  private assertContainerNameValid(containerName: string): string {
+    const safeContainerName = (containerName || '').trim();
+    if (!safeContainerName || !SystemService.CONTAINER_NAME_RE.test(safeContainerName)) {
+      throw new ForbiddenException('Nom de conteneur invalide');
+    }
+    if (!this.allowedContainers.has(safeContainerName)) {
+      throw new ForbiddenException(
+        `Accès refusé: le conteneur "${safeContainerName}" n'est pas autorisé pour la lecture des logs.`,
+      );
+    }
+    return safeContainerName;
+  }
+
+  private decodeDockerMultiplexedBuffer(input: Buffer): string {
+    let offset = 0;
+    let output = '';
+    while (offset + 8 <= input.length) {
+      const payloadSize = input.readUInt32BE(offset + 4);
+      const payloadStart = offset + 8;
+      const payloadEnd = payloadStart + payloadSize;
+      if (payloadEnd > input.length) break;
+      output += input.slice(payloadStart, payloadEnd).toString('utf-8');
+      offset = payloadEnd;
+    }
+    if (!output && input.length > 0) {
+      // fallback pour conteneurs tty=true (non multiplexé)
+      return input.toString('utf-8');
+    }
+    return output;
+  }
+
+  private async ensureDockerAvailable(): Promise<void> {
     if (!this.dockerAvailabilityChecked) {
       try {
-        // Vérifie que le binaire docker est présent et exécutable.
-        await execAsync('docker --version');
+        await this.dockerClient.ping();
         this.dockerAvailable = true;
       } catch {
         this.dockerAvailable = false;
@@ -39,10 +90,9 @@ export class SystemService {
         this.dockerAvailabilityChecked = true;
       }
     }
-
     if (!this.dockerAvailable) {
       throw new ServiceUnavailableException(
-        "Le CLI Docker n'est pas disponible dans le backend (commande 'docker' introuvable).",
+        "Docker n'est pas accessible depuis le backend (socket Docker indisponible).",
       );
     }
   }
@@ -54,20 +104,19 @@ export class SystemService {
     containerName: string,
     tail: number = 200,
   ): Promise<{ containerName: string; tail: number; logs: string }> {
-    const safeContainerName = (containerName || '').trim();
-    if (!safeContainerName || !SystemService.CONTAINER_NAME_RE.test(safeContainerName)) {
-      throw new Error('Nom de conteneur invalide');
-    }
-
+    const safeContainerName = this.assertContainerNameValid(containerName);
     const safeTail = Number.isFinite(tail) ? Math.min(Math.max(Math.floor(tail), 1), 5000) : 200;
-
-    await this.ensureDockerCliAvailable();
+    await this.ensureDockerAvailable();
 
     try {
-      const { stdout, stderr } = await execAsync(
-        `docker logs --tail ${safeTail} ${safeContainerName}`,
-      );
-      const output = [stdout, stderr].filter(Boolean).join('');
+      const container = this.dockerClient.getContainer(safeContainerName);
+      const rawLogs = (await container.logs({
+        stdout: true,
+        stderr: true,
+        tail: safeTail,
+        timestamps: true,
+      })) as Buffer;
+      const output = this.decodeDockerMultiplexedBuffer(rawLogs);
       return {
         containerName: safeContainerName,
         tail: safeTail,
@@ -78,11 +127,14 @@ export class SystemService {
         `Erreur récupération logs Docker (${safeContainerName}): ${error.message}`,
         error.stack,
       );
-      if (typeof error?.message === 'string' && error.message.includes('docker: not found')) {
+      if (
+        typeof error?.message === 'string' &&
+        (error.message.includes('connect ENOENT') || error.message.includes('Cannot connect'))
+      ) {
         this.dockerAvailable = false;
         this.dockerAvailabilityChecked = true;
         throw new ServiceUnavailableException(
-          "Le CLI Docker n'est pas disponible dans le backend (commande 'docker' introuvable).",
+          "Docker n'est pas accessible depuis le backend (socket Docker indisponible).",
         );
       }
       if (typeof error?.message === 'string' && error.message.includes('No such container')) {
@@ -94,6 +146,60 @@ export class SystemService {
         `Impossible de récupérer les logs du conteneur "${safeContainerName}": ${error.message}`,
       );
     }
+  }
+
+  async streamContainerLogs(
+    containerName: string,
+    tail: number,
+    handlers: {
+      onData: (chunk: string) => void;
+      onError?: (error: Error) => void;
+      onEnd?: () => void;
+    },
+  ): Promise<() => void> {
+    const safeContainerName = this.assertContainerNameValid(containerName);
+    const safeTail = Number.isFinite(tail) ? Math.min(Math.max(Math.floor(tail), 1), 5000) : 200;
+    await this.ensureDockerAvailable();
+
+    const container = this.dockerClient.getContainer(safeContainerName);
+    const stream = (await container.logs({
+      stdout: true,
+      stderr: true,
+      follow: true,
+      tail: safeTail,
+      timestamps: true,
+    })) as NodeJS.ReadableStream;
+
+    const stdout = new PassThrough();
+    const stderr = new PassThrough();
+    const onStdout = (chunk: Buffer | string) => handlers.onData(String(chunk));
+    const onStderr = (chunk: Buffer | string) => handlers.onData(String(chunk));
+    stdout.on('data', onStdout);
+    stderr.on('data', onStderr);
+    this.dockerClient.modem.demuxStream(stream as any, stdout, stderr);
+
+    const onError = (err: Error) => {
+      this.logger.error(
+        `Flux logs Docker interrompu (${safeContainerName}): ${err.message}`,
+        err.stack,
+      );
+      handlers.onError?.(err);
+    };
+    const onEnd = () => handlers.onEnd?.();
+    stream.on('error', onError);
+    stream.on('end', onEnd);
+    stream.on('close', onEnd);
+
+    return () => {
+      stream.off('error', onError);
+      stream.off('end', onEnd);
+      stream.off('close', onEnd);
+      stdout.off('data', onStdout);
+      stderr.off('data', onStderr);
+      stdout.destroy();
+      stderr.destroy();
+      (stream as any).destroy?.();
+    };
   }
 
   /**

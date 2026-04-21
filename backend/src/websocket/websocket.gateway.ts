@@ -13,6 +13,7 @@ import { LoggerService } from '../logger/logger.service';
 import { MqttService } from '../mqtt/mqtt.service';
 import { ConfigService } from '../config/config.service';
 import { Injectable } from '@nestjs/common';
+import { SystemService } from '../system/system.service';
 
 @Injectable()
 @WebSocketGateway({
@@ -29,11 +30,13 @@ export class WebsocketGateway
   server: Server;
 
   private connectedClients = new Map<string, Socket>();
+  private logStreamUnsubscribers = new Map<string, Map<string, () => void>>();
 
   constructor(
     private readonly logger: LoggerService,
     private readonly mqttService: MqttService,
     private readonly config: ConfigService,
+    private readonly systemService: SystemService,
   ) {}
 
   afterInit(server: Server) {
@@ -63,6 +66,17 @@ export class WebsocketGateway
 
   handleDisconnect(client: Socket) {
     const clientId = client.id;
+    const unsubByContainer = this.logStreamUnsubscribers.get(clientId);
+    if (unsubByContainer) {
+      for (const [, unsubscribe] of unsubByContainer) {
+        try {
+          unsubscribe();
+        } catch {
+          // no-op
+        }
+      }
+      this.logStreamUnsubscribers.delete(clientId);
+    }
     this.connectedClients.delete(clientId);
     this.logger.log(
       `🔌 WebSocket déconnecté: ${clientId} - Total: ${this.connectedClients.size}`,
@@ -87,6 +101,78 @@ export class WebsocketGateway
     );
     // Ici on pourrait gérer des abonnements spécifiques par client
     client.emit('subscribed', { topic: data.topic });
+  }
+
+  @SubscribeMessage('system:logs:subscribe')
+  async handleSystemLogsSubscribe(
+    @MessageBody() data: { containerName: string; tail?: number },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const containerName = (data?.containerName || '').trim();
+    const tail = typeof data?.tail === 'number' ? data.tail : 200;
+    if (!containerName) {
+      client.emit('system:logs:error', {
+        containerName,
+        message: 'containerName est requis',
+      });
+      return;
+    }
+
+    let byContainer = this.logStreamUnsubscribers.get(client.id);
+    if (!byContainer) {
+      byContainer = new Map<string, () => void>();
+      this.logStreamUnsubscribers.set(client.id, byContainer);
+    }
+
+    const existing = byContainer.get(containerName);
+    if (existing) {
+      try {
+        existing();
+      } catch {
+        // no-op
+      }
+      byContainer.delete(containerName);
+    }
+
+    try {
+      const unsubscribe = await this.systemService.streamContainerLogs(containerName, tail, {
+        onData: (chunk) => {
+          client.emit('system:logs:data', { containerName, chunk });
+        },
+        onError: (error) => {
+          client.emit('system:logs:error', { containerName, message: error.message });
+        },
+        onEnd: () => {
+          client.emit('system:logs:end', { containerName });
+        },
+      });
+      byContainer.set(containerName, unsubscribe);
+      client.emit('system:logs:subscribed', { containerName, tail });
+    } catch (error: any) {
+      client.emit('system:logs:error', {
+        containerName,
+        message: error?.message || 'Impossible de démarrer le stream de logs',
+      });
+    }
+  }
+
+  @SubscribeMessage('system:logs:unsubscribe')
+  handleSystemLogsUnsubscribe(
+    @MessageBody() data: { containerName: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const containerName = (data?.containerName || '').trim();
+    const byContainer = this.logStreamUnsubscribers.get(client.id);
+    if (!byContainer || !containerName) return;
+    const unsubscribe = byContainer.get(containerName);
+    if (!unsubscribe) return;
+    try {
+      unsubscribe();
+    } catch {
+      // no-op
+    }
+    byContainer.delete(containerName);
+    client.emit('system:logs:unsubscribed', { containerName });
   }
 
   private broadcastMqttMessage(message: any) {
