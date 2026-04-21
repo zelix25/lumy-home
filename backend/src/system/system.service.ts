@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
@@ -24,6 +24,28 @@ function unixShutdownCommand(reboot: boolean): string {
 export class SystemService {
   private readonly logger = new Logger(SystemService.name);
   private static readonly CONTAINER_NAME_RE = /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/;
+  private dockerAvailabilityChecked = false;
+  private dockerAvailable = false;
+
+  private async ensureDockerCliAvailable(): Promise<void> {
+    if (!this.dockerAvailabilityChecked) {
+      try {
+        // Vérifie que le binaire docker est présent et exécutable.
+        await execAsync('docker --version');
+        this.dockerAvailable = true;
+      } catch {
+        this.dockerAvailable = false;
+      } finally {
+        this.dockerAvailabilityChecked = true;
+      }
+    }
+
+    if (!this.dockerAvailable) {
+      throw new ServiceUnavailableException(
+        "Le CLI Docker n'est pas disponible dans le backend (commande 'docker' introuvable).",
+      );
+    }
+  }
 
   /**
    * Récupère les dernières lignes de logs d'un conteneur Docker.
@@ -38,6 +60,8 @@ export class SystemService {
     }
 
     const safeTail = Number.isFinite(tail) ? Math.min(Math.max(Math.floor(tail), 1), 5000) : 200;
+
+    await this.ensureDockerCliAvailable();
 
     try {
       const { stdout, stderr } = await execAsync(
@@ -54,6 +78,18 @@ export class SystemService {
         `Erreur récupération logs Docker (${safeContainerName}): ${error.message}`,
         error.stack,
       );
+      if (typeof error?.message === 'string' && error.message.includes('docker: not found')) {
+        this.dockerAvailable = false;
+        this.dockerAvailabilityChecked = true;
+        throw new ServiceUnavailableException(
+          "Le CLI Docker n'est pas disponible dans le backend (commande 'docker' introuvable).",
+        );
+      }
+      if (typeof error?.message === 'string' && error.message.includes('No such container')) {
+        throw new NotFoundException(
+          `Le conteneur "${safeContainerName}" est introuvable.`,
+        );
+      }
       throw new Error(
         `Impossible de récupérer les logs du conteneur "${safeContainerName}": ${error.message}`,
       );
