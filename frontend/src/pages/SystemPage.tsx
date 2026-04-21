@@ -18,6 +18,11 @@ import {
   Paper,
   IconButton,
   Tooltip,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  TextField,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
@@ -62,6 +67,7 @@ function composeServiceKeyToContainerName(composeKey: string): string {
 
 export default function SystemPage() {
   const { t } = useTranslation();
+  const ADVANCED_MODE_STORAGE_KEY = 'lumy_settings_advanced_mode';
   const [loading, setLoading] = useState(true);
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
   const [updaterStatus, setUpdaterStatus] = useState<UpdaterStatus | null>(null);
@@ -77,6 +83,17 @@ export default function SystemPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [boxId, setBoxId] = useState<string | null>(null);
+  const [selectedLogContainer, setSelectedLogContainer] = useState<string>('');
+  const [logTail, setLogTail] = useState<number>(200);
+  const [containerLogs, setContainerLogs] = useState<string>('');
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [advancedMode, setAdvancedMode] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(ADVANCED_MODE_STORAGE_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   useEffect(() => {
     loadSystemData();
@@ -84,6 +101,28 @@ export default function SystemPage() {
     const interval = setInterval(loadSystemData, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const syncAdvancedMode = () => {
+      try {
+        setAdvancedMode(localStorage.getItem(ADVANCED_MODE_STORAGE_KEY) === 'true');
+      } catch {
+        setAdvancedMode(false);
+      }
+    };
+    window.addEventListener('focus', syncAdvancedMode);
+    window.addEventListener('storage', syncAdvancedMode);
+    return () => {
+      window.removeEventListener('focus', syncAdvancedMode);
+      window.removeEventListener('storage', syncAdvancedMode);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!selectedLogContainer && services.length > 0) {
+      setSelectedLogContainer(services[0].name);
+    }
+  }, [services, selectedLogContainer]);
 
   const loadSystemData = async () => {
     try {
@@ -254,6 +293,27 @@ export default function SystemPage() {
       setSuccess(null);
     }
   };
+
+  const handleLoadLogs = async () => {
+    if (!selectedLogContainer) return;
+    setLogsLoading(true);
+    try {
+      const response = await apiService.get<{ containerName: string; tail: number; logs: string }>(
+        `/system/logs/${encodeURIComponent(selectedLogContainer)}?tail=${logTail}`,
+      );
+      setContainerLogs(response?.logs || '');
+    } catch (err: any) {
+      setError(err.message || 'Impossible de charger les logs Docker');
+    } finally {
+      setLogsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!selectedLogContainer) return;
+    handleLoadLogs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedLogContainer]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -635,6 +695,84 @@ export default function SystemPage() {
                     </Alert>
                   ))}
                 </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+
+        {/* Logs Docker (mode avancé) */}
+        {advancedMode && (
+          <Grid item xs={12}>
+            <Card>
+              <CardContent>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 2,
+                    gap: 2,
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <Typography variant="h6" sx={{ fontWeight: 500 }}>
+                    Logs Docker
+                  </Typography>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <FormControl size="small" sx={{ minWidth: 220 }}>
+                      <InputLabel id="container-select-label">Conteneur</InputLabel>
+                      <Select
+                        labelId="container-select-label"
+                        label="Conteneur"
+                        value={selectedLogContainer}
+                        onChange={(e) => setSelectedLogContainer(e.target.value)}
+                      >
+                        {services.map((service) => (
+                          <MenuItem key={service.name} value={service.name}>
+                            {service.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                    <TextField
+                      size="small"
+                      label="Lignes"
+                      type="number"
+                      value={logTail}
+                      onChange={(e) =>
+                        setLogTail(Math.min(5000, Math.max(1, Number(e.target.value) || 200)))
+                      }
+                      sx={{ width: 110 }}
+                      inputProps={{ min: 1, max: 5000 }}
+                    />
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={logsLoading ? <CircularProgress size={16} /> : <RefreshIcon />}
+                      onClick={handleLoadLogs}
+                      disabled={logsLoading || !selectedLogContainer}
+                    >
+                      Rafraîchir
+                    </Button>
+                  </Stack>
+                </Box>
+
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    backgroundColor: '#111',
+                    color: '#e0e0e0',
+                    maxHeight: 420,
+                    overflow: 'auto',
+                    fontFamily: 'monospace',
+                    fontSize: '0.8rem',
+                    whiteSpace: 'pre-wrap',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {containerLogs || 'Aucun log chargé.'}
+                </Paper>
               </CardContent>
             </Card>
           </Grid>

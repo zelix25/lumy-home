@@ -70,6 +70,7 @@ function getTimezoneOptions(): string[] {
 
 export default function SettingsPage() {
   const { t, i18n } = useTranslation();
+  const ADVANCED_MODE_STORAGE_KEY = 'lumy_settings_advanced_mode';
   const [settings, setSettings] = useState<Settings>({
     logout_delay: 0,
     city: '',
@@ -93,6 +94,13 @@ export default function SettingsPage() {
   });
   const [savingTelegram, setSavingTelegram] = useState(false);
   const [hostTimeLabel, setHostTimeLabel] = useState<string | null>(null);
+  const [advancedMode, setAdvancedMode] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(ADVANCED_MODE_STORAGE_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   useEffect(() => {
     loadSettings();
@@ -208,6 +216,15 @@ export default function SettingsPage() {
     }
   };
 
+  const handleToggleAdvancedMode = (enabled: boolean) => {
+    setAdvancedMode(enabled);
+    try {
+      localStorage.setItem(ADVANCED_MODE_STORAGE_KEY, enabled ? 'true' : 'false');
+    } catch {
+      // Ignorer si localStorage n'est pas disponible
+    }
+  };
+
   return (
     <Box>
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 500, mb: 3 }}>
@@ -235,6 +252,7 @@ export default function SettingsPage() {
               <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)} sx={{ mb: 3 }}>
                 <Tab label={t('settings.tabLocation')} />
                 <Tab label={t('settings.tabTelegram')} />
+                <Tab label={t('settings.tabAdvancedMode')} />
               </Tabs>
 
               {activeTab === 0 && (
@@ -245,7 +263,7 @@ export default function SettingsPage() {
                     </Typography>
                   </Alert>
 
-                  {hostTimeLabel !== null && (
+                  {advancedMode && hostTimeLabel !== null && (
                     <Box>
                       <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
                         {t('settings.hostTime')}
@@ -305,7 +323,7 @@ export default function SettingsPage() {
                     fullWidth
                   />
 
-                  {(settings.latitude && settings.longitude) && (
+                  {advancedMode && (settings.latitude && settings.longitude) && (
                     <Alert severity="info">
                       <Typography variant="body2">
                         <strong>{t('settings.coordinates')}:</strong> {settings.latitude.toFixed(6)}, {settings.longitude.toFixed(6)}
@@ -361,21 +379,41 @@ export default function SettingsPage() {
                 </Stack>
               )}
 
-              <Box sx={{ mt: 3 }}>
-                <Button
-                  variant="contained"
-                  onClick={activeTab === 1 ? handleSaveTelegram : handleSave}
-                  disabled={activeTab === 1 ? savingTelegram : saving}
-                >
-                  {activeTab === 1
-                    ? savingTelegram
+              {activeTab === 2 && (
+                <Stack spacing={3}>
+                  <Alert severity="info" sx={{ mb: 1 }}>
+                    <Typography variant="body2">{t('settings.advancedModeInfo')}</Typography>
+                  </Alert>
+
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={advancedMode}
+                        onChange={(e) => handleToggleAdvancedMode(e.target.checked)}
+                      />
+                    }
+                    label={t('settings.advancedModeEnabled')}
+                  />
+                </Stack>
+              )}
+
+              {activeTab !== 2 && (
+                <Box sx={{ mt: 3 }}>
+                  <Button
+                    variant="contained"
+                    onClick={activeTab === 1 ? handleSaveTelegram : handleSave}
+                    disabled={activeTab === 1 ? savingTelegram : saving}
+                  >
+                    {activeTab === 1
+                      ? savingTelegram
+                        ? t('common.loading')
+                        : t('common.save')
+                      : saving
                       ? t('common.loading')
-                      : t('common.save')
-                    : saving
-                    ? t('common.loading')
-                    : t('common.save')}
-                </Button>
-              </Box>
+                      : t('common.save')}
+                  </Button>
+                </Box>
+              )}
             </>
           )}
         </CardContent>

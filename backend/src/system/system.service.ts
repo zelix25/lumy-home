@@ -23,6 +23,42 @@ function unixShutdownCommand(reboot: boolean): string {
 @Injectable()
 export class SystemService {
   private readonly logger = new Logger(SystemService.name);
+  private static readonly CONTAINER_NAME_RE = /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/;
+
+  /**
+   * Récupère les dernières lignes de logs d'un conteneur Docker.
+   */
+  async getContainerLogs(
+    containerName: string,
+    tail: number = 200,
+  ): Promise<{ containerName: string; tail: number; logs: string }> {
+    const safeContainerName = (containerName || '').trim();
+    if (!safeContainerName || !SystemService.CONTAINER_NAME_RE.test(safeContainerName)) {
+      throw new Error('Nom de conteneur invalide');
+    }
+
+    const safeTail = Number.isFinite(tail) ? Math.min(Math.max(Math.floor(tail), 1), 5000) : 200;
+
+    try {
+      const { stdout, stderr } = await execAsync(
+        `docker logs --tail ${safeTail} ${safeContainerName}`,
+      );
+      const output = [stdout, stderr].filter(Boolean).join('');
+      return {
+        containerName: safeContainerName,
+        tail: safeTail,
+        logs: output || 'Aucun log disponible.',
+      };
+    } catch (error: any) {
+      this.logger.error(
+        `Erreur récupération logs Docker (${safeContainerName}): ${error.message}`,
+        error.stack,
+      );
+      throw new Error(
+        `Impossible de récupérer les logs du conteneur "${safeContainerName}": ${error.message}`,
+      );
+    }
+  }
 
   /**
    * Redémarre le système
