@@ -46,6 +46,7 @@ import {
 import { useNotification } from '../hooks/useNotification';
 import { useEffect } from 'react';
 import { translateRoomName } from '../utils/roomTranslations';
+import { weatherService } from '../services/weather.service';
 
 interface CreateSimpleAutomationDialogProps {
   open: boolean;
@@ -176,6 +177,21 @@ export default function CreateSimpleAutomationDialog({
   const [sunriseSunsetType, setSunriseSunsetType] = useState<'sunrise' | 'sunset'>(initialSunriseSunsetType as 'sunrise' | 'sunset');
   const [offsetMinutes, setOffsetMinutes] = useState<number>(initialOffsetMinutes);
   const [triggerTime, setTriggerTime] = useState<string>(initialTriggerTime);
+  const [sunriseTime, setSunriseTime] = useState<string | null>(null);
+  const [sunsetTime, setSunsetTime] = useState<string | null>(null);
+
+  const parseAndOffsetTime = (rawTime: string | null, minutesOffset: number): string | null => {
+    if (!rawTime) return null;
+    const parts = rawTime.split(':');
+    if (parts.length < 2) return null;
+    const hour = parseInt(parts[0], 10);
+    const minute = parseInt(parts[1], 10);
+    if (Number.isNaN(hour) || Number.isNaN(minute)) return null;
+    const date = new Date();
+    date.setHours(hour, minute, 0, 0);
+    date.setMinutes(date.getMinutes() + minutesOffset);
+    return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  };
 
   const handleReset = () => {
     setActiveStep(0);
@@ -324,6 +340,16 @@ export default function CreateSimpleAutomationDialog({
       handleReset();
     }
   }, [automation, open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const loadWeatherTimes = async () => {
+      const weather = await weatherService.getTodayWeather();
+      setSunriseTime(weather?.sunrise || null);
+      setSunsetTime(weather?.sunset || null);
+    };
+    loadWeatherTimes();
+  }, [open]);
 
   // Filtrer les appareils selon le type de déclencheur
   const getAvailableTriggerDevices = () => {
@@ -864,6 +890,14 @@ export default function CreateSimpleAutomationDialog({
                       <Typography variant="caption" color="text.secondary">
                         {t('automations.offsetMinutesDescription')}
                       </Typography>
+                      <Alert severity="info" sx={{ mt: 1.5 }}>
+                        <Typography variant="body2">
+                          {t('automations.sunrise')}: {parseAndOffsetTime(sunriseTime, offsetMinutes) || '--:--'}
+                        </Typography>
+                        <Typography variant="body2">
+                          {t('automations.sunset')}: {parseAndOffsetTime(sunsetTime, offsetMinutes) || '--:--'}
+                        </Typography>
+                      </Alert>
                     </Box>
                   </Stack>
                 </>

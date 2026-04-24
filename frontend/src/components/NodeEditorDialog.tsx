@@ -94,6 +94,7 @@ import {
 } from '../utils/deviceFilter';
 import { Info as InfoIcon } from '@mui/icons-material';
 import { translateRoomName } from '../utils/roomTranslations';
+import { weatherService } from '../services/weather.service';
 
 // Fonction pour obtenir l'icône selon le type de déclencheur
 const getTriggerIcon = (triggerType: AutomationTriggerType) => {
@@ -676,6 +677,21 @@ export default function NodeEditorDialog({
   const [showHelp, setShowHelp] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [zoomControls, setZoomControls] = useState<{ zoomIn: () => void; zoomOut: () => void; fitView: () => void } | null>(null);
+  const [sunriseTime, setSunriseTime] = useState<string | null>(null);
+  const [sunsetTime, setSunsetTime] = useState<string | null>(null);
+
+  const parseAndOffsetTime = (rawTime: string | null, minutesOffset: number): string | null => {
+    if (!rawTime) return null;
+    const parts = rawTime.split(':');
+    if (parts.length < 2) return null;
+    const hour = parseInt(parts[0], 10);
+    const minute = parseInt(parts[1], 10);
+    if (Number.isNaN(hour) || Number.isNaN(minute)) return null;
+    const date = new Date();
+    date.setHours(hour, minute, 0, 0);
+    date.setMinutes(date.getMinutes() + minutesOffset);
+    return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  };
 
   // Fonction pour convertir une automation en nodes et edges
   const convertAutomationToNodes = useCallback((automation: any): { nodes: Node[]; edges: Edge[] } => {
@@ -1000,6 +1016,16 @@ export default function NodeEditorDialog({
         clearTimeout(timer);
       };
     }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const loadWeatherTimes = async () => {
+      const weather = await weatherService.getTodayWeather();
+      setSunriseTime(weather?.sunrise || null);
+      setSunsetTime(weather?.sunset || null);
+    };
+    loadWeatherTimes();
   }, [open]);
 
   // Gérer le plein écran
@@ -1804,6 +1830,14 @@ export default function NodeEditorDialog({
                       <Typography variant="caption" color="text.secondary">
                         {t('automations.offsetMinutesDescription')}
                       </Typography>
+                      <Alert severity="info" sx={{ mt: 1.5 }}>
+                        <Typography variant="body2">
+                          {t('automations.sunrise')}: {parseAndOffsetTime(sunriseTime, (selectedNode?.data as TriggerNodeData)?.offsetMinutes || 0) || '--:--'}
+                        </Typography>
+                        <Typography variant="body2">
+                          {t('automations.sunset')}: {parseAndOffsetTime(sunsetTime, (selectedNode?.data as TriggerNodeData)?.offsetMinutes || 0) || '--:--'}
+                        </Typography>
+                      </Alert>
                     </Box>
                   </Box>
                 )}
