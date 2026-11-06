@@ -500,7 +500,7 @@
     "createAccount": "Créer un compte",
     "store": {
       "title": "Connexion au Lumy Store",
-      "description": "Connectez-vous au Lumy Store pour accéder à des plugins et des fonctionnalités supplémentaires.",
+      "description": "Connectez votre clé API Lumy Store pour accéder à des plugins et des fonctionnalités supplémentaires.",
       "connect": "Se connecter",
       "skip": "Passer",
       "connected": "Connecté au Lumy Store avec succès",
@@ -508,7 +508,10 @@
       "noAccount": "Pas encore de compte au Lumy Store ?",
       "createAccountLink": "Vous pouvez en créer un en cliquant ici",
       "noToken": "Token JWT manquant. Veuillez créer un compte d'abord.",
-      "authError": "Erreur d'authentification. Vérifiez vos identifiants du store ou réessayez."
+      "authError": "Clé API invalide ou révoquée. Vérifiez la clé sur le Lumy Store.",
+      "apiKey": "Clé API du store",
+      "apiKeyHelp": "Générez une clé API depuis votre compte sur le Lumy Store (format lumy_...).",
+      "apiKeyInfo": "Collez la clé API fournie par le Lumy Store. Elle est stockée uniquement sur votre box, jamais dans le navigateur."
     },
     "ai": {
       "title": "Activation de l'Assistant IA",
@@ -877,12 +880,13 @@
   },
   "store": {
     "title": "Connexion au Lumy Store",
-    "description": "Connectez votre compte Lumy Store pour accéder aux plugins et fonctionnalités premium.",
+    "description": "Connectez votre clé API Lumy Store pour accéder aux plugins et fonctionnalités premium.",
     "connect": {
-      "button": "Se connecter au store",
-      "email": "Email du store",
-      "password": "Mot de passe du store",
-      "info": "Utilisez vos identifiants du Lumy Store pour vous connecter. Si vous n'avez pas encore de compte, créez-en un sur le site du store.",
+      "button": "Connecter la clé API",
+      "apiKey": "Clé API",
+      "apiKeyHelp": "Format attendu : lumy_… — générée depuis votre compte sur le store.",
+      "toggleApiKeyVisibility": "Afficher ou masquer la clé API",
+      "info": "Collez la clé API fournie par le Lumy Store. Elle est validée puis stockée uniquement sur votre box (jamais dans le navigateur).",
       "noAccount": "Vous n'avez pas encore de compte ?",
       "createAccount": "Créer un compte",
       "success": "Connexion au store réussie !",
@@ -895,7 +899,9 @@
     },
     "connected": {
       "message": "Connecté au store avec le compte : {{email}}",
-      "unknown": "compte inconnu",
+      "messageMasked": "Connecté au store avec la clé : {{key}}",
+      "unknown": "clé inconnue",
+      "apiKeyLabel": "Clé API",
       "description": "Vous êtes connecté au Lumy Store. Vous pouvez maintenant installer et utiliser des plugins depuis le store."
     },
     "plugins": {

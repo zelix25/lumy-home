@@ -21,10 +21,13 @@ export class User {
   isLocalMode: boolean; // Mode local sans compte
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  storeApiToken: string | null; // Token API pour communiquer avec le Lumy Store
+  storeApiToken: string | null; // Clé API Lumy Store (lumy_...) — jamais exposée en clair côté UI
 
   @Column({ type: 'datetime', nullable: true })
-  storeApiTokenGeneratedAt: Date | null; // Date de génération du token
+  storeApiTokenGeneratedAt: Date | null; // Date d'enregistrement / validation de la clé
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  storeEmail: string | null; // Email du compte store associé à la clé API
 
   @CreateDateColumn()
   createdAt: Date;

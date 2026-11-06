@@ -1,30 +1,31 @@
 import { apiService } from './api.service';
 
 export interface ConnectStoreDto {
-  email: string;
-  password: string;
+  apiKey: string;
 }
 
 export interface StoreConnectionStatus {
   connected: boolean;
+  storeEmail?: string;
+  apiKeyMasked?: string;
 }
 
 export interface ConnectStoreResponse {
   message: string;
-  storeEmail: string;
-  tokenStore?: string; // Token JWT du store à stocker dans le navigateur
+  storeEmail: string | null;
+  apiKeyMasked: string;
 }
 
 class StoreService {
   /**
-   * Connecte l'utilisateur au Lumy Store
+   * Connecte la box au Lumy Store via une clé API (stockée côté serveur uniquement)
    */
   async connectStore(credentials: ConnectStoreDto): Promise<ConnectStoreResponse> {
     return apiService.post<ConnectStoreResponse>('/store/auth/connect', credentials);
   }
 
   /**
-   * Déconnecte l'utilisateur du Lumy Store
+   * Déconnecte la box du Lumy Store
    */
   async disconnectStore(): Promise<{ message: string }> {
     return apiService.delete<{ message: string }>('/store/auth/disconnect');
@@ -39,4 +40,3 @@ class StoreService {
 }
 
 export const storeService = new StoreService();
-
