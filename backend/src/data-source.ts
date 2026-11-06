@@ -11,6 +11,7 @@ import { AutomationExecutionLog } from './automations/entities/automation-execut
 import { Settings } from './settings/entities/settings.entity';
 import { User } from './auth/entities/user.entity';
 import { Telegram } from './telegram/entities/telegram.entity';
+import { migrations } from './migrations';
 
 // Charger les variables d'environnement
 config();
@@ -34,8 +35,8 @@ export const AppDataSource = new DataSource({
     User,
     Telegram,
   ],
-  migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
+  migrations,
   synchronize: nodeEnv !== 'production',
-  logging: false, /*nodeEnv === 'development',*/
+  migrationsTransactionMode: 'each',
+  logging: false /*nodeEnv === 'development',*/,
 });
-

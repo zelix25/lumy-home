@@ -27,6 +27,8 @@ import { UpdaterModule } from './updater/updater.module';
 import { SystemModule } from './system/system.module';
 import { TelegramModule } from './telegram/telegram.module';
 import { configValidationSchema } from './config/config.validation';
+import { migrations } from './migrations';
+import { DatabaseMigrationService } from './database/database-migration.service';
 
 @Module({
   imports: [
@@ -57,12 +59,12 @@ import { configValidationSchema } from './config/config.validation';
 
         /**
          * Première initialisation : fichier absent ou vide (ex. créé par `touch`).
-         * Dans ce cas on crée tout le schéma via synchronize (entités).
+         * → schéma créé via synchronize (entités).
          *
-         * Important : TypeORM exécute les migrations AVANT synchronize. Les migrations
-         * du dépôt supposent des tables déjà présentes (ex. ALTER sur `settings`).
-         * Si on lance les migrations sur une base vierge, elles échouent et le schéma
-         * reste incomplet. D'où : migrations uniquement quand la base existe déjà.
+         * Bases déjà déployées :
+         * → synchronize désactivé en production, migrations exécutées au démarrage.
+         * Les migrations sont idempotentes pour rester sûres après un premier
+         * démarrage « fresh » (synchronize puis migrations au redémarrage).
          */
         const isFreshDatabase = (() => {
           if (!existsSync(absoluteDbPath)) {
@@ -78,16 +80,15 @@ import { configValidationSchema } from './config/config.validation';
         const shouldSynchronize =
           nodeEnv !== 'production' || isFreshDatabase;
 
-        const shouldRunMigrations =
-          nodeEnv === 'production' && !isFreshDatabase;
-
         return {
           type: 'sqlite',
           database: dbPath,
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
-          migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
+          migrations,
           synchronize: shouldSynchronize,
-          migrationsRun: shouldRunMigrations,
+          // Toujours au démarrage : les migrations sont idempotentes (safe base neuve).
+          migrationsRun: true,
+          migrationsTransactionMode: 'each',
           /* logging: nodeEnv === 'development',*/
           logging: false,
         };
@@ -120,7 +121,7 @@ import { configValidationSchema } from './config/config.validation';
     TelegramModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, DatabaseMigrationService],
 })
 export class AppModule {}
 
