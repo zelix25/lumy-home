@@ -12,6 +12,7 @@ import {
 import { DevicesService } from './devices.service';
 import { UpdateFriendlyNameDto } from './dto/update-friendly-name.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
+import { UpdateIconDto } from './dto/update-icon.dto';
 import { SendCommandDto } from './dto/send-command.dto';
 import { SendMqttMessageDto } from './dto/send-mqtt-message.dto';
 
@@ -53,6 +54,14 @@ export class DevicesController {
     @Body() dto: UpdateRoomDto,
   ) {
     return this.devicesService.updateRoom(ieeeAddress, dto.room);
+  }
+
+  @Put(':ieeeAddress/icon')
+  async updateIcon(
+    @Param('ieeeAddress') ieeeAddress: string,
+    @Body() dto: UpdateIconDto,
+  ) {
+    return this.devicesService.updateIcon(ieeeAddress, dto.icon);
   }
 
   @Post(':ieeeAddress/command')

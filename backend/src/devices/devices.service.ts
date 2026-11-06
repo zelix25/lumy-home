@@ -6,6 +6,10 @@ import { Device, DeviceStatus } from './entities/device.entity';
 import { Zigbee2MqttService } from './zigbee2mqtt.service';
 import { WebsocketGateway } from '../websocket/websocket.gateway';
 import { LoggerService } from '../logger/logger.service';
+import {
+  buildGetStatePayload,
+  expandGenericStateCommand,
+} from './switch-exposes.util';
 
 @Injectable()
 export class DevicesService implements OnModuleInit {
@@ -154,6 +158,14 @@ export class DevicesService implements OnModuleInit {
     return device;
   }
 
+  async updateIcon(ieeeAddress: string, icon?: string | null): Promise<Device> {
+    const device = await this.findOne(ieeeAddress);
+    const normalized = icon?.trim() ? icon.trim().toLowerCase() : null;
+    device.icon = normalized;
+    await this.deviceRepository.save(device);
+    return device;
+  }
+
   /**
    * Valide et normalise les valeurs de commande avant envoi
    * @param command - Commande à valider
@@ -236,8 +248,16 @@ export class DevicesService implements OnModuleInit {
   ): Promise<void> {
     const device = await this.findOne(ieeeAddress);
     
+    // Étendre { state: ON/OFF/TOGGLE } vers state_l1/state_l2 si multi-canal (ex. MINI-ZB2GS-L)
+    const expandedCommand = expandGenericStateCommand(
+      command,
+      device.meta?.exposes,
+      device.state,
+      device.model || device.meta?.model,
+    );
+
     // Valider et normaliser la commande avant envoi
-    const validatedCommand = this.validateAndNormalizeCommand(command);
+    const validatedCommand = this.validateAndNormalizeCommand(expandedCommand);
     
     // Utiliser mqttName pour les topics MQTT, avec fallback sur friendlyName si mqttName n'existe pas
     const mqttName = device.mqttName || this.generateMqttName(device.friendlyName);
@@ -349,7 +369,12 @@ export class DevicesService implements OnModuleInit {
     const device = await this.findOne(ieeeAddress);
     // Utiliser mqttName pour les topics MQTT, avec fallback sur friendlyName si mqttName n'existe pas
     const mqttName = device.mqttName || this.generateMqttName(device.friendlyName);
-    await this.zigbee2MqttService.forceReadDeviceState(mqttName);
+    const getPayload = buildGetStatePayload(
+      device.meta?.exposes,
+      device.state,
+      device.model,
+    );
+    await this.zigbee2MqttService.forceReadDeviceState(mqttName, getPayload);
   }
 
   async forceReadAllDeviceStates(): Promise<void> {
@@ -358,7 +383,12 @@ export class DevicesService implements OnModuleInit {
       if (device.status === 'online') {
         // Utiliser mqttName pour les topics MQTT, avec fallback sur friendlyName si mqttName n'existe pas
         const mqttName = device.mqttName || this.generateMqttName(device.friendlyName);
-        await this.zigbee2MqttService.forceReadDeviceState(mqttName);
+        const getPayload = buildGetStatePayload(
+          device.meta?.exposes,
+          device.state,
+          device.model,
+        );
+        await this.zigbee2MqttService.forceReadDeviceState(mqttName, getPayload);
         // Petit délai pour éviter de surcharger
         await new Promise((resolve) => setTimeout(resolve, 100));
       }

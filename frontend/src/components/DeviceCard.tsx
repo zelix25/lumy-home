@@ -8,116 +8,43 @@ import {
   Chip,
   Grid,
   Slider,
-  Tooltip,
   IconButton,
 } from '@mui/material';
 import {
-  Lightbulb,
-  Power,
-  Sensors,
-  ElectricalServices,
-  Window,
-  Thermostat,
-  DirectionsRun,
-  RadioButtonChecked,
-  HelpOutline,
-  Blinds,
-  WaterDrop,
-  Person,
-  LightMode,
-  LocalFireDepartment,
-  Warning,
-  BatteryFull,
   Add,
   Remove,
 } from '@mui/icons-material';
 import { Device } from '../services/devices.service';
 import { devicesService } from '../services/devices.service';
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import i18n from '@/i18n';
 import { translateRoomName } from '../utils/roomTranslations';
+import {
+  buildOnOffCommand,
+  getSwitchChannels,
+  isAnySwitchOn,
+  isChannelOn,
+} from '../utils/switchExposes';
+import { DeviceIcon } from '../utils/deviceIcons';
+import { formatVoltage } from '../utils/voltage';
+
+function readCoverPosition(device: Device): number {
+  if (device.type !== 'cover') return 0;
+  if (device.state?.position !== undefined) {
+    return typeof device.state.position === 'number'
+      ? device.state.position
+      : parseInt(device.state.position, 10) || 0;
+  }
+  if (device.state?.state === 'open' || device.state?.state === 'OPEN') return 100;
+  if (device.state?.state === 'closed' || device.state?.state === 'CLOSED') return 0;
+  return 0;
+}
 
 interface DeviceCardProps {
   device: Device;
   onToggle?: (device: Device, state: boolean) => void;
   onCoverPositionChange?: (device: Device, position: number) => void;
 }
-
-const getDeviceIcon = (type: string, device?: { state?: Record<string, any> | null }) => {
-  // Pour les capteurs, déterminer l'icône en fonction des données disponibles
-  if (type === 'sensor' || type === 'temperature') {
-    if (device?.state) {
-      // Détecter le type de capteur en fonction des données disponibles
-      if (device.state.temperature !== undefined) {
-        return <Thermostat sx={{ fontSize: 48 }} />;
-      }
-      if (device.state.humidity !== undefined) {
-        return <WaterDrop sx={{ fontSize: 48 }} />;
-      }
-      if (device.state.motion !== undefined || device.state.presence !== undefined || device.state.occupancy !== undefined) {
-        return <DirectionsRun sx={{ fontSize: 48 }} />;
-      }
-      if (device.state.illuminance !== undefined) {
-        return <LightMode sx={{ fontSize: 48 }} />;
-      }
-      if (device.state.contact !== undefined) {
-        return <Window sx={{ fontSize: 48 }} />;
-      }
-      if (device.state.water_leak !== undefined) {
-        return <WaterDrop sx={{ fontSize: 48, color: '#F44336' }} />;
-      }
-      if (device.state.smoke !== undefined) {
-        return <LocalFireDepartment sx={{ fontSize: 48, color: '#F44336' }} />;
-      }
-      if (device.state.vibration !== undefined) {
-        return <Warning sx={{ fontSize: 48 }} />;
-      }
-      if (device.state.battery !== undefined) {
-        return <BatteryFull sx={{ fontSize: 48 }} />;
-      }
-    }
-    // Capteur générique par défaut
-    return <Sensors sx={{ fontSize: 48 }} />;
-  }
-
-  switch (type) {
-    case 'light':
-      return <Lightbulb sx={{ fontSize: 48 }} />;
-    case 'switch':
-      return <Power sx={{ fontSize: 48 }} />;
-    case 'plug':
-      return <ElectricalServices sx={{ fontSize: 48 }} />;
-    case 'energy':
-      return <ElectricalServices sx={{ fontSize: 48, color: '#FF9800' }} />;
-    /*case 'door':
-      return <Door sx={{ fontSize: 48 }} />;*/
-    case 'window':
-      return <Window sx={{ fontSize: 48 }} />;
-    case 'cover':
-      return <Blinds sx={{ fontSize: 48 }} />;
-    case 'temperature':
-      return <Thermostat sx={{ fontSize: 48 }} />;
-    case 'motion':
-      return <DirectionsRun sx={{ fontSize: 48 }} />;
-    case 'humidity':
-      return <WaterDrop sx={{ fontSize: 48 }} />;
-    case 'illuminance':
-      return <LightMode sx={{ fontSize: 48 }} />;
-    case 'presence':
-    case 'occupancy':
-      return <Person sx={{ fontSize: 48 }} />;
-    case 'contact':
-      return <Window sx={{ fontSize: 48 }} />;
-    case 'water_leak':
-      return <WaterDrop sx={{ fontSize: 48, color: '#F44336' }} />;
-    case 'smoke':
-      return <LocalFireDepartment sx={{ fontSize: 48, color: '#F44336' }} />;
-    case 'button':
-      return <RadioButtonChecked sx={{ fontSize: 48 }} />;
-    default:
-      return <HelpOutline sx={{ fontSize: 48 }} />;
-  }
-};
 
 const getDeviceTypeLabel = (type: string): string => {
   const labels: Record<string, string> = {
@@ -155,41 +82,110 @@ const getDeviceTypeLabel = (type: string): string => {
 export default function DeviceCard({ device, onToggle, onCoverPositionChange }: DeviceCardProps) {
   const navigate = useNavigate();
   const isOnline = device.status === 'online';
-  const isOn = device.state?.state === 'ON' || device.state?.state === true;
+  const deviceModel = device.model || device.meta?.model || null;
+  const switchChannels = useMemo(
+    () => getSwitchChannels(device.meta?.exposes, device.state, deviceModel),
+    [device.meta?.exposes, device.state, deviceModel],
+  );
+  const isMultiChannelSwitch =
+    (device.type === 'switch' || device.type === 'plug' || device.type === 'light') &&
+    switchChannels.length > 1;
+  const serverIsOn = isAnySwitchOn(device.state, device.meta?.exposes, deviceModel);
+  const [localIsOn, setLocalIsOn] = useState(serverIsOn);
+  const [localChannelState, setLocalChannelState] = useState<Record<string, boolean>>({});
+  const switchOptimisticUntilRef = useRef(0);
   const [heatingSetpoints, setHeatingSetpoints] = useState<Record<string, number>>({});
+  const [coverPosition, setCoverPosition] = useState(() => readCoverPosition(device));
+  const isDraggingCoverRef = useRef(false);
+
+  // Sync ON/OFF serveur → UI, sauf juste après une action utilisateur
+  useEffect(() => {
+    if (Date.now() < switchOptimisticUntilRef.current) return;
+    setLocalIsOn(serverIsOn);
+    const nextChannels: Record<string, boolean> = {};
+    for (const channel of switchChannels) {
+      nextChannels[channel.property] = isChannelOn(device.state, channel);
+    }
+    setLocalChannelState(nextChannels);
+  }, [serverIsOn, device.state, switchChannels]);
   
-  // Pour les volets, récupérer la position (0-100, où 0 = fermé, 100 = ouvert)
-  const coverPosition = device.type === 'cover' && device.state?.position !== undefined
-    ? typeof device.state.position === 'number' 
-      ? device.state.position 
-      : parseInt(device.state.position) || 0
-    : device.state?.state === 'open' || device.state?.state === 'OPEN'
-    ? 100
-    : device.state?.state === 'closed' || device.state?.state === 'CLOSED'
-    ? 0
-    : 0;
+  // Sync position serveur → UI, sauf pendant un drag (évite les sauts sur mobile)
+  useEffect(() => {
+    if (device.type !== 'cover' || isDraggingCoverRef.current) return;
+    setCoverPosition(readCoverPosition(device));
+  }, [device.type, device.state?.position, device.state?.state]);
   
   const handleCardClick = () => {
     navigate(`/appareils/${device.ieeeAddress}`);
   };
 
-  const handleToggle = (event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
+  const handleToggle = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    checked: boolean,
+  ) => {
     event.stopPropagation();
-    if (onToggle && (device.type === 'light' || device.type === 'switch' || device.type === 'plug')) {
-      onToggle(device, checked);
+    if (!(device.type === 'light' || device.type === 'switch' || device.type === 'plug')) {
+      return;
+    }
+    switchOptimisticUntilRef.current = Date.now() + 2000;
+    setLocalIsOn(checked);
+    onToggle?.(device, checked);
+  };
+
+  const handleChannelToggle = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+    property: string,
+    checked: boolean,
+  ) => {
+    event.stopPropagation();
+    switchOptimisticUntilRef.current = Date.now() + 2000;
+    setLocalChannelState((prev) => ({ ...prev, [property]: checked }));
+    setLocalIsOn(
+      switchChannels.some((channel) =>
+        channel.property === property
+          ? checked
+          : (localChannelState[channel.property] ?? isChannelOn(device.state, channel)),
+      ),
+    );
+    try {
+      await devicesService.sendCommand(
+        device.ieeeAddress,
+        buildOnOffCommand(device.meta?.exposes, device.state, checked, property, deviceModel),
+      );
+    } catch (error) {
+      console.error('Erreur lors de la commande multi-canal:', error);
+      switchOptimisticUntilRef.current = 0;
+      setLocalChannelState((prev) => ({ ...prev, [property]: !checked }));
     }
   };
 
-  const handleSwitchClick = (event: React.MouseEvent<HTMLElement>) => {
+  const stopCardNavigation = (event: React.SyntheticEvent) => {
     event.stopPropagation();
   };
 
-  const handleCoverPositionChange = (event: Event | React.SyntheticEvent, newValue: number | number[]) => {
+  const handleCoverPositionPreview = (
+    event: Event | React.SyntheticEvent,
+    newValue: number | number[],
+  ) => {
     event.stopPropagation();
-    if (onCoverPositionChange && device.type === 'cover') {
-      const position = typeof newValue === 'number' ? newValue : newValue[0];
-      onCoverPositionChange(device, position);
-    }
+    if (device.type !== 'cover') return;
+    isDraggingCoverRef.current = true;
+    const position = typeof newValue === 'number' ? newValue : newValue[0];
+    setCoverPosition(position);
+  };
+
+  const handleCoverPositionCommit = (
+    event: Event | React.SyntheticEvent,
+    newValue: number | number[],
+  ) => {
+    event.stopPropagation();
+    if (device.type !== 'cover') return;
+    const position = typeof newValue === 'number' ? newValue : newValue[0];
+    setCoverPosition(position);
+    onCoverPositionChange?.(device, position);
+    window.setTimeout(() => {
+      isDraggingCoverRef.current = false;
+    }, 1500);
   };
 
   const handleSetpointChange = async (device: Device, delta: number) => {
@@ -237,76 +233,122 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
       }}
     >
       <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <Box 
-          sx={{ 
-            display: 'flex', 
-            alignItems: 'flex-start', 
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'flex-start',
             mb: 2,
-            cursor: 'pointer',
           }}
-          onClick={handleCardClick}
         >
           <Box
             sx={{
-              color: isOnline ? 'primary.main' : 'text.disabled',
-              mr: 2,
               display: 'flex',
-              alignItems: 'center',
+              alignItems: 'flex-start',
+              flexGrow: 1,
+              cursor: 'pointer',
+              minWidth: 0,
             }}
+            onClick={handleCardClick}
           >
-            {getDeviceIcon(device.type, device)}
-          </Box>
-          <Box sx={{ flexGrow: 1 }}>
-            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-              {device.friendlyName}
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-              <Typography variant="body2" color="text.secondary">
-                {getDeviceTypeLabel(device.type)}
+            <Box
+              sx={{
+                color: isOnline ? 'primary.main' : 'text.disabled',
+                mr: 2,
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <DeviceIcon device={device} fontSize={48} />
+            </Box>
+            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+                {device.friendlyName}
               </Typography>
-              {device.room && (
-                <Chip
-                  label={translateRoomName(device.room)}
-                  size="small"
-                  sx={{ 
-                    fontSize: '12px',
-                    fontWeight: 400,
-                    backgroundColor: 'rgba(0,0,0,0.04)',
-                    color: 'text.secondary',
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                <Typography variant="body2" color="text.secondary">
+                  {getDeviceTypeLabel(device.type)}
+                </Typography>
+                {device.room && (
+                  <Chip
+                    label={translateRoomName(device.room)}
+                    size="small"
+                    sx={{
+                      fontSize: '12px',
+                      fontWeight: 400,
+                      backgroundColor: 'rgba(0,0,0,0.04)',
+                      color: 'text.secondary',
+                    }}
+                  />
+                )}
+              </Box>
+            </Box>
+          </Box>
+          <Box
+            sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', ml: 1 }}
+            onClick={stopCardNavigation}
+            onMouseDown={stopCardNavigation}
+            onTouchStart={stopCardNavigation}
+          >
+            <Chip
+              label={isOnline ? i18n.t('common.online') : i18n.t('common.offline')}
+              size="small"
+              color={isOnline ? 'success' : 'default'}
+              sx={{
+                mb: 1,
+                fontSize: '12px',
+                fontWeight: 400,
+                backgroundColor: isOnline ? 'rgba(134, 166, 160, 0.1)' : 'rgba(0,0,0,0.04)',
+                color: isOnline ? '#86A6A0' : 'text.secondary',
+              }}
+            />
+            {(device.type === 'light' || device.type === 'switch' || device.type === 'plug') &&
+              !isMultiChannelSwitch && (
+                <Switch
+                  checked={localIsOn}
+                  onChange={handleToggle}
+                  disabled={!isOnline}
+                  color="primary"
+                  size="medium"
+                  inputProps={{
+                    'aria-label': localIsOn ? 'Éteindre' : 'Allumer',
                   }}
                 />
               )}
-            </Box>
-          </Box>
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <Chip
-                label={isOnline ? i18n.t('common.online') : i18n.t('common.offline')}
-                size="small"
-                color={isOnline ? 'success' : 'default'}
-                sx={{ 
-                  mb: 1, 
-                  fontSize: '12px',
-                  fontWeight: 400,
-                  backgroundColor: isOnline ? 'rgba(134, 166, 160, 0.1)' : 'rgba(0,0,0,0.04)',
-                  color: isOnline ? '#86A6A0' : 'text.secondary',
-                }}
-              />
-            {(device.type === 'light' || device.type === 'switch' || device.type === 'plug') && (
-              <Tooltip title={isOn ? 'Éteindre' : 'Allumer'}>
-                <Box onClick={handleSwitchClick}>
-                  <Switch
-                    checked={isOn}
-                    onChange={handleToggle}
-                    onClick={(e) => e.stopPropagation()}
-                    disabled={!isOnline}
-                    color="primary"
-                    size="medium"
-                  />
-                </Box>
-              </Tooltip>
-            )}
           </Box>
         </Box>
+
+        {isMultiChannelSwitch && (
+          <Box
+            sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mb: 1 }}
+            onClick={stopCardNavigation}
+            onMouseDown={stopCardNavigation}
+            onTouchStart={stopCardNavigation}
+          >
+            {switchChannels.map((channel) => (
+              <Box
+                key={channel.property}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  px: 0.5,
+                }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  {channel.label}
+                </Typography>
+                <Switch
+                  checked={localChannelState[channel.property] ?? isChannelOn(device.state, channel)}
+                  onChange={(e, checked) => handleChannelToggle(e, channel.property, checked)}
+                  disabled={!isOnline}
+                  color="primary"
+                  size="small"
+                  inputProps={{ 'aria-label': channel.label }}
+                />
+              </Box>
+            ))}
+          </Box>
+        )}
 
         {/* Afficher un message si l'appareil est en ligne mais n'a pas de données */}
         {isOnline && (!device.state || typeof device.state !== 'object' || Object.keys(device.state).length === 0) && (
@@ -580,16 +622,13 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
                   </Typography>
                 </Grid>
               )}
-              {/* Tension (format V direct) pour les appareils "energy" */}
-              {device.type === 'energy' && device.state.voltage !== undefined && (
+              {device.state.voltage !== undefined && (
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary" display="block">
                     {i18n.t('devices.voltage')}
                   </Typography>
                   <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    {typeof device.state.voltage === 'number'
-                      ? `${device.state.voltage.toFixed(2)} V`
-                      : `${device.state.voltage} V`}
+                    {formatVoltage(device.state.voltage)}
                   </Typography>
                 </Grid>
               )}
@@ -615,28 +654,6 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
                     {typeof device.state.current === 'number'
                       ? `${device.state.current.toFixed(2)} A`
                       : `${device.state.current} A`}
-                  </Typography>
-                </Grid>
-              )}
-              
-              {/* Tension pour les autres types d'appareils */}
-              {device.type !== 'energy' && device.state.voltage !== undefined && (
-                <Grid item xs={6}>
-                  <Typography variant="caption" color="text.secondary" display="block">
-                    {i18n.t('devices.voltage')}
-                  </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    {(() => {
-                      if (typeof device.state.voltage === 'number') {
-                        // Pour les types "switch", afficher la valeur réelle sans diviser
-                        if (device.type === 'switch') {
-                          return `${device.state.voltage.toFixed(2)} V`;
-                        }
-                        // Pour les autres types, diviser par 1000 (millivolts -> volts)
-                        return `${(device.state.voltage / 1000).toFixed(2)} V`;
-                      }
-                      return `${device.state.voltage} V`;
-                    })()}
                   </Typography>
                 </Grid>
               )}
@@ -677,24 +694,25 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
               {device.type === 'cover' && (
                 <Grid item xs={12}>
                   <Box 
-                    sx={{ px: 1, py: 1 }}
+                    sx={{ px: 1, py: 1, touchAction: 'none' }}
                     onClick={(e) => e.stopPropagation()}
                     onMouseDown={(e) => e.stopPropagation()}
                     onMouseUp={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
                   >
                     <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1, fontSize: '0.75rem' }}>
                       {i18n.t('devices.position')}
                     </Typography>
                     <Box 
-                      sx={{ position: 'relative', px: 1 }}
+                      sx={{ position: 'relative', px: 1, touchAction: 'none' }}
                       onClick={(e) => e.stopPropagation()}
                       onMouseDown={(e) => e.stopPropagation()}
                       onMouseUp={(e) => e.stopPropagation()}
                     >
                       <Slider
                         value={coverPosition}
-                        onChange={handleCoverPositionChange}
-                        onChangeCommitted={(e) => e.stopPropagation()}
+                        onChange={handleCoverPositionPreview}
+                        onChangeCommitted={handleCoverPositionCommit}
                         onClick={(e) => e.stopPropagation()}
                         onMouseDown={(e) => e.stopPropagation()}
                         onMouseUp={(e) => e.stopPropagation()}
@@ -709,9 +727,11 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
                         valueLabelFormat={(value) => `${value}%`}
                         sx={{
                           mb: 0.5,
+                          touchAction: 'none',
                           '& .MuiSlider-thumb': {
-                            width: 20,
-                            height: 20,
+                            width: 24,
+                            height: 24,
+                            touchAction: 'none',
                           },
                           '& .MuiSlider-track': {
                             height: 6,
@@ -750,10 +770,10 @@ export default function DeviceCard({ device, onToggle, onCoverPositionChange }: 
                     variant="body2" 
                     sx={{ 
                       fontWeight: 500,
-                      color: (device.state.state === 'ON' || device.state.state === true) ? 'success.main' : 'text.secondary'
+                      color: isAnySwitchOn(device.state, device.meta?.exposes, device.model) ? 'success.main' : 'text.secondary'
                     }}
                   >
-                    {(device.state.state === 'ON' || device.state.state === true) ? 'Actif' : 'Inactif'}
+                    {isAnySwitchOn(device.state, device.meta?.exposes, device.model) ? 'Actif' : 'Inactif'}
                   </Typography>
                 </Grid>
               )}

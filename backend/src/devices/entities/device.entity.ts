@@ -58,6 +58,10 @@ export class Device {
   @Column({ type: 'text', nullable: true })
   room: string;
 
+  /** Icône personnalisée UI (clé front). null = icône selon le type. */
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  icon: string | null;
+
   @Column({ type: 'json', nullable: true })
   state: Record<string, any>;
 

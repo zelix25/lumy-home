@@ -23,6 +23,7 @@ import { useDevices } from '../hooks/useDevices';
 import DeviceCard from '../components/DeviceCard';
 import { devicesService, Device } from '../services/devices.service';
 import i18n from '@/i18n';
+import { buildOnOffCommand } from '../utils/switchExposes';
 
 export default function DevicesPage() {
   const { devices, loading, error } = useDevices();
@@ -37,10 +38,13 @@ export default function DevicesPage() {
 
   const handleToggle = async (device: Device, state: boolean) => {
     try {
-      const command = device.type === 'light' 
-        ? { state: state ? 'ON' : 'OFF' }
-        : { state: state ? 'ON' : 'OFF' };
-      
+      const command = buildOnOffCommand(
+        device.meta?.exposes,
+        device.state,
+        state,
+        undefined,
+        device.model || device.meta?.model,
+      );
       await devicesService.sendCommand(device.ieeeAddress, command);
     } catch (error) {
       console.error('Erreur lors de la commande:', error);
