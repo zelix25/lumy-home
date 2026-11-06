@@ -12,6 +12,7 @@ import { HistoryService as HistoryTimelineService } from '../history_timeline/hi
 import { HistoryService as SensorHistoryService } from '../history/history.service';
 import { SensorType } from '../history/entities/history.entity';
 import { AutomationsService } from '../automations/automations.service';
+import { normalizeVoltageToVolts } from './voltage.util';
 
 /** Clés MQTT Zigbee2MQTT → type stocké en table `history` (graphiques). */
 const SENSOR_HISTORY_DEFS: Array<{
@@ -613,8 +614,25 @@ export class Zigbee2MqttService implements OnModuleInit {
         }
       }
       if (!pickedKey) continue;
-      const newVal = this.toFiniteNumber(mergedState[pickedKey]);
+      let newVal = this.toFiniteNumber(mergedState[pickedKey]);
       if (newVal === null) continue;
+
+      // Historique en volts réels (pile mV → V ; secteur inchangé)
+      if (def.sensorType === SensorType.VOLTAGE) {
+        const oldRaw = this.toFiniteNumber(oldState[pickedKey]);
+        const normNew = normalizeVoltageToVolts(newVal);
+        const normOld =
+          oldRaw === null ? null : normalizeVoltageToVolts(oldRaw);
+        if (
+          normOld !== null &&
+          !this.sensorValueChanged(normOld, normNew, def.epsilon)
+        ) {
+          continue;
+        }
+        entries.push({ sensorType: def.sensorType, value: normNew });
+        continue;
+      }
+
       const oldVal = oldState[pickedKey];
       if (!this.sensorValueChanged(oldVal, newVal, def.epsilon)) continue;
       entries.push({ sensorType: def.sensorType, value: newVal });
@@ -1754,15 +1772,17 @@ export class Zigbee2MqttService implements OnModuleInit {
     this.requestDevicesList();
   }
 
-  public async forceReadDeviceState(friendlyName: string) {
+  public async forceReadDeviceState(
+    friendlyName: string,
+    getPayload: Record<string, any> = { state: '' },
+  ) {
     // Forcer la lecture d'un appareil spécifique
-    // Certains appareils Zigbee supportent la commande "read"
+    // Multi-canal (ex. state_l1/state_l2) : demander chaque propriété switch
     const topic = `zigbee2mqtt/${friendlyName}/get`;
-    const payload = { state: '' }; // Commande vide pour forcer la lecture
     
-    this.mqttService.publish(topic, payload);
+    this.mqttService.publish(topic, getPayload);
     this.logger.log(
-      `Lecture forcée demandée pour ${friendlyName}`,
+      `Lecture forcée demandée pour ${friendlyName}: ${JSON.stringify(getPayload)}`,
       'Zigbee2MqttService',
     );
   }

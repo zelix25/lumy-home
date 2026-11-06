@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -43,6 +43,18 @@ import { SensorType } from '../services/sensor-history.service';
 import AdvancedExposesSettings from '../components/AdvancedExposesSettings';
 import { t } from 'i18next';
 import { translateRoomName } from '../utils/roomTranslations';
+import {
+  buildOnOffCommand,
+  getSwitchChannels,
+  isAnySwitchOn,
+  isChannelOn,
+} from '../utils/switchExposes';
+import {
+  DEVICE_ICON_OPTIONS,
+  DeviceIcon,
+  DeviceIconKey,
+} from '../utils/deviceIcons';
+import { formatVoltage } from '../utils/voltage';
 
 const getDeviceTypeLabel = (type: string): string => {
   const labels: Record<string, string> = {
@@ -93,9 +105,12 @@ export default function DeviceDetailPage() {
   const [nameError, setNameError] = useState<string | null>(null);
   const [friendlyName, setFriendlyName] = useState('');
   const [room, setRoom] = useState('');
+  const [selectedIcon, setSelectedIcon] = useState<DeviceIconKey | 'auto'>('auto');
+  const [savingIcon, setSavingIcon] = useState(false);
   const [brightness, setBrightness] = useState(100);
   const [isOn, setIsOn] = useState(false);
   const [coverPosition, setCoverPosition] = useState(0);
+  const isDraggingCoverRef = useRef(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -117,7 +132,8 @@ export default function DeviceDetailPage() {
         setDevice(data);
         setFriendlyName(data.friendlyName);
         setRoom(data.room || '');
-        setIsOn(data.state?.state === 'ON' || data.state?.state === true);
+        setSelectedIcon((data.icon as DeviceIconKey) || 'auto');
+        setIsOn(isAnySwitchOn(data.state, data.meta?.exposes, data.model));
         setBrightness(
           data.state?.brightness
             ? Math.round((data.state.brightness / 255) * 100)
@@ -184,12 +200,13 @@ export default function DeviceDetailPage() {
         state: Record<string, any>;
       };
       if (eventData.ieeeAddress === ieeeAddress) {
-        setIsOn(eventData.state?.state === 'ON' || eventData.state?.state === true);
+        setIsOn(isAnySwitchOn(eventData.state, device?.meta?.exposes, device?.model));
         if (eventData.state?.brightness !== undefined) {
           setBrightness(Math.round((eventData.state.brightness / 255) * 100));
         }
         // Mettre à jour la position du volet si c'est un appareil cover
-        if (device?.type === 'cover') {
+        // (ignorer pendant un drag tactile pour éviter les sauts du curseur)
+        if (device?.type === 'cover' && !isDraggingCoverRef.current) {
           if (eventData.state?.position !== undefined) {
             setCoverPosition(
               typeof eventData.state.position === 'number' 
@@ -307,27 +324,72 @@ export default function DeviceDetailPage() {
     }
   };
 
-  const handleToggle = async (checked: boolean) => {
+  const handleSaveIcon = async () => {
     if (!ieeeAddress) return;
+    setSavingIcon(true);
+    try {
+      const iconValue = selectedIcon === 'auto' ? null : selectedIcon;
+      const updated = await devicesService.updateIcon(ieeeAddress, iconValue);
+      setDevice(updated);
+      setSelectedIcon((updated.icon as DeviceIconKey) || 'auto');
+      addNotification({
+        type: 'success',
+        title: t('deviceDetail.iconUpdateSuccess'),
+        message: t('deviceDetail.iconUpdateSuccessMessage'),
+      });
+    } catch (err: any) {
+      console.error('Erreur lors de la mise à jour de l\'icône:', err);
+      addNotification({
+        type: 'error',
+        title: t('deviceDetail.iconUpdateError'),
+        message: err.message || t('deviceDetail.iconUpdateError'),
+      });
+    } finally {
+      setSavingIcon(false);
+    }
+  };
+
+  const handleToggle = async (checked: boolean) => {
+    if (!ieeeAddress || !device) return;
     setIsOn(checked);
     try {
-      await devicesService.sendCommand(ieeeAddress, {
-        state: checked ? 'ON' : 'OFF',
-      });
+      await devicesService.sendCommand(
+        ieeeAddress,
+        buildOnOffCommand(device.meta?.exposes, device.state, checked, undefined, device.model),
+      );
     } catch (err) {
       console.error('Erreur lors de la commande:', err);
       setIsOn(!checked); // Revert on error
     }
   };
 
+  const handleChannelToggle = async (property: string, checked: boolean) => {
+    if (!ieeeAddress || !device) return;
+    try {
+      const command = buildOnOffCommand(
+        device.meta?.exposes,
+        device.state,
+        checked,
+        property,
+        device.model,
+      );
+      await devicesService.sendCommand(ieeeAddress, command);
+      const nextState = { ...(device.state || {}), ...command };
+      setDevice((prev) => (prev ? { ...prev, state: nextState } : null));
+      setIsOn(isAnySwitchOn(nextState, device.meta?.exposes, device.model));
+    } catch (err) {
+      console.error('Erreur lors de la commande multi-canal:', err);
+    }
+  };
+
   const handleBrightnessChange = async (_: Event, value: number | number[]) => {
-    if (!ieeeAddress) return;
+    if (!ieeeAddress || !device) return;
     const newBrightness = Array.isArray(value) ? value[0] : value;
     setBrightness(newBrightness);
     const brightnessValue = Math.round((newBrightness / 100) * 255);
     try {
       await devicesService.sendCommand(ieeeAddress, {
-        state: 'ON',
+        ...buildOnOffCommand(device.meta?.exposes, device.state, true, undefined, device.model),
         brightness: brightnessValue,
       });
     } catch (err) {
@@ -335,8 +397,15 @@ export default function DeviceDetailPage() {
     }
   };
 
-  const handleCoverPositionChange = async (_: Event, value: number | number[]) => {
+  const handleCoverPositionPreview = (_: Event, value: number | number[]) => {
+    isDraggingCoverRef.current = true;
+    const newPosition = Array.isArray(value) ? value[0] : value;
+    setCoverPosition(newPosition);
+  };
+
+  const handleCoverPositionCommit = async (_: Event | React.SyntheticEvent, value: number | number[]) => {
     if (!ieeeAddress) return;
+    isDraggingCoverRef.current = true;
     const newPosition = Array.isArray(value) ? value[0] : value;
     setCoverPosition(newPosition);
     try {
@@ -347,6 +416,10 @@ export default function DeviceDetailPage() {
       });
     } catch (err) {
       console.error('Erreur lors du changement de position du volet:', err);
+    } finally {
+      window.setTimeout(() => {
+        isDraggingCoverRef.current = false;
+      }, 1500);
     }
   };
 
@@ -511,6 +584,84 @@ export default function DeviceDetailPage() {
                   </Box>
                 </Box>
 
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: 1 }}>
+                    {t('deviceDetail.icon')}
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(72px, 1fr))',
+                      gap: 1,
+                      mb: 1.5,
+                    }}
+                  >
+                    {DEVICE_ICON_OPTIONS.map(({ key, labelKey, Icon }) => {
+                      const isSelected = selectedIcon === key;
+                      const previewDevice = {
+                        ...device,
+                        icon: key === 'auto' ? null : key,
+                      };
+                      return (
+                        <Box
+                          key={key}
+                          onClick={() => setSelectedIcon(key)}
+                          sx={{
+                            border: '1px solid',
+                            borderColor: isSelected ? 'primary.main' : 'divider',
+                            backgroundColor: isSelected
+                              ? 'rgba(134, 166, 160, 0.12)'
+                              : 'transparent',
+                            borderRadius: 1,
+                            p: 1,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: 0.5,
+                            minHeight: 72,
+                            transition: 'border-color 0.15s, background-color 0.15s',
+                            '&:hover': {
+                              borderColor: 'primary.main',
+                            },
+                          }}
+                        >
+                          {key === 'auto' ? (
+                            <DeviceIcon device={previewDevice} fontSize={28} />
+                          ) : (
+                            <Icon sx={{ fontSize: 28 }} />
+                          )}
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{
+                              textAlign: 'center',
+                              lineHeight: 1.2,
+                              fontSize: '0.65rem',
+                            }}
+                          >
+                            {t(labelKey)}
+                          </Typography>
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                  <Button
+                    variant="contained"
+                    startIcon={<SaveIcon />}
+                    onClick={handleSaveIcon}
+                    size="small"
+                    disabled={
+                      savingIcon ||
+                      (selectedIcon === 'auto'
+                        ? !device.icon
+                        : selectedIcon === device.icon)
+                    }
+                  >
+                    {t('deviceDetail.saveIcon')}
+                  </Button>
+                </Box>
+
                 {device.type === 'light' && (
                   <Box sx={{ mt: 3 }}>
                     <Divider sx={{ mb: 3 }} />
@@ -551,17 +702,38 @@ export default function DeviceDetailPage() {
                     <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
                       Contrôles
                     </Typography>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={isOn}
-                          onChange={(e) => handleToggle(e.target.checked)}
-                          disabled={device.status !== 'online'}
-                          size="medium"
-                        />
-                      }
-                      label={isOn ? t('deviceDetail.enabled') : t('deviceDetail.disabled')}
-                    />
+                    {getSwitchChannels(device.meta?.exposes, device.state, device.model).length > 1 ? (
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        {getSwitchChannels(device.meta?.exposes, device.state, device.model).map((channel) => (
+                          <FormControlLabel
+                            key={channel.property}
+                            control={
+                              <Switch
+                                checked={isChannelOn(device.state, channel)}
+                                onChange={(e) =>
+                                  handleChannelToggle(channel.property, e.target.checked)
+                                }
+                                disabled={device.status !== 'online'}
+                                size="medium"
+                              />
+                            }
+                            label={channel.label}
+                          />
+                        ))}
+                      </Box>
+                    ) : (
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={isOn}
+                            onChange={(e) => handleToggle(e.target.checked)}
+                            disabled={device.status !== 'online'}
+                            size="medium"
+                          />
+                        }
+                        label={isOn ? t('deviceDetail.enabled') : t('deviceDetail.disabled')}
+                      />
+                    )}
                   </Box>
                 )}
 
@@ -571,14 +743,15 @@ export default function DeviceDetailPage() {
                     <Typography variant="h6" gutterBottom sx={{ fontWeight: 500 }}>
                       Contrôles
                     </Typography>
-                    <Box sx={{ px: 1, py: 1 }}>
+                    <Box sx={{ px: 1, py: 1, touchAction: 'none' }}>
                       <Typography variant="body2" color="text.secondary" display="block" sx={{ mb: 1, fontSize: '0.875rem' }}>
                         {t('devices.position')}
                       </Typography>
-                      <Box sx={{ position: 'relative', px: 1 }}>
+                      <Box sx={{ position: 'relative', px: 1, touchAction: 'none' }}>
                         <Slider
                           value={coverPosition}
-                          onChange={handleCoverPositionChange}
+                          onChange={handleCoverPositionPreview}
+                          onChangeCommitted={handleCoverPositionCommit}
                           disabled={device.status !== 'online'}
                           min={0}
                           max={100}
@@ -590,9 +763,11 @@ export default function DeviceDetailPage() {
                           valueLabelFormat={(value) => `${value}%`}
                           sx={{
                             mb: 0.5,
+                            touchAction: 'none',
                             '& .MuiSlider-thumb': {
-                              width: 20,
-                              height: 20,
+                              width: 28,
+                              height: 28,
+                              touchAction: 'none',
                             },
                             '& .MuiSlider-track': {
                               height: 6,
@@ -750,7 +925,7 @@ export default function DeviceDetailPage() {
                     try {
                       const updated = await devicesService.getDevice(device.ieeeAddress);
                       setDevice(updated);
-                      setIsOn(updated.state?.state === 'ON' || updated.state?.state === true);
+                      setIsOn(isAnySwitchOn(updated.state, updated.meta?.exposes, updated.model));
                       if (updated.state?.brightness !== undefined) {
                         setBrightness(Math.round((updated.state.brightness / 255) * 100));
                       }
@@ -963,17 +1138,7 @@ export default function DeviceDetailPage() {
                             ⚡ {t('devices.voltage')}
                           </Typography>
                           <Typography variant="h6" color="primary.main">
-                            {(() => {
-                              if (typeof device.state.voltage === 'number') {
-                                // Pour les types "energy" et "switch", afficher la valeur réelle sans diviser
-                                if (device.type === 'energy' || device.type === 'switch') {
-                                  return `${device.state.voltage.toFixed(2)}V`;
-                                }
-                                // Pour les autres types, diviser par 1000 (millivolts -> volts)
-                                return `${(device.state.voltage / 1000).toFixed(2)}V`;
-                              }
-                              return `${device.state.voltage}V`;
-                            })()}
+                            {formatVoltage(device.state.voltage)}
                           </Typography>
                         </Box>
                       </Grid>

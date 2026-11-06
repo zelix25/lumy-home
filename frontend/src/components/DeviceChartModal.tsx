@@ -92,7 +92,7 @@ const getAvailableSensorTypes = (device: Device | null): Array<{
     sensors.push({
       type: SensorType.VOLTAGE,
       label: i18n.t('devices.voltage'),
-      unit: device.type === 'energy' || device.type === 'switch' ? 'V' : 'V',
+      unit: 'V',
       color: SENSOR_COLORS.voltage,
     });
   }

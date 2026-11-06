@@ -3,6 +3,7 @@ import Chart from 'react-apexcharts';
 import { Box, Typography, CircularProgress, Chip, Stack, useTheme } from '@mui/material';
 import { sensorHistoryService, SensorType } from '../services/sensor-history.service';
 import { ApexOptions } from 'apexcharts';
+import { normalizeVoltageToVolts } from '../utils/voltage';
 
 interface MultiSensorChartProps {
   deviceId: string;
@@ -68,7 +69,10 @@ export default function MultiSensorChart({ deviceId, availableSensors }: MultiSe
               type: sensor.type,
               data: response.items.map((item) => ({
                 timestamp: item.timestamp,
-                value: item.value,
+                value:
+                  sensor.type === SensorType.VOLTAGE
+                    ? normalizeVoltageToVolts(item.value)
+                    : item.value,
               })),
             };
           } catch (err) {

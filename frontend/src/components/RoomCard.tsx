@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Card,
   CardContent,
@@ -11,23 +11,10 @@ import {
   IconButton,
 } from '@mui/material';
 import {
-  Thermostat,
-  LightMode,
-  Person,
-  Lightbulb,
-  Power,
-  ElectricalServices,
-  Sensors,
-  Window,
-  Blinds,
-  DirectionsRun,
-  WaterDrop,
-  RadioButtonUnchecked,
-  Warning,
-  LocalFireDepartment,
-  BatteryFull,
   Add,
   Remove,
+  Thermostat,
+  WaterDrop,
 } from '@mui/icons-material';
 import { Device } from '../services/devices.service';
 import { devicesService } from '../services/devices.service';
@@ -36,6 +23,14 @@ import i18n from '@/i18n';
 import RoomSensorChartModal from './RoomSensorChartModal';
 import DeviceChartModal from './DeviceChartModal';
 import { translateRoomName } from '../utils/roomTranslations';
+import {
+  buildOnOffCommand,
+  getSwitchChannels,
+  isAnySwitchOn,
+  isChannelOn,
+} from '../utils/switchExposes';
+import { DeviceIcon } from '../utils/deviceIcons';
+import { formatVoltage } from '../utils/voltage';
 
 interface RoomCardProps {
   roomName: string;
@@ -48,6 +43,8 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
   const [brightnessValues, setBrightnessValues] = useState<Record<string, number>>({});
   const [coverPositions, setCoverPositions] = useState<Record<string, number>>({});
   const [heatingSetpoints, setHeatingSetpoints] = useState<Record<string, number>>({});
+  /** Empêche le WebSocket d'écraser la position pendant un drag tactile */
+  const draggingCoverIdsRef = useRef<Set<string>>(new Set());
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSensor, setSelectedSensor] = useState<{
     type: SensorType;
@@ -76,7 +73,7 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
     const brightness: Record<string, number> = {};
     const coverPos: Record<string, number> = {};
     validDevices.forEach((device) => {
-      if (device.state?.state === 'ON' || device.state?.state === true) {
+      if (isAnySwitchOn(device.state, device.meta?.exposes, device.model)) {
         states[device.ieeeAddress] = true;
       }
       if (device.state?.brightness !== undefined) {
@@ -101,7 +98,16 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
     });
     setDeviceStates(states);
     setBrightnessValues(brightness);
-    setCoverPositions(coverPos);
+    setCoverPositions((prev) => {
+      const next = { ...coverPos };
+      // Conserver la valeur locale des volets en cours de réglage
+      draggingCoverIdsRef.current.forEach((ieeeAddress) => {
+        if (prev[ieeeAddress] !== undefined) {
+          next[ieeeAddress] = prev[ieeeAddress];
+        }
+      });
+      return next;
+    });
     
     // Synchroniser les consignes de chauffage
     const setpoints: Record<string, number> = {};
@@ -128,10 +134,13 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
 
   const handleToggle = async (device: Device, checked: boolean) => {
     try {
-      const command =
-        device.type === 'light'
-          ? { state: checked ? 'ON' : 'OFF' }
-          : { state: checked ? 'ON' : 'OFF' };
+      const command = buildOnOffCommand(
+        device.meta?.exposes,
+        device.state,
+        checked,
+        undefined,
+        device.model,
+      );
       await devicesService.sendCommand(device.ieeeAddress, command);
       setDeviceStates((prev) => ({ ...prev, [device.ieeeAddress]: checked }));
       onDeviceUpdate?.();
@@ -140,11 +149,39 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
     }
   };
 
+  const handleChannelToggle = async (
+    device: Device,
+    property: string,
+    checked: boolean,
+  ) => {
+    try {
+      const command = buildOnOffCommand(
+        device.meta?.exposes,
+        device.state,
+        checked,
+        property,
+        device.model,
+      );
+      await devicesService.sendCommand(device.ieeeAddress, command);
+      setDeviceStates((prev) => ({
+        ...prev,
+        [device.ieeeAddress]: isAnySwitchOn(
+          { ...(device.state || {}), ...command },
+          device.meta?.exposes,
+          device.model,
+        ),
+      }));
+      onDeviceUpdate?.();
+    } catch (error) {
+      console.error('Erreur lors de la commande multi-canal:', error);
+    }
+  };
+
   const handleBrightnessChange = async (device: Device, value: number) => {
     try {
       const brightnessValue = Math.round((value / 100) * 255);
       await devicesService.sendCommand(device.ieeeAddress, {
-        state: 'ON',
+        ...buildOnOffCommand(device.meta?.exposes, device.state, true, undefined, device.model),
         brightness: brightnessValue,
       });
       setBrightnessValues((prev) => ({ ...prev, [device.ieeeAddress]: value }));
@@ -155,14 +192,24 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
     }
   };
 
-  const handleCoverPositionChange = async (device: Device, position: number) => {
+  const handleCoverPositionPreview = (device: Device, position: number) => {
+    draggingCoverIdsRef.current.add(device.ieeeAddress);
+    setCoverPositions((prev) => ({ ...prev, [device.ieeeAddress]: position }));
+  };
+
+  const handleCoverPositionCommit = async (device: Device, position: number) => {
+    draggingCoverIdsRef.current.add(device.ieeeAddress);
+    setCoverPositions((prev) => ({ ...prev, [device.ieeeAddress]: position }));
     try {
-      const command = { position };
-      await devicesService.sendCommand(device.ieeeAddress, command);
-      setCoverPositions((prev) => ({ ...prev, [device.ieeeAddress]: position }));
+      await devicesService.sendCommand(device.ieeeAddress, { position });
       onDeviceUpdate?.();
     } catch (error) {
       console.error('Erreur lors du changement de position du volet:', error);
+    } finally {
+      // Laisse le temps au device de confirmer avant de réaccepter le flux WS
+      window.setTimeout(() => {
+        draggingCoverIdsRef.current.delete(device.ieeeAddress);
+      }, 1500);
     }
   };
 
@@ -194,80 +241,10 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
   };
 
   const getDeviceIcon = (device: Device, isOn?: boolean) => {
-    const iconColor = device.status === 'online' 
+    const iconColor = device.status === 'online'
       ? (isOn ? '#FFA726' : '#9E9E9E')
       : '#BDBDBD';
-    const iconSize = 32;
-
-    // Pour les capteurs, déterminer l'icône en fonction des données disponibles
-    if (device.type === 'sensor' || device.type === 'temperature') {
-      // Détecter le type de capteur en fonction des données disponibles
-      if (device.state?.temperature !== undefined) {
-        return <Thermostat sx={{ fontSize: iconSize, color: '#2196F3' }} />;
-      }
-      if (device.state?.humidity !== undefined) {
-        return <WaterDrop sx={{ fontSize: iconSize, color: '#2196F3' }} />;
-      }
-      if (device.state?.motion !== undefined || device.state?.presence !== undefined || device.state?.occupancy !== undefined) {
-        return <DirectionsRun sx={{ fontSize: iconSize, color: '#FF9800' }} />;
-      }
-      if (device.state?.illuminance !== undefined) {
-        return <LightMode sx={{ fontSize: iconSize, color: '#FFC107' }} />;
-      }
-      if (device.state?.contact !== undefined) {
-        return <Window sx={{ fontSize: iconSize, color: iconColor }} />;
-      }
-      if (device.state?.water_leak !== undefined) {
-        return <WaterDrop sx={{ fontSize: iconSize, color: '#F44336' }} />;
-      }
-      if (device.state?.smoke !== undefined) {
-        return <LocalFireDepartment sx={{ fontSize: iconSize, color: '#F44336' }} />;
-      }
-      if (device.state?.vibration !== undefined) {
-        return <Warning sx={{ fontSize: iconSize, color: '#FF9800' }} />;
-      }
-      if (device.state?.battery !== undefined) {
-        return <BatteryFull sx={{ fontSize: iconSize, color: iconColor }} />;
-      }
-      // Capteur générique par défaut
-      return <Sensors sx={{ fontSize: iconSize, color: iconColor }} />;
-    }
-
-    switch (device.type) {
-      case 'light':
-        return <Lightbulb sx={{ fontSize: iconSize, color: iconColor }} />;
-      case 'switch':
-        return <Power sx={{ fontSize: iconSize, color: iconColor }} />;
-      case 'plug':
-        return <ElectricalServices sx={{ fontSize: iconSize, color: iconColor }} />;
-      case 'energy':
-        return <ElectricalServices sx={{ fontSize: iconSize, color: '#FF9800' }} />;
-      case 'cover':
-        return <Blinds sx={{ fontSize: iconSize, color: iconColor }} />;
-      case 'temperature':
-        return <Thermostat sx={{ fontSize: iconSize, color: '#2196F3' }} />;
-      case 'motion':
-        return <DirectionsRun sx={{ fontSize: iconSize, color: iconColor }} />;
-      case 'illuminance':
-        return <LightMode sx={{ fontSize: iconSize, color: '#FFC107' }} />;
-      case 'humidity':
-        return <WaterDrop sx={{ fontSize: iconSize, color: '#2196F3' }} />;
-      case 'window':
-        return <Window sx={{ fontSize: iconSize, color: iconColor }} />;
-      case 'presence':
-      case 'occupancy':
-        return <Person sx={{ fontSize: iconSize, color: iconColor }} />;
-      case 'contact':
-        return <Window sx={{ fontSize: iconSize, color: iconColor }} />;
-      case 'water_leak':
-        return <WaterDrop sx={{ fontSize: iconSize, color: '#F44336' }} />;
-      case 'smoke':
-        return <LocalFireDepartment sx={{ fontSize: iconSize, color: '#F44336' }} />;
-      case 'button':
-        return <RadioButtonUnchecked sx={{ fontSize: iconSize, color: iconColor }} />;
-      default:
-        return <Sensors sx={{ fontSize: iconSize, color: iconColor }} />;
-    }
+    return <DeviceIcon device={device} fontSize={32} color={iconColor} />;
   };
 
   const formatPowerW = (device: Device): string | null => {
@@ -310,10 +287,7 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
       }
       // Sinon, afficher la tension si disponible
       if (device.state?.voltage !== undefined) {
-        const voltage = typeof device.state.voltage === 'number' 
-          ? device.state.voltage.toFixed(2) 
-          : device.state.voltage;
-        return `${voltage} V`;
+        return formatVoltage(device.state.voltage);
       }
     }
     if (device.state?.temperature !== undefined) {
@@ -540,9 +514,7 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
                           {/* Tension - Badge vert */}
                           {device.state?.voltage !== undefined && (
                             <Chip
-                              label={`${typeof device.state.voltage === 'number' 
-                                ? `${device.state.voltage.toFixed(2)} V`
-                                : `${device.state.voltage} V`}`}
+                              label={formatVoltage(device.state.voltage)}
                               size="small"
                               sx={{
                                 fontSize: '0.7rem',
@@ -675,30 +647,61 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
                         </Box>
                       ) : (device.type === 'switch' || device.type === 'plug') ? (
                         <Box
-                          sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'flex-start' }}
+                          sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'flex-start', width: '100%' }}
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, width: '100%' }}>
-                            <Typography
-                              variant="h6"
-                              sx={{
-                                fontWeight: 400,
-                                fontSize: '1rem',
-                                color: 'text.primary',
-                              }}
-                            >
-                              {getDeviceValue(device)}
-                            </Typography>
-                            <Switch
-                              checked={isOn}
-                              onChange={(e) => {
-                                e.stopPropagation();
-                                handleToggle(device, e.target.checked);
-                              }}
-                              onClick={(e) => e.stopPropagation()}
-                              size="small"
-                            />
-                          </Box>
+                          {getSwitchChannels(device.meta?.exposes, device.state, device.model).length > 1 ? (
+                            getSwitchChannels(device.meta?.exposes, device.state, device.model).map((channel) => (
+                              <Box
+                                key={channel.property}
+                                sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  gap: 1,
+                                  width: '100%',
+                                }}
+                              >
+                                <Typography
+                                  variant="body2"
+                                  sx={{ fontWeight: 400, color: 'text.secondary' }}
+                                >
+                                  {channel.label}
+                                </Typography>
+                                <Switch
+                                  checked={isChannelOn(device.state, channel)}
+                                  onChange={(e) => {
+                                    e.stopPropagation();
+                                    handleChannelToggle(device, channel.property, e.target.checked);
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  size="small"
+                                />
+                              </Box>
+                            ))
+                          ) : (
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, width: '100%' }}>
+                              <Typography
+                                variant="h6"
+                                sx={{
+                                  fontWeight: 400,
+                                  fontSize: '1rem',
+                                  color: 'text.primary',
+                                }}
+                              >
+                                {getDeviceValue(device)}
+                              </Typography>
+                              <Switch
+                                checked={isOn}
+                                onChange={(e) => {
+                                  e.stopPropagation();
+                                  handleToggle(device, e.target.checked);
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                size="small"
+                              />
+                            </Box>
+                          )}
                           {powerLabel && <Chip label={powerLabel} size="small" sx={powerChipSx} />}
                         </Box>
                       ) : (
@@ -777,18 +780,22 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
                       {/* Contrôles pour les volets */}
                       {device.type === 'cover' && (
                         <Box 
-                          sx={{ mt: 1 }} 
+                          sx={{ mt: 1, touchAction: 'none' }} 
                           onClick={(e) => e.stopPropagation()}
                           onMouseDown={(e) => e.stopPropagation()}
                           onMouseUp={(e) => e.stopPropagation()}
+                          onTouchStart={(e) => e.stopPropagation()}
                         >
                           <Slider
                             value={coverPosition}
                             onChange={(e, value) => {
                               e.stopPropagation();
-                              handleCoverPositionChange(device, value as number);
+                              handleCoverPositionPreview(device, value as number);
                             }}
-                            onChangeCommitted={(e) => e.stopPropagation()}
+                            onChangeCommitted={(e, value) => {
+                              e.stopPropagation();
+                              handleCoverPositionCommit(device, value as number);
+                            }}
                             onClick={(e) => e.stopPropagation()}
                             onMouseDown={(e) => e.stopPropagation()}
                             onMouseUp={(e) => e.stopPropagation()}
@@ -796,17 +803,20 @@ export default function RoomCard({ roomName, devices, onDeviceUpdate }: RoomCard
                             min={0}
                             max={100}
                             step={1}
+                            valueLabelDisplay="auto"
+                            valueLabelFormat={(value) => `${value}%`}
                             size="small"
                             sx={{
+                              touchAction: 'none',
                               '& .MuiSlider-thumb': {
-                                width: 12,
-                                height: 12,
+                                width: 20,
+                                height: 20,
                               },
                               '& .MuiSlider-track': {
-                                height: 2,
+                                height: 4,
                               },
                               '& .MuiSlider-rail': {
-                                height: 2,
+                                height: 4,
                               },
                             }}
                           />

@@ -1236,14 +1236,16 @@
   {
     "model": "MINI-ZB2GS",
     "type": "switch",
+    "subTypes": ["dual_channel"],
     "vendor": "SONOFF",
-    "comment": "SONOFF Zigbee dual-channel smart switch"
+    "comment": "SONOFF Zigbee dual-channel smart switch (state_l1/state_l2)"
   },
   {
     "model": "MINI-ZB2GS-L",
     "type": "switch",
+    "subTypes": ["dual_channel"],
     "vendor": "SONOFF",
-    "comment": "SONOFF Zigbee dual-channel smart switch"
+    "comment": "SONOFF Zigbee dual-channel smart switch (state_l1/state_l2, no neutral)"
   },
   {
     "model": "S32052",

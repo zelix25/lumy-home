@@ -9,6 +9,8 @@ export interface Device {
   model: string | null;
   description: string | null;
   room: string | null;
+  /** Clé d'icône personnalisée ; null = automatique selon le type */
+  icon: string | null;
   state: Record<string, any> | null;
   meta: Record<string, any> | null;
   isSupported: boolean;
@@ -54,6 +56,10 @@ class DevicesService {
 
   async updateRoom(ieeeAddress: string, room: string): Promise<Device> {
     return apiService.put<Device>(`/devices/${ieeeAddress}/room`, { room });
+  }
+
+  async updateIcon(ieeeAddress: string, icon: string | null): Promise<Device> {
+    return apiService.put<Device>(`/devices/${ieeeAddress}/icon`, { icon });
   }
 
   async sendCommand(
