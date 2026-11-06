@@ -12,6 +12,14 @@ import { User } from '../auth/entities/user.entity';
 import { ConnectStoreDto } from './dto/connect-store.dto';
 import { LoggerService } from '../logger/logger.service';
 
+function maskApiKey(apiKey: string): string {
+  const trimmed = apiKey.trim();
+  if (trimmed.length < 12) {
+    return 'lumy_****';
+  }
+  return `${trimmed.slice(0, 8)}…${trimmed.slice(-4)}`;
+}
+
 @Injectable()
 export class StoreAuthService {
   private readonly logger: Logger;
@@ -31,7 +39,6 @@ export class StoreAuthService {
         'https://store.lumy-home.com',
       ) || 'https://store.lumy-home.com';
 
-    // Créer une instance axios pour les requêtes vers le store
     this.axiosInstance = axios.create({
       baseURL: this.storeBaseUrl,
       timeout: 10000,
@@ -42,12 +49,17 @@ export class StoreAuthService {
   }
 
   /**
-   * Connecte un utilisateur au Lumy Store et récupère son apiToken
+   * Connecte la box au Lumy Store via une clé API fournie par l'utilisateur.
+   * La clé est validée auprès du store puis stockée côté serveur uniquement.
    */
   async connectStore(
     userId: string,
     connectDto: ConnectStoreDto,
-  ): Promise<{ message: string; storeEmail: string; tokenStore: string }> {
+  ): Promise<{
+    message: string;
+    storeEmail: string | null;
+    apiKeyMasked: string;
+  }> {
     const user = await this.userRepository.findOne({
       where: { id: userId },
     });
@@ -56,109 +68,39 @@ export class StoreAuthService {
       throw new UnauthorizedException('Utilisateur non trouvé');
     }
 
+    const apiKey = connectDto.apiKey.trim();
+
     try {
-      // 1. Se connecter au store avec les credentials
-      const loginResponse = await this.axiosInstance.post('/api/users/login', {
-        email: connectDto.email,
-        password: connectDto.password,
-      });
+      const profile = await this.fetchStoreProfile(apiKey);
+      const storeEmail =
+        typeof profile?.email === 'string' ? profile.email : null;
 
-      const accessToken = loginResponse.data.accessToken;
-
-      if (!accessToken) {
-        throw new UnauthorizedException(
-          'Impossible de récupérer le token d\'accès du store',
-        );
-      }
-
-      // 2. Récupérer l'apiToken avec le token d'accès
-      let apiTokenResponse;
-      try {
-        apiTokenResponse = await this.axiosInstance.get(
-          '/api/users/me/api-token',
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          },
-        );
-      } catch (error: any) {
-        this.logger.error(
-          `Erreur lors de la récupération de l'apiToken: ${error.message}`,
-          'StoreAuthService',
-        );
-        throw new BadRequestException(
-          `Erreur lors de la récupération du token API du store: ${error.response?.data?.message || error.message}`,
-        );
-      }
-
-      // Log pour debug
-      this.logger.debug(
-        `Réponse apiToken: ${JSON.stringify(apiTokenResponse.data)}`,
-        'StoreAuthService',
-      );
-
-      let apiToken = apiTokenResponse.data?.apiToken;
-
-      // Si l'utilisateur n'a pas d'apiToken, on le régénère automatiquement
-      if (!apiToken) {
-        this.logger.log(
-          'L\'utilisateur n\'a pas d\'apiToken, régénération en cours...',
-          'StoreAuthService',
-        );
-        try {
-          const regenerateResponse = await this.axiosInstance.post(
-            '/api/users/me/api-token/regenerate',
-            {},
-            {
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
-            },
-          );
-          apiToken = regenerateResponse.data?.apiToken;
-        } catch (error: any) {
-          this.logger.error(
-            `Erreur lors de la régénération de l'apiToken: ${error.message}`,
-            'StoreAuthService',
-          );
-          throw new BadRequestException(
-            `Erreur lors de la génération du token API du store: ${error.response?.data?.message || error.message}`,
-          );
-        }
-      }
-
-      if (!apiToken) {
-        this.logger.error(
-          `Impossible de récupérer l'apiToken après régénération. Réponse: ${JSON.stringify(apiTokenResponse.data)}`,
-          'StoreAuthService',
-        );
-        throw new BadRequestException(
-          'Impossible de récupérer le token API du store. Vérifiez que votre compte store est bien configuré.',
-        );
-      }
-
-      // 3. Stocker l'apiToken dans l'entité User
-      user.storeApiToken = apiToken;
+      user.storeApiToken = apiKey;
       user.storeApiTokenGeneratedAt = new Date();
+      user.storeEmail = storeEmail;
       await this.userRepository.save(user);
 
       this.logger.log(
-        `Utilisateur ${user.email} connecté au store avec succès`,
+        `Utilisateur ${user.email} connecté au store via clé API (${maskApiKey(apiKey)})`,
         'StoreAuthService',
       );
 
       return {
         message: 'Connexion au store réussie',
-        storeEmail: connectDto.email,
-        tokenStore: accessToken, // Token JWT du store à stocker dans le navigateur
+        storeEmail,
+        apiKeyMasked: maskApiKey(apiKey),
       };
     } catch (error: any) {
+      if (
+        error instanceof UnauthorizedException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
       if (error.response) {
-        // Erreur HTTP du store
-        if (error.response.status === 401) {
+        if (error.response.status === 401 || error.response.status === 403) {
           throw new UnauthorizedException(
-            'Email ou mot de passe incorrect pour le store',
+            'Clé API invalide ou révoquée. Vérifiez la clé sur le Lumy Store.',
           );
         }
         throw new BadRequestException(
@@ -172,7 +114,41 @@ export class StoreAuthService {
   }
 
   /**
-   * Déconnecte un utilisateur du store (supprime le token)
+   * Valide une clé API auprès du store et retourne le profil utilisateur.
+   */
+  private async fetchStoreProfile(apiKey: string): Promise<Record<string, any>> {
+    try {
+      const response = await this.axiosInstance.get('/api/users/me', {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'X-API-Token': apiKey,
+        },
+      });
+
+      if (response.status !== 200 || !response.data) {
+        throw new UnauthorizedException(
+          'Impossible de valider la clé API auprès du store',
+        );
+      }
+
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        throw new UnauthorizedException(
+          'Clé API invalide ou révoquée. Vérifiez la clé sur le Lumy Store.',
+        );
+      }
+      if (error.request && !error.response) {
+        throw new BadRequestException(
+          'Impossible de contacter le Lumy Store. Vérifiez votre connexion internet.',
+        );
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Déconnecte un utilisateur du store (supprime la clé API stockée)
    */
   async disconnectStore(userId: string): Promise<{ message: string }> {
     const user = await this.userRepository.findOne({
@@ -189,6 +165,7 @@ export class StoreAuthService {
 
     user.storeApiToken = null;
     user.storeApiTokenGeneratedAt = null;
+    user.storeEmail = null;
     await this.userRepository.save(user);
 
     this.logger.log(
@@ -205,33 +182,22 @@ export class StoreAuthService {
   async isConnectedToStore(userId: string): Promise<boolean> {
     const user = await this.userRepository.findOne({
       where: { id: userId },
+      select: ['id', 'storeApiToken'],
     });
 
     if (!user) {
-      this.logger.warn(
-        `Utilisateur ${userId} non trouvé lors de la vérification de connexion au store`,
-        'StoreAuthService',
-      );
       return false;
     }
 
-    // Vérifier que le token existe et n'est pas une chaîne vide
-    const hasToken = !!(
+    return !!(
       user.storeApiToken &&
       typeof user.storeApiToken === 'string' &&
       user.storeApiToken.trim().length > 0
     );
-    
-    this.logger.debug(
-      `Vérification connexion store pour ${userId}: ${hasToken ? 'connecté' : 'non connecté'} (token: ${user.storeApiToken ? `présent (${user.storeApiToken.substring(0, 10)}...)` : 'absent'})`,
-      'StoreAuthService',
-    );
-
-    return hasToken;
   }
 
   /**
-   * Récupère le token API du store pour un utilisateur
+   * Récupère le token API du store pour un utilisateur (usage serveur uniquement)
    */
   async getStoreApiToken(userId: string): Promise<string | null> {
     const user = await this.userRepository.findOne({
@@ -243,9 +209,31 @@ export class StoreAuthService {
   }
 
   /**
-   * Vérifie si le token API est valide et non expiré
-   * Note: Le store ne fournit pas d'expiration explicite pour l'apiToken,
-   * mais on peut vérifier s'il est toujours valide en faisant une requête test
+   * Statut de connexion exposable à l'UI (sans révéler la clé)
+   */
+  async getConnectionStatus(userId: string): Promise<{
+    connected: boolean;
+    storeEmail?: string;
+    apiKeyMasked?: string;
+  }> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      select: ['id', 'storeApiToken', 'storeEmail'],
+    });
+
+    if (!user?.storeApiToken?.trim()) {
+      return { connected: false };
+    }
+
+    return {
+      connected: true,
+      storeEmail: user.storeEmail || undefined,
+      apiKeyMasked: maskApiKey(user.storeApiToken),
+    };
+  }
+
+  /**
+   * Vérifie si le token API est toujours accepté par le store
    */
   async validateApiToken(userId: string): Promise<boolean> {
     const apiToken = await this.getStoreApiToken(userId);
@@ -254,39 +242,19 @@ export class StoreAuthService {
       return false;
     }
 
-    // Faire une requête test vers le store pour valider le token
     try {
-      const response = await this.axiosInstance.get('/api/users/me', {
-        headers: {
-          Authorization: `Bearer ${apiToken}`,
-        },
-      });
-
-      return response.status === 200;
+      await this.fetchStoreProfile(apiToken);
+      return true;
     } catch (error: any) {
-      if (error.response?.status === 401) {
-        // Token invalide ou expiré
+      if (error instanceof UnauthorizedException) {
         this.logger.warn(
-          `Token API invalide pour l'utilisateur ${userId}`,
+          `Clé API invalide pour l'utilisateur ${userId}`,
           'StoreAuthService',
         );
         return false;
       }
-      // Autre erreur (réseau, etc.) - on considère le token comme valide
+      // Erreur réseau : on ne invalide pas la clé stockée
       return true;
     }
   }
-
-  /**
-   * Régénère le token API en se reconnectant au store
-   * Nécessite que l'utilisateur fournisse à nouveau ses credentials
-   */
-  async regenerateApiToken(
-    userId: string,
-    connectDto: ConnectStoreDto,
-  ): Promise<{ message: string }> {
-    // Se reconnecter au store pour obtenir un nouveau token
-    return this.connectStore(userId, connectDto);
-  }
 }
-

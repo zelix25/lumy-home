@@ -498,7 +498,7 @@
     "createAccount": "Create account",
     "store": {
       "title": "Connect to Lumy Store",
-      "description": "Connect to Lumy Store to access plugins and additional features.",
+      "description": "Connect your Lumy Store API key to access plugins and additional features.",
       "connect": "Connect",
       "skip": "Skip",
       "connected": "Successfully connected to Lumy Store",
@@ -506,7 +506,10 @@
       "noAccount": "Don't have a Lumy Store account yet?",
       "createAccountLink": "You can create one by clicking here",
       "noToken": "JWT token missing. Please create an account first.",
-      "authError": "Authentication error. Check your store credentials or try again."
+      "authError": "Invalid or revoked API key. Check the key on the Lumy Store.",
+      "apiKey": "Store API key",
+      "apiKeyHelp": "Generate an API key from your Lumy Store account (format lumy_...).",
+      "apiKeyInfo": "Paste the API key provided by the Lumy Store. It is stored only on your box, never in the browser."
     },
     "ai": {
       "title": "Enable AI Assistant",
@@ -865,12 +868,13 @@
   },
   "store": {
     "title": "Connect to Lumy Store",
-    "description": "Connect your Lumy Store account to access plugins and premium features.",
+    "description": "Connect your Lumy Store API key to access plugins and premium features.",
     "connect": {
-      "button": "Connect to store",
-      "email": "Store email",
-      "password": "Store password",
-      "info": "Use your Lumy Store credentials to connect. If you don't have an account yet, create one on the store website.",
+      "button": "Connect API key",
+      "apiKey": "API key",
+      "apiKeyHelp": "Expected format: lumy_… — generated from your store account.",
+      "toggleApiKeyVisibility": "Show or hide API key",
+      "info": "Paste the API key provided by the Lumy Store. It is validated then stored only on your box (never in the browser).",
       "noAccount": "Don't have an account yet?",
       "createAccount": "Create account",
       "success": "Successfully connected to store!",
@@ -883,7 +887,9 @@
     },
     "connected": {
       "message": "Connected to store with account: {{email}}",
-      "unknown": "unknown account",
+      "messageMasked": "Connected to store with key: {{key}}",
+      "unknown": "unknown key",
+      "apiKeyLabel": "API key",
       "description": "You are connected to the Lumy Store. You can now install and use plugins from the store."
     },
     "plugins": {

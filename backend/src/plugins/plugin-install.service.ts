@@ -11,7 +11,6 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as crypto from 'crypto';
 const AdmZip = require('adm-zip');
-import axios from 'axios';
 import { Plugin, PluginStatus } from './entities/plugin.entity';
 import { StoreApiService } from '../store/store-api.service';
 import { StoreAuthService } from '../store/store-auth.service';
@@ -68,29 +67,19 @@ export class PluginInstallService {
   async installFromStore(
     userId: string,
     pluginId: string,
-    tokenStore?: string,
   ): Promise<Plugin> {
     try {
-      // Valider que le tokenStore est fourni
-      if (!tokenStore || tokenStore.trim().length === 0) {
-        throw new BadRequestException(
-          'Le token JWT du store (tokenStore) est requis pour installer un plugin',
-        );
-      }
-
       this.logger.log(
-        `Installation du plugin ${pluginId} avec tokenStore JWT (${tokenStore.substring(0, 20)}...)`,
+        `Installation du plugin ${pluginId} via clé API store`,
         'PluginInstallService',
       );
 
       // 1. Récupérer les informations du plugin depuis le store
       this.logger.log(
-        `Récupération des informations du plugin ${pluginId} depuis le store avec le tokenStore JWT...`,
+        `Récupération des informations du plugin ${pluginId} depuis le store...`,
         'PluginInstallService',
       );
 
-      // Utiliser l'endpoint authentifié pour récupérer les informations du plugin
-      // Cela permet d'avoir accès au downloadUrl et aux informations utilisateur
       let storePlugin: {
         id: string;
         name: string;
@@ -109,22 +98,19 @@ export class PluginInstallService {
       };
 
       try {
-        // Utiliser le tokenStore JWT pour authentifier la requête vers le store
         storePlugin = await this.storeApiService.get<typeof storePlugin>(
           userId,
           `/api/plugins/${pluginId}`,
-          undefined,
-          { tokenStore }, // Le tokenStore sera utilisé comme Bearer token dans le header Authorization
         );
         
         this.logger.debug(
-          `Plugin ${pluginId} récupéré avec succès depuis le store avec le tokenStore JWT`,
+          `Plugin ${pluginId} récupéré avec succès depuis le store`,
           'PluginInstallService',
         );
       } catch (error: any) {
         // Si l'authentification échoue, essayer l'endpoint public
         this.logger.warn(
-          `Impossible d'utiliser l'endpoint authentifié pour ${pluginId} avec le tokenStore, utilisation de l'endpoint public`,
+          `Impossible d'utiliser l'endpoint authentifié pour ${pluginId}, utilisation de l'endpoint public`,
           'PluginInstallService',
         );
         storePlugin = await this.storeApiService.getPublic<typeof storePlugin>(
@@ -164,7 +150,6 @@ export class PluginInstallService {
       const zipBuffer = await this.downloadPluginPackage(
         userId,
         storePlugin.downloadUrl,
-        tokenStore,
       );
 
       // 3. Extraire et valider le package
@@ -234,86 +219,45 @@ export class PluginInstallService {
   }
 
   /**
-   * Télécharge le package ZIP depuis le store
+   * Télécharge le package ZIP depuis le store (auth par clé API en header uniquement)
    */
   private async downloadPluginPackage(
     userId: string,
     downloadUrl: string,
-    tokenStore?: string,
   ): Promise<Buffer> {
     try {
-      // Valider que le tokenStore est fourni
-      if (!tokenStore || tokenStore.trim().length === 0) {
-        throw new BadRequestException(
-          'Le token JWT du store (tokenStore) est requis pour télécharger le package',
-        );
-      }
-
-      // Récupérer le storeApiToken de la base de données pour l'ajouter comme paramètre
       const apiToken = await this.storeAuthService.getStoreApiToken(userId);
 
       if (!apiToken) {
         throw new BadRequestException(
-          'Vous devez être connecté au Lumy Store pour installer des plugins',
+          'Vous devez connecter une clé API Lumy Store pour installer des plugins',
         );
       }
 
-      // Utiliser le tokenStore JWT pour l'authentification Bearer
-      const authToken = tokenStore;
-
       this.logger.debug(
-        `Téléchargement du package avec tokenStore JWT (${authToken.substring(0, 20)}...) et storeApiToken comme paramètre`,
+        `Téléchargement du package via clé API store`,
         'PluginInstallService',
       );
 
-      const storeBaseUrl =
-        this.configService.get<string>(
-          'STORE_BASE_URL',
-          'https://store.lumy-home.com',
-        ) || 'https://store.lumy-home.com';
+      const buffer = await this.storeApiService.downloadBinary(
+        userId,
+        downloadUrl,
+      );
 
-      // Construire l'URL complète si c'est une URL relative
-      const fullUrl = downloadUrl.startsWith('http')
-        ? downloadUrl
-        : `${storeBaseUrl}${downloadUrl}`;
-
-      // Ajouter le storeApiToken comme paramètre dans l'URL
-      const finalUrl = (() => {
-        try {
-          const url = new URL(fullUrl);
-          url.searchParams.append('storeApiToken', apiToken);
-          return url.toString();
-        } catch (error) {
-          // Si l'URL n'est pas valide, essayer d'ajouter le paramètre manuellement
-          const separator = fullUrl.includes('?') ? '&' : '?';
-          return `${fullUrl}${separator}storeApiToken=${encodeURIComponent(apiToken)}`;
-        }
-      })();
-
-      // Construire la requête avec le Bearer token JWT dans le header Authorization
       this.logger.debug(
-        `Requête GET vers ${finalUrl} avec Bearer token JWT (${authToken.substring(0, 20)}...)`,
+        `Package téléchargé avec succès (${buffer.byteLength} octets)`,
         'PluginInstallService',
       );
 
-      const response = await axios.get(finalUrl, {
-        headers: {
-          Authorization: `Bearer ${authToken}`, // Bearer token JWT (tokenStore)
-        },
-        responseType: 'arraybuffer',
-      });
-
-      this.logger.debug(
-        `Package téléchargé avec succès (${response.data.byteLength} octets)`,
-        'PluginInstallService',
-      );
-
-      return Buffer.from(response.data);
+      return buffer;
     } catch (error: any) {
       this.logger.error(
         `Erreur lors du téléchargement du package: ${error.message}`,
         'PluginInstallService',
       );
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
       throw new BadRequestException(
         `Erreur lors du téléchargement du package: ${error.message}`,
       );

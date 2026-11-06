@@ -32,7 +32,6 @@ export class StoreApiService {
         'https://store.lumy-home.com',
       ) || 'https://store.lumy-home.com';
 
-    // Créer une instance axios pour les requêtes vers le store
     this.axiosInstance = axios.create({
       baseURL: this.storeBaseUrl,
       timeout: 30000,
@@ -43,78 +42,52 @@ export class StoreApiService {
   }
 
   /**
-   * Récupère le token API d'un utilisateur et le valide
+   * Récupère et valide le format de la clé API stockée côté serveur.
    */
   private async getValidApiToken(userId: string): Promise<string> {
     const apiToken = await this.storeAuthService.getStoreApiToken(userId);
 
     if (!apiToken) {
       throw new UnauthorizedException(
-        'Vous devez vous connecter au Lumy Store pour accéder à cette fonctionnalité',
+        'Vous devez connecter une clé API Lumy Store pour accéder à cette fonctionnalité',
       );
     }
 
-    // Vérifier que le token a le bon format (doit commencer par "lumy_")
     if (!apiToken.startsWith('lumy_')) {
       this.logger.warn(
-        `Token API invalide pour l'utilisateur ${userId}: le token ne commence pas par "lumy_" (format: ${apiToken.substring(0, 10)}...)`,
+        `Clé API au format invalide pour l'utilisateur ${userId}`,
         'StoreApiService',
       );
       throw new UnauthorizedException(
-        'Token API invalide: format incorrect. Le token doit commencer par "lumy_"',
+        'Clé API invalide: le format attendu commence par "lumy_"',
       );
     }
-
-    // Log pour déboguer (seulement les 10 premiers caractères pour la sécurité)
-    this.logger.debug(
-      `Token API récupéré pour l'utilisateur ${userId}: ${apiToken.substring(0, 10)}... (longueur: ${apiToken.length})`,
-      'StoreApiService',
-    );
 
     return apiToken;
   }
 
+  private authHeaders(apiToken: string): Record<string, string> {
+    return {
+      Authorization: `Bearer ${apiToken}`,
+      'X-API-Token': apiToken,
+    };
+  }
+
   /**
-   * Fait une requête GET vers l'API du store (avec authentification)
+   * Requête GET authentifiée vers le store (clé API uniquement, jamais en query string)
    */
   async get<T = any>(
     userId: string,
     endpoint: string,
     params?: Record<string, any>,
-    options?: { responseType?: 'json' | 'arraybuffer' | 'blob'; tokenStore?: string },
+    options?: { responseType?: 'json' | 'arraybuffer' | 'blob' },
   ): Promise<T> {
-    // Récupérer le storeApiToken de la base de données pour l'ajouter comme paramètre
     const apiToken = await this.getValidApiToken(userId);
-    
-    // Utiliser le tokenStore JWT si fourni, sinon utiliser le storeApiToken pour l'authentification
-    const authToken = options?.tokenStore || apiToken;
-    
-    // Log pour confirmer l'utilisation du tokenStore JWT
-    if (options?.tokenStore) {
-      this.logger.debug(
-        `Utilisation du tokenStore JWT pour l'authentification (${authToken.substring(0, 20)}...)`,
-        'StoreApiService',
-      );
-    }
 
     try {
-      this.logger.debug(
-        `Requête GET vers le store: ${endpoint} avec Bearer token ${authToken.substring(0, 20)}...`,
-        'StoreApiService',
-      );
-      
-      // Ajouter le storeApiToken comme paramètre dans les requêtes
-      const requestParams = {
-        ...params,
-        storeApiToken: apiToken,
-      };
-      
-      // Construire la requête avec le Bearer token JWT dans le header Authorization
       const response = await this.axiosInstance.get(endpoint, {
-        params: requestParams,
-        headers: {
-          Authorization: `Bearer ${authToken}`, // Bearer token JWT (tokenStore) ou storeApiToken
-        },
+        params,
+        headers: this.authHeaders(apiToken),
         responseType: options?.responseType || 'json',
       });
 
@@ -125,7 +98,7 @@ export class StoreApiService {
   }
 
   /**
-   * Fait une requête GET vers l'API du store sans authentification (endpoints publics)
+   * Requête GET publique (sans authentification)
    */
   async getPublic<T = any>(
     endpoint: string,
@@ -151,7 +124,8 @@ export class StoreApiService {
         }
 
         throw new BadRequestException(
-          data?.message || `Erreur lors de la communication avec le store: ${error.message}`,
+          data?.message ||
+            `Erreur lors de la communication avec le store: ${error.message}`,
         );
       }
 
@@ -167,9 +141,6 @@ export class StoreApiService {
     }
   }
 
-  /**
-   * Fait une requête POST vers l'API du store
-   */
   async post<T = any>(
     userId: string,
     endpoint: string,
@@ -179,9 +150,7 @@ export class StoreApiService {
 
     try {
       const response = await this.axiosInstance.post(endpoint, data, {
-        headers: {
-          Authorization: `Bearer ${apiToken}`,
-        },
+        headers: this.authHeaders(apiToken),
       });
 
       return response.data;
@@ -190,9 +159,6 @@ export class StoreApiService {
     }
   }
 
-  /**
-   * Fait une requête PUT vers l'API du store
-   */
   async put<T = any>(
     userId: string,
     endpoint: string,
@@ -202,9 +168,7 @@ export class StoreApiService {
 
     try {
       const response = await this.axiosInstance.put(endpoint, data, {
-        headers: {
-          Authorization: `Bearer ${apiToken}`,
-        },
+        headers: this.authHeaders(apiToken),
       });
 
       return response.data;
@@ -213,17 +177,12 @@ export class StoreApiService {
     }
   }
 
-  /**
-   * Fait une requête DELETE vers l'API du store
-   */
   async delete<T = any>(userId: string, endpoint: string): Promise<T> {
     const apiToken = await this.getValidApiToken(userId);
 
     try {
       const response = await this.axiosInstance.delete(endpoint, {
-        headers: {
-          Authorization: `Bearer ${apiToken}`,
-        },
+        headers: this.authHeaders(apiToken),
       });
 
       return response.data;
@@ -233,35 +192,42 @@ export class StoreApiService {
   }
 
   /**
-   * Gère les erreurs des requêtes API
+   * Télécharge une URL du store (relative ou absolue) avec la clé API en header uniquement.
    */
+  async downloadBinary(userId: string, downloadUrl: string): Promise<Buffer> {
+    const apiToken = await this.getValidApiToken(userId);
+
+    const fullUrl = downloadUrl.startsWith('http')
+      ? downloadUrl
+      : `${this.storeBaseUrl}${downloadUrl}`;
+
+    try {
+      const response = await axios.get(fullUrl, {
+        headers: this.authHeaders(apiToken),
+        responseType: 'arraybuffer',
+        timeout: 60000,
+      });
+
+      return Buffer.from(response.data);
+    } catch (error: any) {
+      return await this.handleError(error, userId);
+    }
+  }
+
   private async handleError(error: AxiosError, userId: string): Promise<never> {
     if (error.response) {
-      // Erreur HTTP du store
       const status = error.response.status;
       const data = error.response.data as any;
 
       if (status === 401) {
-        // Token invalide ou expiré
-        // Récupérer le token pour le log de débogage
-        const apiToken = await this.storeAuthService.getStoreApiToken(userId);
-        if (apiToken) {
-          this.logger.warn(
-            `Token API invalide pour l'utilisateur ${userId}. Token utilisé: ${apiToken.substring(0, 10)}... (longueur: ${apiToken.length}, commence par "lumy_": ${apiToken.startsWith('lumy_')}). Réponse du store: ${JSON.stringify(data)}. URL: ${error.config?.url || 'unknown'}`,
-            'StoreApiService',
-          );
-        } else {
-          this.logger.warn(
-            `Token API manquant pour l'utilisateur ${userId}. Réponse du store: ${JSON.stringify(data)}. URL: ${error.config?.url || 'unknown'}`,
-            'StoreApiService',
-          );
-        }
-
-        // Optionnel : déconnecter automatiquement l'utilisateur
-        // await this.storeAuthService.disconnectStore(userId);
+        this.logger.warn(
+          `Clé API refusée par le store pour l'utilisateur ${userId} (${error.config?.url || 'unknown'})`,
+          'StoreApiService',
+        );
 
         throw new UnauthorizedException(
-          data?.message || 'Votre connexion au store a expiré. Veuillez vous reconnecter.',
+          data?.message ||
+            'Votre clé API store est invalide ou a été révoquée. Veuillez en saisir une nouvelle.',
         );
       }
 
@@ -278,12 +244,12 @@ export class StoreApiService {
       }
 
       throw new BadRequestException(
-        data?.message || `Erreur lors de la communication avec le store: ${error.message}`,
+        data?.message ||
+          `Erreur lors de la communication avec le store: ${error.message}`,
       );
     }
 
     if (error.request) {
-      // Pas de réponse du serveur
       throw new BadRequestException(
         'Impossible de contacter le Lumy Store. Vérifiez votre connexion internet.',
       );
@@ -294,29 +260,12 @@ export class StoreApiService {
     );
   }
 
-  /**
-   * Valide le token API en faisant une requête de test
-   */
   async validateToken(userId: string): Promise<boolean> {
     try {
       await this.get(userId, '/api/users/me');
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   }
-
-  /**
-   * Rafraîchit le token API en le régénérant depuis le store
-   * Note: Nécessite que l'utilisateur se reconnecte avec ses credentials
-   */
-  async refreshToken(userId: string): Promise<{ message: string }> {
-    // Pour rafraîchir le token, l'utilisateur doit se reconnecter
-    // car le store ne fournit pas d'endpoint de rafraîchissement direct
-    // avec l'apiToken. Il faut utiliser les credentials.
-    throw new BadRequestException(
-      'Pour rafraîchir votre token, veuillez vous reconnecter au store avec vos identifiants',
-    );
-  }
 }
-

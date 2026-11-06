@@ -10,35 +10,30 @@ import {
   Stack,
   CircularProgress,
   Link,
+  InputAdornment,
+  IconButton,
 } from '@mui/material';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { useTranslation } from 'react-i18next';
 import { storeService, ConnectStoreDto } from '../services/store.service';
 
 export default function StoreConnectPage() {
   const { t } = useTranslation();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [apiKey, setApiKey] = useState('');
+  const [showApiKey, setShowApiKey] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [storeEmail, setStoreEmail] = useState<string | null>(null);
+  const [apiKeyMasked, setApiKeyMasked] = useState<string | null>(null);
 
   useEffect(() => {
-    // Récupérer l'email depuis localStorage si disponible
-    const lumyStore = localStorage.getItem('lumy_store');
-    if (lumyStore) {
-      try {
-        const storeData = JSON.parse(lumyStore);
-        if (storeData.email) {
-          setStoreEmail(storeData.email);
-        }
-      } catch (e) {
-        // Si le format est invalide, ignorer
-        console.warn('Format invalide pour lumy_store:', e);
-      }
-    }
+    // Nettoyer d'anciens tokens JWT éventuellement stockés dans le navigateur
+    localStorage.removeItem('lumy_store');
+    localStorage.removeItem('tokenStore');
     checkConnectionStatus();
   }, []);
 
@@ -47,9 +42,13 @@ export default function StoreConnectPage() {
       setCheckingStatus(true);
       const status = await storeService.getConnectionStatus();
       setConnected(status.connected);
+      setStoreEmail(status.storeEmail || null);
+      setApiKeyMasked(status.apiKeyMasked || null);
     } catch (err) {
       console.error('Erreur lors de la vérification du statut:', err);
       setConnected(false);
+      setStoreEmail(null);
+      setApiKeyMasked(null);
     } finally {
       setCheckingStatus(false);
     }
@@ -63,28 +62,15 @@ export default function StoreConnectPage() {
 
     try {
       const credentials: ConnectStoreDto = {
-        email,
-        password,
+        apiKey: apiKey.trim(),
       };
 
       const response = await storeService.connectStore(credentials);
       setConnected(true);
       setStoreEmail(response.storeEmail);
-      
-      // Stocker le token JWT et l'email du store dans le navigateur sous la clé lumy_store
-      if (response.tokenStore) {
-        const storeData = {
-          token: response.tokenStore,
-          email: response.storeEmail,
-        };
-        localStorage.setItem('lumy_store', JSON.stringify(storeData));
-        // Supprimer l'ancienne clé tokenStore si elle existe
-        localStorage.removeItem('tokenStore');
-      }
-      
+      setApiKeyMasked(response.apiKeyMasked);
       setSuccess(t('store.connect.success'));
-      setEmail('');
-      setPassword('');
+      setApiKey('');
     } catch (err: any) {
       const errorMessage = err.message || t('store.connect.error');
       setError(errorMessage);
@@ -102,12 +88,9 @@ export default function StoreConnectPage() {
       await storeService.disconnectStore();
       setConnected(false);
       setStoreEmail(null);
-      
-      // Supprimer le token JWT et l'email du store du navigateur
+      setApiKeyMasked(null);
       localStorage.removeItem('lumy_store');
-      // Supprimer aussi l'ancienne clé tokenStore si elle existe
       localStorage.removeItem('tokenStore');
-      
       setSuccess(t('store.disconnect.success'));
     } catch (err: any) {
       const errorMessage = err.message || t('store.disconnect.error');
@@ -158,13 +141,23 @@ export default function StoreConnectPage() {
           {connected ? (
             <Box>
               <Alert severity="success" sx={{ mb: 2 }}>
-                {t('store.connected.message', { email: storeEmail || t('store.connected.unknown') })}
+                {storeEmail
+                  ? t('store.connected.message', { email: storeEmail })
+                  : t('store.connected.messageMasked', {
+                      key: apiKeyMasked || t('store.connected.unknown'),
+                    })}
               </Alert>
 
               <Stack spacing={2}>
                 <Typography variant="body1">
                   {t('store.connected.description')}
                 </Typography>
+
+                {apiKeyMasked && (
+                  <Typography variant="body2" color="text.secondary">
+                    {t('store.connected.apiKeyLabel')}: {apiKeyMasked}
+                  </Typography>
+                )}
 
                 <Button
                   variant="outlined"
@@ -185,29 +178,36 @@ export default function StoreConnectPage() {
                 </Alert>
 
                 <TextField
-                  label={t('store.connect.email')}
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  label={t('store.connect.apiKey')}
+                  type={showApiKey ? 'text' : 'password'}
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
                   required
                   fullWidth
                   disabled={loading}
-                />
-
-                <TextField
-                  label={t('store.connect.password')}
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  fullWidth
-                  disabled={loading}
+                  autoComplete="off"
+                  placeholder="lumy_..."
+                  helperText={t('store.connect.apiKeyHelp')}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label={t('store.connect.toggleApiKeyVisibility')}
+                          onClick={() => setShowApiKey((v) => !v)}
+                          edge="end"
+                          disabled={loading}
+                        >
+                          {showApiKey ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
                 />
 
                 <Button
                   type="submit"
                   variant="contained"
-                  disabled={loading || !email || !password}
+                  disabled={loading || !apiKey.trim().startsWith('lumy_')}
                   fullWidth
                 >
                   {loading ? <CircularProgress size={24} /> : t('store.connect.button')}
@@ -231,4 +231,3 @@ export default function StoreConnectPage() {
     </Box>
   );
 }
-

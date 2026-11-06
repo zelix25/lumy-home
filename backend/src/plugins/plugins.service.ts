@@ -456,11 +456,10 @@ export class PluginsService {
   /**
    * Installe un plugin depuis le Lumy Store
    */
-  async installFromStore(userId: string, pluginId: string, tokenStore?: string): Promise<Plugin> {
+  async installFromStore(userId: string, pluginId: string): Promise<Plugin> {
     const plugin = await this.pluginInstallService.installFromStore(
       userId,
       pluginId,
-      tokenStore,
     );
 
     // Valider les permissions après l'installation

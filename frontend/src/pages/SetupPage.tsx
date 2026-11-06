@@ -95,9 +95,8 @@ export default function SetupPage() {
   const [error, setError] = useState<string | null>(null);
   const [passwordStrength, setPasswordStrength] = useState<{ score: number; label: string; color: string }>({ score: 0, label: '', color: '' });
   
-  // Étape 2: Store
-  const [storeEmail, setStoreEmail] = useState('');
-  const [storePassword, setStorePassword] = useState('');
+  // Étape 2: Store (clé API)
+  const [storeApiKey, setStoreApiKey] = useState('');
   const [storeConnected, setStoreConnected] = useState(false);
   const [storeLoading, setStoreLoading] = useState(false);
   const [storeError, setStoreError] = useState<string | null>(null);
@@ -222,7 +221,7 @@ export default function SetupPage() {
     setStoreLoading(true);
 
     try {
-      // Vérifier que le token JWT est bien présent avant de se connecter au store
+      // Vérifier que le token JWT Lumy Home est bien présent
       const token = authService.getToken();
       if (!token) {
         setStoreError(t('setup.store.noToken'));
@@ -231,26 +230,15 @@ export default function SetupPage() {
       }
 
       const credentials: ConnectStoreDto = {
-        email: storeEmail,
-        password: storePassword,
+        apiKey: storeApiKey.trim(),
       };
 
-      const response = await storeService.connectStore(credentials);
+      await storeService.connectStore(credentials);
       setStoreConnected(true);
-      
-      // Stocker le token JWT et l'email du store dans le navigateur
-      if (response.tokenStore) {
-        const storeData = {
-          token: response.tokenStore,
-          email: response.storeEmail,
-        };
-        localStorage.setItem('lumy_store', JSON.stringify(storeData));
-        localStorage.removeItem('tokenStore');
-      }
-      
+      localStorage.removeItem('lumy_store');
+      localStorage.removeItem('tokenStore');
       setStoreSuccess(t('setup.store.connected'));
-      setStoreEmail('');
-      setStorePassword('');
+      setStoreApiKey('');
     } catch (err: any) {
       // Extraire le message d'erreur
       let errorMessage = t('setup.store.error');
@@ -266,7 +254,7 @@ export default function SetupPage() {
       
       // Si c'est une erreur 401, donner un message plus explicite
       if (err.message?.includes('401') || err.message?.includes('Non autorisé') || err.message?.includes('Unauthorized')) {
-        // Vérifier si c'est une erreur d'authentification JWT ou d'identifiants store
+        // Vérifier si c'est une erreur d'authentification JWT ou de clé API store
         const token = authService.getToken();
         if (!token) {
           errorMessage = t('setup.store.noToken');
@@ -565,24 +553,20 @@ export default function SetupPage() {
             {!storeConnected ? (
               <form onSubmit={handleConnectStore}>
                 <Stack spacing={2}>
-                  <TextField
-                    label={t('auth.email')}
-                    type="email"
-                    value={storeEmail}
-                    onChange={(e) => setStoreEmail(e.target.value)}
-                    fullWidth
-                    required
-                    autoComplete="email"
-                  />
+                  <Alert severity="info">
+                    {t('setup.store.apiKeyInfo')}
+                  </Alert>
 
                   <TextField
-                    label={t('auth.password')}
+                    label={t('setup.store.apiKey')}
                     type="password"
-                    value={storePassword}
-                    onChange={(e) => setStorePassword(e.target.value)}
+                    value={storeApiKey}
+                    onChange={(e) => setStoreApiKey(e.target.value)}
                     fullWidth
                     required
-                    autoComplete="current-password"
+                    autoComplete="off"
+                    placeholder="lumy_..."
+                    helperText={t('setup.store.apiKeyHelp')}
                   />
 
                   <Stack direction="row" spacing={2}>
@@ -596,7 +580,7 @@ export default function SetupPage() {
                     <Button
                       type="submit"
                       variant="contained"
-                      disabled={storeLoading}
+                      disabled={storeLoading || !storeApiKey.trim().startsWith('lumy_')}
                       fullWidth
                     >
                       {storeLoading ? t('common.loading') : t('setup.store.connect')}

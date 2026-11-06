@@ -35,14 +35,6 @@ export class StoreAuthController {
 
   @Get('status')
   async getConnectionStatus(@CurrentUser() user: { id: string; email: string }) {
-    const isConnected = await this.storeAuthService.isConnectedToStore(
-      user.id,
-    );
-    const apiToken = await this.storeAuthService.getStoreApiToken(user.id);
-    return {
-      connected: isConnected,
-      storeEmail: apiToken ? 'connected' : undefined, // Optionnel: on pourrait récupérer l'email du store
-    };
+    return this.storeAuthService.getConnectionStatus(user.id);
   }
 }
-
