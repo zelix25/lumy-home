@@ -465,7 +465,25 @@
     },
     "passwordTooShort": "Password must contain at least 8 characters",
     "passwordMissingUppercase": "Password must contain at least one uppercase letter",
-    "passwordMissingSpecial": "Password must contain at least one special character"
+    "passwordMissingSpecial": "Password must contain at least one special character",
+    "recovery": {
+      "button": "Recovery",
+      "title": "Recovery mode",
+      "description": "Talks to lumy-updater directly, without going through the backend.",
+      "warning": "Emergency mode: use only if Lumy Home fails to start properly.",
+      "updaterOnline": "Updater reachable",
+      "updaterOffline": "Updater unreachable",
+      "updaterUnreachable": "Cannot reach lumy-updater. Check that the container is running.",
+      "check": "Check for updates",
+      "apply": "Apply updates",
+      "applyHint": "This may take several minutes (image download).",
+      "back": "Back to login",
+      "noUpdates": "No updates available.",
+      "availableUpdates": "Available updates",
+      "checkError": "Error while checking for updates",
+      "applyError": "Error while applying updates",
+      "applySuccess": "Update applied: {{services}}. Wait for restart, then sign in again."
+    }
   },
   "setup": {
     "welcome": "Welcome to Lumy Home",

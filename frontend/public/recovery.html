@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lumy Home — Récupération</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, sans-serif; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #F7F7F5; color: #1a1a1a; }
+    main { width: min(440px, 92vw); background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 1.5rem; }
+    h1 { font-size: 1.25rem; margin: 0 0 .5rem; }
+    p { margin: 0 0 1rem; color: #555; font-size: .9rem; line-height: 1.4; }
+    .warn { background: #fff8e6; border: 1px solid #f0d78c; padding: .75rem; border-radius: 8px; margin-bottom: 1rem; font-size: .85rem; }
+    button { width: 100%; margin: .35rem 0; padding: .7rem 1rem; border-radius: 8px; border: 1px solid #ccc; background: #fff; font-size: .95rem; cursor: pointer; }
+    button.primary { background: #ed6c02; border-color: #ed6c02; color: #fff; }
+    button:disabled { opacity: .55; cursor: wait; }
+    pre { white-space: pre-wrap; word-break: break-word; background: #f5f5f5; padding: .75rem; border-radius: 8px; font-size: .75rem; max-height: 220px; overflow: auto; }
+    a { color: #555; font-size: .85rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Mode récupération</h1>
+    <p>Page de secours si l’interface React est indisponible. Parle à <code>lumy-updater</code> via <code>/recovery/updater</code>.</p>
+    <div class="warn">Urgence uniquement — aucune authentification. Préférez la page de connexion si elle charge.</div>
+    <button id="check" type="button">Vérifier les mises à jour</button>
+    <button id="apply" class="primary" type="button">Appliquer les mises à jour</button>
+    <pre id="out">Prêt.</pre>
+    <p><a href="/">← Retour à Lumy Home</a></p>
+  </main>
+  <script>
+    const out = document.getElementById('out');
+    const checkBtn = document.getElementById('check');
+    const applyBtn = document.getElementById('apply');
+    const base = '/recovery/updater';
+
+    function setBusy(busy) {
+      checkBtn.disabled = busy;
+      applyBtn.disabled = busy;
+    }
+
+    async function call(path, body) {
+      setBusy(true);
+      out.textContent = 'En cours…';
+      try {
+        const res = await fetch(base + path, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body || {}),
+        });
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch { data = text; }
+        out.textContent = JSON.stringify(data, null, 2);
+        if (!res.ok) throw new Error(typeof data === 'string' ? data : (data.message || res.status));
+      } catch (e) {
+        out.textContent = 'Erreur: ' + (e && e.message ? e.message : e);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    checkBtn.onclick = () => call('/check');
+    applyBtn.onclick = () => call('/update');
+  </script>
+</body>
+</html>

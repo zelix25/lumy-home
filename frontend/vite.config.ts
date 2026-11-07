@@ -32,6 +32,12 @@ export default defineConfig(({ mode }) => {
           target: env.VITE_API_URL || 'http://localhost:3000',
           changeOrigin: true,
         },
+        // Mode recovery : proxy direct vers lumy-updater (sans backend)
+        '/recovery/updater': {
+          target: env.VITE_UPDATER_URL || 'http://localhost:3411',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/recovery\/updater/, '/updater'),
+        },
       },
     },
   };

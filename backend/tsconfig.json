@@ -10,7 +10,8 @@
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "${configDir}/src",
-    "incremental": true,
+    // incremental + nest deleteOutDir en watch = dist partiel (ex: main.js manquant).
+    "incremental": false,
     "skipLibCheck": true,
     "strictNullChecks": true,
     "types": [],
