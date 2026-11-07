@@ -57,6 +57,9 @@ function getUserFacingHttpError(status: number, bodyText: string): string {
   return i18n.t('apiErrors.requestFailed', { status });
 }
 
+/** Endpoints où un 401 métier ≠ session Lumy expirée (ne pas déconnecter). */
+const SESSION_SAFE_401_PREFIXES = ['/store/auth/'];
+
 class ApiService {
   private baseUrl: string;
 
@@ -64,6 +67,37 @@ class ApiService {
     // Si l'URL commence par http:// ou https://, c'est une URL absolue
     // Sinon, c'est un chemin relatif qui sera résolu par le navigateur
     this.baseUrl = API_BASE_URL;
+  }
+
+  private isSessionSafe401(endpoint: string): boolean {
+    return SESSION_SAFE_401_PREFIXES.some((prefix) =>
+      endpoint.startsWith(prefix),
+    );
+  }
+
+  /** 401 session Lumy → logout ; 401 métier (store) → erreur sans redirect. */
+  private async handleUnauthorized(
+    endpoint: string,
+    response: Response,
+  ): Promise<never> {
+    const bodyText = await response.text().catch(() => '');
+    const message =
+      tryParseJsonErrorMessage(bodyText) ||
+      getUserFacingHttpError(401, bodyText) ||
+      'Non autorisé';
+
+    if (this.isSessionSafe401(endpoint)) {
+      throw new Error(message);
+    }
+
+    if (getAppPathname() !== '/setup') {
+      localStorage.removeItem('lumy_token');
+      localStorage.removeItem('lumy_user');
+      if (getAppPathname() !== '/login') {
+        window.location.href = getTunnelLoginHref();
+      }
+    }
+    throw new Error(message);
   }
 
   private getHeaders(): HeadersInit {
@@ -106,14 +140,7 @@ class ApiService {
     });
     
     if (response.status === 401) {
-      // Token invalide ou expiré
-      localStorage.removeItem('lumy_token');
-      localStorage.removeItem('lumy_user');
-      // Ne rediriger que si on n'est pas déjà sur la page de login ou de setup
-      if (getAppPathname() !== '/login' && getAppPathname() !== '/setup') {
-        window.location.href = getTunnelLoginHref();
-      }
-      throw new Error('Non autorisé');
+      await this.handleUnauthorized(endpoint, response);
     }
     
     if (!response.ok) {
@@ -158,16 +185,7 @@ class ApiService {
     });
     
     if (response.status === 401) {
-      // Ne pas supprimer le token si on est sur la page de setup (l'utilisateur vient peut-être de créer son compte)
-      if (getAppPathname() !== '/setup') {
-        localStorage.removeItem('lumy_token');
-        localStorage.removeItem('lumy_user');
-        // Ne rediriger que si on n'est pas déjà sur la page de login
-        if (getAppPathname() !== '/login') {
-          window.location.href = getTunnelLoginHref();
-        }
-      }
-      throw new Error('Non autorisé');
+      await this.handleUnauthorized(endpoint, response);
     }
     
     if (!response.ok) {
@@ -188,16 +206,7 @@ class ApiService {
     });
     
     if (response.status === 401) {
-      // Ne pas supprimer le token si on est sur la page de setup (l'utilisateur vient peut-être de créer son compte)
-      if (getAppPathname() !== '/setup') {
-        localStorage.removeItem('lumy_token');
-        localStorage.removeItem('lumy_user');
-        // Ne rediriger que si on n'est pas déjà sur la page de login
-        if (getAppPathname() !== '/login') {
-          window.location.href = getTunnelLoginHref();
-        }
-      }
-      throw new Error('Non autorisé');
+      await this.handleUnauthorized(endpoint, response);
     }
     
     if (!response.ok) {
@@ -218,16 +227,7 @@ class ApiService {
     });
     
     if (response.status === 401) {
-      // Ne pas supprimer le token si on est sur la page de setup (l'utilisateur vient peut-être de créer son compte)
-      if (getAppPathname() !== '/setup') {
-        localStorage.removeItem('lumy_token');
-        localStorage.removeItem('lumy_user');
-        // Ne rediriger que si on n'est pas déjà sur la page de login
-        if (getAppPathname() !== '/login') {
-          window.location.href = getTunnelLoginHref();
-        }
-      }
-      throw new Error('Non autorisé');
+      await this.handleUnauthorized(endpoint, response);
     }
     
     if (!response.ok) {
@@ -247,16 +247,7 @@ class ApiService {
     });
     
     if (response.status === 401) {
-      // Ne pas supprimer le token si on est sur la page de setup (l'utilisateur vient peut-être de créer son compte)
-      if (getAppPathname() !== '/setup') {
-        localStorage.removeItem('lumy_token');
-        localStorage.removeItem('lumy_user');
-        // Ne rediriger que si on n'est pas déjà sur la page de login
-        if (getAppPathname() !== '/login') {
-          window.location.href = getTunnelLoginHref();
-        }
-      }
-      throw new Error('Non autorisé');
+      await this.handleUnauthorized(endpoint, response);
     }
     
     if (!response.ok) {

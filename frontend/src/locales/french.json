@@ -467,7 +467,25 @@
     },
     "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères",
     "passwordMissingUppercase": "Le mot de passe doit contenir au moins une majuscule",
-    "passwordMissingSpecial": "Le mot de passe doit contenir au moins un caractère spécial"
+    "passwordMissingSpecial": "Le mot de passe doit contenir au moins un caractère spécial",
+    "recovery": {
+      "button": "Récupération",
+      "title": "Mode récupération",
+      "description": "Contacte lumy-updater directement, sans passer par le backend.",
+      "warning": "Mode d'urgence : utilisez-le uniquement si Lumy Home ne démarre plus correctement.",
+      "updaterOnline": "Updater accessible",
+      "updaterOffline": "Updater inaccessible",
+      "updaterUnreachable": "Impossible de joindre lumy-updater. Vérifiez que le conteneur tourne.",
+      "check": "Vérifier les mises à jour",
+      "apply": "Appliquer les mises à jour",
+      "applyHint": "L'opération peut prendre plusieurs minutes (téléchargement des images).",
+      "back": "Retour à la connexion",
+      "noUpdates": "Aucune mise à jour disponible.",
+      "availableUpdates": "Mises à jour disponibles",
+      "checkError": "Erreur lors de la vérification des mises à jour",
+      "applyError": "Erreur lors de l'application des mises à jour",
+      "applySuccess": "Mise à jour appliquée : {{services}}. Attendez le redémarrage puis reconnectez-vous."
+    }
   },
   "setup": {
     "welcome": "Bienvenue sur Lumy Home",
@@ -884,7 +902,7 @@
     "connect": {
       "button": "Connecter la clé API",
       "apiKey": "Clé API",
-      "apiKeyHelp": "Format attendu : lumy_… — générée depuis votre compte sur le store.",
+      "apiKeyHelp": "Format attendu : lumy_… - générée depuis votre compte sur le store.",
       "toggleApiKeyVisibility": "Afficher ou masquer la clé API",
       "info": "Collez la clé API fournie par le Lumy Store. Elle est validée puis stockée uniquement sur votre box (jamais dans le navigateur).",
       "noAccount": "Vous n'avez pas encore de compte ?",

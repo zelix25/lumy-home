@@ -99,7 +99,9 @@ export class StoreAuthService {
       }
       if (error.response) {
         if (error.response.status === 401 || error.response.status === 403) {
-          throw new UnauthorizedException(
+          // 400 (pas 401) : la session Lumy Home est valide, c'est la clé store qui est refusée.
+          // Un 401 ferait déconnecter l'utilisateur côté frontend.
+          throw new BadRequestException(
             'Clé API invalide ou révoquée. Vérifiez la clé sur le Lumy Store.',
           );
         }
@@ -126,15 +128,21 @@ export class StoreAuthService {
       });
 
       if (response.status !== 200 || !response.data) {
-        throw new UnauthorizedException(
+        throw new BadRequestException(
           'Impossible de valider la clé API auprès du store',
         );
       }
 
       return response.data;
     } catch (error: any) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof UnauthorizedException
+      ) {
+        throw error;
+      }
       if (error.response?.status === 401 || error.response?.status === 403) {
-        throw new UnauthorizedException(
+        throw new BadRequestException(
           'Clé API invalide ou révoquée. Vérifiez la clé sur le Lumy Store.',
         );
       }
